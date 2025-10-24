@@ -9,7 +9,9 @@
         <div class="user-avatar">{{ strtoupper(substr(Auth::user()->name, 0, 2)) }}</div>
         <div class="user-details">
             <h4>{{ Auth::user()->name }}</h4>
-            <p>{{ Auth::user()->role ?? 'Usuario' }}</p>
+            <p>
+                {{ Auth::user()->is_admin ? 'Administrador' : 'Usuario' }}
+            </p>
         </div>
     </div>
 
@@ -20,13 +22,20 @@
             <span>Inicio</span>
         </a>
         @if (auth()->user()->is_admin)
-            <a href="{{ route('admin.dashboards.index') }}" class="menu-item {{ request()->routeIs('dashboards') ? 'active' : '' }}">
+            <a href="{{ route('admin.dashboards.index') }}"
+                class="menu-item {{ request()->routeIs('dashboards') ? 'active' : '' }}">
                 <span class="menu-icon">📊</span>
                 <span>Gestionar Dashboards</span>
             </a>
-            <a href="{{ route('admin.access.index') }}" class="menu-item {{ request()->routeIs('access') ? 'active' : '' }}">
+            <a href="{{ route('admin.access.index') }}"
+                class="menu-item {{ request()->routeIs('access') ? 'active' : '' }}">
                 <span class="menu-icon">📈</span>
                 <span>Gestionar Accesos</span>
+            </a>
+            <a href="{{ route('admin.users.index') }}"
+                class="menu-item {{ request()->routeIs('access') ? 'active' : '' }}">
+                <span class="menu-icon">📈</span>
+                <span>Gestionar Usuarios</span>
             </a>
         @endif
         <div style="height: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); margin: 10px 20px;"></div>

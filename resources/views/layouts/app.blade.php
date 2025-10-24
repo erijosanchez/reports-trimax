@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'Dashboards Power BI')</title>
     <link rel="stylesheet" href="{{ asset('assets/css/global.css') }}">
-    <link rel="shortcut icon" href="{{ asset('assets/img/LOGOTIPO TRIMAX 2025-01.png') }}" type="image/x-icon">
+    <link rel="shortcut icon" href="{{ asset('assets/img/fv.png') }}" type="image/x-icon">
 </head>
 
 <body>

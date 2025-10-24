@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Admin\UserAccessController;
+use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;;
 
 // Rutas de autenticación
@@ -22,6 +23,7 @@ Route::middleware('auth')->group(function () {
     
     // Rutas de administración (solo para admins)
     Route::middleware('admin')->prefix('admin')->name('admin.')->group(function () {
+        Route::resource('users', UserController::class)->only(['index', 'update', 'create', 'store', 'edit', 'destroy']);
         Route::resource('dashboards', AdminDashboardController::class);
         Route::get('access', [UserAccessController::class, 'index'])->name('access.index');
         Route::post('access/{user}', [UserAccessController::class, 'update'])->name('access.update');
