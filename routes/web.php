@@ -14,7 +14,10 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 // Rutas protegidas por autenticación
 Route::middleware('auth')->group(function () {
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    
     Route::get('/', [DashboardController::class, 'index'])->name('home');
+
     Route::get('/dashboard/{id}', [DashboardController::class, 'show'])->name('dashboard.show');
     
     // Rutas de administración (solo para admins)
