@@ -2,7 +2,7 @@
 
 @section('title', 'Gestionar Accesos')
 
-@section('content')
+@section('others')
 <h1>Gestionar Accesos de Usuarios</h1>
 
 @foreach($users as $user)

@@ -1,15 +1,21 @@
-@extends('layouts.app')
+<!DOCTYPE html>
+<html lang="es">
 
-@section('title', 'Login')
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TriMax - Login</title>
+    <link rel="stylesheet" href="assets/css/login.css">
+</head>
 
-@section('content')
+<body>
     <div class="login-container">
         <div class="login-left">
             <div class="logo">
                 <img src="assets/img/LOGOTIPO TRIMAX 2025-01.png" alt="Logo Trimax">
             </div>
             <div class="welcome-text">
-                <h2>Bienvenido de Consultor</h2>
+                <h2>Bienvenido Consultor</h2>
                 <p>Ingresa tus credenciales para acceder a tu cuenta y continuar con tu experiencia.</p>
             </div>
         </div>
@@ -24,7 +30,7 @@
                 <div class="form-group">
                     <label for="email">Correo Electrónico</label>
                     <div class="input-wrapper">
-                        <input type="email" id="email" name="email" placeholder="usuario@ejemplo.com" required>
+                        <input type="email" id="email" name="email" placeholder="usuario@trimaxperu.com" required>
                         <span class="input-icon">📧</span>
                     </div>
                 </div>
@@ -52,4 +58,7 @@
             this.textContent = type === 'password' ? '👁️' : '🙈';
         });
     </script>
-@endsection
+
+</body>
+
+</html>
