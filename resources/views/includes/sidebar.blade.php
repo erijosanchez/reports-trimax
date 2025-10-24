@@ -41,7 +41,7 @@
             </a>
         @endif
         <div style="height: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); margin: 10px 20px;"></div>
-        <form method="POST" class="menu-item" action="{{ route('logout') }}" style="display:inline">
+        <form method="POST" class="menu-item-1" action="{{ route('logout') }}" style="display:inline">
             @csrf
             <button type="submit"><span class="menu-icon"><i data-lucide="log-out" style=""></i></span></button>
         </form>

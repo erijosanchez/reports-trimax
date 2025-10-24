@@ -134,6 +134,54 @@ body {
     margin: 10px 20px;
 }
 
+.menu-item-1 {
+    padding: 15px 30px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-left: 3px solid transparent;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 15px;
+    color: rgba(255, 255, 255, 0.9);
+    text-decoration: none;
+}
+
+.menu-item-1:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-left-color: #2196F3;
+    padding-left: 35px;
+}
+
+.menu-item-1.active {
+    background: rgba(33, 150, 243, 0.2);
+    border-left-color: #2196F3;
+    font-weight: 600;
+}
+
+.menu-item-1 button {
+    background: none;
+    border: none;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+    width: 73%;
+    text-align: left;
+    padding: 0;
+}
+
+.menu-icon {
+    font-size: 18px;
+    width: 24px;
+    text-align: center;
+}
+
+.menu-divider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.1);
+    margin: 10px 20px;
+}
+
 /* Main Content */
 .main-content {
     flex: 1;
