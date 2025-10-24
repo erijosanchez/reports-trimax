@@ -7,9 +7,12 @@
     <title>@yield('title', 'Dashboards Power BI')</title>
     <link rel="stylesheet" href="{{ asset('assets/css/global.css') }}">
     <link rel="shortcut icon" href="{{ asset('assets/img/fv.png') }}" type="image/x-icon">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
 </head>
 
 <body>
+
     @auth
         <div class="dashboard-container">
             @include('includes.sidebar')
@@ -78,6 +81,11 @@
             });
         </script>
     @endauth
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        lucide.createIcons();
+    </script>
+
 </body>
 
 </html>

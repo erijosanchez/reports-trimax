@@ -12,7 +12,7 @@
                 <h1>Gestión de Usuarios</h1>
                 <p>Administra los usuarios del sistema</p>
             </div>
-            <a href="{{ route('admin.users.create') }}" class="btn btn-primary">➕ Nuevo Usuario</a>
+            <a href="{{ route('admin.users.create') }}" class="btn btn-primary"><i data-lucide="user-round-plus"></i> Crear Nuevo Usuario</a>
         </div>
     </div>
 

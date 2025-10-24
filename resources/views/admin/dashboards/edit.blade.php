@@ -68,11 +68,11 @@
                         </div>
 
                         <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 25px;">
-                            <a href="{{ route('admin.dashboards.index') }}" class="btn btn-outline">
+                            <a href="{{ route('admin.dashboards.index') }}" class="btn btn-secondary">
                                 Cancelar
                             </a>
                             <button type="submit" class="btn btn-primary">
-                                💾 Actualizar Dashboard
+                                <i data-lucide="save"></i>
                             </button>
                         </div>
 

@@ -37,7 +37,7 @@
                         <div style="display: flex; align-items: center; gap: 15px;">
                             <div
                                 style="width: 50px; height: 50px; border-radius: 12px; background: linear-gradient(135deg, #2196F3, #1976D2); display: flex; align-items: center; justify-content: center; font-size: 24px; color: white;">
-                                📊
+                                <i data-lucide="layout-dashboard"></i>
                             </div>
                             <div>
                                 <h3 class="card-title" style="margin: 0; font-size: 18px;">{{ $dashboard->title }}</h3>
@@ -71,7 +71,7 @@
                 </div>
                 <div class="card" style="text-align: center; margin-bottom: 0;">
                     <div style="font-size: 40px; color: #FF9800; margin-bottom: 10px;">🔔</div>
-                    <div style="color: #666; font-size: 14px;">3 Notificaciones</div>
+                    <div style="color: #666; font-size: 14px;"> Notificaciones</div>
                 </div>
             </div>
         </div>

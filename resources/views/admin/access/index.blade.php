@@ -13,8 +13,8 @@
                 <h1>Gestionar Permisos</h1>
                 <p>Administra todos los permisos sobre los reportes y accesos de usuarios</p>
             </div>
-            <a href="{{ route('admin.dashboards.create') }}" class="btn btn-primary">
-                ➕ Crear Nuevo Usuario
+            <a href="{{ route('admin.dashboards.create') }}" class="btn btn-primary" style="margin-top: 20px;">
+                <i data-lucide="user-round-plus"></i> Crear Nuevo Usuario
             </a>
         </div>
     </div>
@@ -54,8 +54,8 @@
                                     @endforeach
                                 </div>
 
-                                <button type="submit" class="btn btn-primary btn-sm">
-                                    💾 Guardar Permisos
+                                <button type="submit" class="btn btn-primary btn-sm" style="padding: 0.25rem 6.5rem">
+                                    <i data-lucide="save"></i>
                                 </button>
                             </form>
                         </div>

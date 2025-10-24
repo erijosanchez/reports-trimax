@@ -12,8 +12,9 @@
             <h1>Gestionar Dashboards</h1>
             <p>Administra todos los dashboards del sistema</p>
         </div>
-        <a href="{{ route('admin.dashboards.create') }}" class="btn btn-primary">
-            ➕ Crear Nuevo Dashboard
+        <a href="{{ route('admin.dashboards.create') }}" class="btn btn-primary" style="align-items: center; display: flex; justify-content: center; gap: 8px;">
+            <span class="menu-icon" ><i data-lucide="grid-2x2-plus"></i> </span>
+            <span>Nuevo Dashboard</span>
         </a>
     </div>
 </div>
@@ -29,7 +30,7 @@
                 <div style="color: #666; font-size: 14px;">Total Dashboards</div>
             </div>
             <div style="width: 50px; height: 50px; border-radius: 12px; background: linear-gradient(135deg, #2196F3, #1976D2); display: flex; align-items: center; justify-content: center; font-size: 24px; color: white;">
-                📊
+                <i data-lucide="layout-dashboard"></i>
             </div>
         </div>
     </div>
@@ -43,7 +44,7 @@
                 <div style="color: #666; font-size: 14px;">Dashboards Activos</div>
             </div>
             <div style="width: 50px; height: 50px; border-radius: 12px; background: linear-gradient(135deg, #4CAF50, #388E3C); display: flex; align-items: center; justify-content: center; font-size: 24px; color: white;">
-                ✓
+                <i data-lucide="grid-2x2-check"></i>
             </div>
         </div>
     </div>
@@ -57,7 +58,7 @@
                 <div style="color: #666; font-size: 14px;">Dashboards Inactivos</div>
             </div>
             <div style="width: 50px; height: 50px; border-radius: 12px; background: linear-gradient(135deg, #FF9800, #F57C00); display: flex; align-items: center; justify-content: center; font-size: 24px; color: white;">
-                ⏸
+                <i data-lucide="grid-2x2-x"></i>
             </div>
         </div>
     </div>
@@ -74,18 +75,18 @@
             <h3>No hay dashboards creados</h3>
             <p>Comienza creando tu primer dashboard</p>
             <a href="{{ route('admin.dashboards.create') }}" class="btn btn-primary" style="margin-top: 20px;">
-                ➕ Crear Primer Dashboard
+                <i data-lucide="grid-2x2-plus"></i> Crear Primer Dashboard
             </a>
         </div>
     @else
         <table class="table">
             <thead>
                 <tr>
-                    <th style="width: 50px;">#</th>
+                    <th style="width: 50px;">N°</th>
                     <th>Título</th>
                     <th style="width: 150px;">Orden</th>
                     <th style="width: 120px;">Estado</th>
-                    <th style="width: 200px; text-align: center;">Acciones</th>
+                    <th style="width: 150px; text-align: center;">Acciones</th>
                 </tr>
             </thead>
             <tbody>
@@ -114,14 +115,14 @@
                     </td>
                     <td>
                         <div style="display: flex; gap: 8px; justify-content: center;">
-                            <a href="{{ route('admin.dashboards.edit', $dashboard->id) }}" class="btn btn-sm btn-secondary">
-                                ✏️ Editar
+                            <a href="{{ route('admin.dashboards.edit', $dashboard->id) }}" class="btn btn-sm btn-secondary" >
+                                <i data-lucide="pencil" style="width:1rem"></i>
                             </a>
                             <form method="POST" action="{{ route('admin.dashboards.destroy', $dashboard->id) }}" style="display:inline">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('¿Estás seguro de eliminar este dashboard?')">
-                                    🗑️ Eliminar
+                                    <i data-lucide="trash-2" style="width:1rem"></i>
                                 </button>
                             </form>
                         </div>
