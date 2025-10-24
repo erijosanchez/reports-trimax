@@ -21,10 +21,10 @@
         </div>
     </div>
 
-    <div class="content-area">
-        <div class="card" style="padding: 20px;">
+    <div class="content-area card-mobil" >
+        <div class="card" style="padding: 0;">
             <div style="display: flex; flex-direction: column; gap: 15px;">
-                <h2 style="color: #0a2540; font-size: 20px;">Vista del Dashboard</h2>
+                <h2 style="color: #0a2540; font-size: 20px; margin-left: 10px; margin-top:5px">Vista del Dashboard</h2>
                 <div class="iframe-container">
                     <iframe src="{{ $dashboard->embed_url }}" frameborder="0" allowfullscreen="true"></iframe>
                 </div>

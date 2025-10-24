@@ -10,7 +10,7 @@ class DashboardController extends Controller
     public function index()
     {
         $user = auth()->user();
-        
+
         if ($user->is_admin) {
             $dashboards = Dashboard::active()->ordered()->get();
         } else {
@@ -31,4 +31,7 @@ class DashboardController extends Controller
 
         return view('dashboards.show', compact('dashboard'));
     }
+
+    
+
 }

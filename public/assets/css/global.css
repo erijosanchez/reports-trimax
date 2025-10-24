@@ -588,4 +588,22 @@ body {
     .iframe-container::before {
         padding-top: 75%;
     }
+
+    .card-mobil {
+        padding: 0 !important;
+        margin: 0 !important;
+        text-align: center;
+    }
+
+    .card-mobil .card {
+        border-radius: 5px !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 95vw;
+        position: relative;
+        left: 53%;
+        right: 47%;
+        margin-left: -50vw !important;
+        margin-right: -50vw !important;
+    }
 }

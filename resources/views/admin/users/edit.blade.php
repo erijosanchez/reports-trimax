@@ -38,7 +38,7 @@
                         <option value="1" {{ $user->is_admin ? 'selected' : '' }}>Administrador</option>
                     </select>
                 </div>
-                <button type="submit" class="btn btn-primary">✅ Actualizar Usuario</button>
+                <button type="submit" class="btn btn-primary"><i data-lucide="save"></i></button>
             </form>
         </div>
     </div>

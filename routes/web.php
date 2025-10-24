@@ -9,18 +9,20 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;;
 
 // Rutas de autenticación
-Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
-Route::post('/login', [AuthController::class, 'login']);
-Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+Route::middleware(['prevent.back'])->group(function () {
+    Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
+    Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+});
 
 // Rutas protegidas por autenticación
-Route::middleware('auth')->group(function () {
+Route::middleware('auth', 'prevent.back')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    
+
     Route::get('/', [DashboardController::class, 'index'])->name('home');
 
     Route::get('/dashboard/{id}', [DashboardController::class, 'show'])->name('dashboard.show');
-    
+
     // Rutas de administración (solo para admins)
     Route::middleware('admin')->prefix('admin')->name('admin.')->group(function () {
         Route::resource('users', UserController::class)->only(['index', 'update', 'create', 'store', 'edit', 'destroy']);
@@ -30,4 +32,4 @@ Route::middleware('auth')->group(function () {
     });
 });
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';

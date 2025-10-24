@@ -6,9 +6,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TriMax - Login</title>
     <link rel="stylesheet" href="assets/css/login.css">
+    <link rel="shortcut icon" href="{{ asset('assets/img/fv.png') }}" type="image/x-icon">
 </head>
 
 <body>
+    @if (session('attempts'))
+        <div class="alert alert-warning">
+            Intento {{ session('attempts') }} de 3 de acceder sin autenticación.
+            @if (session('warning'))
+                {{ session('warning') }}
+            @endif
+        </div>
+    @endif
     <div class="login-container">
         <div class="login-left">
             <div class="logo">
@@ -30,7 +39,8 @@
                 <div class="form-group">
                     <label for="email">Correo Electrónico</label>
                     <div class="input-wrapper">
-                        <input type="email" id="email" name="email" placeholder="usuario@trimaxperu.com" required>
+                        <input type="email" id="email" name="email" placeholder="usuario@trimaxperu.com"
+                            required>
                         <span class="input-icon">📧</span>
                     </div>
                 </div>

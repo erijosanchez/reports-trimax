@@ -31,12 +31,12 @@
                             <p><strong>Email:</strong> {{ $user->email }}</p>
                             <p><strong>Creado:</strong> {{ $user->created_at->format('d/m/Y') }}</p>
                             <div style="margin-top: 10px; display: flex; gap: 10px; flex-wrap: wrap;">
-                                <a href="{{ route('admin.users.edit', $user->id) }}" class="btn btn-primary btn-sm">✏️ Editar</a>
+                                <a href="{{ route('admin.users.edit', $user->id) }}" class="btn btn-primary btn-sm"><i data-lucide="pencil" style="width:1rem"></i></a>
                                 <form action="{{ route('admin.users.destroy', $user->id) }}" method="POST"
                                     onsubmit="return confirm('¿Eliminar este usuario?')">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="btn btn-danger btn-sm">🗑️ Eliminar</button>
+                                    <button type="submit" class="btn btn-danger btn-sm"><i data-lucide="trash-2" style="width:1rem"></i></button>
                                 </form>
                             </div>
                         </div>
