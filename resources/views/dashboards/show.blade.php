@@ -21,15 +21,54 @@
         </div>
     </div>
 
-    <div class="content-area card-mobil" >
-        <div class="card" style="padding: 0;">
-            <div style="display: flex; flex-direction: column; gap: 15px;">
-                <h2 style="color: #0a2540; font-size: 20px; margin-left: 10px; margin-top:5px">Vista del Dashboard</h2>
-                <div class="iframe-container">
-                    <iframe src="{{ $dashboard->embed_url }}" frameborder="0" allowfullscreen="true"></iframe>
-                </div>
+    <div class="content-area card-mobil">
+        <div class="card dashboard-card">
+            <div class="dashboard-header">
+                <h2>Vista del Dashboard</h2>
+            </div>
+
+            <!-- CONTENEDOR PRINCIPAL -->
+            <div id="stage" class="dashboard-frame-container">
+                <iframe id="dashboardIframe" title="Dashboard Público" frameborder="0" allowfullscreen="true"></iframe>
+
+                <!-- MÁSCARAS que tapan todo excepto el hueco central (botones Power BI) -->
+                <div class="mask-left" aria-hidden="true"></div>
+                <div class="mask-right" aria-hidden="true"></div>
+
+                <!-- Botón flotante estilo Power BI -->
+                <button id="fsBtn" class="fs-button">⛶</button>
             </div>
         </div>
     </div>
+
+    <script>
+        (function() {
+            const encodedUrl = '{{ base64_encode($dashboard->embed_url) }}';
+            const iframe = document.getElementById('dashboardIframe');
+            const stage = document.getElementById('stage');
+            const btnFS = document.getElementById('fsBtn');
+
+            // Asignar URL del dashboard
+            iframe.src = atob(encodedUrl);
+
+            // Evitar click derecho dentro del iframe
+            iframe.addEventListener('contextmenu', e => e.preventDefault());
+
+            // Pantalla completa
+            btnFS.addEventListener('click', async () => {
+                try {
+                    if (document.fullscreenElement) {
+                        await document.exitFullscreen();
+                        return;
+                    }
+                    await stage.requestFullscreen({
+                        navigationUI: "hide"
+                    });
+                } catch (e) {
+                    alert('No se pudo activar pantalla completa.');
+                }
+            });
+        })();
+    </script>
 
 @endsection

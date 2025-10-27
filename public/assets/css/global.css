@@ -655,3 +655,109 @@ body {
         margin-right: -50vw !important;
     }
 }
+
+:root {
+  --bar-h: 60px;                              /* altura franja inferior */
+  --nav-hole-w: clamp(240px, 36vw, 500px);    /* hueco central (botones Power BI) */
+  --btn: #0078d4;
+  --btn-ink: #fff;
+}
+
+/* === CONTENEDOR PRINCIPAL === */
+.dashboard-card {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+  padding: 0;
+  overflow: hidden;
+}
+
+.dashboard-header {
+  padding: 12px 18px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.dashboard-header h2 {
+  font-size: 20px;
+  color: #0a2540;
+  margin: 0;
+  font-weight: 600;
+}
+
+/* === IFRAME === */
+.dashboard-frame-container {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16/9;
+  overflow: hidden;
+  border-radius: 0 0 16px 16px;
+  background: #f8fafc;
+}
+
+.dashboard-frame-container iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+  border-radius: 0 0 16px 16px;
+  box-shadow: 0 30px 90px rgba(18,59,93,0.25);
+}
+
+/* === MÁSCARAS === */
+.mask-left, .mask-right {
+  position: absolute;
+  bottom: 0;
+  height: var(--bar-h);
+  z-index: 30;
+  pointer-events: auto;
+  border-top: 1px solid rgba(0,0,0,.06);
+}
+
+.mask-left {
+  left: 0;
+  width: calc(60% - (var(--nav-hole-w)/2));
+  background: linear-gradient(to right, rgb(255, 255, 255) 70%, transparent);
+}
+.mask-right {
+  right: 0;
+  width: calc(60% - (var(--nav-hole-w)/2));
+  background: linear-gradient(to left, rgb(255, 255, 255) 70%, transparent);
+}
+
+/* === BOTÓN PANTALLA COMPLETA === */
+.fs-button {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  z-index: 50;
+  border: none;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-weight: 600;
+  background: linear-gradient(135deg, #0a2540 0%, #2196F3 100%);
+  color: var(--btn-ink);
+  box-shadow: 0 6px 18px rgba(11,99,214,0.25);
+  transition: all 0.25s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.fs-button:hover {
+  background: #005fa3;
+  transform: scale(1.05);
+}
+
+/* === RESPONSIVO === */
+@media (max-width: 768px) {
+  :root { --bar-h: 76px; }
+  .dashboard-frame-container { aspect-ratio: 4/3; }
+  .fs-button { padding: 9px 12px; bottom: 18px; font-size: 14px; }
+}
+
+@media (max-width: 480px) {
+  .dashboard-frame-container { aspect-ratio: 1/1; }
+  .fs-button { font-size: 13px; }
+}
