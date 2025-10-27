@@ -6,7 +6,7 @@
 
     <div class="page-header">
         <div class="breadcrumb">
-            <span>Admin</span> / <a href="{{ route('admin.dashboards.index') }}">Dashboards</a> / {{ $dashboard->title }}
+            <span>Admin</span> / <a href="{{ auth()->user() && auth()->user()->is_admin ? route('admin.dashboards.index') : route('home') }}">Dashboards</a> / {{ $dashboard->title }}
         </div>
         <div
             style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 10px;">
@@ -15,7 +15,8 @@
                 <p style="color: #666; font-size: 14px;">
                     {{ $dashboard->description ?? 'Visualiza los datos de tu reporte en Power BI' }}</p>
             </div>
-            <a href="{{ route('admin.dashboards.index') }}" class="btn btn-outline" style="white-space: nowrap;">
+            <a href="{{ auth()->user() && auth()->user()->is_admin ? route('admin.dashboards.index') : route('home') }}"
+                class="btn btn-outline" style="white-space: nowrap;">
                 ← Volver
             </a>
         </div>
