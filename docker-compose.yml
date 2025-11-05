@@ -1,0 +1,154 @@
+version: '3.8'
+
+services:
+  # Aplicación Laravel
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: trimax-app
+    container_name: trimax_app
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - ./:/var/www
+    networks:
+      - trimax-network
+    depends_on:
+      - mysql
+      - redis
+
+  # Nginx Web Server
+  nginx:
+    image: nginx:alpine
+    container_name: trimax_nginx
+    restart: unless-stopped
+    ports:
+      - "8000:80"
+    volumes:
+      - ./:/var/www
+      - ./docker/nginx:/etc/nginx/conf.d
+    networks:
+      - trimax-network
+    depends_on:
+      - app
+
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: trimax_mysql
+    restart: unless-stopped
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: reports_trimax
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: trimax
+      MYSQL_PASSWORD: trimax123
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - trimax-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis
+  redis:
+    image: redis:7-alpine
+    container_name: trimax_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    networks:
+      - trimax-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  # Laravel Horizon (Queue Worker)
+  horizon:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: trimax_horizon
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - ./:/var/www
+    command: php artisan horizon
+    networks:
+      - trimax-network
+    depends_on:
+      - mysql
+      - redis
+      - app
+
+  # Laravel Scheduler (Cron)
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: trimax_scheduler
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - ./:/var/www
+    command: >
+      sh -c "while true; do
+        php artisan schedule:run --verbose --no-interaction &
+        sleep 60
+      done"
+    networks:
+      - trimax-network
+    depends_on:
+      - mysql
+      - redis
+      - app
+
+  # phpMyAdmin (Opcional)
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: trimax_phpmyadmin
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    environment:
+      PMA_HOST: mysql
+      PMA_USER: root
+      PMA_PASSWORD: root
+    networks:
+      - trimax-network
+    depends_on:
+      - mysql
+
+  # Redis Commander (Opcional)
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: trimax_redis_commander
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      REDIS_HOSTS: local:redis:6379
+    networks:
+      - trimax-network
+    depends_on:
+      - redis
+
+networks:
+  trimax-network:
+    driver: bridge
+
+volumes:
+  mysql_data:
+    driver: local
+  redis_data:
+    driver: local
