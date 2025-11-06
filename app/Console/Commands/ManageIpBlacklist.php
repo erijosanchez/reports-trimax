@@ -7,83 +7,52 @@ use App\Models\IpBlacklist;
 
 class ManageIpBlacklist extends Command
 {
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
     protected $signature = 'ip:manage 
                             {action : block, unblock, list, cleanup}
-                            {--ip= : IP address to block/unblock}
+                            {--ip= : IP address}
                             {--reason= : Reason for blocking}
-                            {--duration= : Block duration in minutes (null = permanent)}';
+                            {--duration= : Duration in minutes}';
 
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
     protected $description = 'Manage IP blacklist';
 
-    /**
-     * Execute the console command.
-     */
     public function handle()
     {
-        $action = $this->argument('action');
-
-        switch ($action) {
-            case 'block':
-                $this->blockIp();
-                break;
-            case 'unblock':
-                $this->unblockIp();
-                break;
-            case 'list':
-                $this->listBlocked();
-                break;
-            case 'cleanup':
-                $this->cleanupExpired();
-                break;
-            default:
-                $this->error('Invalid action. Use: block, unblock, list, or cleanup');
-        }
+        match ($this->argument('action')) {
+            'block' => $this->blockIp(),
+            'unblock' => $this->unblockIp(),
+            'list' => $this->listBlocked(),
+            'cleanup' => $this->cleanupExpired(),
+            default => $this->error('Invalid action'),
+        };
     }
 
     protected function blockIp()
     {
         $ip = $this->option('ip');
-        $reason = $this->option('reason') ?? 'Blocked manually';
-        $duration = $this->option('duration');
-
         if (!$ip) {
-            $this->error('IP address is required. Use --ip=x.x.x.x');
+            $this->error('IP required');
             return;
         }
 
-        IpBlacklist::blockIp($ip, $reason, $duration);
+        IpBlacklist::blockIp(
+            $ip,
+            $this->option('reason') ?? 'Blocked manually',
+            $this->option('duration')
+        );
 
-        if ($duration) {
-            $this->info("IP {$ip} blocked for {$duration} minutes");
-        } else {
-            $this->info("IP {$ip} blocked permanently");
-        }
+        $this->info("IP {$ip} blocked");
     }
 
     protected function unblockIp()
     {
         $ip = $this->option('ip');
-
         if (!$ip) {
-            $this->error('IP address is required. Use --ip=x.x.x.x');
+            $this->error('IP required');
             return;
         }
 
-        if (IpBlacklist::unblockIp($ip)) {
-            $this->info("IP {$ip} unblocked successfully");
-        } else {
-            $this->warn("IP {$ip} was not found in blacklist");
-        }
+        IpBlacklist::unblockIp($ip);
+        $this->info("IP {$ip} unblocked");
     }
 
     protected function listBlocked()
@@ -91,20 +60,18 @@ class ManageIpBlacklist extends Command
         $blocked = IpBlacklist::active()->get();
 
         if ($blocked->isEmpty()) {
-            $this->info('No IPs are currently blocked');
+            $this->info('No blocked IPs');
             return;
         }
 
         $this->table(
-            ['IP Address', 'Reason', 'Blocked Until', 'Created At'],
-            $blocked->map(function ($item) {
-                return [
-                    $item->ip_address,
-                    $item->reason,
-                    $item->blocked_until ? $item->blocked_until->format('Y-m-d H:i:s') : 'Permanent',
-                    $item->created_at->format('Y-m-d H:i:s'),
-                ];
-            })
+            ['IP', 'Reason', 'Until', 'Created'],
+            $blocked->map(fn($i) => [
+                $i->ip_address,
+                $i->reason,
+                $i->blocked_until?->format('Y-m-d H:i') ?? 'Permanent',
+                $i->created_at->format('Y-m-d H:i'),
+            ])
         );
     }
 
@@ -114,6 +81,6 @@ class ManageIpBlacklist extends Command
             ->whereNotNull('blocked_until')
             ->delete();
 
-        $this->info("Cleaned up {$deleted} expired IP blocks");
+        $this->info("Cleaned up {$deleted} expired blocks");
     }
 }

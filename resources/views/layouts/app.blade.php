@@ -1,91 +1,59 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', 'Dashboards Power BI')</title>
-    <link rel="stylesheet" href="{{ asset('assets/css/global.css') }}">
-    <link rel="shortcut icon" href="{{ asset('assets/img/fv.png') }}" type="image/x-icon">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
+    <title>@yield('title') - Reports Trimax</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 </head>
-
 <body>
-
-    @auth
-        <div class="dashboard-container">
-            @include('includes.sidebar')
-
-            <!-- Main Content -->
-            <main class="main-content" id="mainContent">
-                <!-- Top Navigation -->
-                <div class="top-nav">
-                    <button class="menu-toggle" id="menuToggle">☰</button>
-
-                    <div class="top-nav-right">
-                        <div class="search-box">
-                            <span class="search-icon">🔍</span>
-                            <input type="text" placeholder="Buscar...">
-                        </div>
-                        <div class="notification-icon">
-                            🔔
-                            <span class="notification-badge">3</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Content Area -->
-                <div class="content-area">
-                    @if (session('success'))
-                        <div class="alert alert-success">
-                            ✓ {{ session('success') }}
-                        </div>
-                    @endif
-
-                    @if (session('error'))
-                        <div class="alert alert-danger">
-                            ✗ {{ session('error') }}
-                        </div>
-                    @endif
-                    @yield('content')
-                    @yield('others')
-
-                </div>
-            </main>
+    <nav style="background:#333;color:white;padding:1rem;">
+        <div style="max-width:1200px;margin:0 auto;display:flex;justify-content:space-between;">
+            <div>
+                <a href="{{ route('home') }}" style="color:white;text-decoration:none;">Reports Trimax</a>
+            </div>
+            @auth
+            <div style="display:flex;gap:1rem;">
+                <a href="{{ route('home') }}" style="color:white;">Inicio</a>
+                <a href="{{ route('dashboards.index') }}" style="color:white;">Dashboards</a>
+                <a href="{{ route('files.index') }}" style="color:white;">Archivos</a>
+                @if(auth()->user()->isAdmin())
+                    <a href="{{ route('admin.dashboard') }}" style="color:white;">Admin</a>
+                @endif
+                <span style="color:white;">{{ auth()->user()->name }}</span>
+                <form action="{{ route('logout') }}" method="POST" style="display:inline;">
+                    @csrf
+                    <button type="submit" style="background:none;border:none;color:white;cursor:pointer;">Salir</button>
+                </form>
+            </div>
+            @endauth
         </div>
-        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    </nav>
 
-        <script>
-            const menuToggle = document.getElementById('menuToggle');
-            const sidebar = document.getElementById('sidebar');
-            const mainContent = document.getElementById('mainContent');
-            const sidebarOverlay = document.getElementById('sidebarOverlay');
-            const menuItems = document.querySelectorAll('.menu-item');
+    <div style="max-width:1200px;margin:2rem auto;padding:0 1rem;">
+        @if(session('success'))
+            <div style="background:#4CAF50;color:white;padding:1rem;margin-bottom:1rem;border-radius:4px;">
+                {{ session('success') }}
+            </div>
+        @endif
 
-            menuToggle.addEventListener('click', () => {
-                sidebar.classList.toggle('active');
-                sidebarOverlay.classList.toggle('active');
-            });
+        @if(session('error'))
+            <div style="background:#f44336;color:white;padding:1rem;margin-bottom:1rem;border-radius:4px;">
+                {{ session('error') }}
+            </div>
+        @endif
 
-            sidebarOverlay.addEventListener('click', () => {
-                sidebar.classList.remove('active');
-                sidebarOverlay.classList.remove('active');
-            });
+        @if($errors->any())
+            <div style="background:#f44336;color:white;padding:1rem;margin-bottom:1rem;border-radius:4px;">
+                <ul style="margin:0;padding-left:1.5rem;">
+                    @foreach($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
 
-            window.addEventListener('resize', () => {
-                if (window.innerWidth > 768) {
-                    sidebar.classList.remove('active');
-                    sidebarOverlay.classList.remove('active');
-                }
-            });
-        </script>
-    @endauth
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <script>
-        lucide.createIcons();
-    </script>
-
+        @yield('content')
+    </div>
 </body>
-
 </html>

@@ -1,74 +1,35 @@
-<!DOCTYPE html>
-<html lang="es">
+@extends('layouts.app')
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TriMax - Login</title>
-    <link rel="stylesheet" href="assets/css/login.css">
-    <link rel="shortcut icon" href="{{ asset('assets/img/fv.png') }}" type="image/x-icon">
-</head>
+@section('title', 'Login')
 
-<body>
-    @if (session('attempts'))
-        <div class="alert alert-warning">
-            Intento {{ session('attempts') }} de 3 de acceder sin autenticación.
-            @if (session('warning'))
-                {{ session('warning') }}
-            @endif
-        </div>
-    @endif
-    <div class="login-container">
-        <div class="login-left">
-            <div class="logo">
-                <img src="assets/img/LOGOTIPO TRIMAX 2025-01.png" alt="Logo Trimax">
-            </div>
-            <div class="welcome-text">
-                <h2>Bienvenido Consultor</h2>
-                <p>Ingresa tus credenciales para acceder a tu cuenta y continuar con tu experiencia.</p>
-            </div>
+@section('content')
+<div style="max-width:400px;margin:4rem auto;">
+    <h2>Iniciar Sesión</h2>
+    
+    <form method="POST" action="{{ route('login') }}">
+        @csrf
+        
+        <div style="margin-bottom:1rem;">
+            <label>Email:</label>
+            <input type="email" name="email" value="{{ old('email') }}" required 
+                   style="width:100%;padding:0.5rem;margin-top:0.25rem;">
         </div>
 
-        <div class="login-right">
-            <div class="login-header">
-                <h3>Iniciar Sesión</h3>
-            </div>
-
-            <form id="loginForm" method="POST" action="{{ route('login') }}">
-                @csrf
-                <div class="form-group">
-                    <label for="email">Correo Electrónico</label>
-                    <div class="input-wrapper">
-                        <input type="email" id="email" name="email" placeholder="usuario@trimaxperu.com"
-                            required>
-                        <span class="input-icon">📧</span>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label for="password">Contraseña</label>
-                    <div class="input-wrapper">
-                        <input type="password" id="password" name="password" placeholder="••••••••" required>
-                        <span class="input-icon" id="togglePassword">👁️</span>
-                    </div>
-                </div>
-
-                <button type="submit" class="login-button">Iniciar Sesión</button>
-            </form>
+        <div style="margin-bottom:1rem;">
+            <label>Contraseña:</label>
+            <input type="password" name="password" required 
+                   style="width:100%;padding:0.5rem;margin-top:0.25rem;">
         </div>
-    </div>
 
-    <script>
-        const togglePassword = document.getElementById('togglePassword');
-        const passwordInput = document.getElementById('password');
+        <div style="margin-bottom:1rem;">
+            <label>
+                <input type="checkbox" name="remember"> Recordarme
+            </label>
+        </div>
 
-        togglePassword.addEventListener('click', function() {
-            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-            passwordInput.setAttribute('type', type);
-            this.textContent = type === 'password' ? '👁️' : '🙈';
-        });
-    </script>
-
-</body>
-
-</html>
+        <button type="submit" style="width:100%;padding:0.75rem;background:#007bff;color:white;border:none;cursor:pointer;">
+            Iniciar Sesión
+        </button>
+    </form>
+</div>
+@endsection
