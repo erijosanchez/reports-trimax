@@ -6,60 +6,121 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, HasRoles;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
     protected $fillable = [
         'name',
         'email',
         'password',
-        'is_admin',
+        'is_active',
+        'last_login_at',
+        'two_factor_secret',
+        'two_factor_recovery_codes',
+        'two_factor_confirmed_at',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
+        'two_factor_secret',
+        'two_factor_recovery_codes',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
-    protected function casts(): array
-    {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-            'is_admin' => 'boolean',
-        ];
-    }
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'password' => 'hashed',
+        'is_active' => 'boolean',
+        'last_login_at' => 'datetime',
+        'two_factor_confirmed_at' => 'datetime',
+    ];
 
     public function dashboards()
     {
-        return $this->belongsToMany(Dashboard::class, 'user_dashboard_access')
-                    ->withTimestamps();
+        return $this->belongsToMany(Dashboard::class, 'dashboard_user')
+            ->withPivot('can_view')
+            ->withTimestamps();
     }
 
-
-    public function hasAccessToDashboard($dashboardId)
+    public function sessions()
     {
-        if ($this->is_admin) {
+        return $this->hasMany(UserSession::class);
+    }
+
+    public function activeSessions()
+    {
+        return $this->hasMany(UserSession::class)->where('is_online', true);
+    }
+
+    public function locations()
+    {
+        return $this->hasMany(UserLocation::class);
+    }
+
+    public function activityLogs()
+    {
+        return $this->hasMany(UserActivityLog::class);
+    }
+
+    public function uploadedFiles()
+    {
+        return $this->hasMany(UploadedFile::class);
+    }
+
+    public function hasAccessToDashboard($dashboardId): bool
+    {
+        if ($this->hasRole(['super_admin', 'admin'])) {
             return true;
         }
         return $this->dashboards()->where('dashboard_id', $dashboardId)->exists();
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->hasRole(['super_admin', 'admin']);
+    }
+
+    public function isSuperAdmin(): bool
+    {
+        return $this->hasRole('super_admin');
+    }
+
+    public function isOnline(): bool
+    {
+        return $this->activeSessions()
+            ->where('last_activity', '>=', now()->subMinutes(5))
+            ->exists();
+    }
+
+    public function hasTwoFactorEnabled(): bool
+    {
+        return !is_null($this->two_factor_secret) && !is_null($this->two_factor_confirmed_at);
+    }
+
+    public function updateLastLogin(): void
+    {
+        $this->update(['last_login_at' => now()]);
+    }
+
+    public function totalUsageTime(): int
+    {
+        return $this->sessions()
+            ->whereNotNull('session_duration')
+            ->sum('session_duration');
+    }
+
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
+
+    public function scopeOnline($query)
+    {
+        return $query->whereHas('activeSessions', function ($q) {
+            $q->where('last_activity', '>=', now()->subMinutes(5));
+        });
     }
 }

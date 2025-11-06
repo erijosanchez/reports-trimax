@@ -16,36 +16,20 @@ class IpBlacklist extends Model
 
     protected $casts = [
         'blocked_until' => 'datetime',
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
     ];
 
-    /**
-     * Verificar si el bloqueo sigue activo
-     */
     public function isActive(): bool
     {
-        if ($this->blocked_until === null) {
-            return true; // Bloqueo permanente
-        }
-
-        return $this->blocked_until->isFuture();
+        return $this->blocked_until === null || $this->blocked_until->isFuture();
     }
 
-    /**
-     * Scope para obtener solo bloqueos activos
-     */
     public function scopeActive($query)
     {
         return $query->where(function ($q) {
-            $q->whereNull('blocked_until')
-              ->orWhere('blocked_until', '>', now());
+            $q->whereNull('blocked_until')->orWhere('blocked_until', '>', now());
         });
     }
 
-    /**
-     * Bloquear una IP
-     */
     public static function blockIp(string $ip, string $reason, $duration = null): self
     {
         return self::updateOrCreate(
@@ -57,12 +41,8 @@ class IpBlacklist extends Model
         );
     }
 
-    /**
-     * Desbloquear una IP
-     */
     public static function unblockIp(string $ip): bool
     {
         return self::where('ip_address', $ip)->delete();
     }
 }
-
