@@ -9,14 +9,14 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;;
 
 // Rutas de autenticación
-Route::middleware(['prevent.back'])->group(function () {
+Route::middleware(['throttle:login'])->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [AuthController::class, 'login']);
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 });
 
 // Rutas protegidas por autenticación
-Route::middleware('auth', 'prevent.back')->group(function () {
+Route::middleware('auth', 'prevent.back', 'throttle:dashboard')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::get('/', [DashboardController::class, 'index'])->name('home');
@@ -24,7 +24,7 @@ Route::middleware('auth', 'prevent.back')->group(function () {
     Route::get('/dashboard/{id}', [DashboardController::class, 'show'])->name('dashboard.show');
 
     // Rutas de administración (solo para admins)
-    Route::middleware('admin')->prefix('admin')->name('admin.')->group(function () {
+    Route::middleware('admin', 'throttle:sensitive')->prefix('admin')->name('admin.')->group(function () {
         Route::resource('users', UserController::class)->only(['index', 'update', 'create', 'store', 'edit', 'destroy']);
         Route::resource('dashboards', AdminDashboardController::class);
         Route::get('access', [UserAccessController::class, 'index'])->name('access.index');
