@@ -5,67 +5,85 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
-    public function index()
+    public function __construct()
     {
-        $users = User::orderBy('id', 'desc')->paginate(10);
-        return view('admin.users.index', compact('users'));
+        $this->middleware(['auth', 'role:super_admin|admin']);
     }
 
     public function create()
     {
-        return view('admin.users.create');
+        $roles = Role::all();
+        return view('admin.users-create', compact('roles'));
     }
 
     public function store(Request $request)
     {
         $request->validate([
-            'name' => 'required|string|max:100',
-            'email' => 'required|email|unique:users',
-            'password' => 'required|min:6',
-            'is_admin' => 'boolean',
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|min:8|confirmed',
+            'role' => 'required|exists:roles,name',
         ]);
 
-        User::create([
+        $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'is_admin' => $request->is_admin ? 1 : 0,
+            'is_active' => true,
         ]);
 
-        return redirect()->route('admin.users.index')->with('success', 'Usuario creado correctamente.');
+        $user->assignRole($request->role);
+
+        return redirect()->route('admin.users')
+            ->with('success', 'Usuario creado exitosamente');
     }
 
-    public function edit(User $user)
+    public function edit($id)
     {
-        return view('admin.users.edit', compact('user'));
+        $user = User::with('roles')->findOrFail($id);
+        $roles = Role::all();
+        
+        return view('admin.users-edit', compact('user', 'roles'));
     }
 
-    public function update(Request $request, User $user)
+    public function update(Request $request, $id)
     {
+        $user = User::findOrFail($id);
+
         $request->validate([
-            'name' => 'required|string|max:100',
-            'email' => 'required|email|unique:users,email,' . $user->id,
-            'password' => 'nullable|min:6',
-            'is_admin' => 'boolean',
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email,' . $id,
+            'role' => 'required|exists:roles,name',
+            'is_active' => 'boolean',
         ]);
 
-        $data = $request->only('name', 'email', 'is_admin');
-        if ($request->filled('password')) {
-            $data['password'] = Hash::make($request->password);
+        $user->update([
+            'name' => $request->name,
+            'email' => $request->email,
+            'is_active' => $request->boolean('is_active'),
+        ]);
+
+        $user->syncRoles([$request->role]);
+
+        return redirect()->route('admin.users')
+            ->with('success', 'Usuario actualizado');
+    }
+
+    public function destroy($id)
+    {
+        $user = User::findOrFail($id);
+        
+        if ($user->id === auth()->id()) {
+            return back()->withErrors(['error' => 'No puedes eliminarte a ti mismo']);
         }
 
-        $user->update($data);
-
-        return redirect()->route('admin.users.index')->with('success', 'Usuario actualizado correctamente.');
-    }
-
-    public function destroy(User $user)
-    {
         $user->delete();
-        return redirect()->route('admin.users.index')->with('success', 'Usuario eliminado.');
+
+        return back()->with('success', 'Usuario eliminado');
     }
 }
