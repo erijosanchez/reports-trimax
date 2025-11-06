@@ -19,7 +19,6 @@ class CheckIpBlacklistMiddleware
 
         $ip = $request->ip();
 
-        // Verificar si la IP está en la lista negra
         $blacklisted = IpBlacklist::where('ip_address', $ip)
             ->where(function ($query) {
                 $query->whereNull('blocked_until')
@@ -28,18 +27,12 @@ class CheckIpBlacklistMiddleware
             ->first();
 
         if ($blacklisted) {
-            // Log el intento
             \Log::warning('Intento de acceso desde IP bloqueada', [
                 'ip' => $ip,
                 'reason' => $blacklisted->reason,
-                'url' => $request->fullUrl(),
-                'user_agent' => $request->userAgent(),
             ]);
 
-            return response()->json([
-                'message' => 'Acceso denegado. Su IP ha sido bloqueada.',
-                'reason' => 'Actividad sospechosa detectada',
-            ], 403);
+            abort(403, 'Acceso denegado. Su IP ha sido bloqueada.');
         }
 
         return $next($request);

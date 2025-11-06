@@ -17,13 +17,11 @@ class TrackFailedLoginsMiddleware
      *
      * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
      */
-    public function handle(Request $request, Closure $next): Response
+   public function handle(Request $request, Closure $next)
     {
         $response = $next($request);
 
-        // Solo procesar peticiones de login
         if ($request->is('login') && $request->isMethod('post')) {
-            // Si el login falló (código 422 o redirect con errores)
             if ($response->status() === 422 || 
                 ($response->isRedirect() && session()->has('errors'))) {
                 
@@ -32,10 +30,10 @@ class TrackFailedLoginsMiddleware
             }
         }
 
-        return $next($request);
+        return $response;
     }
 
-    protected function logFailedAttempt(Request $request): void
+    protected function logFailedAttempt(Request $request)
     {
         FailedLoginAttempt::create([
             'email' => $request->input('email'),
@@ -45,35 +43,24 @@ class TrackFailedLoginsMiddleware
         ]);
     }
 
-    /**
-     * Verificar y bloquear IP si es necesario
-     */
-    protected function checkAndBlockIp(Request $request): void
+    protected function checkAndBlockIp(Request $request)
     {
         $ip = $request->ip();
-        $maxAttempts = config('auth.max_login_attempts', 5);
-        $lockoutTime = config('auth.lockout_duration', 15); // minutos
+        $maxAttempts = config('security.login.max_attempts', 5);
+        $lockoutTime = config('security.login.lockout_duration', 15);
 
-        // Contar intentos en los últimos 15 minutos
-        $recentAttempts = FailedLoginAttempt::where('ip_address', $ip)
-            ->where('attempted_at', '>', now()->subMinutes($lockoutTime))
-            ->count();
+        $recentAttempts = FailedLoginAttempt::recentAttemptsByIp($ip, $lockoutTime);
 
         if ($recentAttempts >= $maxAttempts) {
-            // Bloquear IP temporalmente
-            IpBlacklist::updateOrCreate(
-                ['ip_address' => $ip],
-                [
-                    'reason' => "Demasiados intentos de login fallidos ({$recentAttempts} intentos)",
-                    'blocked_until' => now()->addMinutes($lockoutTime),
-                ]
+            IpBlacklist::blockIp(
+                $ip, 
+                "Demasiados intentos fallidos ({$recentAttempts})", 
+                $lockoutTime
             );
 
-            // Notificar a administradores (opcional)
-            \Log::warning('IP bloqueada automáticamente por intentos fallidos', [
+            \Log::warning('IP bloqueada automáticamente', [
                 'ip' => $ip,
                 'attempts' => $recentAttempts,
-                'blocked_until' => now()->addMinutes($lockoutTime),
             ]);
         }
     }
