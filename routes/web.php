@@ -9,28 +9,37 @@ use App\Http\Controllers\Auth\TwoFactorController;
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\UserController;
 
-// Auth Routes
+// ============================================================
+// RUTAS PARA LARAVEL 11
+// El middleware se aplica AQUÍ, no en los constructores
+// ============================================================
+
+// Auth Routes (Guest)
 Route::middleware(['guest'])->group(function () {
     Route::get('/', function () {
         return redirect()->route('login');
     });
     
     Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
-    Route::post('/login', [LoginController::class, 'login'])->middleware('throttle:login');
+    Route::post('/login', [LoginController::class, 'login'])
+        ->middleware('throttle:login');
 });
 
-Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
+// Logout (Authenticated)
+Route::post('/logout', [LoginController::class, 'logout'])
+    ->middleware('auth')
+    ->name('logout');
 
-// 2FA Routes
-Route::middleware(['auth'])->group(function () {
-    Route::get('/2fa/setup', [TwoFactorController::class, 'show'])->name('2fa.setup');
-    Route::post('/2fa/enable', [TwoFactorController::class, 'enable'])->name('2fa.enable');
-    Route::get('/2fa/verify', [TwoFactorController::class, 'show'])->name('2fa.verify');
-    Route::post('/2fa/verify', [TwoFactorController::class, 'verify']);
-    Route::post('/2fa/disable', [TwoFactorController::class, 'disable'])->name('2fa.disable');
+// 2FA Routes (Authenticated)
+Route::middleware(['auth'])->prefix('2fa')->name('2fa.')->group(function () {
+    Route::get('/setup', [TwoFactorController::class, 'show'])->name('setup');
+    Route::post('/enable', [TwoFactorController::class, 'enable'])->name('enable');
+    Route::get('/verify', [TwoFactorController::class, 'show'])->name('verify');
+    Route::post('/verify', [TwoFactorController::class, 'verify']);
+    Route::post('/disable', [TwoFactorController::class, 'disable'])->name('disable');
 });
 
-// Protected Routes
+// Protected Routes (Auth + Track + Prevent Back)
 Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back'])->group(function () {
     
     // Home
@@ -40,12 +49,12 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
     Route::prefix('dashboards')->name('dashboards.')->group(function () {
         Route::get('/', [DashboardController::class, 'index'])->name('index');
         Route::get('/{id}', [DashboardController::class, 'show'])->name('show');
-        Route::get('/create', [DashboardController::class, 'create'])
-            ->name('create')
-            ->middleware('role:super_admin|admin');
-        Route::post('/', [DashboardController::class, 'store'])
-            ->name('store')
-            ->middleware('role:super_admin|admin');
+        
+        // Admin only routes
+        Route::middleware('role:super_admin|admin')->group(function () {
+            Route::get('/create', [DashboardController::class, 'create'])->name('create');
+            Route::post('/', [DashboardController::class, 'store'])->name('store');
+        });
     });
     
     // Files
@@ -59,8 +68,8 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
         Route::delete('/{id}', [FileController::class, 'destroy'])->name('destroy');
     });
     
-    // Admin Routes
-    Route::prefix('admin')->name('admin.')->middleware('role:super_admin|admin')->group(function () {
+    // Admin Routes (Admin + Super Admin only)
+    Route::middleware('role:super_admin|admin')->prefix('admin')->name('admin.')->group(function () {
         Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
         Route::get('/users', [AdminController::class, 'users'])->name('users');
         Route::get('/users-online', [AdminController::class, 'usersOnline'])->name('users-online');

@@ -10,10 +10,6 @@ use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
-    public function __construct()
-    {
-        $this->middleware(['auth', 'role:super_admin|admin']);
-    }
 
     public function create()
     {
