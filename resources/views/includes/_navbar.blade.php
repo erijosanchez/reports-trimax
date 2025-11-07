@@ -17,7 +17,8 @@
     <div class="navbar-menu-wrapper d-flex align-items-top">
         <ul class="navbar-nav">
             <li class="nav-item font-weight-semibold d-none d-lg-block ms-0">
-                <h1 class="welcome-text">Bienvenido, <span class="text-black fw-bold">{{ auth()->user()->name }}</span></h1>
+                <h1 class="welcome-text">Bienvenido, <span class="text-black fw-bold">{{ auth()->user()->name }}</span>
+                </h1>
                 <h3 class="welcome-sub-text">Usa el sistema responsablemente</h3>
             </li>
         </ul>
@@ -61,12 +62,15 @@
                 </div>
             </li>
             <li class="nav-item dropdown d-none d-lg-block user-dropdown">
-                <a class="nav-link" id="UserDropdown" href="#" data-bs-toggle="dropdown"
-                    aria-expanded="false">
-                    <img class="img-xs rounded-circle" src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=6366f1&color=fff" alt="Profile image"> </a>
+                <a class="nav-link" id="UserDropdown" href="#" data-bs-toggle="dropdown" aria-expanded="false">
+                    <img class="img-xs rounded-circle"
+                        src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=6366f1&color=fff"
+                        alt="Profile image"> </a>
                 <div class="dropdown-menu dropdown-menu-right navbar-dropdown" aria-labelledby="UserDropdown">
                     <div class="dropdown-header text-center">
-                        <img class="img-md rounded-circle" src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=6366f1&color=fff&" alt="Profile image">
+                        <img class="img-md rounded-circle"
+                            src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=6366f1&color=fff&"
+                            alt="Profile image">
                         <p class="mb-1 mt-3 font-weight-semibold">{{ auth()->user()->name }}</p>
                         <p class="fw-light text-muted mb-0">{{ auth()->user()->email }}</p>
                     </div>
@@ -74,16 +78,16 @@
                             class="dropdown-item-icon mdi mdi-account-outline text-primary me-2"></i> My
                         Profile <span class="badge badge-pill badge-danger">1</span></a>
                     <a class="dropdown-item"><i
-                            class="dropdown-item-icon mdi mdi-message-text-outline text-primary me-2"></i>
-                        Messages</a>
-                    <a class="dropdown-item"><i
                             class="dropdown-item-icon mdi mdi-calendar-check-outline text-primary me-2"></i>
                         Activity</a>
-                    <a class="dropdown-item"><i
-                            class="dropdown-item-icon mdi mdi-help-circle-outline text-primary me-2"></i>
-                        FAQ</a>
-                    <a class="dropdown-item"><i class="dropdown-item-icon mdi mdi-power text-primary me-2"></i>Sign
-                        Out</a>
+                    <form action="{{ route('logout') }}" method="POST" style="display:inline;margin:0;">
+                        @csrf
+                        <button type="submit"
+                            class="dropdown-item">
+                            <i class="dropdown-item-icon mdi mdi-power text-primary me-2"></i>
+                            Salir
+                        </button>
+                    </form>
                 </div>
             </li>
         </ul>

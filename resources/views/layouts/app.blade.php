@@ -38,7 +38,7 @@
             @include('includes.sidebar')
             <!-- partial -->
             <div class="main-panel">
-                
+                @yield('content')
                 <!-- content-wrapper ends -->
                 <!-- partial:partials/_footer.html -->
                 @include('includes._footer')
