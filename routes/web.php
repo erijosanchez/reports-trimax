@@ -8,6 +8,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\TwoFactorController;
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\LocationController;
 
 // ============================================================
 // RUTAS PARA LARAVEL 11
@@ -84,6 +85,14 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
         Route::get('/activity-logs', [AdminController::class, 'activityLogs'])->name('activity-logs');
         Route::get('/security', [AdminController::class, 'security'])->name('security');
         Route::get('/analytics', [AdminController::class, 'analytics'])->name('analytics');
+
+        // 🌍 RUTAS DE UBICACIONES
+        Route::prefix('locations')->name('locations.')->group(function () {
+            Route::get('/map', [LocationController::class, 'map'])->name('map');
+            Route::get('/', [LocationController::class, 'index'])->name('index');
+            Route::get('/user/{userId}', [LocationController::class, 'userHistory'])->name('user-history');
+            Route::get('/live', [LocationController::class, 'liveLocations'])->name('live'); // API
+        });
         
         // User Management
         Route::get('/users/create', [UserController::class, 'create'])->name('users.create');
