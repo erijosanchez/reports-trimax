@@ -21,13 +21,14 @@ class TrackFailedLoginsMiddleware
     {
         $response = $next($request);
 
-        if ($request->is('login') && $request->isMethod('post')) {
-            if ($response->status() === 422 || 
-                ($response->isRedirect() && session()->has('errors'))) {
-                
-                $this->logFailedAttempt($request);
-                $this->checkAndBlockIp($request);
-            }
+        // ✅ SOLO trackear si es POST a /login Y hay errores
+        if ($request->isMethod('post') && 
+            $request->is('login') && 
+            $response->getStatusCode() === 302 &&
+            session()->has('errors')) {
+            
+            $this->logFailedAttempt($request);
+            $this->checkAndBlockIp($request);
         }
 
         return $response;

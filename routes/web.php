@@ -48,13 +48,21 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
     // Dashboards
     Route::prefix('dashboards')->name('dashboards.')->group(function () {
         Route::get('/', [DashboardController::class, 'index'])->name('index');
-        Route::get('/{id}', [DashboardController::class, 'show'])->name('show');
-        
         // Admin only routes
         Route::middleware('role:super_admin|admin')->group(function () {
             Route::get('/create', [DashboardController::class, 'create'])->name('create');
             Route::post('/', [DashboardController::class, 'store'])->name('store');
+            Route::get('/{id}/edit', [DashboardController::class, 'edit'])->name('edit');
+            Route::put('/{id}', [DashboardController::class, 'update'])->name('update');
+            Route::post('/{id}/assign-users', [DashboardController::class, 'assignUsers'])->name('assign-users');
+            
+            // Solo super admin puede eliminar
+            Route::delete('/{id}', [DashboardController::class, 'destroy'])
+                ->name('destroy')
+                ->middleware('role:super_admin');
         });
+        Route::get('/{id}', [DashboardController::class, 'show'])->name('show');
+    
     });
     
     // Files

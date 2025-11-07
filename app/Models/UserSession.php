@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class UserSession extends Model
 {
+    public $timestamps = false;
+
     protected $fillable = [
         'user_id',
         'session_id',
@@ -38,14 +40,16 @@ class UserSession extends Model
 
     public function closeSession()
     {
-        $duration = $this->logout_at ? 
-            $this->logout_at->diffInSeconds($this->login_at) : 
-            now()->diffInSeconds($this->login_at);
+        $duration = abs(
+            ($this->logout_at ?? now())->diffInSeconds($this->login_at)
+        );
 
         $this->update([
             'is_online' => false,
             'logout_at' => now(),
-            'session_duration' => $duration,
+            'session_duration' => abs(
+                (now())->diffInSeconds($this->login_at)
+            ),
         ]);
     }
 
