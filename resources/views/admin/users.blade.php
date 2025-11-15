@@ -24,7 +24,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-sm-12 grid-margin stretch-card">
+            <div class="col-sm-8 grid-margin stretch-card">
                 <div class="card">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center mb-3">
@@ -78,7 +78,8 @@
                                                         @method('DELETE')
                                                         <button type="submit"
                                                             onclick="return confirm('¿Eliminar usuario?')"
-                                                            class="btn btn-danger p-2"><i class="mdi mdi-delete fs-5 "></i></button>
+                                                            class="btn btn-danger p-2"><i
+                                                                class="mdi mdi-delete fs-5 "></i></button>
                                                     </form>
                                                 @endif
                                             </td>
@@ -86,6 +87,57 @@
                                     @endforeach
                                 </tbody>
                             </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-4 d-flex flex-column">
+                <div class="row flex-grow">
+                    <div class="col-12 grid-margin stretch-card">
+                        <div class="card card-rounded">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-lg-12">
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <div>
+                                                <h4 class="card-title card-title-dash">Usuarios Online
+                                                    ({{ $usersOnline->count() }})</h4>
+                                            </div>
+                                        </div>
+                                        <p style="color:#666;margin-top:0.5rem;">Usuarios activos en los últimos 5 minutos
+                                        </p>
+
+                                        @if ($usersOnline->isEmpty())
+                                            <p style="margin-top:2rem;">No hay usuarios online en este momento.</p>
+                                        @else
+                                            @foreach ($usersOnline as $user)
+                                                @foreach ($user->activeSessions as $session)
+                                                    <div class="mt-3">
+                                                        <div
+                                                            class="wrapper d-flex align-items-center justify-content-between py-2 border-bottom">
+                                                            <div class="d-flex">
+                                                                <div class="position-relative">
+                                                                    <img class="img-sm rounded-circle"
+                                                                        src="https://ui-avatars.com/api/?name={{ urlencode($user->name) }}&background=6366f1&color=fff&"
+                                                                        alt="profile">
+                                                                    <span class="online-indicator pulse"></span>
+                                                                </div>
+                                                                <div class="wrapper ms-3">
+                                                                    <p class="ms-1 mb-1 fw-bold">{{ $user->name }}</p>
+                                                                    <small class="text-muted mb-0">{{ $session->last_activity->diffForHumans() }}</small>
+                                                                </div>
+                                                            </div>
+                                                            <div class="text-muted text-small">
+                                                                {{ $session->login_at->diffForHumans(null, true) }}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                @endforeach
+                                            @endforeach
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
