@@ -37,22 +37,18 @@ class AdminController extends Controller
 
     public function users()
     {
+
         $users = User::with('roles')
             ->withCount('sessions')
             ->paginate(20);
 
-        return view('admin.users', compact('users'));
-    }
-
-    public function usersOnline()
-    {
         $usersOnline = User::online()
             ->with(['activeSessions' => function ($query) {
                 $query->latest('last_activity');
             }])
             ->get();
 
-        return view('admin.users-online', compact('usersOnline'));
+        return view('admin.users', compact('users', 'usersOnline'));
     }
 
     public function activityLogs()

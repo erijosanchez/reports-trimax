@@ -47,8 +47,6 @@
                 <div class="collapse" id="charts">
                     <ul class="nav flex-column sub-menu">
                         <li class="nav-item"> <a class="nav-link" href="{{ route('admin.users') }}">Usuarios</a></li>
-                        <li class="nav-item"> <a class="nav-link" href="{{ route('admin.users-online') }}">Usuarios
-                                Online</a></li>
                         <li class="nav-item"> <a class="nav-link" href="{{ route('admin.locations.map') }}">Mapa de
                                 Ubicaciones</a></li>
                         <li class="nav-item"> <a class="nav-link" href="{{ route('admin.locations.index') }}">Historial

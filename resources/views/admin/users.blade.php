@@ -3,69 +3,93 @@
 @section('title', 'Gestionar Usuarios')
 
 @section('content')
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2rem;">
-        <h1>Gestionar Usuarios</h1>
-        <a href="{{ route('admin.users.create') }}"
-            style="padding:0.5rem 1rem;background:#28a745;color:white;text-decoration:none;border-radius:4px;">
-            + Crear Usuario
-        </a>
-    </div>
-
-    <table style="width:100%;border-collapse:collapse;">
-        <thead>
-            <tr style="background:#f0f0f0;">
-                <th style="padding:0.75rem;text-align:left;border:1px solid #ddd;">Nombre</th>
-                <th style="padding:0.75rem;text-align:left;border:1px solid #ddd;">Email</th>
-                <th style="padding:0.75rem;text-align:left;border:1px solid #ddd;">Rol</th>
-                <th style="padding:0.75rem;text-align:left;border:1px solid #ddd;">Estado</th>
-                <th style="padding:0.75rem;text-align:left;border:1px solid #ddd;">Sesiones</th>
-                <th style="padding:0.75rem;text-align:left;border:1px solid #ddd;">Último Login</th>
-                <th style="padding:0.75rem;text-align:left;border:1px solid #ddd;">Acciones</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach ($users as $user)
-                <tr>
-                    <td style="padding:0.75rem;border:1px solid #ddd;">{{ $user->name }}</td>
-                    <td style="padding:0.75rem;border:1px solid #ddd;">{{ $user->email }}</td>
-                    <td style="padding:0.75rem;border:1px solid #ddd;">
-                        @foreach ($user->roles as $role)
-                            <span
-                                style="padding:0.25rem 0.5rem;background:#007bff;color:white;border-radius:3px;font-size:0.85rem;">
-                                {{ $role->name }}
-                            </span>
-                        @endforeach
-                    </td>
-                    <td style="padding:0.75rem;border:1px solid #ddd;">
-                        @if ($user->is_active)
-                            <span style="color:#28a745;">✓ Activo</span>
-                        @else
-                            <span style="color:#dc3545;">✗ Inactivo</span>
-                        @endif
-                    </td>
-                    <td style="padding:0.75rem;border:1px solid #ddd;">{{ $user->sessions_count }}</td>
-                    <td style="padding:0.75rem;border:1px solid #ddd;">
-                        {{ $user->last_login_at ? $user->last_login_at->diffForHumans() : 'Nunca' }}
-                    </td>
-                    <td style="padding:0.75rem;border:1px solid #ddd;">
-                        <a href="{{ route('admin.users.edit', $user->id) }}"
-                            style="color:#007bff;margin-right:0.5rem;">Editar</a>
-                        @if ($user->id !== auth()->id())
-                            <form method="POST" action="{{ route('admin.users.destroy', $user->id) }}"
-                                style="display:inline;">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" onclick="return confirm('¿Eliminar usuario?')"
-                                    style="background:none;border:none;color:#dc3545;cursor:pointer;">Eliminar</button>
-                            </form>
-                        @endif
-                    </td>
-                </tr>
-            @endforeach
-        </tbody>
-    </table>
-
-    <div style="margin-top:1rem;">
-        {{ $users->links() }}
+    <div class="content-wrapper">
+        <div class="row">
+            <div class="col-sm-12">
+                <div class="home-tab">
+                    <div class="d-sm-flex align-items-center justify-content-between border-bottom">
+                    </div>
+                    <div class="tab-content tab-content-basic">
+                        <div class="tab-pane fade show active" id="overview" role="tabpanel" aria-labelledby="overview">
+                            <div class="row">
+                                <div class="col-sm-12">
+                                    <div class="statistics-details d-flex align-items-center justify-content-between">
+                                        <div>
+                                            <h3 class="rate-percentage">Gestión de Usuarios</h3>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-12 grid-margin stretch-card">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h4 class="card-title m-0">Gestionar Usuarios</h4>
+                            <a class="btn btn-rounded btn-primary p-2" href="{{ route('admin.users.create') }}"><i
+                                    class="mdi mdi-account-plus fs-4"></i></a>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Nombre</th>
+                                        <th>Email</th>
+                                        <th>Rol</th>
+                                        <th>Estado</th>
+                                        <th>Sesiones</th>
+                                        <th>Ultimo Login</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach ($users as $user)
+                                        <tr>
+                                            <td>{{ $user->name }}</td>
+                                            <td>{{ $user->email }}</td>
+                                            <td>
+                                                @foreach ($user->roles as $role)
+                                                    <label class="badge badge-primary">
+                                                        {{ $role->name }}
+                                                    </label>
+                                                @endforeach
+                                            </td>
+                                            <td>
+                                                @if ($user->is_active)
+                                                    <label class="badge badge-success">✓ Activo</label>
+                                                @else
+                                                    <label class="badge badge-danger">✗ Inactivo</label>
+                                                @endif
+                                            </td>
+                                            <td>{{ $user->sessions_count }}</td>
+                                            <td>{{ $user->last_login_at ? $user->last_login_at->diffForHumans() : 'Nunca' }}
+                                            </td>
+                                            <td>
+                                                <a href="{{ route('admin.users.edit', $user->id) }}"
+                                                    class="btn btn-warning p-2"><i class="mdi mdi-pencil fs-5"></i></a>
+                                                @if ($user->id !== auth()->id())
+                                                    <form method="POST"
+                                                        action="{{ route('admin.users.destroy', $user->id) }}"
+                                                        style="display:inline;">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit"
+                                                            onclick="return confirm('¿Eliminar usuario?')"
+                                                            class="btn btn-danger p-2"><i class="mdi mdi-delete fs-5 "></i></button>
+                                                    </form>
+                                                @endif
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 @endsection

@@ -81,7 +81,6 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
     Route::middleware('role:super_admin|admin')->prefix('admin')->name('admin.')->group(function () {
         Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
         Route::get('/users', [AdminController::class, 'users'])->name('users');
-        Route::get('/users-online', [AdminController::class, 'usersOnline'])->name('users-online');
         Route::get('/activity-logs', [AdminController::class, 'activityLogs'])->name('activity-logs');
         Route::get('/security', [AdminController::class, 'security'])->name('security');
         // 🌍 RUTAS DE UBICACIONES
