@@ -67,9 +67,7 @@
                 </a>
                 <div class="collapse" id="icons">
                     <ul class="nav flex-column sub-menu">
-                        <li class="nav-item"> <a class="nav-link" href="{{ route('admin.security') }}">Seguridad</a>
-                        </li>
-                        <li class="nav-item"> <a class="nav-link" href="{{ route('admin.analytics') }}">Analisis</a>
+                        <li class="nav-item"> <a class="nav-link" href="{{ route('admin.security') }}">Seguridad y Analisis</a>
                         </li>
                     </ul>
                 </div>

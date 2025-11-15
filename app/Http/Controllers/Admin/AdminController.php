@@ -74,11 +74,6 @@ class AdminController extends Controller
             ->limit(50)
             ->get();
 
-        return view('admin.security', compact('blockedIps', 'recentFailedAttempts'));
-    }
-
-    public function analytics()
-    {
         $usageStats = User::with('sessions')
             ->get()
             ->map(function ($user) {
@@ -91,6 +86,6 @@ class AdminController extends Controller
             ->sortByDesc('total_time')
             ->take(10);
 
-        return view('admin.analytics', compact('usageStats'));
+        return view('admin.security', compact('blockedIps', 'recentFailedAttempts', 'usageStats'));
     }
 }

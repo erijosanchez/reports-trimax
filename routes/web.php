@@ -84,8 +84,6 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
         Route::get('/users-online', [AdminController::class, 'usersOnline'])->name('users-online');
         Route::get('/activity-logs', [AdminController::class, 'activityLogs'])->name('activity-logs');
         Route::get('/security', [AdminController::class, 'security'])->name('security');
-        Route::get('/analytics', [AdminController::class, 'analytics'])->name('analytics');
-
         // 🌍 RUTAS DE UBICACIONES
         Route::prefix('locations')->name('locations.')->group(function () {
             Route::get('/map', [LocationController::class, 'map'])->name('map');
