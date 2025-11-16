@@ -3,103 +3,168 @@
 @section('title', 'Historial de Ubicaciones')
 
 @section('content')
-    <h1>Historial de Ubicaciones</h1>
+    <div class="content-wrapper">
+        <div class="row">
+            <div class="col-sm-12">
+                <div class="home-tab">
+                    <div class="d-sm-flex align-items-center justify-content-between border-bottom">
+                    </div>
+                    <div class="tab-content-basic tab-content">
+                        <div class="tab-pane fade show active" id="overview" role="tabpanel" aria-labelledby="overview">
+                            <div class="row">
+                                <div class="col-sm-12">
+                                    <div class="d-flex align-items-center justify-content-between statistics-details">
+                                        <div>
+                                            <h3 class="rate-percentage">Historial de Ubicaciones</h3>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
 
-    <!-- Filtros -->
-    <form method="GET" style="background:#f8f9fa;padding:1.5rem;border-radius:4px;margin:2rem 0;">
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;">
-            <div>
-                <label style="display:block;margin-bottom:0.5rem;">Usuario:</label>
-                <select name="user_id" style="width:100%;padding:0.5rem;border:1px solid #ddd;border-radius:4px;">
-                    <option value="">Todos</option>
-                    @foreach ($users as $user)
-                        <option value="{{ $user->id }}" {{ request('user_id') == $user->id ? 'selected' : '' }}>
-                            {{ $user->name }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
+                            <!-- Filtros -->
+                            <div class="row mt-1">
+                                <div class="col-lg-12 grid-margin stretch-card">
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <h4 class="card-title mb-4">Filtros de Búsqueda</h4>
+                                            <form method="GET">
+                                                <div class="row">
+                                                    <div class="col-md-3 mb-3">
+                                                        <label class="form-label">Usuario</label>
+                                                        <select name="user_id" class="form-select">
+                                                            <option value="">Todos</option>
+                                                            @foreach ($users as $user)
+                                                                <option value="{{ $user->id }}"
+                                                                    {{ request('user_id') == $user->id ? 'selected' : '' }}>
+                                                                    {{ $user->name }}
+                                                                </option>
+                                                            @endforeach
+                                                        </select>
+                                                    </div>
 
-            <div>
-                <label style="display:block;margin-bottom:0.5rem;">Ciudad:</label>
-                <input type="text" name="city" value="{{ request('city') }}" placeholder="Buscar ciudad"
-                    style="width:100%;padding:0.5rem;border:1px solid #ddd;border-radius:4px;">
-            </div>
+                                                    <div class="col-md-3 mb-3">
+                                                        <label class="form-label">Ciudad</label>
+                                                        <input type="text" name="city" value="{{ request('city') }}"
+                                                            placeholder="Buscar ciudad" class="form-control">
+                                                    </div>
 
-            <div>
-                <label style="display:block;margin-bottom:0.5rem;">Fecha Desde:</label>
-                <input type="date" name="date_from" value="{{ request('date_from') }}"
-                    style="width:100%;padding:0.5rem;border:1px solid #ddd;border-radius:4px;">
-            </div>
+                                                    <div class="col-md-3 mb-3">
+                                                        <label class="form-label">Fecha Desde</label>
+                                                        <input type="date" name="date_from"
+                                                            value="{{ request('date_from') }}" class="form-control">
+                                                    </div>
 
-            <div>
-                <label style="display:block;margin-bottom:0.5rem;">Fecha Hasta:</label>
-                <input type="date" name="date_to" value="{{ request('date_to') }}"
-                    style="width:100%;padding:0.5rem;border:1px solid #ddd;border-radius:4px;">
+                                                    <div class="col-md-3 mb-3">
+                                                        <label class="form-label">Fecha Hasta</label>
+                                                        <input type="date" name="date_to"
+                                                            value="{{ request('date_to') }}" class="form-control">
+                                                    </div>
+                                                </div>
+
+                                                <div class="d-flex gap-2">
+                                                    <button type="submit" class="btn btn-primary text-white">
+                                                        <i class="mdi mdi-filter me-1"></i>Filtrar
+                                                    </button>
+                                                    <a href="{{ route('admin.locations.index') }}" class="btn btn-light">
+                                                        <i class="mdi mdi-refresh me-1"></i>Limpiar
+                                                    </a>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Tabla de Ubicaciones -->
+                            <div class="row">
+                                <div class="col-lg-12 grid-margin stretch-card">
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <h4 class="card-title">Registros de Ubicación</h4>
+                                            <p class="card-description">
+                                                Total de registros: <code>{{ $locations->total() }}</code>
+                                            </p>
+                                            <div class="table-responsive">
+                                                <table class="table table-hover">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Fecha/Hora</th>
+                                                            <th>Usuario</th>
+                                                            <th>Ubicación</th>
+                                                            <th>IP</th>
+                                                            <th>Coordenadas</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @forelse($locations as $location)
+                                                            <tr>
+                                                                <td>
+                                                                    <span
+                                                                        class="text-muted">{{ $location->created_at->format('d/m/Y') }}</span><br>
+                                                                    <small
+                                                                        class="text-muted">{{ $location->created_at->format('H:i:s') }}</small>
+                                                                </td>
+                                                                <td>
+                                                                    <div class="d-flex align-items-center">
+                                                                        <img class="img-xs rounded-circle me-2"
+                                                                            src="https://ui-avatars.com/api/?name={{ urlencode($location->user->name) }}&background=6366f1&color=fff"
+                                                                            alt="profile">
+                                                                        <span>{{ $location->user->name }}</span>
+                                                                    </div>
+                                                                </td>
+                                                                <td>
+                                                                    <div class="d-flex align-items-center">
+                                                                        <i class="mdi mdi-map-marker text-primary me-2"></i>
+                                                                        <span>{{ $location->formatted_location }}</span>
+                                                                    </div>
+                                                                    @if ($location->is_vpn)
+                                                                        <span class="badge badge-danger mt-1">VPN</span>
+                                                                    @endif
+                                                                </td>
+                                                                <td>
+                                                                    <code
+                                                                        class="text-dark">{{ $location->ip_address }}</code>
+                                                                </td>
+                                                                <td>
+                                                                    @if ($location->latitude && $location->longitude)
+                                                                        <small class="text-muted">
+                                                                            {{ number_format($location->latitude, 4) }},
+                                                                            {{ number_format($location->longitude, 4) }}
+                                                                        </small>
+                                                                    @else
+                                                                        <span class="text-muted">N/A</span>
+                                                                    @endif
+                                                                </td>
+                                                            </tr>
+                                                        @empty
+                                                            <tr>
+                                                                <td colspan="5" class="text-center py-5">
+                                                                    <div class="text-muted">
+                                                                        <i
+                                                                            class="mdi mdi-map-marker-off mdi-48px d-block mb-2"></i>
+                                                                        <p>No se encontraron ubicaciones</p>
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                        @endforelse
+                                                    </tbody>
+                                                </table>
+                                            </div>
+
+                                            <!-- Paginación -->
+                                            <div class="mt-4">
+                                                {{ $locations->links() }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>
             </div>
         </div>
-
-        <div style="margin-top:1rem;display:flex;gap:0.5rem;">
-            <button type="submit"
-                style="padding:0.5rem 1.5rem;background:#007bff;color:white;border:none;cursor:pointer;border-radius:4px;">
-                Filtrar
-            </button>
-            <a href="{{ route('admin.locations.index') }}"
-                style="padding:0.5rem 1.5rem;background:#6c757d;color:white;text-decoration:none;border-radius:4px;display:inline-block;">
-                Limpiar
-            </a>
-        </div>
-    </form>
-
-    <!-- Tabla de Ubicaciones -->
-    <table style="width:100%;border-collapse:collapse;">
-        <thead>
-            <tr style="background:#f0f0f0;">
-                <th style="padding:0.75rem;text-align:left;border:1px solid #ddd;">Fecha/Hora</th>
-                <th style="padding:0.75rem;text-align:left;border:1px solid #ddd;">Usuario</th>
-                <th style="padding:0.75rem;text-align:left;border:1px solid #ddd;">Ubicación</th>
-                <th style="padding:0.75rem;text-align:left;border:1px solid #ddd;">IP</th>
-                <th style="padding:0.75rem;text-align:left;border:1px solid #ddd;">Coordenadas</th>
-            </tr>
-        </thead>
-        <tbody>
-            @forelse($locations as $location)
-                <tr>
-                    <td style="padding:0.75rem;border:1px solid #ddd;">
-                        {{ $location->created_at->format('d/m/Y H:i:s') }}
-                    </td>
-                    <td style="padding:0.75rem;border:1px solid #ddd;">
-                        {{ $location->user->name }}
-                    </td>
-                    <td style="padding:0.75rem;border:1px solid #ddd;">
-                        {{ $location->formatted_location }}
-                        @if ($location->is_vpn)
-                            <span
-                                style="padding:0.25rem 0.5rem;background:#dc3545;color:white;border-radius:3px;font-size:0.75rem;">VPN</span>
-                        @endif
-                    </td>
-                    <td style="padding:0.75rem;border:1px solid #ddd;font-family:monospace;font-size:0.85rem;">
-                        {{ $location->ip_address }}
-                    </td>
-                    <td style="padding:0.75rem;border:1px solid #ddd;font-size:0.85rem;">
-                        @if ($location->latitude && $location->longitude)
-                            {{ number_format($location->latitude, 4) }}, {{ number_format($location->longitude, 4) }}
-                        @else
-                            <span style="color:#999;">N/A</span>
-                        @endif
-                    </td>
-                </tr>
-            @empty
-                <tr>
-                    <td colspan="5" style="padding:2rem;text-align:center;color:#666;">
-                        No se encontraron ubicaciones
-                    </td>
-                </tr>
-            @endforelse
-        </tbody>
-    </table>
-
-    <div style="margin-top:1rem;">
-        {{ $locations->links() }}
     </div>
 @endsection
