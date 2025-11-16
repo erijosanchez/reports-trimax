@@ -17,7 +17,7 @@
     <div class="navbar-menu-wrapper d-flex align-items-top">
         <ul class="navbar-nav">
             <li class="nav-item font-weight-semibold d-none d-lg-block ms-0">
-                <h1 class="welcome-text">Bienvenido, <span class="text-black fw-bold">{{ auth()->user()->name }}</span>
+                <h1 class="welcome-text">👋Bienvenido, <span class="text-black fw-bold">{{ auth()->user()->name }}</span>
                 </h1>
                 <h3 class="welcome-sub-text">Usa el sistema responsablemente</h3>
             </li>
@@ -31,12 +31,14 @@
                     <input type="text" class="form-control">
                 </div>
             </li>
+            <!--
             <li class="nav-item">
                 <form class="search-form" action="#">
                     <i class="icon-search"></i>
                     <input type="search" class="form-control" placeholder="Search Here" title="Search here">
                 </form>
-            </li>
+            </li>-->
+            <!--
             <li class="nav-item dropdown">
                 <a class="nav-link count-indicator" id="countDropdown" href="#" data-bs-toggle="dropdown"
                     aria-expanded="false">
@@ -60,7 +62,7 @@
                         </div>
                     </a>
                 </div>
-            </li>
+            </li> -->
             <li class="nav-item dropdown d-none d-lg-block user-dropdown">
                 <a class="nav-link" id="UserDropdown" href="#" data-bs-toggle="dropdown" aria-expanded="false">
                     <img class="img-xs rounded-circle"
@@ -74,12 +76,6 @@
                         <p class="mb-1 mt-3 font-weight-semibold">{{ auth()->user()->name }}</p>
                         <p class="fw-light text-muted mb-0">{{ auth()->user()->email }}</p>
                     </div>
-                    <a class="dropdown-item"><i
-                            class="dropdown-item-icon mdi mdi-account-outline text-primary me-2"></i> My
-                        Profile <span class="badge badge-pill badge-danger">1</span></a>
-                    <a class="dropdown-item"><i
-                            class="dropdown-item-icon mdi mdi-calendar-check-outline text-primary me-2"></i>
-                        Activity</a>
                     <form action="{{ route('logout') }}" method="POST" style="display:inline;margin:0;">
                         @csrf
                         <button type="submit"
