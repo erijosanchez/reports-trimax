@@ -47,12 +47,9 @@
                 <div class="collapse" id="charts">
                     <ul class="nav flex-column sub-menu">
                         <li class="nav-item"> <a class="nav-link" href="{{ route('admin.users') }}">Usuarios</a></li>
-                        <li class="nav-item"> <a class="nav-link" href="{{ route('admin.locations.map') }}">Mapa de
-                                Ubicaciones</a></li>
+                        <li class="nav-item"> <a class="nav-link" href="{{ route('admin.locations.map') }}">Ubicaciones</a></li>
                         <li class="nav-item"> <a class="nav-link" href="{{ route('admin.locations.index') }}">Historial
                                 de Ubicaciones</a></li>
-                        <li class="nav-item"> <a class="nav-link" href="{{ route('admin.activity-logs') }}">Logs de
-                                Actividad</a></li>
                     </ul>
                 </div>
             </li>
@@ -65,8 +62,11 @@
                 </a>
                 <div class="collapse" id="icons">
                     <ul class="nav flex-column sub-menu">
-                        <li class="nav-item"> <a class="nav-link" href="{{ route('admin.security') }}">Seguridad y Analisis</a>
+                        <li class="nav-item"> <a class="nav-link" href="{{ route('admin.security') }}">Seguridad y
+                                Analisis</a>
                         </li>
+                        <li class="nav-item"> <a class="nav-link" href="{{ route('admin.activity-logs') }}">Logs de
+                                Actividad</a></li>
                     </ul>
                 </div>
             </li>
