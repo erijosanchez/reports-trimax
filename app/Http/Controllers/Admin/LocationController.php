@@ -34,6 +34,11 @@ class LocationController extends Controller
                     'country' => $location->country,
                     'ip' => $location->ip_address,
                     'is_vpn' => $location->is_vpn,
+                    'location_type' => $location->location_type,          // ← NUEVO
+                    'formatted_address' => $location->formatted_address,  // ← NUEVO
+                    'accuracy' => $location->accuracy,                    // ← NUEVO
+                    'street_name' => $location->street_name,              // ← NUEVO
+                    'district' => $location->district,
                     'last_seen' => $location->created_at->diffForHumans(),
                     'is_online' => $user->isOnline(),
                 ];

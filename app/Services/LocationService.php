@@ -158,4 +158,45 @@ class LocationService
         return $lastLocation &&
             strtolower($lastLocation->city) === strtolower($city);
     }
+
+    /**
+     * Guardar ubicación GPS automática
+     */
+    public static function saveGpsLocation(
+        int $userId,
+        int $sessionId,
+        float $latitude,
+        float $longitude,
+        float $accuracy
+    ): UserLocation {
+        \Log::info('GPS automático', [
+            'user_id' => $userId,
+            'lat' => $latitude,
+            'lon' => $longitude,
+            'accuracy' => $accuracy,
+        ]);
+
+        $address = \App\Services\GeocodingService::reverseGeocode($latitude, $longitude);
+
+        return UserLocation::create([
+            'user_id' => $userId,
+            'session_id' => $sessionId,
+            'latitude' => $latitude,
+            'longitude' => $longitude,
+            'street_name' => $address['street_name'],
+            'street_number' => $address['street_number'],
+            'district' => $address['district'],
+            'city' => $address['city'],
+            'region' => $address['region'],
+            'country' => $address['country'],
+            'country_code' => $address['country_code'],
+            'postal_code' => $address['postal_code'],
+            'formatted_address' => $address['formatted_address'],
+            'ip_address' => get_real_ip(),
+            'location_type' => 'gps',
+            'accuracy' => $accuracy,
+            'is_vpn' => false,
+            'created_at' => now(),
+        ]);
+    }
 }

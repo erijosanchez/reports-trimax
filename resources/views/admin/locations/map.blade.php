@@ -9,11 +9,11 @@
                 <div class="home-tab">
                     <div class="d-sm-flex align-items-center justify-content-between border-bottom">
                     </div>
-                    <div class="tab-content tab-content-basic">
+                    <div class="tab-content-basic tab-content">
                         <div class="tab-pane fade show active" id="overview" role="tabpanel" aria-labelledby="overview">
                             <div class="row">
                                 <div class="col-sm-12">
-                                    <div class="statistics-details d-flex align-items-center justify-content-between">
+                                    <div class="d-flex align-items-center justify-content-between statistics-details">
                                         <div>
                                             <h3 class="rate-percentage">Mapa de Ubicaciones en Tiempo Real</h3>
                                             <p style="color:#666;">Seguimiento de ubicaciones de trabajadores en campo</p>
@@ -148,12 +148,45 @@
                                                                                 style="color:#666;">{{ $location['email'] }}</small>
                                                                         </td>
                                                                         <td style="padding:0.75rem;border:1px solid #ddd;">
-                                                                            📍 {{ $location['city'] }},
-                                                                            {{ $location['region'] }},
-                                                                            {{ $location['country'] }}
+                                                                            @if ($location['location_type'] === 'gps')
+                                                                                <div
+                                                                                    style="display:flex;align-items:start;gap:0.5rem;">
+                                                                                    <span
+                                                                                        style="font-size:1.5rem;">📱</span>
+                                                                                    <div>
+                                                                                        <strong style="color:#28a745;">GPS
+                                                                                            Preciso</strong><br>
+                                                                                        <span
+                                                                                            style="font-size:0.95rem;">{{ $location['formatted_address'] ?? $location['city'] }}</span>
+                                                                                        @if ($location['accuracy'])
+                                                                                            <br><small style="color:#666;">
+                                                                                                Precisión:
+                                                                                                {{ number_format($location['accuracy'], 0) }}m
+                                                                                            </small>
+                                                                                        @endif
+                                                                                    </div>
+                                                                                </div>
+                                                                            @else
+                                                                                <div
+                                                                                    style="display:flex;align-items:start;gap:0.5rem;">
+                                                                                    <span
+                                                                                        style="font-size:1.5rem;">🌐</span>
+                                                                                    <div>
+                                                                                        <strong style="color:#007bff;">Por
+                                                                                            IP</strong><br>
+                                                                                        <span style="font-size:0.95rem;">
+                                                                                            📍 {{ $location['city'] }},
+                                                                                            {{ $location['region'] }},
+                                                                                            {{ $location['country'] }}
+                                                                                        </span>
+                                                                                    </div>
+                                                                                </div>
+                                                                            @endif
                                                                             @if ($location['is_vpn'])
-                                                                                <span
-                                                                                    style="padding:0.25rem 0.5rem;background:#dc3545;color:white;border-radius:3px;font-size:0.75rem;margin-left:0.5rem;">VPN</span>
+                                                                                <br><span
+                                                                                    style="padding:0.25rem 0.5rem;background:#dc3545;color:white;border-radius:3px;font-size:0.75rem;">
+                                                                                    ⚠️ VPN
+                                                                                </span>
                                                                             @endif
                                                                         </td>
                                                                         <td
@@ -221,17 +254,23 @@
 
             // Popup con información
             const popupContent = `
-        <div style="min-width:200px;">
-            <strong>${location.name}</strong><br>
-            ${location.email}<br>
-            <hr style="margin:0.5rem 0;">
-            📍 ${location.city}, ${location.region}<br>
-            ${location.country}<br>
-            <small>IP: ${location.ip}</small><br>
-            <small>${location.last_seen}</small>
-            ${location.is_vpn ? '<br><span style="color:red;">⚠️ VPN Detectado</span>' : ''}
-        </div>
-    `;
+                <div style="min-width:220px;">
+                    <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem;">
+                        ${location.location_type === 'gps' ? '📱' : '🌐'}
+                        <strong style="font-size:1.1rem;">${location.name}</strong>
+                    </div>
+                    <small>${location.email}</small>
+                    <hr style="margin:0.5rem 0;">
+                    ${location.location_type === 'gps' && location.formatted_address ? 
+                        `<strong>📍 ${location.formatted_address}</strong><br>` :
+                        `📍 ${location.city}, ${location.region}<br>${location.country}<br>`
+                    }
+                    ${location.accuracy ? `<small>Precisión: ${Math.round(location.accuracy)}m</small><br>` : ''}
+                    <small>IP: ${location.ip}</small><br>
+                    <small style="color:#666;">${location.last_seen}</small>
+                    ${location.is_vpn ? '<br><span style="color:red;">⚠️ VPN Detectado</span>' : ''}
+                </div>
+            `;
 
             marker.bindPopup(popupContent);
         });

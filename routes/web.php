@@ -89,6 +89,7 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
             Route::get('/', [LocationController::class, 'index'])->name('index');
             Route::get('/user/{userId}', [LocationController::class, 'userHistory'])->name('user-history');
             Route::get('/live', [LocationController::class, 'liveLocations'])->name('live'); // API
+            Route::post('/store-gps', [LocationController::class, 'storeGpsLocation'])->name('store-gps'); //API gps automatico
         });
         
         // User Management
