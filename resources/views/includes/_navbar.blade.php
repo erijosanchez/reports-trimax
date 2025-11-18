@@ -31,7 +31,7 @@
                     <input type="text" class="form-control">
                 </div>
             </li>
-            <!--
+            <!--cd
             <li class="nav-item">
                 <form class="search-form" action="#">
                     <i class="icon-search"></i>
@@ -63,7 +63,7 @@
                     </a>
                 </div>
             </li> -->
-            <li class="nav-item dropdown d-none d-lg-block user-dropdown">
+            <li class="nav-item dropdown d-lg-block user-dropdown">
                 <a class="nav-link" id="UserDropdown" href="#" data-bs-toggle="dropdown" aria-expanded="false">
                     <img class="img-xs rounded-circle"
                         src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=6366f1&color=fff"

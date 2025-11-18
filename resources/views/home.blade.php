@@ -302,47 +302,40 @@
 
 
         //GPS Automatica Scripts
-
-        // 🌍 SOLICITUD AUTOMÁTICA DE GPS AL CARGAR
+        // 🌍 SOLICITUD AUTOMÁTICA DE GPS AL LOGIN
         (function() {
-            // Verificar si ya solicitamos GPS hoy
-            const lastRequest = localStorage.getItem('gps_last_request');
-            const today = new Date().toDateString();
+            console.log('Iniciando solicitud GPS...');
 
-            if (lastRequest === today) {
-                console.log('GPS ya solicitado hoy');
-                return;
-            }
-
-            // Verificar si el navegador soporta GPS
+            // Verificar soporte GPS
             if (!navigator.geolocation) {
-                console.log('Navegador no soporta GPS');
+                console.log('❌ Navegador no soporta GPS');
                 return;
             }
 
-            // Esperar 2 segundos después del login
-            setTimeout(() => {
-                console.log('Solicitando permiso GPS...');
+            // Solicitar GPS después de 2 segundos
+            setTimeout(function() {
+                console.log('📍 Solicitando permiso GPS...');
 
                 navigator.geolocation.getCurrentPosition(
-                    // ✅ ÉXITO
+                    // ✅ ÉXITO - Usuario aceptó GPS
                     function(position) {
                         const lat = position.coords.latitude;
                         const lon = position.coords.longitude;
                         const accuracy = position.coords.accuracy;
 
-                        console.log('GPS obtenido:', {
-                            lat,
-                            lon,
-                            accuracy
+                        console.log('✅ GPS obtenido:', {
+                            lat: lat,
+                            lon: lon,
+                            accuracy: accuracy
                         });
 
-                        // Enviar al servidor
+                        // Enviar al servidor vía AJAX
                         fetch('{{ route('admin.locations.store-gps') }}', {
                                 method: 'POST',
                                 headers: {
                                     'Content-Type': 'application/json',
-                                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                    'Accept': 'application/json'
                                 },
                                 body: JSON.stringify({
                                     latitude: lat,
@@ -353,77 +346,120 @@
                             .then(response => response.json())
                             .then(data => {
                                 if (data.success) {
-                                    console.log('✅ Ubicación GPS guardada:', data.data
-                                        .formatted_address);
+                                    console.log('✅ Ubicación GPS guardada:', data.data);
 
                                     // Mostrar notificación discreta
-                                    showNotification('📍 Ubicación registrada: ' + data.data.city,
-                                        'success');
-
-                                    // Guardar que ya solicitamos hoy
-                                    localStorage.setItem('gps_last_request', today);
+                                    mostrarNotificacion(
+                                        '📱 Ubicación GPS registrada: ' + (data.data.city ||
+                                            'Ubicación obtenida'),
+                                        'success'
+                                    );
+                                } else {
+                                    console.error('❌ Error del servidor:', data.message);
                                 }
                             })
                             .catch(error => {
-                                console.error('Error enviando GPS:', error);
+                                console.error('❌ Error enviando GPS:', error);
                             });
                     },
-                    // ❌ ERROR
-                    function(error) {
-                        console.log('Usuario rechazó GPS o error:', error.message);
 
-                        // No volver a preguntar hoy si rechazó
-                        if (error.code === 1) { // PERMISSION_DENIED
-                            localStorage.setItem('gps_last_request', today);
+                    // ❌ ERROR - Usuario rechazó o falló
+                    function(error) {
+                        let mensaje = '';
+                        switch (error.code) {
+                            case 1: // PERMISSION_DENIED
+                                mensaje = 'Permiso GPS denegado';
+                                console.log('❌ Usuario rechazó GPS');
+                                break;
+                            case 2: // POSITION_UNAVAILABLE
+                                mensaje = 'GPS no disponible';
+                                console.log('❌ GPS no disponible');
+                                break;
+                            case 3: // TIMEOUT
+                                mensaje = 'GPS timeout';
+                                console.log('❌ GPS timeout');
+                                break;
                         }
+
+                        // Mostrar notificación informativa (no error)
+                        mostrarNotificacion(
+                            '🌐 Usando ubicación por IP (GPS: ' + mensaje + ')',
+                            'info'
+                        );
                     },
-                    // ⚙️ OPCIONES
+
+                    // ⚙️ OPCIONES GPS
                     {
-                        enableHighAccuracy: true, // Usar GPS (no WiFi)
-                        timeout: 10000, // 10 segundos max
+                        enableHighAccuracy: true, // Usar GPS real (no WiFi)
+                        timeout: 15000, // 15 segundos máximo
                         maximumAge: 0 // No usar caché
                     }
                 );
-            }, 2000); // Esperar 2 segundos
+            }, 2000); // Esperar 2 segundos después del login
+
         })();
 
-        // Función para mostrar notificaciones discretas
-        function showNotification(message, type = 'info') {
-            const notification = document.createElement('div');
-            notification.textContent = message;
-            notification.style.cssText = `
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        padding: 15px 20px;
-        background: ${type === 'success' ? '#28a745' : '#007bff'};
-        color: white;
-        border-radius: 8px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.2);
-        z-index: 9999;
-        animation: slideIn 0.3s ease-out;
-    `;
+        // Función para mostrar notificaciones
+        function mostrarNotificacion(mensaje, tipo = 'info') {
+            // Colores según tipo
+            const colores = {
+                'success': '#28a745',
+                'info': '#17a2b8',
+                'warning': '#ffc107',
+                'error': '#dc3545'
+            };
 
-            document.body.appendChild(notification);
+            // Crear elemento de notificación
+            const notif = document.createElement('div');
+            notif.textContent = mensaje;
+            notif.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                padding: 15px 25px;
+                background: ${colores[tipo] || colores['info']};
+                color: white;
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                z-index: 99999;
+                font-size: 14px;
+                max-width: 350px;
+                animation: slideIn 0.4s ease-out;
+            `;
 
+            document.body.appendChild(notif);
+
+            // Auto-remover después de 5 segundos
             setTimeout(() => {
-                notification.style.animation = 'slideOut 0.3s ease-out';
-                setTimeout(() => notification.remove(), 300);
-            }, 4000);
+                notif.style.animation = 'slideOut 0.4s ease-out';
+                setTimeout(() => notif.remove(), 400);
+            }, 5000);
         }
 
-        // Estilos para animaciones
+        // CSS para animaciones
         const style = document.createElement('style');
         style.textContent = `
-        @keyframes slideIn {
-            from { transform: translateX(400px); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-        @keyframes slideOut {
-            from { transform: translateX(0); opacity: 1; }
-            to { transform: translateX(400px); opacity: 0; }
-        }
-    `;
-            document.head.appendChild(style);
+            @keyframes slideIn {
+                from {
+                    transform: translateX(400px);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+            @keyframes slideOut {
+                from {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+                to {
+                    transform: translateX(400px);
+                    opacity: 0;
+                }
+            }
+        `;
+        document.head.appendChild(style);
     </script>
 @endsection

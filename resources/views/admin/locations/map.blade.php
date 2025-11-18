@@ -150,45 +150,95 @@
                                                                         <td style="padding:0.75rem;border:1px solid #ddd;">
                                                                             @if ($location['location_type'] === 'gps')
                                                                                 <div
-                                                                                    style="display:flex;align-items:start;gap:0.5rem;">
-                                                                                    <span
-                                                                                        style="font-size:1.5rem;">📱</span>
-                                                                                    <div>
-                                                                                        <strong style="color:#28a745;">GPS
-                                                                                            Preciso</strong><br>
-                                                                                        <span
-                                                                                            style="font-size:0.95rem;">{{ $location['formatted_address'] ?? $location['city'] }}</span>
+                                                                                    style="display:flex;align-items:start;gap:0.75rem;">
+                                                                                    <div style="font-size:1.8rem;">📱</div>
+                                                                                    <div style="flex:1;">
+                                                                                        <div
+                                                                                            style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.25rem;">
+                                                                                            <strong
+                                                                                                style="color:#28a745;font-size:1rem;">GPS
+                                                                                                Preciso</strong>
+                                                                                            @if ($location['accuracy'])
+                                                                                                <span
+                                                                                                    style="padding:0.2rem 0.6rem;background:#28a745;color:white;border-radius:12px;font-size:0.75rem;">
+                                                                                                    {{ number_format($location['accuracy'], 0) }}m
+                                                                                                </span>
+                                                                                            @endif
+                                                                                        </div>
+
+                                                                                        @if ($location['formatted_address'])
+                                                                                            <div
+                                                                                                style="font-size:0.95rem;line-height:1.4;">
+                                                                                                {{ $location['formatted_address'] }}
+                                                                                            </div>
+                                                                                        @else
+                                                                                            <div style="font-size:0.95rem;">
+                                                                                                @if ($location['street_name'])
+                                                                                                    <strong>{{ $location['street_name'] }}
+                                                                                                        @if ($location['street_number'])
+                                                                                                            #{{ $location['street_number'] }}
+                                                                                                        @endif
+                                                                                                    </strong><br>
+                                                                                                @endif
+                                                                                                @if ($location['district'])
+                                                                                                    {{ $location['district'] }},
+                                                                                                @endif
+                                                                                                {{ $location['city'] }}
+                                                                                            </div>
+                                                                                        @endif
+
                                                                                         @if ($location['accuracy'])
-                                                                                            <br><small style="color:#666;">
+                                                                                            <small
+                                                                                                style="color:#666;font-size:0.8rem;">
                                                                                                 Precisión:
-                                                                                                {{ number_format($location['accuracy'], 0) }}m
+                                                                                                @if ($location['accuracy'] < 50)
+                                                                                                    <span
+                                                                                                        style="color:#28a745;">⭐
+                                                                                                        Muy precisa</span>
+                                                                                                @elseif($location['accuracy'] < 100)
+                                                                                                    <span
+                                                                                                        style="color:#28a745;">✓
+                                                                                                        Precisa</span>
+                                                                                                @elseif($location['accuracy'] < 500)
+                                                                                                    <span
+                                                                                                        style="color:#ffc107;">△
+                                                                                                        Moderada</span>
+                                                                                                @else
+                                                                                                    <span
+                                                                                                        style="color:#dc3545;">○
+                                                                                                        Baja</span>
+                                                                                                @endif
                                                                                             </small>
                                                                                         @endif
                                                                                     </div>
                                                                                 </div>
                                                                             @else
                                                                                 <div
-                                                                                    style="display:flex;align-items:start;gap:0.5rem;">
-                                                                                    <span
-                                                                                        style="font-size:1.5rem;">🌐</span>
+                                                                                    style="display:flex;align-items:start;gap:0.75rem;">
+                                                                                    <div style="font-size:1.8rem;">🌐</div>
                                                                                     <div>
-                                                                                        <strong style="color:#007bff;">Por
+                                                                                        <strong
+                                                                                            style="color:#007bff;font-size:1rem;">Por
                                                                                             IP</strong><br>
                                                                                         <span style="font-size:0.95rem;">
                                                                                             📍 {{ $location['city'] }},
-                                                                                            {{ $location['region'] }},
+                                                                                            {{ $location['region'] }}<br>
                                                                                             {{ $location['country'] }}
                                                                                         </span>
                                                                                     </div>
                                                                                 </div>
                                                                             @endif
+
                                                                             @if ($location['is_vpn'])
-                                                                                <br><span
-                                                                                    style="padding:0.25rem 0.5rem;background:#dc3545;color:white;border-radius:3px;font-size:0.75rem;">
-                                                                                    ⚠️ VPN
-                                                                                </span>
+                                                                                <div style="margin-top:0.5rem;">
+                                                                                    <span
+                                                                                        style="padding:0.3rem 0.6rem;background:#dc3545;color:white;border-radius:3px;font-size:0.75rem;">
+                                                                                        ⚠️ VPN Detectado
+                                                                                    </span>
+                                                                                </div>
                                                                             @endif
                                                                         </td>
+
                                                                         <td
                                                                             style="padding:0.75rem;border:1px solid #ddd;font-family:monospace;font-size:0.85rem;">
                                                                             {{ $location['ip'] }}
@@ -254,21 +304,49 @@
 
             // Popup con información
             const popupContent = `
-                <div style="min-width:220px;">
+                <div style="min-width:250px;max-width:350px;">
                     <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem;">
-                        ${location.location_type === 'gps' ? '📱' : '🌐'}
+                        ${location.location_type === 'gps' ? 
+                            '<span style="font-size:1.5rem;">📱</span>' : 
+                            '<span style="font-size:1.5rem;">🌐</span>'
+                        }
                         <strong style="font-size:1.1rem;">${location.name}</strong>
                     </div>
-                    <small>${location.email}</small>
-                    <hr style="margin:0.5rem 0;">
-                    ${location.location_type === 'gps' && location.formatted_address ? 
-                        `<strong>📍 ${location.formatted_address}</strong><br>` :
-                        `📍 ${location.city}, ${location.region}<br>${location.country}<br>`
-                    }
-                    ${location.accuracy ? `<small>Precisión: ${Math.round(location.accuracy)}m</small><br>` : ''}
-                    <small>IP: ${location.ip}</small><br>
-                    <small style="color:#666;">${location.last_seen}</small>
-                    ${location.is_vpn ? '<br><span style="color:red;">⚠️ VPN Detectado</span>' : ''}
+                    
+                    <div style="font-size:0.85rem;color:#666;margin-bottom:0.5rem;">
+                        ${location.email}
+                    </div>
+                    
+                    <hr style="margin:0.5rem 0;border:none;border-top:1px solid #ddd;">
+                    
+                    ${location.location_type === 'gps' && location.formatted_address ? `
+                            <div style="margin-bottom:0.5rem;">
+                                <strong style="color:#28a745;">📍 GPS Preciso</strong><br>
+                                <span style="font-size:0.9rem;">${location.formatted_address}</span>
+                            </div>
+                            ${location.accuracy ? `
+                            <div style="background:#f0f9f4;padding:0.4rem;border-radius:4px;margin-bottom:0.5rem;">
+                                <small style="color:#28a745;">
+                                    ✓ Precisión: ${Math.round(location.accuracy)}m
+                                </small>
+                            </div>
+                        ` : ''}
+                        ` : `
+                            <div style="margin-bottom:0.5rem;">
+                                <strong style="color:#007bff;">📍 Por IP</strong><br>
+                                <span style="font-size:0.9rem;">
+                                    ${location.city}, ${location.region}<br>
+                                    ${location.country}
+                                </span>
+                            </div>
+                        `}
+                    
+                    <div style="font-size:0.85rem;color:#666;border-top:1px solid #eee;padding-top:0.5rem;">
+                        <small>IP: ${location.ip}</small><br>
+                        <small>${location.last_seen}</small>
+                    </div>
+                    
+                    ${location.is_vpn ? '<div style="margin-top:0.5rem;"><span style="color:#dc3545;font-size:0.85rem;">⚠️ VPN Detectado</span></div>' : ''}
                 </div>
             `;
 
