@@ -338,7 +338,7 @@
                         });
 
                         // Enviar al servidor
-                        fetch('{{ route('location.store-gps') }}', {
+                        fetch('{{ route('admin.locations.store-gps') }}', {
                                 method: 'POST',
                                 headers: {
                                     'Content-Type': 'application/json',
