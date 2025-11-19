@@ -1,84 +1,148 @@
 @extends('layouts.app')
 
-@section('title', 'Historial de ' . $user->name)
+@section('title', 'Historial GPS de ' . $user->name)
 
 @section('content')
-    <div style="margin-bottom:2rem;">
-        <a href="{{ route('admin.locations.map') }}" style="color:#007bff;text-decoration:none;">
-            ← Volver al Mapa
-        </a>
-    </div>
+    <div class="content-wrapper">
+        <div class="row">
+            <div class="col-12">
+                
+                <!-- Navegación -->
+                <div style="margin-bottom:2rem;">
+                    <a href="{{ route('admin.locations.map') }}" class="btn btn-secondary">
+                        ← Volver al Mapa
+                    </a>
+                </div>
 
-    <h1>Historial de Ubicaciones: {{ $user->name }}</h1>
-    <p style="color:#666;">{{ $user->email }}</p>
+                <!-- Header -->
+                <div class="card">
+                    <div class="card-body">
+                        <h2><i class="mdi mdi-history"></i> Historial GPS: {{ $user->name }}</h2>
+                        <p style="color:#666;">{{ $user->email }}</p>
+                    </div>
+                </div>
 
-    <!-- Estadísticas -->
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin:2rem 0;">
-        <div style="padding:1.5rem;background:#007bff;color:white;border-radius:4px;">
-            <h3 style="margin:0;font-size:2rem;">{{ $stats['total_locations'] }}</h3>
-            <p style="margin:0.5rem 0 0 0;">Ubicaciones Registradas</p>
+                <!-- Estadísticas -->
+                <div class="row mt-4">
+                    <div class="col-md-4">
+                        <div class="card bg-primary text-white">
+                            <div class="card-body">
+                                <h3>{{ $stats['total_locations'] }}</h3>
+                                <p class="mb-0"><i class="mdi mdi-map-marker"></i> Ubicaciones GPS</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-success text-white">
+                            <div class="card-body">
+                                <h3>{{ $stats['cities_visited'] }}</h3>
+                                <p class="mb-0"><i class="mdi mdi-city"></i> Ciudades Visitadas</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-warning text-white">
+                            <div class="card-body">
+                                <h3>{{ $stats['countries_visited'] }}</h3>
+                                <p class="mb-0"><i class="mdi mdi-earth"></i> Países Visitados</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ciudades Únicas -->
+                @if($uniqueCities->count() > 0)
+                <div class="card mt-4">
+                    <div class="card-body">
+                        <h4><i class="mdi mdi-city"></i> Ciudades Visitadas:</h4>
+                        <div style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-top:1rem;">
+                            @foreach($uniqueCities as $city)
+                                <span class="badge bg-primary" style="padding:0.5rem 1rem;font-size:0.9rem;">
+                                    <i class="mdi mdi-map-marker"></i> {{ $city }}
+                                </span>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+                @endif
+
+                <!-- Tabla de Historial -->
+                <div class="card mt-4">
+                    <div class="card-body">
+                        <h4><i class="mdi mdi-history"></i> Historial Completo</h4>
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>📅 Fecha/Hora</th>
+                                        <th>📍 Ubicación GPS</th>
+                                        <th>🎯 Precisión</th>
+                                        <th>📐 Coordenadas</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse($locations as $location)
+                                        <tr>
+                                            <td>
+                                                {{ $location->created_at->format('d/m/Y H:i:s') }}<br>
+                                                <small class="text-muted">{{ $location->created_at->diffForHumans() }}</small>
+                                            </td>
+                                            <td>
+                                                @if($location->formatted_address)
+                                                    {{ $location->formatted_address }}
+                                                @elseif($location->city)
+                                                    {{ $location->city }}
+                                                    @if($location->region), {{ $location->region }}@endif
+                                                    @if($location->country), {{ $location->country }}@endif
+                                                @else
+                                                    <span class="text-muted">Ubicación no disponible</span>
+                                                @endif
+                                            </td>
+                                            <td>
+                                                @if($location->accuracy)
+                                                    <span class="badge bg-
+                                                        @if($location->accuracy < 50) success
+                                                        @elseif($location->accuracy < 100) primary
+                                                        @elseif($location->accuracy < 500) warning
+                                                        @else danger
+                                                        @endif
+                                                    ">
+                                                        {{ number_format($location->accuracy, 0) }}m
+                                                    </span>
+                                                @else
+                                                    <span class="text-muted">N/A</span>
+                                                @endif
+                                            </td>
+                                            <td>
+                                                @if($location->latitude && $location->longitude)
+                                                    <small class="text-muted">
+                                                        {{ number_format($location->latitude, 4) }}, 
+                                                        {{ number_format($location->longitude, 4) }}
+                                                    </small>
+                                                @else
+                                                    <span class="text-muted">N/A</span>
+                                                @endif
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="4" class="text-center text-muted">
+                                                No hay ubicaciones GPS registradas
+                                            </td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Paginación -->
+                        <div class="mt-3">
+                            {{ $locations->links() }}
+                        </div>
+                    </div>
+                </div>
+
+            </div>
         </div>
-        <div style="padding:1.5rem;background:#28a745;color:white;border-radius:4px;">
-            <h3 style="margin:0;font-size:2rem;">{{ $stats['cities_visited'] }}</h3>
-            <p style="margin:0.5rem 0 0 0;">Ciudades Visitadas</p>
-        </div>
-        <div style="padding:1.5rem;background:#ffc107;color:white;border-radius:4px;">
-            <h3 style="margin:0;font-size:2rem;">{{ $stats['countries_visited'] }}</h3>
-            <p style="margin:0.5rem 0 0 0;">Países Visitados</p>
-        </div>
-    </div>
-
-    <!-- Ciudades Únicas -->
-    <div style="background:#f8f9fa;padding:1.5rem;border-radius:4px;margin-bottom:2rem;">
-        <h3>Ciudades Visitadas:</h3>
-        <div style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-top:1rem;">
-            @foreach ($uniqueCities as $city)
-                <span style="padding:0.5rem 1rem;background:white;border:1px solid #ddd;border-radius:20px;">
-                    📍 {{ $city->city }}, {{ $city->region }}
-                </span>
-            @endforeach
-        </div>
-    </div>
-
-    <!-- Historial -->
-    <table style="width:100%;border-collapse:collapse;">
-        <thead>
-            <tr style="background:#f0f0f0;">
-                <th style="padding:0.75rem;text-align:left;border:1px solid #ddd;">Fecha/Hora</th>
-                <th style="padding:0.75rem;text-align:left;border:1px solid #ddd;">Ubicación</th>
-                <th style="padding:0.75rem;text-align:left;border:1px solid #ddd;">IP</th>
-                <th style="padding:0.75rem;text-align:left;border:1px solid #ddd;">Coordenadas</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach ($locations as $location)
-                <tr>
-                    <td style="padding:0.75rem;border:1px solid #ddd;">
-                        {{ $location->created_at->format('d/m/Y H:i:s') }}<br>
-                        <small style="color:#666;">{{ $location->created_at->diffForHumans() }}</small>
-                    </td>
-                    <td style="padding:0.75rem;border:1px solid #ddd;">
-                        <strong>{{ $location->formatted_location }}</strong>
-                        @if ($location->is_vpn)
-                            <br><span style="color:#dc3545;font-size:0.85rem;">⚠️ VPN Detectado</span>
-                        @endif
-                    </td>
-                    <td style="padding:0.75rem;border:1px solid #ddd;font-family:monospace;">
-                        {{ $location->ip_address }}
-                    </td>
-                    <td style="padding:0.75rem;border:1px solid #ddd;font-size:0.85rem;">
-                        @if ($location->latitude && $location->longitude)
-                            {{ number_format($location->latitude, 4) }}, {{ number_format($location->longitude, 4) }}
-                        @else
-                            <span style="color:#999;">N/A</span>
-                        @endif
-                    </td>
-                </tr>
-            @endforeach
-        </tbody>
-    </table>
-
-    <div style="margin-top:1rem;">
-        {{ $locations->appends(['user_id' => $user->id])->links() }}
     </div>
 @endsection

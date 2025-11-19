@@ -9,6 +9,7 @@ use App\Http\Controllers\Auth\TwoFactorController;
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\LocationController;
+use App\Http\Controllers\LocationApiController;
 
 // ============================================================
 // RUTAS PARA LARAVEL 11
@@ -20,7 +21,7 @@ Route::middleware(['guest'])->group(function () {
     Route::get('/', function () {
         return redirect()->route('login');
     });
-    
+
     Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
     Route::post('/login', [LoginController::class, 'login'])
         ->middleware('throttle:login');
@@ -42,10 +43,13 @@ Route::middleware(['auth'])->prefix('2fa')->name('2fa.')->group(function () {
 
 // Protected Routes (Auth + Track + Prevent Back)
 Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back'])->group(function () {
-    
+
     // Home
     Route::get('/home', [HomeController::class, 'index'])->name('home');
-    
+
+    Route::post('/gps-location', [LocationApiController::class, 'storeGpsLocation'])
+        ->name('location.store-gps'); //API gps automatico
+
     // Dashboards
     Route::prefix('dashboards')->name('dashboards.')->group(function () {
         Route::get('/', [DashboardController::class, 'index'])->name('index');
@@ -56,16 +60,15 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
             Route::get('/{id}/edit', [DashboardController::class, 'edit'])->name('edit');
             Route::put('/{id}', [DashboardController::class, 'update'])->name('update');
             Route::post('/{id}/assign-users', [DashboardController::class, 'assignUsers'])->name('assign-users');
-            
+
             // Solo super admin puede eliminar
             Route::delete('/{id}', [DashboardController::class, 'destroy'])
                 ->name('destroy')
                 ->middleware('role:super_admin');
         });
         Route::get('/{id}', [DashboardController::class, 'show'])->name('show');
-    
     });
-    
+
     // Files
     Route::prefix('files')->name('files.')->group(function () {
         Route::get('/', [FileController::class, 'index'])->name('index');
@@ -76,7 +79,7 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
         Route::get('/{id}/download', [FileController::class, 'download'])->name('download');
         Route::delete('/{id}', [FileController::class, 'destroy'])->name('destroy');
     });
-    
+
     // Admin Routes (Admin + Super Admin only)
     Route::middleware('role:super_admin|admin')->prefix('admin')->name('admin.')->group(function () {
         Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
@@ -89,9 +92,9 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
             Route::get('/', [LocationController::class, 'index'])->name('index');
             Route::get('/user/{userId}', [LocationController::class, 'userHistory'])->name('user-history');
             Route::get('/live', [LocationController::class, 'liveLocations'])->name('live'); // API
-            Route::post('/store-gps', [LocationController::class, 'storeGpsLocation'])->name('store-gps'); //API gps automatico
+
         });
-        
+
         // User Management
         Route::get('/users/create', [UserController::class, 'create'])->name('users.create');
         Route::post('/users', [UserController::class, 'store'])->name('users.store');

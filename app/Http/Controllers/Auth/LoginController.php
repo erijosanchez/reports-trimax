@@ -58,13 +58,6 @@ class LoginController extends Controller
             'login_at' => now(),
         ]);
 
-        // Registrar ubicación
-        LocationService::trackLocation(
-            $user->id,
-            $session->id,
-            $request->ip()
-        );
-
         // Log actividad
         UserActivityLog::log($user->id, 'login', 'User', $user->id, 'Usuario inició sesión');
 

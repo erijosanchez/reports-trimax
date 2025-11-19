@@ -15,14 +15,20 @@ class LocationController extends Controller
      */
     public function map()
     {
-        // Obtener usuarios con su última ubicación
         $usersWithLocations = User::with(['locations' => function ($query) {
-            $query->latest('created_at')->limit(1);
+            $query->where('location_type', 'gps')
+                ->latest('created_at')
+                ->limit(1);
         }])
-            ->whereHas('locations')
+            ->whereHas('locations', function ($query) {
+                $query->where('location_type', 'gps');
+            })
             ->get()
             ->map(function ($user) {
                 $location = $user->locations->first();
+
+                if (!$location) return null;
+
                 return [
                     'user_id' => $user->id,
                     'name' => $user->name,
@@ -32,19 +38,16 @@ class LocationController extends Controller
                     'city' => $location->city,
                     'region' => $location->region,
                     'country' => $location->country,
-                    'ip' => $location->ip_address,
-                    'is_vpn' => $location->is_vpn,
-                    'location_type' => $location->location_type ?? 'ip',          // ← NUEVO
-                    'formatted_address' => $location->formatted_address,  // ← NUEVO
-                    'accuracy' => $location->accuracy,                    // ← NUEVO
-                    'street_name' => $location->street_name,              // ← NUEVO
-                    'street_number' => $location->street_number,
+                    'formatted_address' => $location->formatted_address,
+                    'street_name' => $location->street_name,
                     'district' => $location->district,
+                    'accuracy' => $location->accuracy,
                     'last_seen' => $location->created_at->diffForHumans(),
                     'is_online' => $user->isOnline(),
                 ];
             })
-            ->filter(fn($loc) => $loc['latitude'] && $loc['longitude']);
+            ->filter()
+            ->values();
 
         return view('admin.locations.map', compact('usersWithLocations'));
     }

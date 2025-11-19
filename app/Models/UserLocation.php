@@ -10,36 +10,81 @@ class UserLocation extends Model
 
     protected $fillable = [
         'user_id',
-        'session_id',
         'latitude',
         'longitude',
+        'accuracy',
+        'street_name',
+        'street_number',
+        'district',
         'city',
         'region',
         'country',
         'country_code',
-        'ip_address',
-        'is_vpn',
-        'street_name',
-        'street_number',
-        'district',
         'postal_code',
         'formatted_address',
         'location_type',
-        'accuracy',
         'created_at',
     ];
 
     protected $casts = [
         'latitude' => 'decimal:8',
         'longitude' => 'decimal:8',
-        'is_vpn' => 'boolean',
-        'created_at' => 'datetime',
         'accuracy' => 'decimal:2',
+        'created_at' => 'datetime',
     ];
 
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Obtener texto de precisión
+     */
+    public function getAccuracyTextAttribute(): string
+    {
+        if (!$this->accuracy) return 'Desconocida';
+
+        if ($this->accuracy < 50) return 'Muy precisa';
+        if ($this->accuracy < 100) return 'Precisa';
+        if ($this->accuracy < 500) return 'Moderada';
+        return 'Baja';
+    }
+
+    /**
+     * Obtener dirección completa formateada
+     */
+    public function getFullAddressAttribute(): string
+    {
+        if ($this->formatted_address) {
+            return $this->formatted_address;
+        }
+
+        $parts = array_filter([
+            $this->street_name ? $this->street_name . ' ' . $this->street_number : null,
+            $this->district,
+            $this->city,
+            $this->region,
+            $this->country,
+        ]);
+
+        return implode(', ', $parts) ?: 'Ubicación no disponible';
+    }
+
+    /**
+     * Scope para ubicaciones GPS únicamente
+     */
+    public function scopeGpsOnly($query)
+    {
+        return $query->where('location_type', 'gps');
+    }
+
+    /**
+     * Scope para ubicaciones recientes
+     */
+    public function scopeRecent($query, $days = 7)
+    {
+        return $query->where('created_at', '>=', now()->subDays($days));
     }
 
     public function session()
@@ -56,30 +101,5 @@ class UserLocation extends Model
     public function isGpsLocation(): bool
     {
         return $this->location_type === 'gps';
-    }
-
-    public function getAccuracyTextAttribute(): string
-    {
-        if (!$this->accuracy) return 'N/A';
-        if ($this->accuracy < 50) return 'Muy precisa';
-        if ($this->accuracy < 100) return 'Precisa';
-        if ($this->accuracy < 500) return 'Moderada';
-        return 'Baja';
-    }
-
-    public function getFullAddressAttribute(): string
-    {
-        if ($this->formatted_address) {
-            return $this->formatted_address;
-        }
-
-        $parts = array_filter([
-            $this->street_name ? $this->street_name . ' ' . $this->street_number : null,
-            $this->district,
-            $this->city,
-            $this->region,
-        ]);
-
-        return implode(', ', $parts) ?: $this->formatted_location;
     }
 }

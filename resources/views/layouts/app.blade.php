@@ -54,7 +54,6 @@
     <script src="{{ asset('assets/vendors/js/vendor.bundle.base.js') }}"></script>
     <!-- endinject -->
     <!-- Plugin js for this page -->
-    <script src="{{ asset('assets/vendors/chart.js/Chart.min.js') }}"></script>
     <script src="{{ asset('assets/vendors/bootstrap-datepicker/bootstrap-datepicker.min.js') }}"></script>
     <script src="{{ asset('assets/vendors/progressbar.js/progressbar.min.js') }}"></script>
 
@@ -70,6 +69,10 @@
     <script src="{{ asset('assets/js/dashboard.js') }}"></script>
     <script src="{{ asset('assets/js/Chart.roundedBarCharts.js') }}"></script>
     <!-- End custom js for this page-->
+    <!-- GPS Tracking solo para usuarios autenticados -->
+    @auth
+        <script src="{{ asset('assets/js/gps-tracking.js') }}"></script>
+    @endauth
 </body>
 
 </html>
