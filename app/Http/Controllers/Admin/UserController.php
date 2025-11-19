@@ -43,7 +43,7 @@ class UserController extends Controller
     {
         $user = User::with('roles')->findOrFail($id);
         $roles = Role::all();
-        
+
         return view('admin.users-edit', compact('user', 'roles'));
     }
 
@@ -51,35 +51,47 @@ class UserController extends Controller
     {
         $user = User::findOrFail($id);
 
+        // Validación
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $id,
             'role' => 'required|exists:roles,name',
+            'password' => 'nullable|min:8|confirmed',  // ← nullable para que sea opcional
             'is_active' => 'boolean',
         ]);
 
+        // Actualizar datos básicos
         $user->update([
             'name' => $request->name,
             'email' => $request->email,
             'is_active' => $request->boolean('is_active'),
         ]);
 
+        // Actualizar contraseña SOLO si se proporcionó una nueva
+        if ($request->filled('password')) {
+            $user->update([
+                'password' => Hash::make($request->password),
+            ]);
+        }
+
+        // Actualizar rol
         $user->syncRoles([$request->role]);
 
         return redirect()->route('admin.users')
-            ->with('success', 'Usuario actualizado');
+            ->with('success', 'Usuario actualizado exitosamente');
     }
 
     public function destroy($id)
     {
         $user = User::findOrFail($id);
-        
+
+        // Prevenir auto-eliminación
         if ($user->id === auth()->id()) {
             return back()->withErrors(['error' => 'No puedes eliminarte a ti mismo']);
         }
 
         $user->delete();
 
-        return back()->with('success', 'Usuario eliminado');
+        return back()->with('success', 'Usuario eliminado exitosamente');
     }
 }
