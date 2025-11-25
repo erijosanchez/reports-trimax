@@ -158,7 +158,7 @@
                                                                                 title="Descargar">
                                                                                 <i class="mdi mdi-download"></i>
                                                                             </a>
-                                                                            @if ($file->user_id === auth()->id() || auth()->user()->isAdmin())
+                                                                            @if ($file->user_id === auth()->id() || auth()->user()->isAdmin() || auth()->user()->isSuperAdmin())
                                                                                 <form method="POST"
                                                                                     action="{{ route('files.destroy', $file->id) }}"
                                                                                     style="display:inline;">

@@ -1,76 +1,184 @@
 <nav class="sidebar sidebar-offcanvas" id="sidebar">
     <ul class="nav">
         <li class="nav-item">
-            <a class="nav-link" href="{{ route('home') }}">
+            <a class="nav-link {{ request()->routeIs('home') ? 'active' : '' }}" href="{{ route('home') }}">
                 <i class="mdi mdi-home menu-icon"></i>
                 <span class="menu-title">Home</span>
             </a>
         </li>
-        <li class="nav-item nav-category">Vistas</li>
-        <li class="nav-item">
-            <a class="nav-link" data-bs-toggle="collapse" href="#ui-basic" aria-expanded="false"
-                aria-controls="ui-basic">
-                <i class="mdi mdi-account-multiple menu-icon"></i>
-                <span class="menu-title">Usuarios</span>
-                <i class="menu-arrow"></i>
-            </a>
-            <div class="collapse" id="ui-basic">
-                <ul class="nav flex-column sub-menu">
-                    <li class="nav-item"> <a class="nav-link" href="{{ route('dashboards.index') }}">Dashboard</a></li>
-                    <li class="nav-item"> <a class="nav-link" href="{{ route('files.index') }}">Archivos</a></li>
-                </ul>
-            </div>
-        </li>
-        @if (auth()->user()->isAdmin())
-            <li class="nav-item nav-category">Administrador</li>
+
+        {{-- MÓDULO USUARIOS (Solo usuarios normales, consultores y superadmin) --}}
+        @if (!auth()->user()->isMarketing() && !auth()->user()->isAdmin())
+            <li class="nav-item nav-category">Vistas</li>
             <li class="nav-item">
-                <a class="nav-link" data-bs-toggle="collapse" href="#form-elements" aria-expanded="false"
-                    aria-controls="form-elements">
-                    <i class="menu-icon mdi mdi-grid"></i>
-                    <span class="menu-title">Admin Dashboard</span>
+                <a class="nav-link {{ request()->routeIs('dashboards.*') || request()->routeIs('files.*') ? '' : 'collapsed' }}" 
+                   data-bs-toggle="collapse" 
+                   href="#vistas" 
+                   aria-expanded="{{ request()->routeIs('dashboards.*') || request()->routeIs('files.*') ? 'true' : 'false' }}"
+                   aria-controls="vistas">
+                    <i class="mdi mdi-account-multiple menu-icon"></i>
+                    <span class="menu-title">Usuarios</span>
                     <i class="menu-arrow"></i>
                 </a>
-                <div class="collapse" id="form-elements">
+                <div class="collapse {{ request()->routeIs('dashboards.*') || request()->routeIs('files.*') ? 'show' : '' }}" id="vistas">
                     <ul class="nav flex-column sub-menu">
-                        <li class="nav-item"><a class="nav-link" href="{{ route('admin.dashboard') }}">Dashboard</a>
+                        <li class="nav-item"> 
+                            <a class="nav-link {{ request()->routeIs('dashboards.index') ? 'active' : '' }}" 
+                               href="{{ route('dashboards.index') }}">Dashboard</a>
                         </li>
-                    </ul>
-                </div>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" data-bs-toggle="collapse" href="#charts" aria-expanded="false"
-                    aria-controls="charts">
-                    <i class="menu-icon mdi mdi-account-switch"></i>
-                    <span class="menu-title">Admin Usuarios</span>
-                    <i class="menu-arrow"></i>
-                </a>
-                <div class="collapse" id="charts">
-                    <ul class="nav flex-column sub-menu">
-                        <li class="nav-item"> <a class="nav-link" href="{{ route('admin.users') }}">Usuarios</a></li>
-                        <li class="nav-item"> <a class="nav-link" href="{{ route('admin.locations.map') }}">Ubicaciones</a></li>
-                        <li class="nav-item"> <a class="nav-link" href="{{ route('admin.locations.index') }}">Historial
-                                de Ubicaciones</a></li>
-                    </ul>
-                </div>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" data-bs-toggle="collapse" href="#icons" aria-expanded="false"
-                    aria-controls="icons">
-                    <i class="menu-icon mdi mdi-lock-outline"></i>
-                    <span class="menu-title">Seguridad</span>
-                    <i class="menu-arrow"></i>
-                </a>
-                <div class="collapse" id="icons">
-                    <ul class="nav flex-column sub-menu">
-                        <li class="nav-item"> <a class="nav-link" href="{{ route('admin.security') }}">Seguridad y
-                                Analisis</a>
+                        <li class="nav-item"> 
+                            <a class="nav-link {{ request()->routeIs('files.index') ? 'active' : '' }}" 
+                               href="{{ route('files.index') }}">Archivos</a>
                         </li>
-                        <li class="nav-item"> <a class="nav-link" href="{{ route('admin.activity-logs') }}">Logs de
-                                Actividad</a></li>
                     </ul>
                 </div>
             </li>
         @endif
+
+        {{-- MÓDULO COMERCIAL (Solo consultores y superadmin) --}}
+        @if (auth()->user()->isConsultor() || auth()->user()->isSuperAdmin())
+            <li class="nav-item nav-category">COMERCIAL</li>
+            <li class="nav-item">
+                <a class="nav-link {{ request()->routeIs('comercial.orden') ? 'active' : '' }}" 
+                   href="">
+                    <i class="mdi mdi-file-document-box menu-icon"></i>
+                    <span class="menu-title">Consultar Orden</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {{ request()->routeIs('comercial.acuerdos') ? 'active' : '' }}" 
+                   href="">
+                    <i class="mdi mdi-book-open-page-variant menu-icon"></i>
+                    <span class="menu-title">Acuerdos Comerciales</span>
+                </a>
+            </li>
+        @endif
+
+        {{-- MÓDULO MARKETING (Solo marketing y superadmin, pero superadmin NO lo ve) --}}
+        @if (auth()->user()->isMarketing())
+            <li class="nav-item nav-category">MARKETING</li>
+            <li class="nav-item">
+                <a class="nav-link {{ request()->routeIs('marketing.detalles.*') || request()->routeIs('marketing.alertas.*') ? '' : 'collapsed' }}" 
+                   data-bs-toggle="collapse" 
+                   href="#marketing-detalles" 
+                   aria-expanded="{{ request()->routeIs('marketing.detalles.*') || request()->routeIs('marketing.alertas.*') ? 'true' : 'false' }}"
+                   aria-controls="marketing-detalles">
+                    <i class="mdi mdi-clipboard-alert menu-icon"></i>
+                    <span class="menu-title">Detalles & Alertas</span>
+                    <i class="menu-arrow"></i>
+                </a>
+                <div class="collapse {{ request()->routeIs('marketing.detalles.*') || request()->routeIs('marketing.alertas.*') ? 'show' : '' }}" id="marketing-detalles">
+                    <ul class="nav flex-column sub-menu">
+                        <li class="nav-item"> 
+                            <a class="nav-link {{ request()->routeIs('marketing.detalles.zona') ? 'active' : '' }}" 
+                               href="">Detalle por Zona</a>
+                        </li>
+                        <li class="nav-item"> 
+                            <a class="nav-link {{ request()->routeIs('marketing.alertas.atencion') ? 'active' : '' }}" 
+                               href="">Alertas de atención</a>
+                        </li>
+                    </ul>
+                </div>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {{ request()->routeIs('marketing.analisis.*') ? '' : 'collapsed' }}" 
+                   data-bs-toggle="collapse" 
+                   href="#marketing-analisis" 
+                   aria-expanded="{{ request()->routeIs('marketing.analisis.*') ? 'true' : 'false' }}"
+                   aria-controls="marketing-analisis">
+                    <i class="mdi mdi-chart-line menu-icon"></i>
+                    <span class="menu-title">Análisis</span>
+                    <i class="menu-arrow"></i>
+                </a>
+                <div class="collapse {{ request()->routeIs('marketing.analisis.*') ? 'show' : '' }}" id="marketing-analisis">
+                    <ul class="nav flex-column sub-menu">
+                        <li class="nav-item"> 
+                            <a class="nav-link {{ request()->routeIs('marketing.analisis.tendencias') ? 'active' : '' }}" 
+                               href="">Tendencias</a>
+                        </li>
+                        <li class="nav-item"> 
+                            <a class="nav-link {{ request()->routeIs('marketing.analisis.reconocimientos') ? 'active' : '' }}" 
+                               href="">Reconocimientos</a>
+                        </li>
+                    </ul>
+                </div>
+            </li>
+        @endif
+
+        {{-- MÓDULO ADMINISTRADOR (Solo admin y superadmin) --}}
+        @if (auth()->user()->isAdmin() || auth()->user()->isSuperAdmin())
+            <li class="nav-item nav-category">Administrador</li>
+            <li class="nav-item">
+                <a class="nav-link {{ request()->routeIs('admin.dashboard') ? '' : 'collapsed' }}" 
+                   data-bs-toggle="collapse" 
+                   href="#form-elements" 
+                   aria-expanded="{{ request()->routeIs('admin.dashboard') ? 'true' : 'false' }}"
+                   aria-controls="form-elements">
+                    <i class="menu-icon mdi mdi-grid"></i>
+                    <span class="menu-title">Admin Dashboard</span>
+                    <i class="menu-arrow"></i>
+                </a>
+                <div class="collapse {{ request()->routeIs('admin.dashboard') ? 'show' : '' }}" id="form-elements">
+                    <ul class="nav flex-column sub-menu">
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}" 
+                               href="{{ route('admin.dashboard') }}">Dashboard</a>
+                        </li>
+                    </ul>
+                </div>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {{ request()->routeIs('admin.users') || request()->routeIs('admin.locations.*') ? '' : 'collapsed' }}" 
+                   data-bs-toggle="collapse" 
+                   href="#charts" 
+                   aria-expanded="{{ request()->routeIs('admin.users') || request()->routeIs('admin.locations.*') ? 'true' : 'false' }}"
+                   aria-controls="charts">
+                    <i class="menu-icon mdi mdi-account-switch"></i>
+                    <span class="menu-title">Admin Usuarios</span>
+                    <i class="menu-arrow"></i>
+                </a>
+                <div class="collapse {{ request()->routeIs('admin.users') || request()->routeIs('admin.locations.*') ? 'show' : '' }}" id="charts">
+                    <ul class="nav flex-column sub-menu">
+                        <li class="nav-item"> 
+                            <a class="nav-link {{ request()->routeIs('admin.users') ? 'active' : '' }}" 
+                               href="{{ route('admin.users') }}">Usuarios</a>
+                        </li>
+                        <li class="nav-item"> 
+                            <a class="nav-link {{ request()->routeIs('admin.locations.map') ? 'active' : '' }}" 
+                               href="{{ route('admin.locations.map') }}">Ubicaciones</a>
+                        </li>
+                        <li class="nav-item"> 
+                            <a class="nav-link {{ request()->routeIs('admin.locations.index') ? 'active' : '' }}" 
+                               href="{{ route('admin.locations.index') }}">Historial de Ubicaciones</a>
+                        </li>
+                    </ul>
+                </div>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {{ request()->routeIs('admin.security') || request()->routeIs('admin.activity-logs') ? '' : 'collapsed' }}" 
+                   data-bs-toggle="collapse" 
+                   href="#icons" 
+                   aria-expanded="{{ request()->routeIs('admin.security') || request()->routeIs('admin.activity-logs') ? 'true' : 'false' }}"
+                   aria-controls="icons">
+                    <i class="menu-icon mdi mdi-lock-outline"></i>
+                    <span class="menu-title">Seguridad</span>
+                    <i class="menu-arrow"></i>
+                </a>
+                <div class="collapse {{ request()->routeIs('admin.security') || request()->routeIs('admin.activity-logs') ? 'show' : '' }}" id="icons">
+                    <ul class="nav flex-column sub-menu">
+                        <li class="nav-item"> 
+                            <a class="nav-link {{ request()->routeIs('admin.security') ? 'active' : '' }}" 
+                               href="{{ route('admin.security') }}">Seguridad y Análisis</a>
+                        </li>
+                        <li class="nav-item"> 
+                            <a class="nav-link {{ request()->routeIs('admin.activity-logs') ? 'active' : '' }}" 
+                               href="{{ route('admin.activity-logs') }}">Logs de Actividad</a>
+                        </li>
+                    </ul>
+                </div>
+            </li>
+        @endif
+
         <li class="nav-item nav-category">help</li>
         <li class="nav-item">
             <a class="nav-link" href="http://bootstrapdash.com/demo/star-admin2-free/docs/documentation.html">

@@ -80,12 +80,22 @@ class User extends Authenticatable
 
     public function isAdmin(): bool
     {
-        return $this->hasRole(['super_admin', 'admin']);
+        return $this->hasRole(['admin']);
     }
 
     public function isSuperAdmin(): bool
     {
         return $this->hasRole('super_admin');
+    }
+
+    public function isMarketing()
+    {
+        return $this->role === 'marketing';
+    }
+
+    public function isConsultor()
+    {
+        return $this->role === 'consultor';
     }
 
     public function isOnline(): bool
@@ -122,5 +132,15 @@ class User extends Authenticatable
         return $query->whereHas('activeSessions', function ($q) {
             $q->where('last_activity', '>=', now()->subMinutes(5));
         });
+    }
+
+    public function getRoleName()
+    {
+        if ($this->isSuperAdmin()) return 'Super Admin';
+        if ($this->isAdmin()) return 'Admin';
+        if ($this->isMarketing()) return 'Marketing';
+        if ($this->isConsultor()) return 'Consultor';
+
+        return 'Usuario';
     }
 }

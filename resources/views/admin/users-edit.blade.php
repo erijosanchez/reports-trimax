@@ -266,7 +266,7 @@
                                 </div>
 
                                 <div class="col-lg-12 grid-margin stretch-card">
-                                    @if (auth()->user()->isSuperAdmin() && $user->id !== auth()->id())
+                                    @if (auth()->user()->isSuperAdmin() && $user->id !== auth()->id() && !in_array($user->roles->first()->name, ['superadmin']))
                                         <div class="card border-danger">
                                             <div class="card-body">
                                                 <h5 class="text-danger mb-3">

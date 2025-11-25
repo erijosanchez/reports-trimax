@@ -88,13 +88,7 @@
                                                 <div>
                                                     <p class="mb-1 text-white">Mi Rol</p>
                                                     <h6 class="mb-0 text-white">
-                                                        @if (auth()->user()->isSuperAdmin())
-                                                            Super Admin
-                                                        @elseif(auth()->user()->isAdmin())
-                                                            Admin
-                                                        @else
-                                                            Usuario
-                                                        @endif
+                                                        {{ auth()->user()->getRoleName() }}
                                                     </h6>
                                                 </div>
                                             </div>

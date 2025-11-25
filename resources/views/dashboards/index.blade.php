@@ -18,7 +18,7 @@
                                             <h3 class="rate-percentage mb-0">Dashboards</h3>
                                             <p class="text-muted mt-1">Gestiona y visualiza tus reportes de Power BI</p>
                                         </div>
-                                        @if (auth()->user()->isAdmin())
+                                        @if (auth()->user()->isSuperAdmin() || auth()->user()->isAdmin())
                                             <a href="{{ route('dashboards.create') }}" class="btn btn-success text-white">
                                                 <i class="mdi mdi-plus-circle me-1"></i>Crear Dashboard
                                             </a>
@@ -37,7 +37,7 @@
                                                 <h4 class="mb-3">No hay dashboards disponibles</h4>
                                                 <p class="text-muted mb-4">Aún no se han creado dashboards en el sistema.
                                                 </p>
-                                                @if (auth()->user()->isAdmin())
+                                                @if (auth()->user()->isSuperAdmin() || auth()->user()->isAdmin())
                                                     <a href="{{ route('dashboards.create') }}" class="btn btn-primary">
                                                         <i class="mdi mdi-plus-circle me-1 text-white"></i>Crear el primer dashboard
                                                     </a>
@@ -75,7 +75,7 @@
                                                             <i class="mdi mdi-chart-areaspline me-1"></i> Ver Dashboard
                                                         </a>
 
-                                                        @if (auth()->user()->isAdmin())
+                                                        @if (auth()->user()->isSuperAdmin() || auth()->user()->isAdmin())
                                                             <a href="{{ route('dashboards.edit', $dashboard->id) }}"
                                                                 class="btn btn-warning btn-sm p-3">
                                                                 <i class="mdi mdi-pencil" style="font-size: 1.2rem"></i>
@@ -84,7 +84,7 @@
                                                     </div>
 
                                                     <!-- Info adicional para admin -->
-                                                    @if (auth()->user()->isAdmin())
+                                                    @if (auth()->user()->isSuperAdmin() || auth()->user()->isAdmin())
                                                         <div class="border-top pt-3">
                                                             <div class="d-flex align-items-center">
                                                                 <i class="mdi mdi-account-multiple text-primary me-2"></i>
