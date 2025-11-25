@@ -90,12 +90,12 @@ class User extends Authenticatable
 
     public function isMarketing()
     {
-        return $this->role === 'marketing';
+        return $this->hasRole('marketing');
     }
 
     public function isConsultor()
     {
-        return $this->role === 'consultor';
+        return $this->hasRole('consultor');
     }
 
     public function isOnline(): bool

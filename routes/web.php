@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\LocationController;
 use App\Http\Controllers\LocationApiController;
+use App\Http\Controllers\ComercialController;
 
 // ============================================================
 // RUTAS PARA LARAVEL 11
@@ -78,6 +79,16 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
         Route::get('/{id}/view', [FileController::class, 'view'])->name('view');
         Route::get('/{id}/download', [FileController::class, 'download'])->name('download');
         Route::delete('/{id}', [FileController::class, 'destroy'])->name('destroy');
+    });
+
+    // Comercial Routes (Consultor + Super Admin only)
+    Route::prefix('comercial')->name('comercial.')->group(function () {
+        Route::get('/acuerdos', [ComercialController::class, 'acuerdos'])->name('acuerdos');
+        Route::get('/consulta-orden', [ComercialController::class, 'consultaOrden'])->name('consulta-orden');
+        Route::get('/obtener-ordenes', [ComercialController::class, 'obtenerOrdenes'])->name('ordenes-obtener');
+        Route::get('/obtener-sedes', [ComercialController::class, 'obtenerSedes'])->name('ordenes-sedes');
+        Route::post('/limpiar-cache', [ComercialController::class, 'limpiarCache'])->name('ordenes.cache');
+        Route::get('/exportar-csv', [ComercialController::class, 'exportarCsv'])->name('ordenes.exportar');
     });
 
     // Admin Routes (Admin + Super Admin only)

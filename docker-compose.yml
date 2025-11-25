@@ -14,6 +14,11 @@ services:
       - ./:/var/www
     networks:
       - trimax-network
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       - mysql
       - redis

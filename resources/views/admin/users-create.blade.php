@@ -30,7 +30,7 @@
 
                             <!-- Formulario -->
                             <div class="row">
-                                <div class="col-lg-8 col-xl-6 mx-auto grid-margin stretch-card">
+                                <div class="col-lg-8 mx-auto grid-margin stretch-card">
                                     <div class="card">
                                         <div class="card-body">
                                             <h4 class="card-title mb-4">
@@ -180,7 +180,7 @@
 
                             <!-- Información adicional -->
                             <div class="row">
-                                <div class="col-lg-8 col-xl-6 mx-auto">
+                                <div class="col-lg-8 mx-auto">
                                     <div class="card">
                                         <div class="card-body">
                                             <h5 class="mb-3">
