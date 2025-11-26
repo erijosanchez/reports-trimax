@@ -7,13 +7,13 @@ use App\Models\Dashboard;
 
 class HomeController extends Controller
 {
-    
+
     public function index()
     {
         $user = auth()->user();
-        
+
         $dashboards = Dashboard::active()
-            ->when(!$user->isAdmin(), function ($query) use ($user) {
+            ->when(!$user->isAdmin() && !$user->isSuperAdmin(), function ($query) use ($user) {
                 $query->whereHas('users', function ($q) use ($user) {
                     $q->where('user_id', $user->id);
                 });
