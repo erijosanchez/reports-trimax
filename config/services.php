@@ -35,4 +35,20 @@ return [
         ],
     ],
 
+    'google' => [
+        'sheets' => [
+            'spreadsheet_id' => env('GOOGLE_SHEETS_SPREADSHEET_ID', '12SKxU3bvZ4psujz0DVfx-el1jKgbBX7S8pw_ngX7Ezg'),
+            'sheet_name' => env('GOOGLE_SHEETS_SHEET_NAME', 'ORD'),
+        ],
+        'service_account' => [
+            'json_location' => env('GOOGLE_SERVICE_ACCOUNT_JSON_LOCATION', 'app/google/service-account.json'),
+        ],
+        'scopes' => [
+            'https://www.googleapis.com/auth/spreadsheets',
+            'https://www.googleapis.com/auth/drive'
+        ],
+    ],
+
+
+
 ];

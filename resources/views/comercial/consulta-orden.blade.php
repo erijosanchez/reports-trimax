@@ -12,17 +12,17 @@
                             <h3 class="mb-3">Consulta de Órdenes</h3>
                         </div>
                     </div>
-                    <div class="tab-content tab-content-basic mt-4">
+                    <div class="mt-4 tab-content-basic tab-content">
                         <div class="tab-pane fade show active" id="overview" role="tabpanel" aria-labelledby="overview">
 
                             {{-- Cards de Estadísticas --}}
-                            <div class="row mb-4">
+                            <div class="mb-4 row">
                                 <div class="col-md-4">
                                     <div class="card">
                                         <div class="card-body">
-                                            <div class="d-flex justify-content-between align-items-center">
+                                            <div class="d-flex align-items-center justify-content-between">
                                                 <div>
-                                                    <p class="text-muted mb-1">Total de órdenes</p>
+                                                    <p class="mb-1 text-muted">Total de órdenes</p>
                                                     <h2 class="mb-0 font-weight-bold" id="totalOrdenes">
                                                         <span class="spinner-border spinner-border-sm"></span>
                                                     </h2>
@@ -30,8 +30,8 @@
                                                         <i class="mdi mdi-arrow-up"></i> Actualizado
                                                     </small>
                                                 </div>
-                                                <div class="icon-lg bg-primary-gradient text-white rounded-circle">
-                                                    <i class="mdi mdi-cart-outline mdi-24px"></i>
+                                                <div class="bg-primary-gradient rounded-circle text-white icon-lg">
+                                                    <i class="mdi-cart-outline mdi mdi-24px"></i>
                                                 </div>
                                             </div>
                                             <div class="mt-3">
@@ -43,9 +43,9 @@
                                 <div class="col-md-4">
                                     <div class="card">
                                         <div class="card-body">
-                                            <div class="d-flex justify-content-between align-items-center">
+                                            <div class="d-flex align-items-center justify-content-between">
                                                 <div>
-                                                    <p class="text-muted mb-1">Órdenes disponibles para facturar</p>
+                                                    <p class="mb-1 text-muted">Órdenes disponibles para facturar</p>
                                                     <h2 class="mb-0 font-weight-bold" id="ordenesFacturar">
                                                         <span class="spinner-border spinner-border-sm"></span>
                                                     </h2>
@@ -53,7 +53,7 @@
                                                         <i class="mdi mdi-arrow-up"></i> En proceso
                                                     </small>
                                                 </div>
-                                                <div class="icon-lg bg-success-gradient text-white rounded-circle">
+                                                <div class="bg-success-gradient rounded-circle text-white icon-lg">
                                                     <i class="mdi mdi-file-document-box mdi-24px"></i>
                                                 </div>
                                             </div>
@@ -63,15 +63,15 @@
                                 <div class="col-md-4">
                                     <div class="card">
                                         <div class="card-body">
-                                            <div class="d-flex justify-content-between align-items-center">
+                                            <div class="d-flex align-items-center justify-content-between">
                                                 <div>
-                                                    <p class="text-muted mb-1">En Tránsito / En Sede</p>
+                                                    <p class="mb-1 text-muted">En Tránsito / En Sede</p>
                                                     <h2 class="mb-0 font-weight-bold" id="ordenesTransito">
                                                         <span class="spinner-border spinner-border-sm"></span>
                                                     </h2>
                                                     <small class="text-muted">Órdenes en proceso</small>
                                                 </div>
-                                                <div class="icon-lg bg-warning-gradient text-white rounded-circle">
+                                                <div class="bg-warning-gradient rounded-circle text-white icon-lg">
                                                     <i class="mdi mdi-truck-delivery mdi-24px"></i>
                                                 </div>
                                             </div>
@@ -82,11 +82,11 @@
 
                             {{-- Filtros y Tabla --}}
                             <div class="row">
-                                <div class="col-lg-12 grid-margin stretch-card">
+                                <div class="grid-margin col-lg-12 stretch-card">
                                     <div class="card">
                                         <div class="card-body">
                                             {{-- Sección de Filtros --}}
-                                            <div class="row mb-3">
+                                            <div class="mb-3 row">
                                                 <div class="col-md-3">
                                                     <label class="form-label">Filtrar por Sede</label>
                                                     <select class="form-select" id="filtroSede">
@@ -123,12 +123,12 @@
                                                 </div>
                                             </div>
 
-                                            <div class="row mb-3">
-                                                <div class="col-md-12 d-flex justify-content-between align-items-center">
+                                            <div class="mb-3 row">
+                                                <div class="d-flex align-items-center justify-content-between col-md-12">
                                                     <div>
-                                                        <button class="btn btn-sm btn-outline-primary"
+                                                        <button class="btn-outline-primary btn btn-sm"
                                                             id="btnLimpiarFiltros">
-                                                            <i class="mdi mdi-filter-remove"></i> Limpiar Filtros
+                                                            <i class="mdi-filter-remove mdi"></i> Limpiar Filtros
                                                         </button>
                                                         <button class="btn btn-sm btn-info" id="btnRecargar">
                                                             <i class="mdi mdi-refresh"></i> Recargar
@@ -147,7 +147,7 @@
                                             </div>
 
                                             {{-- Loading Spinner --}}
-                                            <div id="loadingSpinner" class="text-center py-5">
+                                            <div id="loadingSpinner" class="py-5 text-center">
                                                 <div class="spinner-border text-primary" role="status"
                                                     style="width: 3rem; height: 3rem;">
                                                     <span class="visually-hidden">Cargando...</span>
@@ -163,8 +163,8 @@
 
                                             {{-- Tabla de Órdenes --}}
                                             <div class="table-responsive" id="tablaContainer" style="display: none;">
-                                                <table class="table table-hover" id="tablaOrdenes">
-                                                    <thead>
+                                                <table class="table table-hover table-sm" id="tablaOrdenes">
+                                                    <thead class="table-light">
                                                         <tr>
                                                             <th width="30">
                                                                 <div class="form-check">
@@ -172,14 +172,22 @@
                                                                         id="selectAll">
                                                                 </div>
                                                             </th>
-                                                            <th>Pedido</th>
-                                                            <th>Fecha</th>
-                                                            <th>Cliente</th>
                                                             <th>Sede</th>
+                                                            <th># Orden</th>
+                                                            <th>RUC</th>
+                                                            <th>Cliente</th>
+                                                            <th>Diseño</th>
                                                             <th>Producto</th>
-                                                            <th>Estado del Pago</th>
+                                                            <th>O. Compra</th>
+                                                            <th>Fecha</th>
+                                                            <th>Hora</th>
+                                                            <th>Tipo</th>
+                                                            <th>Usuario</th>
                                                             <th>Estado</th>
-                                                            <th class="bg-primary text-white">Lead Time</th>
+                                                            <th class="bg-primary text-white">Ubicación</th>
+                                                            <th>Tallado</th>
+                                                            <th>Tratamiento</th>
+                                                            <th>Lead Time</th>
                                                             <th>Acciones</th>
                                                         </tr>
                                                     </thead>
@@ -190,14 +198,14 @@
                                             </div>
 
                                             {{-- Paginación --}}
-                                            <div class="row mt-3" id="paginacionContainer" style="display: none;">
+                                            <div class="mt-3 row" id="paginacionContainer" style="display: none;">
                                                 <div class="col-md-6">
                                                     <p class="text-muted">Mostrando <span id="totalMostrado">0</span> de
                                                         <span id="totalRegistros">0</span> órdenes</p>
                                                 </div>
                                                 <div class="col-md-6">
                                                     <nav>
-                                                        <ul class="pagination justify-content-end" id="paginacion">
+                                                        <ul class="justify-content-end pagination" id="paginacion">
                                                             {{-- Se genera dinámicamente --}}
                                                         </ul>
                                                     </nav>
@@ -205,7 +213,7 @@
                                             </div>
 
                                             {{-- Leyenda de Estados --}}
-                                            <div class="alert alert-info mt-3" role="alert" style="display: none;"
+                                            <div class="mt-3 alert alert-info" role="alert" style="display: none;"
                                                 id="leyendaEstados">
                                                 <h6 class="alert-heading"><i class="mdi mdi-information"></i> Leyenda de
                                                     Estados:</h6>
@@ -281,15 +289,26 @@
             font-size: 16px;
         }
 
-        /* Columna Lead Time en azul */
+        /* Columna Ubicación en AZUL - DESTACADA */
         thead th.bg-primary {
             background-color: #4B49AC !important;
+            color: white !important;
+            font-weight: bold;
         }
 
-        tbody td:nth-child(9) {
-            background-color: rgba(75, 73, 172, 0.1);
+        /* Toda la columna de ubicación con fondo azul claro */
+        tbody td.col-ubicacion {
+            background-color: rgba(75, 73, 172, 0.15) !important;
             font-weight: 600;
             color: #4B49AC;
+            border-left: 3px solid #4B49AC;
+            border-right: 3px solid #4B49AC;
+        }
+
+        /* Tabla más compacta */
+        .table-sm td, .table-sm th {
+            padding: 0.5rem;
+            font-size: 0.875rem;
         }
     </style>
 
@@ -353,6 +372,7 @@
 
             // Exportar
             $('#btnExportar').on('click', function() {
+                exportarCSV();
             });
         });
 
@@ -361,7 +381,7 @@
          */
         function cargarSedes() {
             $.ajax({
-                
+                url: '/api/ordenes/sedes',
                 method: 'GET',
                 success: function(response) {
                     if (response.success && response.data) {
@@ -371,6 +391,9 @@
                         });
                         $('#filtroSede').html(options);
                     }
+                },
+                error: function(xhr) {
+                    console.error('Error al cargar sedes:', xhr.responseText);
                 }
             });
         }
@@ -397,6 +420,7 @@
             }
 
             $.ajax({
+                url: '/api/ordenes',
                 method: 'GET',
                 data: params,
                 timeout: 30000,
@@ -430,17 +454,20 @@
                     }
                 },
                 error: function(xhr) {
-                    let mensaje = 'Error de conexión';
+                    let mensaje = 'Error de conexión con el servidor';
 
                     if (xhr.status === 500) {
                         mensaje = 'Error del servidor. Verifica la configuración de Google Sheets.';
                     } else if (xhr.status === 404) {
-                        mensaje = 'No se encontró el endpoint. Verifica las rutas.';
+                        mensaje = 'No se encontró el endpoint. Verifica las rutas de la API.';
                     } else if (xhr.responseJSON && xhr.responseJSON.message) {
                         mensaje = xhr.responseJSON.message;
+                    } else if (xhr.statusText) {
+                        mensaje = `Error: ${xhr.statusText}`;
                     }
 
                     mostrarError(mensaje);
+                    console.error('Error detallado:', xhr);
                 }
             });
         }
@@ -476,15 +503,16 @@
             if (ordenesPagina.length === 0) {
                 html = `
                 <tr>
-                    <td colspan="10" class="text-center py-5">
-                        <i class="mdi mdi-database-search mdi-48px text-muted"></i>
+                    <td colspan="18" class="py-5 text-center">
+                        <i class="text-muted mdi mdi-database-search mdi-48px"></i>
                         <p class="mt-3 text-muted">No se encontraron órdenes con los filtros aplicados</p>
                     </td>
                 </tr>
             `;
             } else {
                 ordenesPagina.forEach(orden => {
-                    const badgeEstado = obtenerBadgeEstado(orden.ubicacion_orden || '');
+                    const badgeEstado = obtenerBadgeEstado(orden.estado_orden || '');
+                    const badgeUbicacion = obtenerBadgeEstado(orden.ubicacion_orden || '');
                     const badgeSede = obtenerBadgeSede(orden.descripcion_sede || '');
 
                     html += `
@@ -494,13 +522,21 @@
                                 <input class="form-check-input row-checkbox" type="checkbox" value="${orden.numero_orden || ''}">
                             </div>
                         </td>
-                        <td><a href="#" class="text-primary font-weight-bold">#${orden.numero_orden || 'N/A'}</a></td>
-                        <td><small class="text-muted">${orden.fecha_orden || '-'}</small></td>
-                        <td title="${orden.Cliente || '-'}">${truncarTexto(orden.Cliente || '-', 30)}</td>
                         <td>${badgeSede}</td>
-                        <td title="${orden.descripcion_producto || '-'}">${truncarTexto(orden.descripcion_producto || '-', 40)}</td>
-                        <td><span class="badge badge-success"><i class="mdi mdi-check-circle"></i> Pagado</span></td>
+                        <td><a href="#" class="font-weight-bold text-primary">#${orden.numero_orden || 'N/A'}</a></td>
+                        <td><small>${orden.RUC || '-'}</small></td>
+                        <td title="${orden.Cliente || '-'}">${truncarTexto(orden.Cliente || '-', 25)}</td>
+                        <td><small>${orden['Diseño'] || '-'}</small></td>
+                        <td title="${orden.descripcion_producto || '-'}">${truncarTexto(orden.descripcion_producto || '-', 30)}</td>
+                        <td><small>${orden.orden_compra || '-'}</small></td>
+                        <td><small>${orden.fecha_orden || '-'}</small></td>
+                        <td><small>${orden.hora_orden || '-'}</small></td>
+                        <td><span class="badge badge-${orden.tipo_orden === 'FABRICACION' ? 'primary' : 'secondary'}">${orden.tipo_orden || '-'}</span></td>
+                        <td><small>${truncarTexto(orden.nombre_usuario || '-', 20)}</small></td>
                         <td>${badgeEstado}</td>
+                        <td class="col-ubicacion"><strong>${orden.ubicacion_orden || '-'}</strong></td>
+                        <td><small>${orden.descripcion_tallado || '-'}</small></td>
+                        <td><small>${orden.Tratamiento || '-'}</small></td>
                         <td class="font-weight-bold text-primary">${orden.Lead_Time || '-'}</td>
                         <td>
                             <button class="btn btn-sm btn-primary btn-icon-text" title="Ver detalles" onclick="verDetalle('${orden.numero_orden}')">
@@ -526,33 +562,33 @@
          * Truncar texto largo
          */
         function truncarTexto(texto, maxLength) {
-            if (texto.length <= maxLength) return texto;
+            if (!texto || texto.length <= maxLength) return texto;
             return texto.substring(0, maxLength) + '...';
         }
 
         /**
          * Obtener badge según estado
          */
-        function obtenerBadgeEstado(ubicacion) {
-            if (!ubicacion) return '<span class="badge badge-dark">Sin estado</span>';
+        function obtenerBadgeEstado(estado) {
+            if (!estado) return '<span class="badge badge-dark">Sin estado</span>';
 
-            const ubicacionUpper = ubicacion.toUpperCase();
+            const estadoUpper = estado.toUpperCase();
 
-            if (ubicacionUpper.includes('FACTURADO') || ubicacionUpper.includes('ENTREGADO')) {
+            if (estadoUpper.includes('FACTURADO') || estadoUpper.includes('ENTREGADO')) {
                 return `<span class="badge badge-success" style="background-color: #28a745;">
-                <i class="mdi mdi-check-circle"></i> ${ubicacion}
+                <i class="mdi mdi-check-circle"></i> ${estado}
             </span>`;
-            } else if (ubicacionUpper.includes('TRANSITO')) {
+            } else if (estadoUpper.includes('TRANSITO')) {
                 return `<span class="badge badge-warning" style="background-color: #ffc107; color: #000;">
-                <i class="mdi mdi-truck-delivery"></i> ${ubicacion}
+                <i class="mdi mdi-truck-delivery"></i> ${estado}
             </span>`;
-            } else if (ubicacionUpper.includes('SEDE')) {
+            } else if (estadoUpper.includes('SEDE')) {
                 return `<span class="badge badge-warning" style="background-color: #ffc107; color: #000;">
-                <i class="mdi mdi-home-map-marker"></i> ${ubicacion}
+                <i class="mdi mdi-home-map-marker"></i> ${estado}
             </span>`;
             } else {
                 return `<span class="badge badge-dark">
-                <i class="mdi mdi-clock-outline"></i> ${ubicacion}
+                <i class="mdi-clock-outline mdi"></i> ${estado}
             </span>`;
             }
         }
@@ -561,6 +597,8 @@
          * Obtener badge según sede
          */
         function obtenerBadgeSede(sede) {
+            if (!sede) return '<span class="badge badge-secondary">Sin sede</span>';
+            
             const badges = {
                 'LOS OLIVOS': 'info',
                 'AREQUIPA': 'primary',
@@ -658,6 +696,47 @@
                 // Aquí puedes abrir un modal con los detalles
                 alert('Detalle de orden #' + numeroOrden + '\n\nEsta función se puede expandir con un modal');
             }
+        }
+
+        /**
+         * Exportar a CSV
+         */
+        function exportarCSV() {
+            if (ordenesFiltered.length === 0) {
+                alert('No hay datos para exportar');
+                return;
+            }
+
+            let csv = 'Sede,# Orden,RUC,Cliente,Diseño,Producto,O. Compra,Fecha,Hora,Tipo,Usuario,Estado,Ubicación,Tallado,Tratamiento,Lead Time\n';
+
+            ordenesFiltered.forEach(orden => {
+                csv += [
+                    orden.descripcion_sede || '',
+                    orden.numero_orden || '',
+                    orden.RUC || '',
+                    `"${(orden.Cliente || '').replace(/"/g, '""')}"`,
+                    orden['Diseño'] || '',
+                    `"${(orden.descripcion_producto || '').replace(/"/g, '""')}"`,
+                    orden.orden_compra || '',
+                    orden.fecha_orden || '',
+                    orden.hora_orden || '',
+                    orden.tipo_orden || '',
+                    orden.nombre_usuario || '',
+                    orden.estado_orden || '',
+                    orden.ubicacion_orden || '',
+                    orden.descripcion_tallado || '',
+                    orden.Tratamiento || '',
+                    orden.Lead_Time || ''
+                ].join(',') + '\n';
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `ordenes_trimax_${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            window.URL.revokeObjectURL(url);
         }
 
         /**

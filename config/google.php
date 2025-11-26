@@ -6,7 +6,7 @@ return [
     | Google application name
     |----------------------------------------------------------------------------
     */
-    'application_name' => env('GOOGLE_APPLICATION_NAME', ''),
+    'application_name' => env('GOOGLE_APPLICATION_NAME', 'Trimax Reportes'),
 
     /*
     |----------------------------------------------------------------------------
@@ -48,7 +48,7 @@ return [
         /*
         | Enable service account auth or not.
         */
-        'enable' => env('GOOGLE_SERVICE_ENABLED', false),
+        'enable' => env('GOOGLE_SERVICE_ENABLED', true),
 
         /*
          * Path to service account json file. You can also pass the credentials as an array

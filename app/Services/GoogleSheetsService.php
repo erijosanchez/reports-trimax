@@ -2,278 +2,235 @@
 
 namespace App\Services;
 
+use Revolution\Google\Sheets\Facades\Sheets;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
-use Revolution\Google\Sheets\Facades\Sheets;
 
 class GoogleSheetsService
 {
     protected $spreadsheetId;
+    protected $sheetName;
 
     public function __construct()
     {
-        $this->spreadsheetId = config('google.spreadsheet_id');
+        $this->spreadsheetId = env('GOOGLE_SHEETS_SPREADSHEET_ID', '12SKxU3bvZ4psujz0DVfx-el1jKgbBX7S8pw_ngX7Ezg');
+        $this->sheetName = env('GOOGLE_SHEETS_SHEET_NAME', 'Orden');
     }
 
     /**
-     * Obtener datos del sheet
+     * Obtener todas las órdenes del Google Sheet
      */
-    public function getSheetData($sheetName = 'Orden_x_Usuario')
+    public function getOrdenes($useCache = true)
     {
         try {
+            $cacheKey = 'google_sheets_ordenes';
+            $cacheDuration = 300; // 5 minutos
+
+            if ($useCache && Cache::has($cacheKey)) {
+                Log::info('Obteniendo órdenes desde caché');
+                return Cache::get($cacheKey);
+            }
+
+            Log::info('Conectando a Google Sheets', [
+                'spreadsheet_id' => $this->spreadsheetId,
+                'sheet_name' => $this->sheetName
+            ]);
+
+            // Obtener datos del sheet
             $rows = Sheets::spreadsheet($this->spreadsheetId)
-                ->sheet($sheetName)
+                ->sheet($this->sheetName)
                 ->get();
 
-            return $rows->toArray();
+            if (empty($rows) || $rows->count() === 0) {
+                Log::warning('No se encontraron datos en el Google Sheet');
+                return [
+                    'success' => false,
+                    'message' => 'No se encontraron datos en el Google Sheet',
+                    'data' => []
+                ];
+            }
 
+            Log::info('Datos obtenidos correctamente', ['total_rows' => $rows->count()]);
+
+            // Primera fila son los headers
+            $headers = $rows->first();
+            $dataRows = $rows->slice(1);
+
+            Log::info('Headers encontrados', ['headers' => $headers->toArray()]);
+
+            // Convertir a array asociativo
+            $ordenes = [];
+            foreach ($dataRows as $row) {
+                $orden = [];
+                foreach ($headers as $index => $header) {
+                    $orden[$header] = $row[$index] ?? null;
+                }
+                // Solo agregar si tiene número de orden
+                if (!empty($orden['numero_orden'])) {
+                    $ordenes[] = $orden;
+                }
+            }
+
+            $result = [
+                'success' => true,
+                'data' => $ordenes,
+                'total' => count($ordenes)
+            ];
+
+            // Guardar en caché
+            Cache::put($cacheKey, $result, $cacheDuration);
+
+            Log::info('Órdenes procesadas correctamente', ['total_ordenes' => count($ordenes)]);
+
+            return $result;
+        } catch (\Google\Service\Exception $e) {
+            $errorMessage = 'Error de Google Sheets API: ' . $e->getMessage();
+            Log::error($errorMessage, [
+                'code' => $e->getCode(),
+                'errors' => $e->getErrors()
+            ]);
+
+            return [
+                'success' => false,
+                'message' => $errorMessage,
+                'data' => []
+            ];
         } catch (\Exception $e) {
-            Log::error('Error al obtener datos de Google Sheets: ' . $e->getMessage());
-            return [];
+            $errorMessage = 'Error al obtener datos de Google Sheets: ' . $e->getMessage();
+            Log::error($errorMessage, [
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return [
+                'success' => false,
+                'message' => $errorMessage,
+                'data' => []
+            ];
         }
     }
 
     /**
-     * Obtener datos con caché
+     * Obtener sedes únicas
      */
-    public function getSheetDataCached($sheetName = 'Orden_x_Usuario', $minutes = 5)
+    public function getSedes()
     {
-        $cacheKey = "google_sheets_{$sheetName}";
-        
-        return Cache::remember($cacheKey, $minutes * 60, function () use ($sheetName) {
-            return $this->getSheetData($sheetName);
-        });
+        try {
+            $result = $this->getOrdenes();
+
+            if (!$result['success']) {
+                return ['success' => false, 'data' => []];
+            }
+
+            $sedes = collect($result['data'])
+                ->pluck('descripcion_sede')
+                ->filter()
+                ->unique()
+                ->sort()
+                ->values()
+                ->toArray();
+
+            Log::info('Sedes obtenidas', ['total_sedes' => count($sedes)]);
+
+            return [
+                'success' => true,
+                'data' => $sedes
+            ];
+        } catch (\Exception $e) {
+            Log::error('Error al obtener sedes: ' . $e->getMessage());
+            return ['success' => false, 'data' => []];
+        }
+    }
+
+    /**
+     * Calcular estadísticas
+     */
+    public function getEstadisticas()
+    {
+        try {
+            $result = $this->getOrdenes();
+
+            if (!$result['success']) {
+                return [
+                    'total' => 0,
+                    'disponibles_facturar' => 0,
+                    'en_transito' => 0,
+                    'en_sede' => 0
+                ];
+            }
+
+            $ordenes = collect($result['data']);
+
+            $stats = [
+                'total' => $ordenes->count(),
+                'disponibles_facturar' => $ordenes->filter(function ($orden) {
+                    $ubicacion = strtoupper($orden['ubicacion_orden'] ?? '');
+                    return !str_contains($ubicacion, 'FACTURADO') &&
+                        !str_contains($ubicacion, 'ENTREGADO');
+                })->count(),
+                'en_transito' => $ordenes->filter(function ($orden) {
+                    $ubicacion = strtoupper($orden['ubicacion_orden'] ?? '');
+                    return str_contains($ubicacion, 'TRANSITO');
+                })->count(),
+                'en_sede' => $ordenes->filter(function ($orden) {
+                    $ubicacion = strtoupper($orden['ubicacion_orden'] ?? '');
+                    return str_contains($ubicacion, 'SEDE') &&
+                        !str_contains($ubicacion, 'TRANSITO');
+                })->count()
+            ];
+
+            Log::info('Estadísticas calculadas', $stats);
+
+            return $stats;
+        } catch (\Exception $e) {
+            Log::error('Error al calcular estadísticas: ' . $e->getMessage());
+            return [
+                'total' => 0,
+                'disponibles_facturar' => 0,
+                'en_transito' => 0,
+                'en_sede' => 0
+            ];
+        }
     }
 
     /**
      * Limpiar caché
      */
-    public function clearCache($sheetName = 'Orden_x_Usuario')
+    public function clearCache()
     {
-        Cache::forget("google_sheets_{$sheetName}");
+        Cache::forget('google_sheets_ordenes');
+        Log::info('Caché de Google Sheets limpiado');
     }
 
     /**
-     * Convertir datos a array asociativo con headers
+     * Verificar conexión
      */
-    public function parseSheetData($data)
-    {
-        if (empty($data) || count($data) < 2) {
-            return [];
-        }
-
-        $headers = array_shift($data);
-        
-        $result = [];
-        foreach ($data as $row) {
-            $rowData = [];
-            foreach ($headers as $index => $header) {
-                $rowData[$header] = $row[$index] ?? '';
-            }
-            
-            if (!empty(array_filter($rowData))) {
-                $result[] = $rowData;
-            }
-        }
-
-        return $result;
-    }
-
-    /**
-     * Obtener datos ya parseados
-     */
-    public function getSheetDataParsed($sheetName = 'Orden_x_Usuario')
-    {
-        try {
-            $collection = Sheets::spreadsheet($this->spreadsheetId)
-                ->sheet($sheetName)
-                ->get();
-
-            $headers = $collection->pull(0);
-            
-            return $collection->map(function ($row) use ($headers) {
-                return $headers->combine($row);
-            })->toArray();
-
-        } catch (\Exception $e) {
-            Log::error('Error al obtener datos parseados: ' . $e->getMessage());
-            return [];
-        }
-    }
-
-    /**
-     * Obtener datos parseados con caché
-     */
-    public function getSheetDataParsedCached($sheetName = 'Orden_x_Usuario', $minutes = 5)
-    {
-        $cacheKey = "google_sheets_parsed_{$sheetName}";
-        
-        return Cache::remember($cacheKey, $minutes * 60, function () use ($sheetName) {
-            return $this->getSheetDataParsed($sheetName);
-        });
-    }
-
-    /**
-     * Buscar en los datos
-     */
-    public function searchInData($data, $searchTerm)
-    {
-        if (empty($searchTerm)) {
-            return $data;
-        }
-
-        $searchTerm = mb_strtolower($searchTerm);
-
-        return array_filter($data, function ($row) use ($searchTerm) {
-            foreach ($row as $value) {
-                if (stripos(mb_strtolower($value), $searchTerm) !== false) {
-                    return true;
-                }
-            }
-            return false;
-        });
-    }
-
-    /**
-     * Filtrar por columna
-     */
-    public function filterByColumn($data, $columnName, $value)
-    {
-        if (empty($value) || !is_array($data)) {
-            return $data;
-        }
-
-        return array_filter($data, function ($row) use ($columnName, $value) {
-            return isset($row[$columnName]) && 
-                   strcasecmp(trim($row[$columnName]), trim($value)) === 0;
-        });
-    }
-
-    /**
-     * Filtrar por múltiples condiciones
-     */
-    public function filterByMultiple($data, $filters)
-    {
-        if (empty($filters) || !is_array($data)) {
-            return $data;
-        }
-
-        return array_filter($data, function ($row) use ($filters) {
-            foreach ($filters as $column => $value) {
-                if (!empty($value) && isset($row[$column])) {
-                    if (strcasecmp(trim($row[$column]), trim($value)) !== 0) {
-                        return false;
-                    }
-                }
-            }
-            return true;
-        });
-    }
-
-    /**
-     * Obtener valores únicos
-     */
-    public function getUniqueValues($data, $columnName)
-    {
-        $values = array_column($data, $columnName);
-        $values = array_unique($values);
-        $values = array_filter($values);
-        sort($values);
-        return array_values($values);
-    }
-
-    /**
-     * Ordenar por columna
-     */
-    public function sortByColumn($data, $columnName, $ascending = true)
-    {
-        usort($data, function ($a, $b) use ($columnName, $ascending) {
-            $valueA = $a[$columnName] ?? '';
-            $valueB = $b[$columnName] ?? '';
-            
-            $comparison = strcasecmp($valueA, $valueB);
-            
-            return $ascending ? $comparison : -$comparison;
-        });
-
-        return $data;
-    }
-
-    /**
-     * Obtener estadísticas
-     */
-    public function getStats($data)
-    {
-        $total = count($data);
-        
-        $enTransito = 0;
-        $enSede = 0;
-        $facturados = 0;
-        $entregados = 0;
-        
-        foreach ($data as $row) {
-            $ubicacion = mb_strtoupper($row['ubicacion_orden'] ?? '');
-            
-            if (strpos($ubicacion, 'TRANSITO') !== false) {
-                $enTransito++;
-            }
-            
-            if (strpos($ubicacion, 'SEDE') !== false) {
-                $enSede++;
-            }
-            
-            if (strpos($ubicacion, 'FACTURADO') !== false) {
-                $facturados++;
-            }
-            
-            if (strpos($ubicacion, 'ENTREGADO') !== false) {
-                $entregados++;
-            }
-        }
-
-        return [
-            'total' => $total,
-            'en_transito' => $enTransito,
-            'en_sede' => $enSede,
-            'facturados' => $facturados,
-            'entregados' => $entregados,
-            'disponibles_facturar' => $enSede + $enTransito
-        ];
-    }
-
-    /**
-     * Obtener rango específico
-     */
-    public function getRange($sheetName, $range)
+    public function testConnection()
     {
         try {
             $rows = Sheets::spreadsheet($this->spreadsheetId)
-                ->sheet($sheetName)
-                ->range($range)
+                ->sheet($this->sheetName)
+                ->range('A1:C2')
                 ->get();
 
-            return $rows->toArray();
+            if ($rows->count() > 0) {
+                return [
+                    'success' => true,
+                    'message' => 'Conexión exitosa a Google Sheets',
+                    'sample_data' => $rows->toArray()
+                ];
+            }
 
+            return [
+                'success' => false,
+                'message' => 'No se pudo obtener datos del sheet'
+            ];
         } catch (\Exception $e) {
-            Log::error('Error al obtener rango: ' . $e->getMessage());
-            return [];
-        }
-    }
-
-    /**
-     * Obtener todas las hojas del spreadsheet
-     */
-    public function getSheetsList()
-    {
-        try {
-            $sheets = Sheets::spreadsheet($this->spreadsheetId)
-                ->sheetList();
-
-            return $sheets;
-
-        } catch (\Exception $e) {
-            Log::error('Error al listar hojas: ' . $e->getMessage());
-            return [];
+            return [
+                'success' => false,
+                'message' => 'Error de conexión: ' . $e->getMessage()
+            ];
         }
     }
 }

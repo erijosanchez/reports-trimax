@@ -15,7 +15,7 @@
         "laravel/tinker": "^2.10.1",
         "pragmarx/google2fa-laravel": "^2.3",
         "predis/predis": "^3.2",
-        "revolution/laravel-google-sheets": "^7.1",
+        "revolution/laravel-google-sheets": "*",
         "spatie/laravel-permission": "^6.23"
     },
     "require-dev": {

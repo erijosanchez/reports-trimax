@@ -8,13 +8,13 @@ use App\Services\GoogleSheetsService;
 class ComercialController extends Controller
 {
 
-    protected $googleSheets;
+    protected $sheetsService;
 
-    public function __construct(GoogleSheetsService $googleSheets)
+    public function __construct(GoogleSheetsService $sheetsService)
     {
-        $this->googleSheets = $googleSheets;
+        $this->sheetsService = $sheetsService;
     }
-
+    
     public function acuerdos()
     {
         // Lógica para mostrar los acuerdos comerciales
@@ -27,164 +27,157 @@ class ComercialController extends Controller
         return view('comercial.consulta-orden');
     }
 
-    public function obtenerOrdenes(Request $request)
+    public function index(Request $request)
     {
         try {
-            // Obtener datos parseados con caché
-            $useCache = !$request->has('nocache');
+            Log::info('Solicitud de órdenes recibida', [
+                'filtros' => $request->all()
+            ]);
 
-            if ($useCache) {
-                $ordenes = $this->googleSheets->getSheetDataParsedCached('Orden_x_Usuario', 5);
-            } else {
-                $ordenes = $this->googleSheets->getSheetDataParsed('Orden_x_Usuario');
+            // Forzar actualización si se solicita
+            $forceRefresh = $request->has('nocache');
+            if ($forceRefresh) {
+                $this->sheetsService->clearCache();
             }
 
-            if (empty($ordenes)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'No se pudieron obtener datos del Google Sheet'
-                ], 500);
+            // Obtener datos
+            $result = $this->sheetsService->getOrdenes(!$forceRefresh);
+
+            if (!$result['success']) {
+                return response()->json($result, 500);
             }
+
+            $ordenes = collect($result['data']);
 
             // Aplicar filtros
-            $filters = [];
-
             if ($request->filled('sede')) {
-                $filters['descripcion_sede'] = $request->sede;
-            }
-
-            if ($request->filled('tipo_orden')) {
-                $filters['tipo_orden'] = $request->tipo_orden;
-            }
-
-            if (!empty($filters)) {
-                $ordenes = $this->googleSheets->filterByMultiple($ordenes, $filters);
-            }
-
-            // Filtrar por estado
-            if ($request->filled('estado')) {
-                $estado = mb_strtoupper($request->estado);
-                $ordenes = array_filter($ordenes, function ($orden) use ($estado) {
-                    $ubicacion = mb_strtoupper($orden['ubicacion_orden'] ?? '');
-
-                    if ($estado === 'FACTURADO') {
-                        return strpos($ubicacion, 'FACTURADO') !== false ||
-                            strpos($ubicacion, 'ENTREGADO') !== false;
-                    } elseif ($estado === 'EN TRANSITO') {
-                        return strpos($ubicacion, 'TRANSITO') !== false;
-                    } elseif ($estado === 'EN SEDE') {
-                        return strpos($ubicacion, 'SEDE') !== false;
-                    } elseif ($estado === 'OTROS') {
-                        return strpos($ubicacion, 'FACTURADO') === false &&
-                            strpos($ubicacion, 'ENTREGADO') === false &&
-                            strpos($ubicacion, 'TRANSITO') === false &&
-                            strpos($ubicacion, 'SEDE') === false;
-                    }
-
-                    return true;
+                $ordenes = $ordenes->filter(function ($orden) use ($request) {
+                    return stripos($orden['descripcion_sede'] ?? '', $request->sede) !== false;
                 });
             }
 
-            // Búsqueda general
-            if ($request->filled('buscar')) {
-                $ordenes = $this->googleSheets->searchInData($ordenes, $request->buscar);
+            if ($request->filled('estado')) {
+                $estado = strtoupper($request->estado);
+                $ordenes = $ordenes->filter(function ($orden) use ($estado) {
+                    $ubicacion = strtoupper($orden['ubicacion_orden'] ?? '');
+
+                    switch ($estado) {
+                        case 'FACTURADO':
+                            return str_contains($ubicacion, 'FACTURADO') ||
+                                str_contains($ubicacion, 'ENTREGADO');
+                        case 'EN TRANSITO':
+                            return str_contains($ubicacion, 'TRANSITO');
+                        case 'EN SEDE':
+                            return str_contains($ubicacion, 'SEDE') &&
+                                !str_contains($ubicacion, 'TRANSITO');
+                        case 'OTROS':
+                            return !str_contains($ubicacion, 'FACTURADO') &&
+                                !str_contains($ubicacion, 'ENTREGADO') &&
+                                !str_contains($ubicacion, 'TRANSITO') &&
+                                !str_contains($ubicacion, 'SEDE');
+                        default:
+                            return true;
+                    }
+                });
             }
 
-            // Reindexar
-            $ordenes = array_values($ordenes);
+            if ($request->filled('tipo_orden')) {
+                $ordenes = $ordenes->filter(function ($orden) use ($request) {
+                    return stripos($orden['tipo_orden'] ?? '', $request->tipo_orden) !== false;
+                });
+            }
 
-            // Estadísticas
-            $stats = $this->googleSheets->getStats($ordenes);
+            if ($request->filled('buscar')) {
+                $buscar = strtolower($request->buscar);
+                $ordenes = $ordenes->filter(function ($orden) use ($buscar) {
+                    $searchFields = implode(' ', [
+                        $orden['numero_orden'] ?? '',
+                        $orden['Cliente'] ?? '',
+                        $orden['RUC'] ?? '',
+                        $orden['descripcion_producto'] ?? '',
+                        $orden['descripcion_sede'] ?? ''
+                    ]);
+                    return stripos($searchFields, $buscar) !== false;
+                });
+            }
+
+            // Obtener estadísticas
+            $stats = $this->sheetsService->getEstadisticas();
+
+            Log::info('Órdenes filtradas', [
+                'total_original' => $result['total'],
+                'total_filtrado' => $ordenes->count()
+            ]);
 
             return response()->json([
                 'success' => true,
-                'data' => $ordenes,
+                'data' => $ordenes->values()->toArray(),
                 'stats' => $stats,
-                'total' => count($ordenes)
+                'total' => $ordenes->count()
             ]);
         } catch (\Exception $e) {
+            Log::error('Error en OrdenController::index', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
+            ]);
+
             return response()->json([
                 'success' => false,
-                'message' => 'Error al obtener datos: ' . $e->getMessage()
+                'message' => 'Error al procesar la solicitud: ' . $e->getMessage()
             ], 500);
         }
     }
 
-    public function obtenerSedes(Request $request)
+    /**
+     * Obtener sedes disponibles
+     */
+    public function getSedes()
     {
         try {
-            $ordenes = $this->googleSheets->getSheetDataParsedCached('Orden_x_Usuario');
-            $sedes = $this->googleSheets->getUniqueValues($ordenes, 'descripcion_sede');
-
-            return response()->json([
-                'success' => true,
-                'data' => $sedes
-            ]);
+            $result = $this->sheetsService->getSedes();
+            return response()->json($result);
         } catch (\Exception $e) {
+            Log::error('Error al obtener sedes: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Error: ' . $e->getMessage()
+                'message' => 'Error al obtener sedes: ' . $e->getMessage()
             ], 500);
         }
     }
 
-    public function limpiarCache()
+    /**
+     * Limpiar caché manualmente
+     */
+    public function clearCache()
     {
         try {
-            $this->googleSheets->clearCache('Orden_x_Usuario');
-
+            $this->sheetsService->clearCache();
             return response()->json([
                 'success' => true,
                 'message' => 'Caché limpiado correctamente'
             ]);
         } catch (\Exception $e) {
+            Log::error('Error al limpiar caché: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Error: ' . $e->getMessage()
+                'message' => 'Error al limpiar caché: ' . $e->getMessage()
             ], 500);
         }
     }
 
-    public function exportarCsv(Request $request)
+    /**
+     * Probar conexión con Google Sheets
+     */
+    public function testConnection()
     {
         try {
-            $ordenes = $this->googleSheets->getSheetDataParsedCached('Orden_x_Usuario');
-
-            if (empty($ordenes)) {
-                return response()->json(['error' => 'No hay datos para exportar'], 404);
-            }
-
-            $filename = 'ordenes_' . date('Y-m-d_His') . '.csv';
-
-            $headers = [
-                'Content-Type' => 'text/csv; charset=UTF-8',
-                'Content-Disposition' => "attachment; filename=\"{$filename}\"",
-            ];
-
-            $callback = function () use ($ordenes) {
-                $file = fopen('php://output', 'w');
-
-                // BOM para Excel UTF-8
-                fprintf($file, chr(0xEF) . chr(0xBB) . chr(0xBF));
-
-                // Headers
-                if (!empty($ordenes)) {
-                    fputcsv($file, array_keys($ordenes[0]));
-
-                    // Datos
-                    foreach ($ordenes as $orden) {
-                        fputcsv($file, $orden);
-                    }
-                }
-
-                fclose($file);
-            };
-
-            return response()->stream($callback, 200, $headers);
+            $result = $this->sheetsService->testConnection();
+            return response()->json($result);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error al exportar: ' . $e->getMessage()
+                'message' => 'Error al probar conexión: ' . $e->getMessage()
             ], 500);
         }
     }
