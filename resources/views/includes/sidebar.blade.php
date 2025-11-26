@@ -39,8 +39,8 @@
         @if (auth()->user()->isConsultor() || auth()->user()->isSuperAdmin())
             <li class="nav-item nav-category">COMERCIAL</li>
             <li class="nav-item">
-                <a class="nav-link {{ request()->routeIs('comercial.consulta-orde') ? 'active' : '' }}" 
-                   href="{{ route('comercial.consulta-orden') }}">
+                <a class="nav-link {{ request()->routeIs('comercial.orden') ? 'active' : '' }}" 
+                   href="{{ route('comercial.orden') }}">
                     <i class="mdi mdi-file-document-box menu-icon"></i>
                     <span class="menu-title">Consultar Orden</span>
                 </a>

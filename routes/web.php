@@ -84,11 +84,19 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
     // Comercial Routes (Consultor + Super Admin only)
     Route::prefix('comercial')->name('comercial.')->group(function () {
         Route::get('/acuerdos', [ComercialController::class, 'acuerdos'])->name('acuerdos');
-        Route::get('/consulta-orden', [ComercialController::class, 'consultaOrden'])->name('consulta-orden');
-        Route::get('/obtener-ordenes', [ComercialController::class, 'obtenerOrdenes'])->name('ordenes-obtener');
-        Route::get('/obtener-sedes', [ComercialController::class, 'obtenerSedes'])->name('ordenes-sedes');
-        Route::post('/limpiar-cache', [ComercialController::class, 'limpiarCache'])->name('ordenes.cache');
-        Route::get('/exportar-csv', [ComercialController::class, 'exportarCsv'])->name('ordenes.exportar');
+        Route::get('/comercial/consultar-orden', [ComercialController::class, 'consultarOrden'])
+            ->name('orden');
+
+        Route::get('/comercial/obtener-ordenes', [ComercialController::class, 'obtenerOrdenes'])
+            ->name('ordenes.obtener');
+        Route::get('/comercial/obtener-sedes', [ComercialController::class, 'obtenerSedes'])
+            ->name('ordenes.sedes');
+
+        Route::post('/comercial/limpiar-cache', [ComercialController::class, 'limpiarCache'])
+            ->name('ordenes.cache');
+
+        Route::get('/comercial/exportar-excel', [ComercialController::class, 'exportarExcel'])
+            ->name('ordenes.exportar');
     });
 
     // Admin Routes (Admin + Super Admin only)
