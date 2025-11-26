@@ -27,6 +27,16 @@ class ComercialController extends Controller
     public function obtenerOrdenes(Request $request)
     {
         try {
+            // 🔥 OPTIMIZACIÓN PARA 80K FILAS
+            ini_set('memory_limit', '1024M'); // 1GB para estar seguros
+            ini_set('max_execution_time', '300'); // 5 minutos
+            set_time_limit(300);
+            
+            \Log::info('🚀 Iniciando carga de órdenes', [
+                'memory_limit' => ini_get('memory_limit'),
+                'max_execution_time' => ini_get('max_execution_time')
+            ]);
+            
             // NO usar caché de base de datos para datasets grandes
             // Usar caché de archivos o sin caché
             $useCache = !$request->has('nocache');
@@ -34,12 +44,16 @@ class ComercialController extends Controller
             if ($useCache) {
                 // Usar caché de archivos en lugar de database
                 $cacheKey = 'google_sheets_historico';
-                $ordenes = \Cache::store('file')->remember($cacheKey, 300, function () {
+                $ordenes = \Cache::store('file')->remember($cacheKey, 600, function () { // 10 minutos de caché
+                    \Log::info('📥 Obteniendo datos desde Google Sheets (sin caché)');
                     $rawData = $this->googleSheets->getSheetData('Historico');
+                    \Log::info('📊 Filas obtenidas: ' . count($rawData));
                     return $this->googleSheets->parseSheetData($rawData);
                 });
             } else {
+                \Log::info('📥 Obteniendo datos desde Google Sheets (forzado, sin caché)');
                 $rawData = $this->googleSheets->getSheetData('Historico');
+                \Log::info('📊 Filas obtenidas: ' . count($rawData));
                 $ordenes = $this->googleSheets->parseSheetData($rawData);
             }
 
@@ -49,6 +63,8 @@ class ComercialController extends Controller
                     'message' => 'No se pudieron obtener datos del Google Sheet'
                 ], 500);
             }
+
+            \Log::info('✅ Órdenes parseadas: ' . count($ordenes));
 
             // Aplicar filtros
             $filters = [];
@@ -63,6 +79,7 @@ class ComercialController extends Controller
 
             if (!empty($filters)) {
                 $ordenes = $this->googleSheets->filterByMultiple($ordenes, $filters);
+                \Log::info('📊 Después de filtros: ' . count($ordenes));
             }
 
             // Filtrar por estado (ubicación)
@@ -87,11 +104,13 @@ class ComercialController extends Controller
                     
                     return true;
                 });
+                \Log::info('📊 Después de filtro estado: ' . count($ordenes));
             }
 
             // Búsqueda general
             if ($request->filled('buscar')) {
                 $ordenes = $this->googleSheets->searchInData($ordenes, $request->buscar);
+                \Log::info('📊 Después de búsqueda: ' . count($ordenes));
             }
 
             // Reindexar array
@@ -99,6 +118,15 @@ class ComercialController extends Controller
 
             // Estadísticas
             $stats = $this->calcularEstadisticas($ordenes);
+
+            // Liberar memoria
+            gc_collect_cycles();
+
+            \Log::info('✅ Respuesta lista', [
+                'total_ordenes' => count($ordenes),
+                'memory_usado' => round(memory_get_usage() / 1024 / 1024, 2) . ' MB',
+                'memory_pico' => round(memory_get_peak_usage() / 1024 / 1024, 2) . ' MB'
+            ]);
 
             return response()->json([
                 'success' => true,
@@ -108,7 +136,9 @@ class ComercialController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            \Log::error('Error en obtenerOrdenes: ' . $e->getMessage());
+            \Log::error('❌ Error en obtenerOrdenes: ' . $e->getMessage());
+            \Log::error('Stack trace: ' . $e->getTraceAsString());
+            \Log::error('Memory usado: ' . round(memory_get_usage() / 1024 / 1024, 2) . ' MB');
             
             return response()->json([
                 'success' => false,
@@ -152,6 +182,9 @@ class ComercialController extends Controller
         try {
             \Cache::store('file')->forget('google_sheets_historico');
             \Cache::store('file')->forget('google_sheets_sedes');
+            
+            // Forzar garbage collection
+            gc_collect_cycles();
             
             return response()->json([
                 'success' => true,
@@ -205,6 +238,10 @@ class ComercialController extends Controller
     public function exportarExcel(Request $request)
     {
         try {
+            // Aumentar límite de memoria para exportación
+            ini_set('memory_limit', '1024M');
+            ini_set('max_execution_time', '300');
+            
             // Obtener datos sin caché para export
             $rawData = $this->googleSheets->getSheetData('Historico');
             

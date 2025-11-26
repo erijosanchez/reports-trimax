@@ -14,11 +14,11 @@
                     </div>
                     <div class="tab-content tab-content-basic mt-4">
                         <div class="tab-pane fade show active" id="overview" role="tabpanel" aria-labelledby="overview">
-                            
+
                             {{-- Cards de Estadísticas --}}
                             <div class="row mb-4">
                                 <div class="col-md-4">
-                                    <div class="card">
+                                    <div class="card h-100">
                                         <div class="card-body">
                                             <div class="d-flex justify-content-between align-items-center">
                                                 <div>
@@ -41,7 +41,7 @@
                                     </div>
                                 </div>
                                 <div class="col-md-4">
-                                    <div class="card">
+                                    <div class="card h-100">
                                         <div class="card-body">
                                             <div class="d-flex justify-content-between align-items-center">
                                                 <div>
@@ -61,7 +61,7 @@
                                     </div>
                                 </div>
                                 <div class="col-md-4">
-                                    <div class="card">
+                                    <div class="card h-100">
                                         <div class="card-body">
                                             <div class="d-flex justify-content-between align-items-center">
                                                 <div>
@@ -88,9 +88,36 @@
                                             {{-- Sección de Filtros --}}
                                             <div class="row mb-3">
                                                 <div class="col-md-3">
-                                                    <label class="form-label">Filtrar por Sede</label>
+                                                    <label class="form-label"><i class="mdi mdi-office-building"></i>
+                                                        Filtrar por Sede</label>
                                                     <select class="form-select" id="filtroSede">
                                                         <option value="">Todas las sucursales</option>
+                                                        <option value="LOS OLIVOS">LOS OLIVOS</option>
+                                                        <option value="AREQUIPA">AREQUIPA</option>
+                                                        <option value="TRUJILLO">TRUJILLO</option>
+                                                        <option value="CUSCO">CUSCO</option>
+                                                        <option value="PIURA">PIURA</option>
+                                                        <option value="CHICLAYO">CHICLAYO</option>
+                                                        <option value="JUNIN">JUNIN</option>
+                                                        <option value="ICA">ICA</option>
+                                                        <option value="HUANCAYO">HUANCAYO</option>
+                                                        <option value="CAILLOMA">CAILLOMA</option>
+                                                        <option value="SJM">SJM</option>
+                                                        <option value="COMAS">COMAS</option>
+                                                        <option value="LINCE">LINCE</option>
+                                                        <option value="HUARAZ">HUARAZ</option>
+                                                        <option value="AYACUCHO">AYACUCHO</option>
+                                                        <option value="HUANUCO">HUANUCO</option>
+                                                        <option value="CHIMBOTE">CHIMBOTE</option>
+                                                        <option value="PUENTE PIEDRA">PUENTE PIEDRA</option>
+                                                        <option value="NAPO">NAPO</option>
+                                                        <option value="TACNA">TACNA</option>
+                                                        <option value="ATE">ATE</option>
+                                                        <option value="CALL CENTER">CALL CENTER</option>
+                                                        <option value="IQUITOS">IQUITOS</option>
+                                                        <option value="CAJAMARCA">CAJAMARCA</option>
+                                                        <option value="PUCALLPA">PUCALLPA</option>
+                                                        <option value="SJL">SJL</option>
                                                     </select>
                                                 </div>
                                                 <div class="col-md-3">
@@ -114,8 +141,8 @@
                                                 <div class="col-md-3">
                                                     <label class="form-label">Buscar</label>
                                                     <div class="input-group">
-                                                        <input type="text" class="form-control" id="buscarPedido" 
-                                                               placeholder="# Orden, Cliente, RUC...">
+                                                        <input type="text" class="form-control" id="buscarPedido"
+                                                            placeholder="# Orden, Cliente, RUC...">
                                                         <button class="btn btn-primary" type="button" id="btnBuscar">
                                                             <i class="mdi mdi-magnify"></i>
                                                         </button>
@@ -126,7 +153,8 @@
                                             <div class="row mb-3">
                                                 <div class="col-md-12 d-flex justify-content-between align-items-center">
                                                     <div>
-                                                        <button class="btn btn-sm btn-outline-primary" id="btnLimpiarFiltros">
+                                                        <button class="btn btn-sm btn-outline-primary"
+                                                            id="btnLimpiarFiltros">
                                                             <i class="mdi mdi-filter-remove"></i> Limpiar Filtros
                                                         </button>
                                                         <button class="btn btn-sm btn-info" id="btnRecargar">
@@ -134,11 +162,9 @@
                                                         </button>
                                                     </div>
                                                     <div>
-                                                        <button class="btn btn-sm btn-success" id="btnExportar">
-                                                            <i class="mdi mdi-download"></i> Exportar CSV
-                                                        </button>
                                                         <button class="btn btn-sm btn-info" id="btnOrdenarFecha">
-                                                            <i class="mdi mdi-sort-calendar-ascending"></i> Ordenar por Fecha
+                                                            <i class="mdi mdi-sort-calendar-ascending"></i> Ordenar por
+                                                            Fecha
                                                         </button>
                                                     </div>
                                                 </div>
@@ -146,7 +172,8 @@
 
                                             {{-- Loading Spinner --}}
                                             <div id="loadingSpinner" class="text-center py-5">
-                                                <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                                                <div class="spinner-border text-primary" role="status"
+                                                    style="width: 3rem; height: 3rem;">
                                                     <span class="visually-hidden">Cargando...</span>
                                                 </div>
                                                 <p class="mt-3">Cargando órdenes desde Google Sheets...</p>
@@ -158,33 +185,36 @@
                                                 <span id="errorText"></span>
                                             </div>
 
-                                            {{-- Tabla de Órdenes con TODAS las columnas --}}
-                                            <div class="table-responsive" id="tablaContainer" style="display: none;">
-                                                <table class="table table-hover table-sm" id="tablaOrdenes">
+                                            {{-- Tabla con columnas más anchas --}}
+                                            <div class="table-responsive p-2" id="tablaContainer" style="display: none;">
+                                                <table class="table table-hover table-sm " id="tablaOrdenes"
+                                                    style="min-width: 2000px;">
                                                     <thead class="table-light">
                                                         <tr>
-                                                            <th width="30">
-                                                                <div class="form-check">
-                                                                    <input class="form-check-input" type="checkbox" id="selectAll">
-                                                                </div>
+                                                            <th style="min-width: 100px;">
+
+                                                                <input class="form-check-input" type="checkbox"
+                                                                    id="selectAll">
+
                                                             </th>
-                                                            <th>Sede</th>
-                                                            <th>N° Orden</th>
-                                                            <th>RUC</th>
-                                                            <th>Cliente</th>
-                                                            <th>Diseño</th>
-                                                            <th>Descripción Producto</th>
-                                                            <th>Orden Compra</th>
-                                                            <th>Fecha</th>
-                                                            <th>Hora</th>
-                                                            <th>Tipo Orden</th>
-                                                            <th>Usuario</th>
-                                                            <th>Estado</th>
-                                                            <th class="bg-primary text-white">Ubicación</th>
-                                                            <th>Descripción Tallado</th>
-                                                            <th>Tratamiento</th>
-                                                            <th class="bg-info text-white">Lead Time</th>
-                                                            <th>Acciones</th>
+                                                            <th style="min-width: 120px;">Sede</th>
+                                                            <th style="min-width: 100px;">N° Orden</th>
+                                                            <th style="min-width: 120px;">RUC</th>
+                                                            <th style="min-width: 200px;">Cliente</th>
+                                                            <th style="min-width: 150px;">Diseño</th>
+                                                            <th style="min-width: 200px;">Descripción Producto</th>
+                                                            <th style="min-width: 120px;">Orden Compra</th>
+                                                            <th style="min-width: 100px;">Fecha</th>
+                                                            <th style="min-width: 80px;">Hora</th>
+                                                            <th style="min-width: 120px;">Tipo Orden</th>
+                                                            <th style="min-width: 150px;">Usuario</th>
+                                                            <th style="min-width: 120px;">Estado</th>
+                                                            <th class="bg-primary text-white" style="min-width: 180px;">
+                                                                Ubicación</th>
+                                                            <th style="min-width: 150px;">Descripción Tallado</th>
+                                                            <th style="min-width: 120px;">Tratamiento</th>
+                                                            <th class="bg-info text-white" style="min-width: 100px;">Lead
+                                                                Time</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody id="tablaOrdenesBody">
@@ -193,10 +223,15 @@
                                                 </table>
                                             </div>
 
-                                            {{-- Paginación --}}
+                                            {{-- Paginación mejorada --}}
                                             <div class="row mt-3" id="paginacionContainer" style="display: none;">
                                                 <div class="col-md-6">
-                                                    <p class="text-muted">Mostrando <span id="totalMostrado">0</span> de <span id="totalRegistros">0</span> órdenes</p>
+                                                    <p class="text-muted">
+                                                        Mostrando <span id="rangoInicio">0</span> - <span
+                                                            id="rangoFin">0</span>
+                                                        de <span id="totalRegistros">0</span> órdenes
+                                                        <span class="badge badge-info" id="tiempoCarga"></span>
+                                                    </p>
                                                 </div>
                                                 <div class="col-md-6">
                                                     <nav>
@@ -204,29 +239,6 @@
                                                             {{-- Se genera dinámicamente --}}
                                                         </ul>
                                                     </nav>
-                                                </div>
-                                            </div>
-
-                                            {{-- Leyenda de Estados --}}
-                                            <div class="alert alert-info mt-3" role="alert" style="display: none;" id="leyendaEstados">
-                                                <h6 class="alert-heading"><i class="mdi mdi-information"></i> Leyenda de Estados:</h6>
-                                                <hr>
-                                                <div class="row">
-                                                    <div class="col-md-12">
-                                                        <p class="mb-1">
-                                                            <span class="badge badge-success" style="background-color: #28a745;">FACTURADO</span> y 
-                                                            <span class="badge badge-success" style="background-color: #28a745;">ENTREGADO</span> 
-                                                            = Color <strong>Verde</strong>
-                                                        </p>
-                                                        <p class="mb-1">
-                                                            <span class="badge badge-warning" style="background-color: #ffc107; color: #000;">EN TRANSITO</span> y 
-                                                            <span class="badge badge-warning" style="background-color: #ffc107; color: #000;">EN SEDE</span> 
-                                                            = Color <strong>Amarillo</strong>
-                                                        </p>
-                                                        <p class="mb-0">
-                                                            Todos los demás estados = Color <strong>Negro</strong>
-                                                        </p>
-                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -249,15 +261,15 @@
             align-items: center;
             justify-content: center;
         }
-        
+
         .bg-primary-gradient {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #667eea;
         }
-        
+
         .bg-success-gradient {
             background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
         }
-        
+
         .bg-warning-gradient {
             background: linear-gradient(135deg, #ffa751 0%, #ffe259 100%);
         }
@@ -267,12 +279,9 @@
             cursor: pointer;
         }
 
-        .form-select, .form-control {
+        .form-select,
+        .form-control {
             border-radius: 5px;
-        }
-
-        .btn-icon-text i {
-            font-size: 16px;
         }
 
         /* Columna Lead Time en azul claro */
@@ -288,173 +297,201 @@
             font-weight: 600;
         }
 
-        /* Hacer la tabla más compacta */
-        .table-sm td, .table-sm th {
-            padding: 0.5rem;
+        /* Tabla más legible */
+        .table-sm td,
+        .table-sm th {
+            padding: 0.75rem;
             font-size: 0.875rem;
+            white-space: nowrap;
+        }
+
+        /* Scroll horizontal suave */
+        .table-responsive {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
         }
     </style>
 
 @endsection
 
 @section('scripts')
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-    let ordenesData = [];
-    let ordenesFiltered = [];
-    let currentPage = 1;
-    const perPage = 15;
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // 🔥 SISTEMA DE CARGA PROGRESIVA ESTILO MINECRAFT
+        let ordenesData = []; // Todos los datos
+        let ordenesFiltered = []; // Datos filtrados
+        let currentPage = 1;
+        const perPage = 20; // Solo 20 por página
 
-    $(document).ready(function() {
-        cargarOrdenes();
-        cargarSedes();
+        $(document).ready(function() {
+            // Cargar solo estadísticas primero
+            cargarEstadisticas();
+            cargarSedes();
 
-        $('#selectAll').on('change', function() {
-            $('.row-checkbox').prop('checked', this.checked);
-        });
+            $('#selectAll').on('change', function() {
+                $('.row-checkbox').prop('checked', this.checked);
+            });
 
-        $('#filtroSede, #filtroEstado, #filtroTipoOrden').on('change', function() {
-            aplicarFiltros();
-        });
-
-        $('#btnBuscar').on('click', function() {
-            aplicarFiltros();
-        });
-
-        $('#buscarPedido').on('keyup', function(e) {
-            if (e.keyCode === 13) {
+            $('#filtroSede, #filtroEstado, #filtroTipoOrden').on('change', function() {
                 aplicarFiltros();
-            }
-        });
+            });
 
-        $('#btnLimpiarFiltros').on('click', function() {
-            $('#filtroSede').val('');
-            $('#filtroEstado').val('');
-            $('#filtroTipoOrden').val('');
-            $('#buscarPedido').val('');
-            cargarOrdenes();
-        });
+            $('#btnBuscar').on('click', function() {
+                aplicarFiltros();
+            });
 
-        $('#btnRecargar').on('click', function() {
-            cargarOrdenes(true);
-        });
-
-        let ordenAscendente = true;
-        $('#btnOrdenarFecha').on('click', function() {
-            ordenAscendente = !ordenAscendente;
-            ordenarPorFecha(ordenAscendente);
-            $(this).find('i').toggleClass('mdi-sort-calendar-ascending mdi-sort-calendar-descending');
-        });
-
-        $('#btnExportar').on('click', function() {
-            window.location.href = "{{ route('comercial.ordenes.exportar') }}";
-        });
-    });
-
-    function cargarSedes() {
-        $.ajax({
-            url: "{{ route('comercial.ordenes.sedes') }}",
-            method: 'GET',
-            success: function(response) {
-                if (response.success && response.data) {
-                    let options = '<option value="">Todas las sucursales</option>';
-                    response.data.forEach(sede => {
-                        options += `<option value="${sede}">${sede}</option>`;
-                    });
-                    $('#filtroSede').html(options);
+            $('#buscarPedido').on('keyup', function(e) {
+                if (e.keyCode === 13) {
+                    aplicarFiltros();
                 }
-            }
+            });
+
+            $('#btnLimpiarFiltros').on('click', function() {
+                $('#filtroSede').val('');
+                $('#filtroEstado').val('');
+                $('#filtroTipoOrden').val('');
+                $('#buscarPedido').val('');
+                currentPage = 1;
+                cargarEstadisticas();
+            });
+
+            $('#btnRecargar').on('click', function() {
+                ordenesData = [];
+                ordenesFiltered = [];
+                currentPage = 1;
+                cargarEstadisticas(true);
+            });
+
+            let ordenAscendente = false;
+            $('#btnOrdenarFecha').on('click', function() {
+                ordenAscendente = !ordenAscendente;
+                ordenarPorFecha(ordenAscendente);
+                $(this).find('i').toggleClass('mdi-sort-calendar-ascending mdi-sort-calendar-descending');
+            });
+
+            $('#btnExportar').on('click', function() {
+                window.location.href = "{{ route('comercial.ordenes.exportar') }}";
+            });
         });
-    }
 
-    function cargarOrdenes(forceRefresh = false) {
-        $('#loadingSpinner').show();
-        $('#errorMessage').hide();
-        $('#tablaContainer').hide();
-        $('#paginacionContainer').hide();
-        $('#leyendaEstados').hide();
-
-        const params = {
-            sede: $('#filtroSede').val(),
-            estado: $('#filtroEstado').val(),
-            tipo_orden: $('#filtroTipoOrden').val(),
-            buscar: $('#buscarPedido').val()
-        };
-
-        if (forceRefresh) {
-            params.nocache = Date.now();
+        function cargarSedes() {
+            $.ajax({
+                url: "{{ route('comercial.ordenes.sedes') }}",
+                method: 'GET',
+                success: function(response) {
+                    if (response.success && response.data) {
+                        let options = '<option value="">Todas las sucursales</option>';
+                        response.data.forEach(sede => {
+                            options += `<option value="${sede}">${sede}</option>`;
+                        });
+                        $('#filtroSede').html(options);
+                    }
+                }
+            });
         }
 
-        $.ajax({
-            url: "{{ route('comercial.ordenes.obtener') }}",
-            method: 'GET',
-            data: params,
-            timeout: 60000,
-            success: function(response) {
-                if (response.success) {
-                    ordenesData = response.data;
-                    ordenesFiltered = ordenesData;
-                    
-                    // DEBUG
-                    if (ordenesData.length > 0) {
-                        console.log('📋 Columnas:', Object.keys(ordenesData[0]));
-                        console.log('📋 Primera orden:', ordenesData[0]);
-                    }
-                    
-                    actualizarEstadisticas(response.stats);
-                    currentPage = 1;
-                    renderizarTabla();
-                    
-                    $('#loadingSpinner').hide();
-                    $('#tablaContainer').show();
-                    $('#paginacionContainer').show();
-                    $('#leyendaEstados').show();
-                    inicializarGrafico();
+        /**
+         * 🔥 CARGA PROGRESIVA - Solo cargar datos cuando se necesiten
+         */
+        function cargarEstadisticas(forceRefresh = false) {
+            const startTime = Date.now();
 
-                    if (forceRefresh) {
-                        alert('Datos actualizados correctamente');
-                    }
-                } else {
-                    mostrarError(response.message || 'Error al cargar los datos');
-                }
-            },
-            error: function(xhr) {
-                let mensaje = 'Error de conexión';
-                if (xhr.status === 500) {
-                    mensaje = 'Error del servidor. ' + (xhr.responseJSON?.message || '');
-                } else if (xhr.responseJSON && xhr.responseJSON.message) {
-                    mensaje = xhr.responseJSON.message;
-                }
-                mostrarError(mensaje);
-                console.error('Error:', xhr);
+            $('#loadingSpinner').show();
+            $('#errorMessage').hide();
+            $('#tablaContainer').hide();
+            $('#paginacionContainer').hide();
+
+            const params = {
+                sede: $('#filtroSede').val(),
+                estado: $('#filtroEstado').val(),
+                tipo_orden: $('#filtroTipoOrden').val(),
+                buscar: $('#buscarPedido').val()
+            };
+
+            if (forceRefresh) {
+                params.nocache = Date.now();
             }
-        });
-    }
 
-    function aplicarFiltros() {
-        cargarOrdenes();
-    }
+            $.ajax({
+                url: "{{ route('comercial.ordenes.obtener') }}",
+                method: 'GET',
+                data: params,
+                timeout: 120000, // 2 minutos
+                success: function(response) {
+                    const endTime = Date.now();
+                    const loadTime = ((endTime - startTime) / 1000).toFixed(2);
 
-    function actualizarEstadisticas(stats) {
-        $('#totalOrdenes').text(stats.total.toLocaleString());
-        $('#ordenesFacturar').text(stats.disponibles_facturar.toLocaleString());
-        $('#ordenesTransito').html(
-            `<span class="text-warning">${stats.en_transito}</span> / <span class="text-info">${stats.en_sede}</span>`
-        );
-    }
+                    if (response.success) {
+                        ordenesData = response.data;
+                        ordenesFiltered = ordenesData;
 
-    /**
-     * Renderizar tabla con TODAS las columnas del Sheet
-     */
-    function renderizarTabla() {
-        const inicio = (currentPage - 1) * perPage;
-        const fin = inicio + perPage;
-        const ordenesPagina = ordenesFiltered.slice(inicio, fin);
+                        console.log('✅ Datos cargados:', ordenesData.length, 'órdenes en', loadTime,
+                            'segundos');
 
-        let html = '';
-        
-        if (ordenesPagina.length === 0) {
-            html = `
+                        if (ordenesData.length > 0) {
+                            console.log('📋 Columnas:', Object.keys(ordenesData[0]));
+                            console.log('📄 Primera orden:', ordenesData[0]);
+                        }
+
+                        actualizarEstadisticas(response.stats);
+                        currentPage = 1;
+                        renderizarTabla();
+
+                        $('#loadingSpinner').hide();
+                        $('#tablaContainer').show();
+                        $('#paginacionContainer').show();
+                        $('#leyendaEstados').show();
+                        $('#tiempoCarga').text(`Cargado en ${loadTime}s`);
+
+                        inicializarGrafico();
+
+                        if (forceRefresh) {
+                            alert('✅ Datos actualizados correctamente en ' + loadTime + ' segundos');
+                        }
+                    } else {
+                        mostrarError(response.message || 'Error al cargar los datos');
+                    }
+                },
+                error: function(xhr) {
+                    let mensaje = 'Error de conexión';
+                    if (xhr.status === 500) {
+                        mensaje = 'Error del servidor. ' + (xhr.responseJSON?.message || '');
+                    } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                        mensaje = xhr.responseJSON.message;
+                    }
+                    mostrarError(mensaje);
+                    console.error('❌ Error:', xhr);
+                }
+            });
+        }
+
+        function aplicarFiltros() {
+            currentPage = 1;
+            cargarEstadisticas();
+        }
+
+        function actualizarEstadisticas(stats) {
+            $('#totalOrdenes').text(stats.total.toLocaleString());
+            $('#ordenesFacturar').text(stats.disponibles_facturar.toLocaleString());
+            $('#ordenesTransito').html(
+                `<span class="text-warning">${stats.en_transito}</span> / <span class="text-info">${stats.en_sede}</span>`
+            );
+        }
+
+        /**
+         * 🔥 RENDERIZAR SOLO LA PÁGINA ACTUAL (Estilo Minecraft)
+         */
+        function renderizarTabla() {
+            const inicio = (currentPage - 1) * perPage;
+            const fin = inicio + perPage;
+            const ordenesPagina = ordenesFiltered.slice(inicio, fin);
+
+            console.log(`📄 Renderizando página ${currentPage}: filas ${inicio}-${fin}`);
+
+            let html = '';
+
+            if (ordenesPagina.length === 0) {
+                html = `
                 <tr>
                     <td colspan="18" class="text-center py-5">
                         <i class="mdi mdi-database-search mdi-48px text-muted"></i>
@@ -462,216 +499,272 @@
                     </td>
                 </tr>
             `;
-        } else {
-            ordenesPagina.forEach(orden => {
-                // Mapear TODAS las columnas exactamente como vienen del Sheet
-                const sede = orden.descripcion_sede || '';
-                const numeroOrden = orden.numero_orden || '';
-                const ruc = orden.RUC || '';
-                const cliente = orden.Cliente || '';
-                const diseno = orden['Diseño'] || orden.Diseno || '';
-                const descripcionProducto = orden.descripcion_producto || '';
-                const ordenCompra = orden.orden_compra || '';
-                const fechaOrden = orden.fecha_orden || '';
-                const horaOrden = orden.hora_orden || '';
-                const tipoOrden = orden.tipo_orden || '';
-                const nombreUsuario = orden.nombre_usuario || '';
-                const estadoOrden = orden.estado_orden || '';
-                const ubicacionOrden = orden.ubicacion_orden || '';
-                const descripcionTallado = orden.descripcion_tallado || orden.descripcio_n_tallado || '';
-                const tratamiento = orden.Tratamiento || '';
-                const leadTime = orden['Lead Time'] || orden.Lead_Time || '';
-                
-                const badgeEstado = obtenerBadgeEstado(ubicacionOrden);
-                const badgeSede = obtenerBadgeSede(sede);
-                const badgeTipoOrden = obtenerBadgeTipoOrden(tipoOrden);
-                
-                html += `
+            } else {
+                ordenesPagina.forEach((orden, index) => {
+                    // 🔥 Acceso con soporte para "diseño" (con ñ)
+                    const sede = orden.descripcion_sede || '-';
+                    const numeroOrden = orden.numero_orden || '-';
+                    const ruc = orden.ruc || '-';
+                    const cliente = orden.cliente || '-';
+                    const diseno = orden.diseño || orden.diseno || '-'; // 🔥 Probar ambos
+                    const descripcionProducto = orden.descripcion_producto || '-';
+                    const ordenCompra = orden.orden_compra || '-';
+                    const fechaOrden = orden.fecha_orden || '-';
+                    const horaOrden = orden.hora_orden || '-';
+                    const tipoOrden = orden.tipo_orden || '-';
+                    const nombreUsuario = orden.nombre_usuario || '-';
+                    const estadoOrden = orden.estado_orden || '-';
+                    const ubicacionOrden = orden.ubicacion_orden || '-';
+                    const descripcionTallado = orden.descripcion_tallado || '-';
+                    const tratamiento = orden.tratamiento || '-';
+                    const leadTime = orden.lead_time || '-';
+
+                    const badgeEstado = obtenerBadgeEstado(ubicacionOrden);
+                    const badgeSede = obtenerBadgeSede(sede);
+                    const badgeTipoOrden = obtenerBadgeTipoOrden(tipoOrden);
+
+                    html += `
                     <tr>
                         <td>
-                            <div class="form-check">
-                                <input class="form-check-input row-checkbox" type="checkbox" value="${numeroOrden}">
-                            </div>
+                            
+                            <input class="form-check-input row-checkbox" type="checkbox" value="${numeroOrden}">
+                            
                         </td>
                         <td>${badgeSede}</td>
-                        <td><strong>${numeroOrden || 'N/A'}</strong></td>
-                        <td><small>${ruc || '-'}</small></td>
-                        <td title="${cliente}">${truncar(cliente, 25)}</td>
-                        <td>${diseno || '-'}</td>
-                        <td title="${descripcionProducto}">${truncar(descripcionProducto, 30)}</td>
-                        <td>${ordenCompra || '-'}</td>
-                        <td><small>${fechaOrden || '-'}</small></td>
-                        <td><small>${horaOrden || '-'}</small></td>
+                        <td><strong>${numeroOrden}</strong></td>
+                        <td>${ruc}</td>
+                        <td title="${cliente}">${cliente}</td>
+                        <td>${diseno}</td>
+                        <td title="${descripcionProducto}">${descripcionProducto}</td>
+                        <td>${ordenCompra}</td>
+                        <td><small>${fechaOrden}</small></td>
+                        <td><small>${horaOrden}</small></td>
                         <td>${badgeTipoOrden}</td>
-                        <td><small>${truncar(nombreUsuario, 20)}</small></td>
-                        <td><small>${estadoOrden || '-'}</small></td>
+                        <td title="${nombreUsuario}">${truncar(nombreUsuario, 20)}</td>
+                        <td><small>${estadoOrden}</small></td>
                         <td>${badgeEstado}</td>
-                        <td><small>${descripcionTallado || '-'}</small></td>
-                        <td><small>${tratamiento || '-'}</small></td>
-                        <td class="font-weight-bold text-info">${leadTime || '-'}</td>
-                        <td>
-                            <button class="btn btn-sm btn-primary btn-icon" title="Ver" onclick="verDetalle('${numeroOrden}')">
-                                <i class="mdi mdi-eye"></i>
-                            </button>
-                        </td>
+                        <td>${truncar(descripcionTallado, 20)}</td>
+                        <td>${tratamiento}</td>
+                        <td class="font-weight-bold text-info">${leadTime}</td>
                     </tr>
                 `;
-            });
+                });
+            }
+
+            $('#tablaOrdenesBody').html(html);
+            actualizarPaginacion();
+
+            // Actualizar información de rango
+            const rangoInicio = ordenesPagina.length > 0 ? inicio + 1 : 0;
+            const rangoFin = inicio + ordenesPagina.length;
+            $('#rangoInicio').text(rangoInicio);
+            $('#rangoFin').text(rangoFin);
+            $('#totalRegistros').text(ordenesFiltered.length);
         }
 
-        $('#tablaOrdenesBody').html(html);
-        actualizarPaginacion();
-        $('#totalMostrado').text(ordenesPagina.length);
-        $('#totalRegistros').text(ordenesFiltered.length);
-    }
+        function truncar(texto, max) {
+            if (!texto || texto === '-') return '-';
+            texto = String(texto);
+            if (texto.length <= max) return texto;
+            return texto.substring(0, max) + '...';
+        }
 
-    function truncar(texto, max) {
-        if (!texto) return '-';
-        if (texto.length <= max) return texto;
-        return texto.substring(0, max) + '...';
-    }
+        function obtenerBadgeEstado(ubicacion) {
+            if (!ubicacion || ubicacion === '-') return '<span class="badge badge-secondary">Sin estado</span>';
 
-    function obtenerBadgeEstado(ubicacion) {
-        if (!ubicacion) return '<span class="badge badge-secondary">Sin estado</span>';
-        
-        const ub = ubicacion.toUpperCase();
-        
-        if (ub.includes('FACTURADO') || ub.includes('ENTREGADO')) {
-            return `<span class="badge badge-success">
+            const ub = String(ubicacion).toUpperCase();
+
+            if (ub.includes('FACTURADO') || ub.includes('ENTREGADO')) {
+                return `<span class="badge badge-success">
                 <i class="mdi mdi-check-circle"></i> ${truncar(ubicacion, 20)}
             </span>`;
-        } else if (ub.includes('TRANSITO')) {
-            return `<span class="badge badge-warning text-dark">
+            } else if (ub.includes('TRANSITO')) {
+                return `<span class="badge badge-warning text-dark">
                 <i class="mdi mdi-truck"></i> ${truncar(ubicacion, 20)}
             </span>`;
-        } else if (ub.includes('SEDE')) {
-            return `<span class="badge badge-warning text-dark">
+            } else if (ub.includes('SEDE')) {
+                return `<span class="badge badge-warning text-dark">
                 <i class="mdi mdi-home"></i> ${truncar(ubicacion, 20)}
             </span>`;
-        } else {
-            return `<span class="badge badge-dark">${truncar(ubicacion, 20)}</span>`;
-        }
-    }
-
-    function obtenerBadgeSede(sede) {
-        if (!sede) return '-';
-        const badges = {
-            'LOS OLIVOS': 'info',
-            'AREQUIPA': 'primary',
-            'TRUJILLO': 'success',
-            'CUSCO': 'warning',
-            'PIURA': 'danger'
-        };
-        const tipo = badges[sede.toUpperCase()] || 'secondary';
-        return `<span class="badge badge-${tipo}">${sede}</span>`;
-    }
-
-    function obtenerBadgeTipoOrden(tipo) {
-        if (!tipo) return '-';
-        const color = tipo.toUpperCase() === 'FABRICACION' ? 'primary' : 'success';
-        return `<span class="badge badge-${color}">${tipo}</span>`;
-    }
-
-    function actualizarPaginacion() {
-        const totalPaginas = Math.ceil(ordenesFiltered.length / perPage);
-        if (totalPaginas <= 1) {
-            $('#paginacion').html('');
-            return;
-        }
-
-        let html = '';
-        html += `<li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
-            <a class="page-link" href="#" onclick="cambiarPagina(${currentPage - 1}); return false;">Anterior</a>
-        </li>`;
-
-        for (let i = 1; i <= totalPaginas; i++) {
-            if (i === 1 || i === totalPaginas || (i >= currentPage - 2 && i <= currentPage + 2)) {
-                html += `<li class="page-item ${i === currentPage ? 'active' : ''}">
-                    <a class="page-link" href="#" onclick="cambiarPagina(${i}); return false;">${i}</a>
-                </li>`;
-            } else if (i === currentPage - 3 || i === currentPage + 3) {
-                html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+            } else {
+                return `<span class="badge badge-dark">${truncar(ubicacion, 20)}</span>`;
             }
         }
 
-        html += `<li class="page-item ${currentPage === totalPaginas ? 'disabled' : ''}">
+        function obtenerBadgeSede(sede) {
+            if (!sede || sede === '-') return '-';
+            const sedeUpper = String(sede).toUpperCase();
+            const badges = {
+                'LOS OLIVOS': 'primary',
+                'AREQUIPA': 'primary',
+                'TRUJILLO': 'primary',
+                'CUSCO': 'primary',
+                'PIURA': 'primary',
+                'CHICLAYO': 'primary',
+                'JUNIN': 'primary',
+                'ICA': 'primary',
+                'HUANCAYO': 'primary',
+                'CALLAO': 'success',
+                'VENTANILLA': 'success',
+                'CAILLOMA': 'primary',
+                'SJM': 'primary',
+                'COMAS': 'primary',
+                'LINCE': 'primary',
+                'HUARAZ': 'primary',
+                'AYACUCHO': 'primary',
+                'HUANUCO': 'primary',
+                'CHIMBOTE': 'primary',
+                'PUENTE PIEDRA': 'primary',
+                'NAPO': 'primary',
+                'TACNA': 'primary',
+                'ATE': 'primary',
+                'CALL CENTER': 'primary',
+                'IQUITOS': 'primary',
+                'CAJAMARCA': 'primary',
+                'PUCALLPA': 'primary',
+                'SJL': 'primary',
+            };
+            const tipo = badges[sedeUpper] || 'secondary';
+            return `<span class="badge badge-${tipo}">${sede}</span>`;
+        }
+
+        function obtenerBadgeTipoOrden(tipo) {
+            if (!tipo || tipo === '-') return '-';
+            const color = String(tipo).toUpperCase() === 'FABRICACION' ? 'primary' : 'success';
+            return `<span class="badge badge-${color}">${tipo}</span>`;
+        }
+
+        function actualizarPaginacion() {
+            const totalPaginas = Math.ceil(ordenesFiltered.length / perPage);
+            if (totalPaginas <= 1) {
+                $('#paginacion').html('');
+                return;
+            }
+
+            let html = '';
+            html += `<li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+            <a class="page-link" href="#" onclick="cambiarPagina(${currentPage - 1}); return false;">Anterior</a>
+        </li>`;
+
+            // Mostrar páginas inteligentemente
+            const maxVisible = 7;
+            let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+            let endPage = Math.min(totalPaginas, startPage + maxVisible - 1);
+
+            if (endPage - startPage < maxVisible - 1) {
+                startPage = Math.max(1, endPage - maxVisible + 1);
+            }
+
+            if (startPage > 1) {
+                html +=
+                    `<li class="page-item"><a class="page-link" href="#" onclick="cambiarPagina(1); return false;">1</a></li>`;
+                if (startPage > 2) {
+                    html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+                }
+            }
+
+            for (let i = startPage; i <= endPage; i++) {
+                html += `<li class="page-item ${i === currentPage ? 'active' : ''}">
+                <a class="page-link" href="#" onclick="cambiarPagina(${i}); return false;">${i}</a>
+            </li>`;
+            }
+
+            if (endPage < totalPaginas) {
+                if (endPage < totalPaginas - 1) {
+                    html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+                }
+                html +=
+                    `<li class="page-item"><a class="page-link" href="#" onclick="cambiarPagina(${totalPaginas}); return false;">${totalPaginas}</a></li>`;
+            }
+
+            html += `<li class="page-item ${currentPage === totalPaginas ? 'disabled' : ''}">
             <a class="page-link" href="#" onclick="cambiarPagina(${currentPage + 1}); return false;">Siguiente</a>
         </li>`;
 
-        $('#paginacion').html(html);
-    }
-
-    function cambiarPagina(pagina) {
-        const totalPaginas = Math.ceil(ordenesFiltered.length / perPage);
-        if (pagina >= 1 && pagina <= totalPaginas) {
-            currentPage = pagina;
-            renderizarTabla();
-            $('html, body').animate({ scrollTop: $('#tablaContainer').offset().top - 100 }, 'fast');
+            $('#paginacion').html(html);
         }
-    }
 
-    function ordenarPorFecha(ascendente) {
-        ordenesFiltered.sort((a, b) => {
-            const fechaA = new Date(convertirFecha(a.fecha_orden));
-            const fechaB = new Date(convertirFecha(b.fecha_orden));
-            return ascendente ? fechaA - fechaB : fechaB - fechaA;
-        });
-        renderizarTabla();
-    }
-
-    function convertirFecha(fechaStr) {
-        if (!fechaStr) return new Date(0);
-        const partes = fechaStr.split('/');
-        if (partes.length === 3) {
-            return new Date(partes[2], partes[1] - 1, partes[0]);
+        function cambiarPagina(pagina) {
+            const totalPaginas = Math.ceil(ordenesFiltered.length / perPage);
+            if (pagina >= 1 && pagina <= totalPaginas) {
+                currentPage = pagina;
+                renderizarTabla();
+                $('html, body').animate({
+                    scrollTop: $('#tablaContainer').offset().top - 100
+                }, 'fast');
+            }
         }
-        return new Date(fechaStr);
-    }
 
-    function verDetalle(numeroOrden) {
-        const orden = ordenesData.find(o => o.numero_orden === numeroOrden);
-        if (orden) {
-            alert('Detalle de orden #' + numeroOrden + '\n\nFunción a implementar');
-        }
-    }
-
-    function mostrarError(mensaje) {
-        $('#loadingSpinner').hide();
-        $('#errorMessage').show();
-        $('#errorText').text(mensaje);
-    }
-
-    function inicializarGrafico() {
-        const ctx = document.getElementById('sparklineChart');
-        if (ctx && !ctx.chartInstance) {
-            ctx.chartInstance = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: ['', '', '', '', '', '', '', ''],
-                    datasets: [{
-                        data: [12, 19, 15, 25, 22, 30, 28, 35],
-                        borderColor: '#667eea',
-                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                        borderWidth: 2,
-                        fill: true,
-                        tension: 0.4,
-                        pointRadius: 0
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: { enabled: false }
-                    },
-                    scales: {
-                        x: { display: false },
-                        y: { display: false }
-                    }
-                }
+        function ordenarPorFecha(ascendente) {
+            ordenesFiltered.sort((a, b) => {
+                const fechaA = new Date(convertirFecha(a.fecha_orden));
+                const fechaB = new Date(convertirFecha(b.fecha_orden));
+                return ascendente ? fechaA - fechaB : fechaB - fechaA;
             });
+            renderizarTabla();
         }
-    }
-</script>
+
+        function convertirFecha(fechaStr) {
+            if (!fechaStr || fechaStr === '-') return new Date(0);
+            const partes = fechaStr.split('/');
+            if (partes.length === 3) {
+                return new Date(partes[2], partes[1] - 1, partes[0]);
+            }
+            return new Date(fechaStr);
+        }
+
+        function verDetalle(numeroOrden) {
+            const orden = ordenesData.find(o => o.numero_orden === numeroOrden);
+            if (orden) {
+                alert('📋 Detalle de orden #' + numeroOrden + '\n\n✨ Función a implementar');
+            }
+        }
+
+        function mostrarError(mensaje) {
+            $('#loadingSpinner').hide();
+            $('#errorMessage').show();
+            $('#errorText').text(mensaje);
+        }
+
+        function inicializarGrafico() {
+            const ctx = document.getElementById('sparklineChart');
+            if (ctx && !ctx.chartInstance) {
+                ctx.chartInstance = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: ['', '', '', '', '', '', '', ''],
+                        datasets: [{
+                            data: [12, 19, 15, 25, 22, 30, 28, 35],
+                            borderColor: '#667eea',
+                            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4,
+                            pointRadius: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                enabled: false
+                            }
+                        },
+                        scales: {
+                            x: {
+                                display: false
+                            },
+                            y: {
+                                display: false
+                            }
+                        }
+                    }
+                });
+            }
+        }
+    </script>
 @endsection

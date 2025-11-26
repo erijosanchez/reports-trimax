@@ -16,7 +16,7 @@ class FileController extends Controller
         $user = auth()->user();
 
         $files = UploadedFile::query()
-            ->when(!$user->isAdmin(), function ($query) use ($user) {
+            ->when(!$user->isAdmin() && !$user->isSuperAdmin(), function ($query) use ($user) {
                 $query->where(function ($q) use ($user) {
                     $q->where('user_id', $user->id)
                         ->orWhere('is_public', true);
