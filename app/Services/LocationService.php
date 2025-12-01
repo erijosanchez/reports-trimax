@@ -17,19 +17,8 @@ class LocationService
         ?float $accuracy = null
     ): UserLocation {
 
-        Log::info('🌍 Iniciando geocoding GPS', [
-            'user_id' => $userId,
-            'lat' => $latitude,
-            'lon' => $longitude,
-        ]);
-
         // Obtener dirección usando geocoding
         $address = GeocodingService::reverseGeocode($latitude, $longitude);
-
-        Log::info('✅ Geocoding completo', [
-            'city' => $address['city'],
-            'country' => $address['country'],
-        ]);
 
         // Crear registro en base de datos
         return UserLocation::create([

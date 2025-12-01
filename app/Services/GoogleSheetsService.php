@@ -36,19 +36,15 @@ class GoogleSheetsService
             // Si no se especifica rango, obtener todo
             $fullRange = $range ? "{$sheetName}!{$range}" : $sheetName;
 
-            \Log::info('🔍 Intentando leer hoja:', ['range' => $fullRange]);
-
             $response = $this->service->spreadsheets_values->get(
                 $this->spreadsheetId,
                 $fullRange
             );
 
             $values = $response->getValues();
-            \Log::info('✅ Datos obtenidos correctamente', ['filas' => count($values)]);
 
             return $values;
         } catch (\Exception $e) {
-            \Log::error('❌ Error al obtener datos de Google Sheets: ' . $e->getMessage());
             return [];
         }
     }
@@ -72,14 +68,11 @@ class GoogleSheetsService
     public function parseSheetData($data)
 {
     if (empty($data)) {
-        \Log::warning('⚠️ No hay datos para parsear');
         return [];
     }
 
     $startTime = microtime(true);
     $startMemory = memory_get_usage();
-
-    \Log::info('📊 Iniciando parseo de ' . count($data) . ' filas');
 
     // 🔥 VERIFICAR si la primera fila es una fila de "actualizado" y saltarla
     if (!empty($data[0]) && is_array($data[0])) {
@@ -87,7 +80,6 @@ class GoogleSheetsService
         
         if (strpos($firstCell, 'actualizado') !== false) {
             array_shift($data);
-            \Log::info('⚠️ Se detectó y eliminó fila de actualización');
         }
     }
 
@@ -104,8 +96,6 @@ class GoogleSheetsService
         $normalized = preg_replace('/[^a-z0-9_ñ]/', '', $normalized);
         $normalizedHeaders[] = $normalized;
     }
-
-    \Log::info('✅ Headers normalizados: ' . implode(', ', array_slice($normalizedHeaders, 0, 10)) . '...');
 
     $headerCount = count($normalizedHeaders);
     $result = [];
@@ -141,7 +131,6 @@ class GoogleSheetsService
         if ($processedCount % 5000 === 0 && $processedCount > 0) {
             gc_collect_cycles();
             $currentMemory = round((memory_get_usage() - $startMemory) / 1024 / 1024, 2);
-            \Log::info("📊 Progreso: {$processedCount} filas procesadas, memoria usada: {$currentMemory} MB");
         }
     }
 

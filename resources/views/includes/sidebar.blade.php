@@ -47,7 +47,7 @@
             </li>
             <li class="nav-item">
                 <a class="nav-link {{ request()->routeIs('comercial.acuerdos') ? 'active' : '' }}" 
-                   href="">
+                   href="{{ route('comercial.acuerdos') }}">
                     <i class="mdi mdi-book-open-page-variant menu-icon"></i>
                     <span class="menu-title">Acuerdos Comerciales</span>
                 </a>

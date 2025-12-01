@@ -83,18 +83,25 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
 
     // Comercial Routes (Consultor + Super Admin only)
     Route::prefix('comercial')->name('comercial.')->group(function () {
+
+        /* ACUERDOS COMERCIALES APROBAR*/
         Route::get('/acuerdos', [ComercialController::class, 'acuerdos'])->name('acuerdos');
+         // AJAX endpoints
+        Route::get('/acuerdos/obtener', [ComercialController::class, 'obtenerAcuerdos'])->name('acuerdos.obtener');
+        Route::post('/acuerdos/crear', [ComercialController::class, 'crearAcuerdo'])->name('acuerdos.crear');
+        Route::post('/acuerdos/{id}/validar', [ComercialController::class, 'validarAcuerdo'])->name('acuerdos.validar');
+        Route::post('/acuerdos/{id}/aprobar', [ComercialController::class, 'aprobarAcuerdo'])->name('acuerdos.aprobar');
+        Route::get('/acuerdos/{id}/archivo/{index}', [ComercialController::class, 'descargarArchivo'])->name('acuerdos.descargar');
+
+        /* CONSULTAR ORDENES -> SHEET */
         Route::get('consultar-orden', [ComercialController::class, 'consultarOrden'])
             ->name('orden');
-
         Route::get('obtener-ordenes', [ComercialController::class, 'obtenerOrdenes'])
             ->name('ordenes.obtener');
         Route::get('obtener-sedes', [ComercialController::class, 'obtenerSedes'])
             ->name('ordenes.sedes');
-
         Route::post('limpiar-cache', [ComercialController::class, 'limpiarCache'])
             ->name('ordenes.cache');
-
         Route::get('exportar-excel', [ComercialController::class, 'exportarExcel'])
             ->name('ordenes.exportar');
     });
