@@ -54,8 +54,8 @@
             </li>
         @endif
 
-        {{-- MÓDULO MARKETING (Solo marketing y superadmin, pero superadmin NO lo ve) --}}
-        @if (auth()->user()->isMarketing())
+        {{-- MÓDULO MARKETING (Solo marketing y superadmin) --}}
+        @if (auth()->user()->isMarketing() || auth()->user()->isSuperAdmin())
             <li class="nav-item nav-category">MARKETING</li>
             <li class="nav-item">
                 <a class="nav-link {{ request()->routeIs('marketing.detalles.*') || request()->routeIs('marketing.alertas.*') ? '' : 'collapsed' }}" 
