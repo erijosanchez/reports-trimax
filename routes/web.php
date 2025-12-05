@@ -88,11 +88,15 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
         Route::get('/acuerdos', [ComercialController::class, 'acuerdos'])->name('acuerdos');
          // AJAX endpoints
         Route::get('/acuerdos/obtener', [ComercialController::class, 'obtenerAcuerdos'])->name('acuerdos.obtener');
+        Route::get('/acuerdos/usuarios', [ComercialController::class, 'obtenerUsuariosCreadores'])->name('acuerdos.usuarios');
         Route::post('/acuerdos/crear', [ComercialController::class, 'crearAcuerdo'])->name('acuerdos.crear');
         Route::post('/acuerdos/{id}/validar', [ComercialController::class, 'validarAcuerdo'])->name('acuerdos.validar');
         Route::post('/acuerdos/{id}/aprobar', [ComercialController::class, 'aprobarAcuerdo'])->name('acuerdos.aprobar');
+        Route::post('/acuerdos/{id}/deshabilitar', [ComercialController::class, 'deshabilitarAcuerdo'])->name('acuerdos.deshabilitar');
+        Route::post('/acuerdos/{id}/extender', [ComercialController::class, 'extenderAcuerdo'])->name('acuerdos.extender');
         Route::get('/acuerdos/{id}/archivo/{index}', [ComercialController::class, 'descargarArchivo'])->name('acuerdos.descargar');
-
+        Route::post('/acuerdos/{id}/rehabilitar', [ComercialController::class, 'rehabilitarAcuerdo'])->name('acuerdos.rehabilitar');
+        
         /* CONSULTAR ORDENES -> SHEET */
         Route::get('consultar-orden', [ComercialController::class, 'consultarOrden'])
             ->name('orden');

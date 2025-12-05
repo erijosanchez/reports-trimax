@@ -37,7 +37,17 @@ class AcuerdoComercial extends Model
         'validado_at',
         'aprobado_por',
         'aprobado_at',
-        'archivos_adjuntos'
+        'archivos_adjuntos',
+        'habilitado',
+        'motivo_deshabilitacion',
+        'deshabilitado_at',
+        'deshabilitado_por',
+        'motivo_rehabilitacion',
+        'rehabilitado_at',
+        'rehabilitado_por',
+        'motivo_extension',
+        'extendido_at',
+        'extendido_por'
     ];
 
     protected $casts = [
@@ -45,10 +55,20 @@ class AcuerdoComercial extends Model
         'fecha_fin' => 'date',
         'validado_at' => 'datetime',
         'aprobado_at' => 'datetime',
-        'archivos_adjuntos' => 'array'
+        'deshabilitado_at' => 'datetime',
+        'rehabilitado_at' => 'datetime',
+        'extendido_at' => 'datetime',
+        'archivos_adjuntos' => 'array',
+        'habilitado' => 'boolean'
     ];
 
     protected $appends = ['estado_calculado'];
+
+    // Agregar relación
+    public function rehabilitador()
+    {
+        return $this->belongsTo(User::class, 'rehabilitado_por');
+    }
 
     // Relaciones
     public function creador()
@@ -66,15 +86,30 @@ class AcuerdoComercial extends Model
         return $this->belongsTo(User::class, 'aprobado_por');
     }
 
+    public function deshabilitador()
+    {
+        return $this->belongsTo(User::class, 'deshabilitado_por');
+    }
+
+    public function extensor()
+    {
+        return $this->belongsTo(User::class, 'extendido_por');
+    }
+
     // Accesor para calcular el estado automático
     public function getEstadoCalculadoAttribute()
     {
+        // Si está deshabilitado
+        if (!$this->habilitado) {
+            return 'Deshabilitado';
+        }
+
         // Si está rechazado en cualquier etapa
         if ($this->validado === 'Rechazado' || $this->aprobado === 'Rechazado') {
             return 'Rechazado';
         }
 
-        // Si está aprobado completamente y vigente
+        // Si está aprobado completamente
         if ($this->validado === 'Aprobado' && $this->aprobado === 'Aprobado') {
             // Verificar si está vencido
             if (Carbon::parse($this->fecha_fin)->lt(Carbon::today())) {

@@ -36,7 +36,7 @@
         @endif
 
         {{-- MÓDULO COMERCIAL (Solo consultores y superadmin) --}}
-        @if (auth()->user()->isConsultor() || auth()->user()->isSuperAdmin())
+        @if (auth()->user()->isConsultor() || auth()->user()->isSuperAdmin() || auth()->user()->isAdmin())
             <li class="nav-item nav-category">COMERCIAL</li>
             <li class="nav-item">
                 <a class="nav-link {{ request()->routeIs('comercial.orden') ? 'active' : '' }}" 

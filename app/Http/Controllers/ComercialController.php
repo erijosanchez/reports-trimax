@@ -10,6 +10,10 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Notification;
 use App\Notifications\AcuerdoCreado;
 use App\Notifications\AcuerdoAprobado;
+use App\Notifications\AcuerdoDeshabilitado;
+use App\Notifications\AcuerdoExtendido;
+use App\Notifications\AcuerdoRehabilitado;
+
 
 class ComercialController extends Controller
 {
@@ -36,8 +40,8 @@ class ComercialController extends Controller
             $query = AcuerdoComercial::with(['creador', 'validador', 'aprobador']);
 
             // Filtros
-            if ($request->filled('cliente')) {
-                $query->where('razon_social', 'like', '%' . $request->cliente . '%');
+            if ($request->filled('usuario')) {
+                $query->where('user_id', $request->usuario);
             }
 
             if ($request->filled('sede')) {
@@ -270,7 +274,6 @@ class ComercialController extends Controller
 
             Notification::send($usuarios, new AcuerdoCreado($acuerdo));
 
-            \Log::info('Notificaciones de creación enviadas para acuerdo: ' . $acuerdo->numero_acuerdo);
         } catch (\Exception $e) {
             \Log::error('Error al enviar notificaciones de creación: ' . $e->getMessage());
         }
@@ -285,7 +288,6 @@ class ComercialController extends Controller
             // Notificar al creador
             $acuerdo->creador->notify(new AcuerdoAprobado($acuerdo));
 
-            \Log::info('Notificación de aprobación enviada para acuerdo: ' . $acuerdo->numero_acuerdo);
         } catch (\Exception $e) {
             \Log::error('Error al enviar notificación de aprobación: ' . $e->getMessage());
         }
@@ -334,11 +336,6 @@ class ComercialController extends Controller
             ini_set('max_execution_time', '300'); // 5 minutos
             set_time_limit(300);
 
-            \Log::info('🚀 Iniciando carga de órdenes', [
-                'memory_limit' => ini_get('memory_limit'),
-                'max_execution_time' => ini_get('max_execution_time')
-            ]);
-
             // NO usar caché de base de datos para datasets grandes
             // Usar caché de archivos o sin caché
             $useCache = !$request->has('nocache');
@@ -347,13 +344,10 @@ class ComercialController extends Controller
                 // Usar caché de archivos en lugar de database
                 $cacheKey = 'google_sheets_historico';
                 $ordenes = \Cache::store('file')->remember($cacheKey, 600, function () { // 10 minutos de caché
-                    \Log::info('📥 Obteniendo datos desde Google Sheets (sin caché)');
                     $rawData = $this->googleSheets->getSheetData('Historico');
-                    \Log::info('📊 Filas obtenidas: ' . count($rawData));
                     return $this->googleSheets->parseSheetData($rawData);
                 });
             } else {
-                \Log::info('📥 Obteniendo datos desde Google Sheets (forzado, sin caché)');
                 $rawData = $this->googleSheets->getSheetData('Historico');
                 \Log::info('📊 Filas obtenidas: ' . count($rawData));
                 $ordenes = $this->googleSheets->parseSheetData($rawData);
@@ -365,8 +359,6 @@ class ComercialController extends Controller
                     'message' => 'No se pudieron obtener datos del Google Sheet'
                 ], 500);
             }
-
-            \Log::info('✅ Órdenes parseadas: ' . count($ordenes));
 
             // Aplicar filtros
             $filters = [];
@@ -381,7 +373,6 @@ class ComercialController extends Controller
 
             if (!empty($filters)) {
                 $ordenes = $this->googleSheets->filterByMultiple($ordenes, $filters);
-                \Log::info('📊 Después de filtros: ' . count($ordenes));
             }
 
             // Filtrar por estado (ubicación)
@@ -406,13 +397,11 @@ class ComercialController extends Controller
 
                     return true;
                 });
-                \Log::info('📊 Después de filtro estado: ' . count($ordenes));
             }
 
             // Búsqueda general
             if ($request->filled('buscar')) {
                 $ordenes = $this->googleSheets->searchInData($ordenes, $request->buscar);
-                \Log::info('📊 Después de búsqueda: ' . count($ordenes));
             }
 
             // Reindexar array
@@ -424,12 +413,6 @@ class ComercialController extends Controller
             // Liberar memoria
             gc_collect_cycles();
 
-            \Log::info('✅ Respuesta lista', [
-                'total_ordenes' => count($ordenes),
-                'memory_usado' => round(memory_get_usage() / 1024 / 1024, 2) . ' MB',
-                'memory_pico' => round(memory_get_peak_usage() / 1024 / 1024, 2) . ' MB'
-            ]);
-
             return response()->json([
                 'success' => true,
                 'data' => $ordenes,
@@ -438,13 +421,95 @@ class ComercialController extends Controller
             ]);
         } catch (\Exception $e) {
             \Log::error('❌ Error en obtenerOrdenes: ' . $e->getMessage());
-            \Log::error('Stack trace: ' . $e->getTraceAsString());
-            \Log::error('Memory usado: ' . round(memory_get_usage() / 1024 / 1024, 2) . ' MB');
 
             return response()->json([
                 'success' => false,
                 'message' => 'Error al obtener datos: ' . $e->getMessage()
             ], 500);
+        }
+    }
+
+    /**
+     * Rehabilitar acuerdo
+     */
+    public function rehabilitarAcuerdo(Request $request, $id)
+    {
+        try {
+            $acuerdo = AcuerdoComercial::findOrFail($id);
+
+            // Verificar permisos
+            $emailsAutorizados = ['smonopoli@trimaxperu.com', 'planeamiento.comercial@trimaxperu.com'];
+            if (!in_array(Auth::user()->email, $emailsAutorizados)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No tienes permisos para rehabilitar acuerdos'
+                ], 403);
+            }
+
+            // Verificar que esté deshabilitado
+            if ($acuerdo->habilitado) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Este acuerdo ya está habilitado'
+                ], 400);
+            }
+
+            $validated = $request->validate([
+                'motivo' => 'required|string|min:10'
+            ]);
+
+            $acuerdo->update([
+                'habilitado' => true,
+                'motivo_rehabilitacion' => $validated['motivo'],
+                'rehabilitado_at' => now(),
+                'rehabilitado_por' => Auth::id()
+            ]);
+
+            // Actualizar estado
+            $acuerdo->actualizarEstado();
+
+            // Enviar notificaciones
+            $this->enviarNotificacionRehabilitacion($acuerdo, $validated['motivo']);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Acuerdo rehabilitado correctamente',
+                'acuerdo' => $acuerdo->load(['creador', 'validador', 'aprobador', 'rehabilitador'])
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error al rehabilitar acuerdo: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Enviar notificación de rehabilitación
+     */
+    private function enviarNotificacionRehabilitacion($acuerdo, $motivo)
+    {
+        try {
+            // Usuarios autorizados
+            $destinatarios = User::whereIn('email', [
+                'smonopoli@trimaxperu.com',
+                'planeamiento.comercial@trimaxperu.com'
+            ])->get();
+
+            // ✅ SIEMPRE incluir al creador del acuerdo
+            if ($acuerdo->creador) {
+                $destinatarios = $destinatarios->push($acuerdo->creador);
+            }
+
+            // Eliminar duplicados por ID
+            $destinatarios = $destinatarios->unique('id');
+
+            Notification::send($destinatarios, new AcuerdoRehabilitado($acuerdo, $motivo));
+
+        } catch (\Exception $e) {
+            \Log::error('Error al enviar notificaciones de rehabilitación: ' . $e->getMessage());
         }
     }
 
@@ -495,6 +560,189 @@ class ComercialController extends Controller
                 'success' => false,
                 'message' => 'Error: ' . $e->getMessage()
             ], 500);
+        }
+    }
+
+    /**
+     * Obtener usuarios que han creado acuerdos para el select
+     */
+    public function obtenerUsuariosCreadores()
+    {
+        try {
+            $usuarios = AcuerdoComercial::with('creador')
+                ->get()
+                ->pluck('creador')
+                ->unique('id')
+                ->filter()
+                ->sortBy('name')
+                ->values();
+
+            return response()->json([
+                'success' => true,
+                'data' => $usuarios->map(function ($usuario) {
+                    return [
+                        'id' => $usuario->id,
+                        'name' => $usuario->name,
+                        'email' => $usuario->email
+                    ];
+                })
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Deshabilitar acuerdo
+     */
+    public function deshabilitarAcuerdo(Request $request, $id)
+    {
+        try {
+            $acuerdo = AcuerdoComercial::findOrFail($id);
+
+            // ✅ Verificar permisos
+            $emailsAutorizados = ['smonopoli@trimaxperu.com', 'planeamiento.comercial@trimaxperu.com'];
+            if (!in_array(Auth::user()->email, $emailsAutorizados)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No tienes permisos para deshabilitar acuerdos'
+                ], 403);
+            }
+
+            $validated = $request->validate([
+                'motivo' => 'required|string|min:10'
+            ]);
+
+            $acuerdo->update([
+                'habilitado' => false,
+                'motivo_deshabilitacion' => $validated['motivo'],
+                'deshabilitado_at' => now(),
+                'deshabilitado_por' => Auth::id()
+            ]);
+
+            // Actualizar estado
+            $acuerdo->actualizarEstado();
+
+            // Enviar notificaciones
+            $this->enviarNotificacionDeshabilitacion($acuerdo, $validated['motivo']);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Acuerdo deshabilitado correctamente',
+                'acuerdo' => $acuerdo->load(['creador', 'validador', 'aprobador', 'deshabilitador'])
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error al deshabilitar acuerdo: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Extender acuerdo
+     */
+    public function extenderAcuerdo(Request $request, $id)
+    {
+        try {
+            $acuerdo = AcuerdoComercial::findOrFail($id);
+
+            // ✅ Verificar permisos
+            $emailsAutorizados = ['smonopoli@trimaxperu.com', 'planeamiento.comercial@trimaxperu.com'];
+            if (!in_array(Auth::user()->email, $emailsAutorizados)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No tienes permisos para extender acuerdos'
+                ], 403);
+            }
+
+            $validated = $request->validate([
+                'nueva_fecha_fin' => 'required|date|after:' . $acuerdo->fecha_fin,
+                'motivo' => 'required|string|min:10'
+            ]);
+
+            $acuerdo->update([
+                'fecha_fin' => $validated['nueva_fecha_fin'],
+                'motivo_extension' => $validated['motivo'],
+                'extendido_at' => now(),
+                'extendido_por' => Auth::id()
+            ]);
+
+            // Actualizar estado
+            $acuerdo->actualizarEstado();
+
+            // Enviar notificaciones
+            $this->enviarNotificacionExtension($acuerdo, $validated['motivo'], $validated['nueva_fecha_fin']);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Acuerdo extendido correctamente',
+                'acuerdo' => $acuerdo->load(['creador', 'validador', 'aprobador', 'extensor'])
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error al extender acuerdo: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Enviar notificación de deshabilitación
+     */
+    private function enviarNotificacionDeshabilitacion($acuerdo, $motivo)
+    {
+        try {
+            // Usuarios autorizados
+            $destinatarios = User::whereIn('email', [
+                'smonopoli@trimaxperu.com',
+                'planeamiento.comercial@trimaxperu.com'
+            ])->get();
+
+            // ✅ SIEMPRE incluir al creador del acuerdo
+            if ($acuerdo->creador) {
+                $destinatarios = $destinatarios->push($acuerdo->creador);
+            }
+
+            // Eliminar duplicados por ID
+            $destinatarios = $destinatarios->unique('id');
+
+            Notification::send($destinatarios, new AcuerdoDeshabilitado($acuerdo, $motivo));
+        } catch (\Exception $e) {
+            \Log::error('Error al enviar notificaciones de deshabilitación: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Enviar notificación de extensión
+     */
+    private function enviarNotificacionExtension($acuerdo, $motivo, $nuevaFecha)
+    {
+        try {
+            // Usuarios autorizados
+            $destinatarios = User::whereIn('email', [
+                'smonopoli@trimaxperu.com',
+                'planeamiento.comercial@trimaxperu.com'
+            ])->get();
+
+            // ✅ SIEMPRE incluir al creador del acuerdo
+            if ($acuerdo->creador) {
+                $destinatarios = $destinatarios->push($acuerdo->creador);
+            }
+
+            // Eliminar duplicados por ID
+            $destinatarios = $destinatarios->unique('id');
+
+            Notification::send($destinatarios, new AcuerdoExtendido($acuerdo, $motivo, $nuevaFecha));
+        } catch (\Exception $e) {
+            \Log::error('Error al enviar notificaciones de extensión: ' . $e->getMessage());
         }
     }
 

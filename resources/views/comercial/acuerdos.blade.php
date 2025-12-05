@@ -24,8 +24,8 @@
                         <div class="tab-pane fade show active" id="overview" role="tabpanel">
 
                             {{-- Cards de Estadísticas --}}
-                            <div class="row mb-4">
-                                <div class="col-md-3">
+                            <div class="row mb-4 ">
+                                <div class="col-md-3 pb-2">
                                     <div class="card card-stat h-100">
                                         <div class="card-body">
                                             <div class="d-flex justify-content-between align-items-center">
@@ -42,7 +42,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-md-3 pb-2">
                                     <div class="card card-stat h-100">
                                         <div class="card-body">
                                             <div class="d-flex justify-content-between align-items-center">
@@ -59,7 +59,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-md-3 pb-2">
                                     <div class="card card-stat h-100">
                                         <div class="card-body">
                                             <div class="d-flex justify-content-between align-items-center">
@@ -76,7 +76,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-md-3 pb-2">
                                     <div class="card card-stat h-100">
                                         <div class="card-body">
                                             <div class="d-flex justify-content-between align-items-center">
@@ -104,14 +104,15 @@
                                             <div class="row mb-3">
                                                 <div class="col-md-3">
                                                     <label class="form-label"><i class="mdi mdi-account"></i>
-                                                        Cliente</label>
-                                                    <input type="text" class="form-control form-control"
-                                                        id="filtroCliente" placeholder="Buscar cliente...">
+                                                        Consultor </label>
+                                                    <select class="form-select" id="filtroUsuario">
+                                                        <option value="">Todos los usuarios</option>
+                                                    </select>
                                                 </div>
                                                 <div class="col-md-3">
                                                     <label class="form-label"><i class="mdi mdi-office-building"></i>
                                                         Sede</label>
-                                                    <select class="form-select form-select" id="filtroSede">
+                                                    <select class="form-select" id="filtroSede">
                                                         <option value="">Todas las sedes</option>
                                                         <option value="LOS OLIVOS">LOS OLIVOS</option>
                                                         <option value="AREQUIPA">AREQUIPA</option>
@@ -145,11 +146,12 @@
                                                 </div>
                                                 <div class="col-md-3">
                                                     <label class="form-label"><i class="mdi mdi-flag"></i> Estado</label>
-                                                    <select class="form-select form-select" id="filtroEstado">
+                                                    <select class="form-select" id="filtroEstado">
                                                         <option value="">Todos los estados</option>
                                                         <option value="Solicitado">Solicitado</option>
                                                         <option value="Vigente">Vigente</option>
                                                         <option value="Vencido">Vencido</option>
+                                                        <option value="Deshabilitado">Deshabilitado</option>
                                                     </select>
                                                 </div>
                                                 <div class="col-md-3">
@@ -157,7 +159,7 @@
                                                         Buscar</label>
                                                     <div class="input-group input-group-lg">
                                                         <input type="text" class="form-control" id="buscarGeneral"
-                                                            placeholder="# Acuerdo, Cliente...">
+                                                            placeholder="# Acuerdo, RUC...">
                                                         <button class="btn btn-primary" type="button" id="btnBuscar">
                                                             <i class="mdi mdi-magnify"></i>
                                                         </button>
@@ -220,7 +222,7 @@
                                                                 <th style="min-width: 130px;" class="bg-info text-white">
                                                                     Aprobado</th>
                                                                 <th style="min-width: 150px;">Creado Por</th>
-                                                                <th style="min-width: 150px;" class="text-center">Acciones
+                                                                <th style="min-width: 200px;" class="text-center">Acciones
                                                                 </th>
                                                             </tr>
                                                         </thead>
@@ -425,6 +427,127 @@
         </div>
     </div>
 
+    {{-- Modal para Deshabilitar Acuerdo --}}
+    <div class="modal fade" id="modalDeshabilitar" tabindex="-1" data-bs-backdrop="static">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title">
+                        <i class="mdi mdi-cancel"></i> Deshabilitar Acuerdo
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="formDeshabilitar">
+                    @csrf
+                    <input type="hidden" id="acuerdoIdDeshabilitar">
+                    <div class="modal-body">
+                        <div class="alert alert-warning">
+                            <i class="mdi mdi-alert"></i>
+                            Esta acción deshabilitará el acuerdo comercial y enviará notificaciones a los responsables.
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Motivo de la Deshabilitación <span
+                                    class="text-danger">*</span></label>
+                            <textarea class="form-control" name="motivo" rows="4" required
+                                placeholder="Explique detalladamente el motivo por el cual se deshabilita este acuerdo..."></textarea>
+                            <small class="text-muted">Mínimo 10 caracteres</small>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="mdi mdi-close"></i> Cancelar
+                        </button>
+                        <button type="submit" class="btn btn-danger" id="btnConfirmarDeshabilitar">
+                            <i class="mdi mdi-cancel"></i> Deshabilitar Acuerdo
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    {{-- Modal para Rehabilitar Acuerdo --}}
+    <div class="modal fade" id="modalRehabilitar" tabindex="-1" data-bs-backdrop="static">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title">
+                        <i class="mdi mdi-check-circle"></i> Rehabilitar Acuerdo
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="formRehabilitar">
+                    @csrf
+                    <input type="hidden" id="acuerdoIdRehabilitar">
+                    <div class="modal-body">
+                        <div class="alert alert-info">
+                            <i class="mdi mdi-information"></i>
+                            Esta acción rehabilitará el acuerdo comercial y enviará notificaciones a los responsables.
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Motivo de la Rehabilitación <span
+                                    class="text-danger">*</span></label>
+                            <textarea class="form-control" name="motivo" rows="4" required
+                                placeholder="Explique detalladamente el motivo por el cual se rehabilita este acuerdo..."></textarea>
+                            <small class="text-muted">Mínimo 10 caracteres</small>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="mdi mdi-close"></i> Cancelar
+                        </button>
+                        <button type="submit" class="btn btn-success" id="btnConfirmarRehabilitar">
+                            <i class="mdi mdi-check-circle"></i> Rehabilitar Acuerdo
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    {{-- Modal para Extender Acuerdo --}}
+    <div class="modal fade" id="modalExtender" tabindex="-1" data-bs-backdrop="static">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title">
+                        <i class="mdi mdi-calendar-clock"></i> Extender Acuerdo
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="formExtender">
+                    @csrf
+                    <input type="hidden" id="acuerdoIdExtender">
+                    <div class="modal-body">
+                        <div class="alert alert-info">
+                            <i class="mdi mdi-information"></i>
+                            Fecha actual de fin: <strong id="fechaFinActual"></strong>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Nueva Fecha de Fin <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" name="nueva_fecha_fin" required>
+                            <small class="text-muted">Debe ser posterior a la fecha de fin actual</small>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Motivo de la Extensión <span class="text-danger">*</span></label>
+                            <textarea class="form-control" name="motivo" rows="4" required
+                                placeholder="Explique el motivo por el cual se extiende este acuerdo..."></textarea>
+                            <small class="text-muted">Mínimo 10 caracteres</small>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="mdi mdi-close"></i> Cancelar
+                        </button>
+                        <button type="submit" class="btn btn-success" id="btnConfirmarExtender">
+                            <i class="mdi mdi-calendar-check"></i> Extender Acuerdo
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     {{-- Estilos --}}
     <style>
         .card-stat {
@@ -432,6 +555,11 @@
             border-radius: 10px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
             transition: transform 0.2s;
+        }
+
+        .badge-deshabilitado {
+            background-color: #6B7280;
+            color: white;
         }
 
         .card-stat:hover {
@@ -547,12 +675,15 @@
         const userEmail = "{{ Auth::user()->email }}";
         const canValidate = userEmail === 'planeamiento.comercial@trimaxperu.com';
         const canApprove = userEmail === 'smonopoli@trimaxperu.com';
+        const canManageAcuerdos = userEmail === 'smonopoli@trimaxperu.com' || userEmail ===
+            'planeamiento.comercial@trimaxperu.com';
 
         $(document).ready(function() {
             cargarAcuerdos();
+            cargarUsuarios();
 
             // Eventos de filtros
-            $('#filtroCliente, #filtroSede, #filtroEstado').on('change', function() {
+            $('#filtroUsuario, #filtroSede, #filtroEstado').on('change', function() {
                 aplicarFiltros();
             });
 
@@ -567,7 +698,7 @@
             });
 
             $('#btnLimpiarFiltros').on('click', function() {
-                $('#filtroCliente').val('');
+                $('#filtroUsuario').val('');
                 $('#filtroSede').val('');
                 $('#filtroEstado').val('');
                 $('#buscarGeneral').val('');
@@ -585,12 +716,49 @@
                 $('#modalAcuerdo').modal('show');
             });
 
-            // Submit formulario
+            // Submit formularios
             $('#formAcuerdo').on('submit', function(e) {
                 e.preventDefault();
                 crearAcuerdo();
             });
+
+            $('#formDeshabilitar').on('submit', function(e) {
+                e.preventDefault();
+                deshabilitarAcuerdo();
+            });
+
+            $('#formExtender').on('submit', function(e) {
+                e.preventDefault();
+                extenderAcuerdo();
+            });
+
+            $('#formRehabilitar').on('submit', function(e) {
+                e.preventDefault();
+                rehabilitarAcuerdo();
+            });
         });
+
+        /**
+         * Cargar usuarios creadores para el select
+         */
+        function cargarUsuarios() {
+            $.ajax({
+                url: "{{ route('comercial.acuerdos.usuarios') }}",
+                method: 'GET',
+                success: function(response) {
+                    if (response.success) {
+                        let options = '<option value="">Todos los usuarios</option>';
+                        response.data.forEach(usuario => {
+                            options += `<option value="${usuario.id}">${usuario.name}</option>`;
+                        });
+                        $('#filtroUsuario').html(options);
+                    }
+                },
+                error: function(xhr) {
+                    console.error('Error al cargar usuarios:', xhr);
+                }
+            });
+        }
 
         /**
          * Cargar acuerdos
@@ -601,7 +769,7 @@
             $('#tablaContainer').hide();
 
             const params = {
-                cliente: $('#filtroCliente').val(),
+                usuario: $('#filtroUsuario').val(),
                 sede: $('#filtroSede').val(),
                 estado: $('#filtroEstado').val(),
                 buscar: $('#buscarGeneral').val()
@@ -614,7 +782,6 @@
                 success: function(response) {
                     if (response.success) {
                         acuerdosData = response.data;
-
                         console.log('✅ Acuerdos cargados:', acuerdosData.length);
 
                         actualizarEstadisticas();
@@ -678,8 +845,11 @@
                     const badgeValidado = obtenerBadgeAprobacion(acuerdo.validado);
                     const badgeAprobado = obtenerBadgeAprobacion(acuerdo.aprobado);
 
+                    const esDeshabilitado = acuerdo.estado === 'Deshabilitado';
+                    const esVigente = acuerdo.estado === 'Vigente';
+
                     html += `
-                    <tr>
+                    <tr ${esDeshabilitado ? 'class="table-secondary"' : ''}>
                         <td class="text-center">${index + 1}</td>
                         <td><strong class="text-primary">${acuerdo.numero_acuerdo}</strong></td>
                         <td>${acuerdo.sede}</td>
@@ -695,35 +865,52 @@
                         <td>${badgeEstado}</td>
                         <td>
                             ${badgeValidado}
-                            ${canValidate && acuerdo.validado === 'Pendiente' ? `
-                                    <div class="btn-group mt-1" role="group">
-                                        <button class="btn btn-sm btn-success" onclick="validarAcuerdo(${acuerdo.id}, 'Aprobado')">
-                                            <i class="mdi mdi-check"></i>
-                                        </button>
-                                        <button class="btn btn-sm btn-danger" onclick="validarAcuerdo(${acuerdo.id}, 'Rechazado')">
-                                            <i class="mdi mdi-close"></i>
-                                        </button>
-                                    </div>
-                                ` : ''}
+                            ${canValidate && acuerdo.validado === 'Pendiente' && !esDeshabilitado ? `
+                                        <div class="btn-group mt-1" role="group">
+                                            <button class="btn btn-sm btn-success" onclick="validarAcuerdo(${acuerdo.id}, 'Aprobado')">
+                                                <i class="mdi mdi-check"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-danger" onclick="validarAcuerdo(${acuerdo.id}, 'Rechazado')">
+                                                <i class="mdi mdi-close"></i>
+                                            </button>
+                                        </div>
+                                    ` : ''}
                         </td>
                         <td>
                             ${badgeAprobado}
-                            ${canApprove && acuerdo.aprobado === 'Pendiente' ? `
-                                    <div class="btn-group mt-1" role="group">
-                                        <button class="btn btn-sm btn-success" onclick="aprobarAcuerdo(${acuerdo.id}, 'Aprobado')">
-                                            <i class="mdi mdi-check"></i>
-                                        </button>
-                                        <button class="btn btn-sm btn-danger" onclick="aprobarAcuerdo(${acuerdo.id}, 'Rechazado')">
-                                            <i class="mdi mdi-close"></i>
-                                        </button>
-                                    </div>
-                                ` : ''}
+                            ${canApprove && acuerdo.aprobado === 'Pendiente' && !esDeshabilitado ? `
+                                        <div class="btn-group mt-1" role="group">
+                                            <button class="btn btn-sm btn-success" onclick="aprobarAcuerdo(${acuerdo.id}, 'Aprobado')">
+                                                <i class="mdi mdi-check"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-danger" onclick="aprobarAcuerdo(${acuerdo.id}, 'Rechazado')">
+                                                <i class="mdi mdi-close"></i>
+                                            </button>
+                                        </div>
+                                    ` : ''}
                         </td>
                         <td>${acuerdo.creador ? acuerdo.creador.name : '-'}</td>
                         <td class="text-center">
-                            <button class="btn btn-sm btn-info" onclick="verDetalles(${acuerdo.id})" title="Ver detalles">
-                                <i class="mdi mdi-eye"></i>
-                            </button>
+                            <div class="btn-group" role="group">
+                                <button class="btn btn-sm btn-info" onclick="verDetalles(${acuerdo.id})" title="Ver detalles">
+                                    <i class="mdi mdi-eye"></i>
+                                </button>
+                                ${canManageAcuerdos && esVigente && !esDeshabilitado ? `
+                                        <button class="btn btn-sm btn-success" onclick="abrirModalExtender(${acuerdo.id})" title="Extender vigencia">
+                                            <i class="mdi mdi-calendar-clock"></i>
+                                        </button>
+                                    ` : ''}
+                                ${canManageAcuerdos && !esDeshabilitado ? `
+                                        <button class="btn btn-sm btn-danger" onclick="abrirModalDeshabilitar(${acuerdo.id})" title="Deshabilitar">
+                                            <i class="mdi mdi-cancel"></i>
+                                        </button>
+                                    ` : ''}
+                                ${canManageAcuerdos && esDeshabilitado ? `
+                                        <button class="btn btn-sm btn-success" onclick="abrirModalRehabilitar(${acuerdo.id})" title="Rehabilitar">
+                                            <i class="mdi mdi-check-circle"></i>
+                                        </button>
+                                    ` : ''}
+                            </div>
                         </td>
                     </tr>
                 `;
@@ -757,6 +944,7 @@
                             confirmButtonColor: '#3B82F6'
                         });
                         cargarAcuerdos();
+                        cargarUsuarios();
                     }
                 },
                 error: function(xhr) {
@@ -774,6 +962,235 @@
                 complete: function() {
                     $('#btnGuardarAcuerdo').prop('disabled', false).html(
                         '<i class="mdi mdi-content-save"></i> Guardar Acuerdo');
+                }
+            });
+        }
+
+        /**
+         * Abrir modal deshabilitar
+         */
+        function abrirModalDeshabilitar(id) {
+            if (!canManageAcuerdos) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Acceso Denegado',
+                    text: 'No tienes permisos para deshabilitar acuerdos',
+                    confirmButtonColor: '#EF4444'
+                });
+                return;
+            }
+
+            $('#acuerdoIdDeshabilitar').val(id);
+            $('#formDeshabilitar')[0].reset();
+            $('#modalDeshabilitar').modal('show');
+        }
+
+        /**
+         * Deshabilitar acuerdo
+         */
+        function deshabilitarAcuerdo() {
+            const id = $('#acuerdoIdDeshabilitar').val();
+            const motivo = $('textarea[name="motivo"]', '#formDeshabilitar').val();
+
+            if (motivo.length < 10) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Motivo insuficiente',
+                    text: 'El motivo debe tener al menos 10 caracteres',
+                    confirmButtonColor: '#F59E0B'
+                });
+                return;
+            }
+
+            $('#btnConfirmarDeshabilitar').prop('disabled', true).html(
+                '<i class="mdi mdi-loading mdi-spin"></i> Procesando...');
+
+            $.ajax({
+                url: `/comercial/acuerdos/${id}/deshabilitar`,
+                method: 'POST',
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    motivo: motivo
+                },
+                success: function(response) {
+                    if (response.success) {
+                        $('#modalDeshabilitar').modal('hide');
+                        Swal.fire({
+                            icon: 'success',
+                            title: '¡Deshabilitado!',
+                            text: response.message,
+                            confirmButtonColor: '#3B82F6'
+                        });
+                        cargarAcuerdos();
+                    }
+                },
+                error: function(xhr) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: xhr.responseJSON?.message || 'Error al deshabilitar acuerdo',
+                        confirmButtonColor: '#EF4444'
+                    });
+                },
+                complete: function() {
+                    $('#btnConfirmarDeshabilitar').prop('disabled', false).html(
+                        '<i class="mdi mdi-cancel"></i> Deshabilitar Acuerdo');
+                }
+            });
+        }
+
+        /**
+         * Abrir modal extender
+         */
+        function abrirModalExtender(id) {
+            if (!canManageAcuerdos) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Acceso Denegado',
+                    text: 'No tienes permisos para extender acuerdos',
+                    confirmButtonColor: '#EF4444'
+                });
+                return;
+            }
+
+            const acuerdo = acuerdosData.find(a => a.id === id);
+            if (!acuerdo) return;
+
+            $('#acuerdoIdExtender').val(id);
+            $('#fechaFinActual').text(formatearFecha(acuerdo.fecha_fin));
+            $('#formExtender')[0].reset();
+
+            // Establecer fecha mínima
+            $('input[name="nueva_fecha_fin"]', '#formExtender').attr('min', acuerdo.fecha_fin);
+
+            $('#modalExtender').modal('show');
+        }
+
+        /**
+         * Extender acuerdo
+         */
+        function extenderAcuerdo() {
+            const id = $('#acuerdoIdExtender').val();
+            const nuevaFecha = $('input[name="nueva_fecha_fin"]', '#formExtender').val();
+            const motivo = $('textarea[name="motivo"]', '#formExtender').val();
+
+            if (motivo.length < 10) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Motivo insuficiente',
+                    text: 'El motivo debe tener al menos 10 caracteres',
+                    confirmButtonColor: '#F59E0B'
+                });
+                return;
+            }
+
+            $('#btnConfirmarExtender').prop('disabled', true).html(
+            '<i class="mdi mdi-loading mdi-spin"></i> Procesando...');
+
+            $.ajax({
+                url: `/comercial/acuerdos/${id}/extender`,
+                method: 'POST',
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    nueva_fecha_fin: nuevaFecha,
+                    motivo: motivo
+                },
+                success: function(response) {
+                    if (response.success) {
+                        $('#modalExtender').modal('hide');
+                        Swal.fire({
+                            icon: 'success',
+                            title: '¡Extendido!',
+                            text: response.message,
+                            confirmButtonColor: '#3B82F6'
+                        });
+                        cargarAcuerdos();
+                    }
+                },
+                error: function(xhr) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: xhr.responseJSON?.message || 'Error al extender acuerdo',
+                        confirmButtonColor: '#EF4444'
+                    });
+                },
+                complete: function() {
+                    $('#btnConfirmarExtender').prop('disabled', false).html(
+                        '<i class="mdi mdi-calendar-check"></i> Extender Acuerdo');
+                }
+            });
+        }
+
+        /**
+         * Abrir modal rehabilitar
+         */
+        function abrirModalRehabilitar(id) {
+            if (!canManageAcuerdos) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Acceso Denegado',
+                    text: 'No tienes permisos para rehabilitar acuerdos',
+                    confirmButtonColor: '#EF4444'
+                });
+                return;
+            }
+
+            $('#acuerdoIdRehabilitar').val(id);
+            $('#formRehabilitar')[0].reset();
+            $('#modalRehabilitar').modal('show');
+        }
+
+        /**
+         * Rehabilitar acuerdo
+         */
+        function rehabilitarAcuerdo() {
+            const id = $('#acuerdoIdRehabilitar').val();
+            const motivo = $('textarea[name="motivo"]', '#formRehabilitar').val();
+
+            if (motivo.length < 10) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Motivo insuficiente',
+                    text: 'El motivo debe tener al menos 10 caracteres',
+                    confirmButtonColor: '#F59E0B'
+                });
+                return;
+            }
+
+            $('#btnConfirmarRehabilitar').prop('disabled', true).html(
+                '<i class="mdi mdi-loading mdi-spin"></i> Procesando...');
+
+            $.ajax({
+                url: `/comercial/acuerdos/${id}/rehabilitar`,
+                method: 'POST',
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    motivo: motivo
+                },
+                success: function(response) {
+                    if (response.success) {
+                        $('#modalRehabilitar').modal('hide');
+                        Swal.fire({
+                            icon: 'success',
+                            title: '¡Rehabilitado!',
+                            text: response.message,
+                            confirmButtonColor: '#3B82F6'
+                        });
+                        cargarAcuerdos();
+                    }
+                },
+                error: function(xhr) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: xhr.responseJSON?.message || 'Error al rehabilitar acuerdo',
+                        confirmButtonColor: '#EF4444'
+                    });
+                },
+                complete: function() {
+                    $('#btnConfirmarRehabilitar').prop('disabled', false).html(
+                        '<i class="mdi mdi-check-circle"></i> Rehabilitar Acuerdo');
                 }
             });
         }
@@ -895,6 +1312,38 @@
                 archivosHTML = '<p class="text-muted">No hay archivos adjuntos</p>';
             }
 
+            let historialHTML = '';
+            if (acuerdo.motivo_deshabilitacion) {
+                historialHTML += `
+                    <div class="alert alert-danger">
+                        <h6><i class="mdi mdi-cancel"></i> Deshabilitado</h6>
+                        <p><strong>Motivo:</strong> ${acuerdo.motivo_deshabilitacion}</p>
+                        <p><strong>Por:</strong> ${acuerdo.deshabilitador?.name || '-'}</p>
+                        <p><strong>Fecha:</strong> ${formatearFecha(acuerdo.deshabilitado_at)}</p>
+                    </div>
+                `;
+            }
+            if (acuerdo.motivo_rehabilitacion) {
+                historialHTML += `
+                    <div class="alert alert-success">
+                        <h6><i class="mdi mdi-check-circle"></i> Rehabilitado</h6>
+                        <p><strong>Motivo:</strong> ${acuerdo.motivo_rehabilitacion}</p>
+                        <p><strong>Por:</strong> ${acuerdo.rehabilitador?.name || '-'}</p>
+                        <p><strong>Fecha:</strong> ${formatearFecha(acuerdo.rehabilitado_at)}</p>
+                    </div>
+                `;
+            }
+            if (acuerdo.motivo_extension) {
+                historialHTML += `
+                    <div class="alert alert-info">
+                        <h6><i class="mdi mdi-calendar-clock"></i> Extensión</h6>
+                        <p><strong>Motivo:</strong> ${acuerdo.motivo_extension}</p>
+                        <p><strong>Por:</strong> ${acuerdo.extensor?.name || '-'}</p>
+                        <p><strong>Fecha:</strong> ${formatearFecha(acuerdo.extendido_at)}</p>
+                    </div>
+                `;
+            }
+
             const html = `
             <div class="row">
                 <div class="col-md-6">
@@ -944,6 +1393,14 @@
                     </table>
                 </div>
             </div>
+            ${historialHTML ? `
+                <div class="row mt-3">
+                    <div class="col-md-12">
+                        <h6 class="text-primary"><i class="mdi mdi-history"></i> Historial</h6>
+                        ${historialHTML}
+                    </div>
+                </div>
+                ` : ''}
             <div class="row mt-3">
                 <div class="col-md-12">
                     <h6 class="text-primary"><i class="mdi mdi-comment-text"></i> Comentarios</h6>
@@ -969,7 +1426,8 @@
             const badges = {
                 'Solicitado': '<span class="badge badge-estado badge-solicitado">Solicitado</span>',
                 'Vigente': '<span class="badge badge-estado badge-vigente">Vigente</span>',
-                'Vencido': '<span class="badge badge-estado badge-vencido">Vencido</span>'
+                'Vencido': '<span class="badge badge-estado badge-vencido">Vencido</span>',
+                'Deshabilitado': '<span class="badge badge-estado badge-deshabilitado">Deshabilitado</span>'
             };
             return badges[estado] || '<span class="badge badge-secondary">' + estado + '</span>';
         }
