@@ -142,6 +142,7 @@
                                                         <option value="CAJAMARCA">CAJAMARCA</option>
                                                         <option value="PUCALLPA">PUCALLPA</option>
                                                         <option value="SJL">SJL</option>
+                                                        <option value="TODOS">TODOS</option>
                                                     </select>
                                                 </div>
                                                 <div class="col-md-3">
@@ -207,11 +208,11 @@
                                                                 <th style="min-width: 130px;">N° Acuerdo</th>
                                                                 <th style="min-width: 120px;">Sede</th>
                                                                 <th style="min-width: 130px;">RUC</th>
-                                                                <th style="min-width: 220px;">Razón Social</th>
+                                                                <th style="min-width: 250px;">Razón Social</th>
                                                                 <th style="min-width: 130px;">Consultor</th>
                                                                 <th style="min-width: 130px;">Ciudad</th>
-                                                                <th style="min-width: 200px;">Acuerdo Comercial</th>
-                                                                <th style="min-width: 150px;">Tipo Promoción</th>
+                                                                <th style="min-width: 400px;">Acuerdo Comercial</th>
+                                                                <th style="min-width: 300px;">Tipo Promoción</th>
                                                                 <th style="min-width: 130px;">Marca</th>
                                                                 <th style="min-width: 110px;">Fecha Inicio</th>
                                                                 <th style="min-width: 110px;">Fecha Fin</th>
@@ -296,6 +297,8 @@
                                         <option value="CAJAMARCA">CAJAMARCA</option>
                                         <option value="PUCALLPA">PUCALLPA</option>
                                         <option value="SJL">SJL</option>
+                                        <option value="SJL">SJL</option>
+                                        <option value="TODOS">TODOS</option>
                                     </select>
                                 </div>
 
@@ -857,7 +860,7 @@
                         <td title="${acuerdo.razon_social}"><strong>${acuerdo.razon_social}</strong></td>
                         <td>${acuerdo.consultor}</td>
                         <td>${acuerdo.ciudad}</td>
-                        <td title="${acuerdo.acuerdo_comercial}">${truncar(acuerdo.acuerdo_comercial, 30)}</td>
+                        <td title="${acuerdo.acuerdo_comercial}">${truncar(acuerdo.acuerdo_comercial, 70)}</td>
                         <td>${acuerdo.tipo_promocion}</td>
                         <td>${acuerdo.marca}</td>
                         <td><small>${formatearFecha(acuerdo.fecha_inicio)}</small></td>
@@ -1361,7 +1364,7 @@
                 <div class="col-md-6">
                     <h6 class="text-primary"><i class="mdi mdi-package"></i> Detalles del Acuerdo</h6>
                     <table class="table table-borderless table-sm">
-                        <tr><th>Acuerdo:</th><td>${acuerdo.acuerdo_comercial}</td></tr>
+                        <tr><th>Acuerdo:</th><td style="max-width: 250px; max-height: 80px; overflow-y: auto; overflow-x: hidden; word-wrap: break-word; white-space: normal;">${acuerdo.acuerdo_comercial}</td></tr>
                         <tr><th>Promoción:</th><td>${acuerdo.tipo_promocion}</td></tr>
                         <tr><th>Marca:</th><td>${acuerdo.marca}</td></tr>
                         <tr><th>AR:</th><td>${acuerdo.ar || '-'}</td></tr>
