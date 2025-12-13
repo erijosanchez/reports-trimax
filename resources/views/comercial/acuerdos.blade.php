@@ -769,22 +769,17 @@
         /**
          * Cargar acuerdos
          */
+        /**
+         * Cargar acuerdos
+         */
         function cargarAcuerdos() {
             $('#loadingSpinner').show();
             $('#errorMessage').hide();
             $('#tablaContainer').hide();
 
-            const params = {
-                usuario: $('#filtroUsuario').val(),
-                sede: $('#filtroSede').val(),
-                estado: $('#filtroEstado').val(),
-                buscar: $('#buscarGeneral').val()
-            };
-
             $.ajax({
                 url: "{{ route('comercial.acuerdos.obtener') }}",
                 method: 'GET',
-                data: params,
                 success: function(response) {
                     if (response.success) {
                         acuerdosData = response.data;
@@ -811,8 +806,72 @@
         /**
          * Aplicar filtros
          */
+        /**
+         * Aplicar filtros
+         */
         function aplicarFiltros() {
-            cargarAcuerdos();
+            $('#loadingSpinner').show();
+            $('#errorMessage').hide();
+            $('#tablaContainer').hide();
+
+            const filtroUsuario = $('#filtroUsuario').val();
+            const filtroSede = $('#filtroSede').val();
+            const filtroEstado = $('#filtroEstado').val();
+            const busqueda = $('#buscarGeneral').val().toLowerCase().trim();
+
+            let acuerdosFiltrados = acuerdosData;
+
+            // Filtro por usuario
+            if (filtroUsuario) {
+                acuerdosFiltrados = acuerdosFiltrados.filter(a =>
+                    a.creador && a.creador.id == filtroUsuario
+                );
+            }
+
+            // Filtro por sede
+            if (filtroSede) {
+                acuerdosFiltrados = acuerdosFiltrados.filter(a =>
+                    a.sede === filtroSede
+                );
+            }
+
+            // Filtro por estado
+            if (filtroEstado) {
+                acuerdosFiltrados = acuerdosFiltrados.filter(a =>
+                    a.estado === filtroEstado
+                );
+            }
+
+            // Búsqueda general (flexible)
+            if (busqueda) {
+                acuerdosFiltrados = acuerdosFiltrados.filter(a => {
+                    const numero = (a.numero_acuerdo || '').toLowerCase();
+                    const ruc = (a.ruc || '').toLowerCase();
+                    const razon = (a.razon_social || '').toLowerCase();
+                    const consultor = (a.consultor || '').toLowerCase();
+                    const acuerdo = (a.acuerdo_comercial || '').toLowerCase();
+                    const ciudad = (a.ciudad || '').toLowerCase();
+
+                    return numero.includes(busqueda) ||
+                        ruc.includes(busqueda) ||
+                        razon.includes(busqueda) ||
+                        consultor.includes(busqueda) ||
+                        acuerdo.includes(busqueda) ||
+                        ciudad.includes(busqueda);
+                });
+            }
+
+            // Actualizar con los datos filtrados
+            const acuerdosOriginal = acuerdosData;
+            acuerdosData = acuerdosFiltrados;
+
+            actualizarEstadisticas();
+            renderizarTabla();
+
+            acuerdosData = acuerdosOriginal; // Restaurar datos originales
+
+            $('#loadingSpinner').hide();
+            $('#tablaContainer').show();
         }
 
         /**
@@ -875,28 +934,28 @@
                         <td>
                             ${badgeValidado}
                             ${canValidate && acuerdo.validado === 'Pendiente' && !esDeshabilitado ? `
-                                        <div class="btn-group mt-1" role="group">
-                                            <button class="btn btn-sm btn-success" onclick="validarAcuerdo(${acuerdo.id}, 'Aprobado')">
-                                                <i class="mdi mdi-check"></i>
-                                            </button>
-                                            <button class="btn btn-sm btn-danger" onclick="validarAcuerdo(${acuerdo.id}, 'Rechazado')">
-                                                <i class="mdi mdi-close"></i>
-                                            </button>
-                                        </div>
-                                    ` : ''}
+                                                <div class="btn-group mt-1" role="group">
+                                                    <button class="btn btn-sm btn-success" onclick="validarAcuerdo(${acuerdo.id}, 'Aprobado')">
+                                                        <i class="mdi mdi-check"></i>
+                                                    </button>
+                                                    <button class="btn btn-sm btn-danger" onclick="validarAcuerdo(${acuerdo.id}, 'Rechazado')">
+                                                        <i class="mdi mdi-close"></i>
+                                                    </button>
+                                                </div>
+                                            ` : ''}
                         </td>
                         <td>
                             ${badgeAprobado}
                             ${canApprove && acuerdo.aprobado === 'Pendiente' && !esDeshabilitado ? `
-                                        <div class="btn-group mt-1" role="group">
-                                            <button class="btn btn-sm btn-success" onclick="aprobarAcuerdo(${acuerdo.id}, 'Aprobado')">
-                                                <i class="mdi mdi-check"></i>
-                                            </button>
-                                            <button class="btn btn-sm btn-danger" onclick="aprobarAcuerdo(${acuerdo.id}, 'Rechazado')">
-                                                <i class="mdi mdi-close"></i>
-                                            </button>
-                                        </div>
-                                    ` : ''}
+                                                <div class="btn-group mt-1" role="group">
+                                                    <button class="btn btn-sm btn-success" onclick="aprobarAcuerdo(${acuerdo.id}, 'Aprobado')">
+                                                        <i class="mdi mdi-check"></i>
+                                                    </button>
+                                                    <button class="btn btn-sm btn-danger" onclick="aprobarAcuerdo(${acuerdo.id}, 'Rechazado')">
+                                                        <i class="mdi mdi-close"></i>
+                                                    </button>
+                                                </div>
+                                            ` : ''}
                         </td>
                         <td>${acuerdo.creador ? acuerdo.creador.name : '-'}</td>
                         <td class="text-center">
@@ -905,20 +964,20 @@
                                     <i class="mdi mdi-eye"></i>
                                 </button>
                                 ${canManageAcuerdos && esVigente && !esDeshabilitado ? `
-                                        <button class="btn btn-sm btn-success" onclick="abrirModalExtender(${acuerdo.id})" title="Extender vigencia">
-                                            <i class="mdi mdi-calendar-clock"></i>
-                                        </button>
-                                    ` : ''}
+                                                <button class="btn btn-sm btn-success" onclick="abrirModalExtender(${acuerdo.id})" title="Extender vigencia">
+                                                    <i class="mdi mdi-calendar-clock"></i>
+                                                </button>
+                                            ` : ''}
                                 ${canManageAcuerdos && !esDeshabilitado ? `
-                                        <button class="btn btn-sm btn-danger" onclick="abrirModalDeshabilitar(${acuerdo.id})" title="Deshabilitar">
-                                            <i class="mdi mdi-cancel"></i>
-                                        </button>
-                                    ` : ''}
+                                                <button class="btn btn-sm btn-danger" onclick="abrirModalDeshabilitar(${acuerdo.id})" title="Deshabilitar">
+                                                    <i class="mdi mdi-cancel"></i>
+                                                </button>
+                                            ` : ''}
                                 ${canManageAcuerdos && esDeshabilitado ? `
-                                        <button class="btn btn-sm btn-success" onclick="abrirModalRehabilitar(${acuerdo.id})" title="Rehabilitar">
-                                            <i class="mdi mdi-check-circle"></i>
-                                        </button>
-                                    ` : ''}
+                                                <button class="btn btn-sm btn-success" onclick="abrirModalRehabilitar(${acuerdo.id})" title="Rehabilitar">
+                                                    <i class="mdi mdi-check-circle"></i>
+                                                </button>
+                                            ` : ''}
                             </div>
                         </td>
                     </tr>
@@ -1094,7 +1153,7 @@
             }
 
             $('#btnConfirmarExtender').prop('disabled', true).html(
-            '<i class="mdi mdi-loading mdi-spin"></i> Procesando...');
+                '<i class="mdi mdi-loading mdi-spin"></i> Procesando...');
 
             $.ajax({
                 url: `/comercial/acuerdos/${id}/extender`,
@@ -1403,13 +1462,13 @@
                 </div>
             </div>
             ${historialHTML ? `
-                <div class="row mt-3">
-                    <div class="col-md-12">
-                        <h6 class="text-primary"><i class="mdi mdi-history"></i> Historial</h6>
-                        ${historialHTML}
-                    </div>
-                </div>
-                ` : ''}
+                        <div class="row mt-3">
+                            <div class="col-md-12">
+                                <h6 class="text-primary"><i class="mdi mdi-history"></i> Historial</h6>
+                                ${historialHTML}
+                            </div>
+                        </div>
+                        ` : ''}
             <div class="row mt-3">
                 <div class="col-md-12">
                     <h6 class="text-primary"><i class="mdi mdi-comment-text"></i> Comentarios</h6>
