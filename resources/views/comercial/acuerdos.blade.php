@@ -214,6 +214,9 @@
                                                                 <th style="min-width: 400px;">Acuerdo Comercial</th>
                                                                 <th style="min-width: 300px;">Tipo Promoción</th>
                                                                 <th style="min-width: 130px;">Marca</th>
+                                                                <th style="min-width: 130px;">AR</th>
+                                                                <th style="min-width: 130px;">Diseños</th>
+                                                                <th style="min-width: 130px;">Material</th>
                                                                 <th style="min-width: 110px;">Fecha Inicio</th>
                                                                 <th style="min-width: 110px;">Fecha Fin</th>
                                                                 <th style="min-width: 130px;"
@@ -863,6 +866,9 @@
                         <td title="${acuerdo.acuerdo_comercial}">${truncar(acuerdo.acuerdo_comercial, 70)}</td>
                         <td>${acuerdo.tipo_promocion}</td>
                         <td>${acuerdo.marca}</td>
+                        <td>${acuerdo.ar}</td>
+                        <td>${acuerdo.disenos}</td>
+                        <td>${acuerdo.material}</td>
                         <td><small>${formatearFecha(acuerdo.fecha_inicio)}</small></td>
                         <td><small>${formatearFecha(acuerdo.fecha_fin)}</small></td>
                         <td>${badgeEstado}</td>
