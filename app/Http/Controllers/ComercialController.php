@@ -273,7 +273,6 @@ class ComercialController extends Controller
             $usuarios = collect([$validador, $aprobador, $acuerdo->creador])->filter();
 
             Notification::send($usuarios, new AcuerdoCreado($acuerdo));
-
         } catch (\Exception $e) {
             \Log::error('Error al enviar notificaciones de creación: ' . $e->getMessage());
         }
@@ -287,7 +286,6 @@ class ComercialController extends Controller
         try {
             // Notificar al creador
             $acuerdo->creador->notify(new AcuerdoAprobado($acuerdo));
-
         } catch (\Exception $e) {
             \Log::error('Error al enviar notificación de aprobación: ' . $e->getMessage());
         }
@@ -326,6 +324,94 @@ class ComercialController extends Controller
     public function consultarOrden()
     {
         return view('comercial.consulta-orden');
+    }
+
+    /**
+     * Obtener solo las 100 órdenes más recientes (CARGA RÁPIDA)
+     */
+    public function obtenerOrdenesRecientes(Request $request)
+    {
+        try {
+            ini_set('memory_limit', '512M');
+            ini_set('max_execution_time', '60');
+
+            $cacheKey = 'google_sheets_ultimas_100';
+
+            $ordenes = \Cache::store('file')->remember($cacheKey, 300, function () {
+                $rawData = $this->googleSheets->getSheetData('Historico');
+                $todasOrdenes = $this->googleSheets->parseSheetData($rawData);
+
+                // Ordenar por fecha descendente y tomar solo 100
+                usort($todasOrdenes, function ($a, $b) {
+                    $fechaA = $this->convertirFechaParaComparar($a['fecha_orden'] ?? '');
+                    $fechaB = $this->convertirFechaParaComparar($b['fecha_orden'] ?? '');
+                    return $fechaB <=> $fechaA; // Descendente (más recientes primero)
+                });
+
+                return array_slice($todasOrdenes, 0, 100);
+            });
+
+            // Aplicar filtros solo a las 100
+            if ($request->filled('sede')) {
+                $ordenes = array_filter($ordenes, function ($orden) use ($request) {
+                    return ($orden['descripcion_sede'] ?? '') === $request->sede;
+                });
+            }
+
+            if ($request->filled('estado')) {
+                $estado = mb_strtoupper($request->estado);
+                $ordenes = array_filter($ordenes, function ($orden) use ($estado) {
+                    $ubicacion = mb_strtoupper($orden['ubicacion_orden'] ?? '');
+
+                    if ($estado === 'FACTURADO') {
+                        return strpos($ubicacion, 'FACTURADO') !== false || strpos($ubicacion, 'ENTREGADO') !== false;
+                    } elseif ($estado === 'EN TRANSITO') {
+                        return strpos($ubicacion, 'TRANSITO') !== false;
+                    } elseif ($estado === 'EN SEDE') {
+                        return strpos($ubicacion, 'SEDE') !== false;
+                    }
+                    return true;
+                });
+            }
+
+            if ($request->filled('buscar')) {
+                $ordenes = $this->googleSheets->searchInData($ordenes, $request->buscar);
+            }
+
+            $ordenes = array_values($ordenes);
+            $stats = $this->calcularEstadisticas($ordenes);
+
+            return response()->json([
+                'success' => true,
+                'data' => $ordenes,
+                'stats' => $stats,
+                'total' => count($ordenes),
+                'es_reciente' => true,
+                'mensaje' => 'Mostrando las 100 órdenes más recientes'
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('❌ Error en obtenerOrdenesRecientes: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Convertir fecha para comparación
+     */
+    private function convertirFechaParaComparar($fechaStr)
+    {
+        if (!$fechaStr || $fechaStr === '-') return 0;
+
+        // Formato DD/MM/YYYY
+        $partes = explode('/', $fechaStr);
+        if (count($partes) === 3) {
+            return mktime(0, 0, 0, $partes[1], $partes[0], $partes[2]);
+        }
+
+        return strtotime($fechaStr);
     }
 
     public function obtenerOrdenes(Request $request)
@@ -507,7 +593,6 @@ class ComercialController extends Controller
             $destinatarios = $destinatarios->unique('id');
 
             Notification::send($destinatarios, new AcuerdoRehabilitado($acuerdo, $motivo));
-
         } catch (\Exception $e) {
             \Log::error('Error al enviar notificaciones de rehabilitación: ' . $e->getMessage());
         }
@@ -753,21 +838,37 @@ class ComercialController extends Controller
     {
         $total = count($ordenes);
 
-        $enTransito = count(array_filter($ordenes, function ($orden) {
-            return stripos($orden['ubicacion_orden'] ?? '', 'TRANSITO') !== false;
-        }));
+        $enTransito = 0;
+        $enSede = 0;
+        $facturados = 0;
+        $entregados = 0;
 
-        $enSede = count(array_filter($ordenes, function ($orden) {
-            return stripos($orden['ubicacion_orden'] ?? '', 'SEDE') !== false;
-        }));
+        // 🔥 NUEVO - Contadores de importes
+        $importeTransito = 0;
+        $importeSede = 0;
 
-        $facturados = count(array_filter($ordenes, function ($orden) {
-            return stripos($orden['ubicacion_orden'] ?? '', 'FACTURADO') !== false;
-        }));
+        foreach ($ordenes as $orden) {
+            $ubicacion = mb_strtoupper($orden['ubicacion_orden'] ?? '');
+            $importe = $this->limpiarImporte($orden['importe'] ?? 0);
 
-        $entregados = count(array_filter($ordenes, function ($orden) {
-            return stripos($orden['ubicacion_orden'] ?? '', 'ENTREGADO') !== false;
-        }));
+            if (stripos($ubicacion, 'TRANSITO') !== false) {
+                $enTransito++;
+                $importeTransito += $importe; // 🔥 SUMAR IMPORTE
+            }
+
+            if (stripos($ubicacion, 'SEDE') !== false) {
+                $enSede++;
+                $importeSede += $importe; // 🔥 SUMAR IMPORTE
+            }
+
+            if (stripos($ubicacion, 'FACTURADO') !== false) {
+                $facturados++;
+            }
+
+            if (stripos($ubicacion, 'ENTREGADO') !== false) {
+                $entregados++;
+            }
+        }
 
         return [
             'total' => $total,
@@ -775,8 +876,25 @@ class ComercialController extends Controller
             'en_sede' => $enSede,
             'facturados' => $facturados,
             'entregados' => $entregados,
-            'disponibles_facturar' => $enSede + $enTransito
+            'disponibles_facturar' => $enSede + $enTransito,
+            // 🔥 NUEVO - Importes
+            'importe_transito' => round($importeTransito, 2),
+            'importe_sede' => round($importeSede, 2),
+            'importe_total' => round($importeTransito + $importeSede, 2)
         ];
+    }
+
+    private function limpiarImporte($importeStr)
+    {
+        if (!$importeStr || $importeStr === '-') {
+            return 0;
+        }
+
+        // Convertir a string y limpiar
+        $limpio = preg_replace('/[^0-9.]/', '', (string)$importeStr);
+
+        $numero = floatval($limpio);
+        return $numero;
     }
 
     /**

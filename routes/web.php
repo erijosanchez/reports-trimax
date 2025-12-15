@@ -86,7 +86,7 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
 
         /* ACUERDOS COMERCIALES APROBAR*/
         Route::get('/acuerdos', [ComercialController::class, 'acuerdos'])->name('acuerdos');
-         // AJAX endpoints
+        // AJAX endpoints
         Route::get('/acuerdos/obtener', [ComercialController::class, 'obtenerAcuerdos'])->name('acuerdos.obtener');
         Route::get('/acuerdos/usuarios', [ComercialController::class, 'obtenerUsuariosCreadores'])->name('acuerdos.usuarios');
         Route::post('/acuerdos/crear', [ComercialController::class, 'crearAcuerdo'])->name('acuerdos.crear');
@@ -96,7 +96,7 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
         Route::post('/acuerdos/{id}/extender', [ComercialController::class, 'extenderAcuerdo'])->name('acuerdos.extender');
         Route::get('/acuerdos/{id}/archivo/{index}', [ComercialController::class, 'descargarArchivo'])->name('acuerdos.descargar');
         Route::post('/acuerdos/{id}/rehabilitar', [ComercialController::class, 'rehabilitarAcuerdo'])->name('acuerdos.rehabilitar');
-        
+
         /* CONSULTAR ORDENES -> SHEET */
         Route::get('consultar-orden', [ComercialController::class, 'consultarOrden'])
             ->name('orden');
@@ -108,6 +108,8 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
             ->name('ordenes.cache');
         Route::get('exportar-excel', [ComercialController::class, 'exportarExcel'])
             ->name('ordenes.exportar');
+        Route::get('obtener-ordenes-recientes', [ComercialController::class, 'obtenerOrdenesRecientes'])
+            ->name('ordenes.recientes');
     });
 
     // Admin Routes (Admin + Super Admin only)
@@ -116,7 +118,7 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
         Route::get('/users', [AdminController::class, 'users'])->name('users');
         Route::get('/activity-logs', [AdminController::class, 'activityLogs'])->name('activity-logs');
         Route::get('/security', [AdminController::class, 'security'])->name('security');
-        // 🌍 RUTAS DE UBICACIONES
+        // RUTAS DE UBICACIONES
         Route::prefix('locations')->name('locations.')->group(function () {
             Route::get('/map', [LocationController::class, 'map'])->name('map');
             Route::get('/', [LocationController::class, 'index'])->name('index');

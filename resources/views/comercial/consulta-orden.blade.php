@@ -17,7 +17,7 @@
 
                             {{-- Cards de Estadísticas --}}
                             <div class="row mb-4">
-                                <div class="col-md-4">
+                                <div class="col-md-3">
                                     <div class="card h-100">
                                         <div class="card-body">
                                             <div class="d-flex justify-content-between align-items-center">
@@ -34,13 +34,11 @@
                                                     <i class="mdi mdi-cart-outline mdi-24px"></i>
                                                 </div>
                                             </div>
-                                            <div class="mt-3">
-                                                <canvas id="sparklineChart" height="50"></canvas>
-                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-md-4">
+
+                                <div class="col-md-3">
                                     <div class="card h-100">
                                         <div class="card-body">
                                             <div class="d-flex justify-content-between align-items-center">
@@ -60,7 +58,8 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-md-4">
+
+                                <div class="col-md-3">
                                     <div class="card h-100">
                                         <div class="card-body">
                                             <div class="d-flex justify-content-between align-items-center">
@@ -77,6 +76,59 @@
                                             </div>
                                         </div>
                                     </div>
+                                </div>
+
+                                {{-- 🔥 NUEVO CARD DE IMPORTE --}}
+                                <div class="col-md-3">
+                                    <div class="card h-100 border-info">
+                                        <div class="card-body">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <p class="text-muted mb-1">Importe Total</p>
+                                                    <h4 class="mb-0 font-weight-bold text-info" id="importeTotal">
+                                                        <span class="spinner-border spinner-border-sm"></span>
+                                                    </h4>
+                                                    <small class="text-muted">
+                                                        <i class="mdi mdi-map-marker"></i> En Sede y Tránsito
+                                                    </small>
+                                                </div>
+                                                <div class="icon-lg bg-info-gradient text-white rounded-circle">
+                                                    <i class="mdi mdi-cash-multiple mdi-24px"></i>
+                                                </div>
+                                            </div>
+                                            <div class="mt-3">
+                                                <small class="text-muted d-block">
+                                                    <i class="mdi mdi-home-variant"></i> En Sede:
+                                                    <strong class="text-info" id="importeSede">S/ 0.00</strong>
+                                                </small>
+                                                <small class="text-muted d-block">
+                                                    <i class="mdi mdi-truck"></i> En Tránsito:
+                                                    <strong class="text-warning" id="importeTransito">S/ 0.00</strong>
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-12">
+                                    <div class="btn-group btn-group-lg w-100" role="group">
+                                        <input type="radio" class="btn-check" name="vistaMode" id="vistaReciente"
+                                            autocomplete="off" checked>
+                                        <label class="btn btn-outline-primary" for="vistaReciente">
+                                            <i class="mdi mdi-clock-fast"></i> Últimas 100 Órdenes (Carga Rápida)
+                                        </label>
+
+                                        <input type="radio" class="btn-check" name="vistaMode" id="vistaHistorico"
+                                            autocomplete="off">
+                                        <label class="btn btn-outline-warning" for="vistaHistorico">
+                                            <i class="mdi mdi-database-search"></i> Búsqueda en Histórico
+                                        </label>
+                                    </div>
+                                    <small class="text-muted d-block mt-2" id="mensajeVista">
+                                        ⚡ Mostrando las 100 órdenes más recientes para carga rápida
+                                    </small>
                                 </div>
                             </div>
 
@@ -203,6 +255,8 @@
                                                             <th style="min-width: 200px;">Cliente</th>
                                                             <th style="min-width: 150px;">Diseño</th>
                                                             <th style="min-width: 200px;">Descripción Producto</th>
+                                                            <th class="bg-success text-white" style="min-width: 120px;">
+                                                                Importe</th>
                                                             <th style="min-width: 120px;">Orden Compra</th>
                                                             <th style="min-width: 100px;">Fecha</th>
                                                             <th style="min-width: 80px;">Hora</th>
@@ -310,6 +364,33 @@
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
         }
+
+        /* Card de importe */
+        .bg-info-gradient {
+            background: linear-gradient(135deg, #17a2b8 0%, #20c997 100%);
+        }
+
+        /* Columna Importe en verde claro */
+        tbody td:nth-child(8) {
+            background-color: rgba(40, 167, 69, 0.1);
+            font-weight: 700;
+            color: #28a745;
+            text-align: right;
+        }
+
+        /* Ajustar índices de otras columnas resaltadas */
+        tbody td:nth-child(15) {
+            /* Ubicación */
+            background-color: rgba(75, 73, 172, 0.1);
+            font-weight: 600;
+        }
+
+        tbody td:nth-child(18) {
+            /* Lead Time */
+            background-color: rgba(23, 162, 184, 0.1);
+            font-weight: 600;
+            color: #17a2b8;
+        }
     </style>
 
 @endsection
@@ -322,11 +403,33 @@
         let ordenesFiltered = []; // Datos filtrados
         let currentPage = 1;
         const perPage = 20; // Solo 20 por página
+        let modoHistorico = false;
 
         $(document).ready(function() {
-            // Cargar solo estadísticas primero
-            cargarEstadisticas();
+            // 🔥 CARGAR VISTA RECIENTE POR DEFECTO
+            cargarVista();
             cargarSedes();
+
+            // 🔥 TOGGLE ENTRE VISTAS
+            $('input[name="vistaMode"]').on('change', function() {
+                modoHistorico = $('#vistaHistorico').is(':checked');
+
+                if (modoHistorico) {
+                    $('#mensajeVista').html(
+                        '🔍 <strong>Modo histórico activado</strong> - Buscando en todos los registros (puede tardar)'
+                    );
+                } else {
+                    $('#mensajeVista').html('⚡ Mostrando las 100 órdenes más recientes para carga rápida');
+                }
+
+                // Limpiar filtros al cambiar
+                $('#filtroSede').val('');
+                $('#filtroEstado').val('');
+                $('#filtroTipoOrden').val('');
+                $('#buscarPedido').val('');
+
+                cargarVista();
+            });
 
             $('#selectAll').on('change', function() {
                 $('.row-checkbox').prop('checked', this.checked);
@@ -352,14 +455,14 @@
                 $('#filtroTipoOrden').val('');
                 $('#buscarPedido').val('');
                 currentPage = 1;
-                cargarEstadisticas();
+                cargarVista();
             });
 
             $('#btnRecargar').on('click', function() {
                 ordenesData = [];
                 ordenesFiltered = [];
                 currentPage = 1;
-                cargarEstadisticas(true);
+                cargarVista(true);
             });
 
             let ordenAscendente = false;
@@ -368,11 +471,151 @@
                 ordenarPorFecha(ordenAscendente);
                 $(this).find('i').toggleClass('mdi-sort-calendar-ascending mdi-sort-calendar-descending');
             });
-
-            $('#btnExportar').on('click', function() {
-                window.location.href = "{{ route('comercial.ordenes.exportar') }}";
-            });
         });
+
+        /**
+         * Cargar vista según el modo
+         */
+        function cargarVista(forceRefresh = false) {
+            if (modoHistorico) {
+                cargarHistorico(forceRefresh);
+            } else {
+                cargarRecientes(forceRefresh);
+            }
+        }
+
+        /**
+         * Cargar solo 100 recientes (RÁPIDO)
+         */
+        function cargarRecientes(forceRefresh = false) {
+            const startTime = Date.now();
+
+            $('#loadingSpinner').show();
+            $('#errorMessage').hide();
+            $('#tablaContainer').hide();
+            $('#paginacionContainer').hide();
+
+            const params = {
+                sede: $('#filtroSede').val(),
+                estado: $('#filtroEstado').val(),
+                tipo_orden: $('#filtroTipoOrden').val(),
+                buscar: $('#buscarPedido').val()
+            };
+
+            if (forceRefresh) {
+                params.nocache = Date.now();
+            }
+
+            $.ajax({
+                url: "{{ route('comercial.ordenes.recientes') }}", // 🔥 NUEVA RUTA
+                method: 'GET',
+                data: params,
+                timeout: 60000,
+                success: function(response) {
+                    const endTime = Date.now();
+                    const loadTime = ((endTime - startTime) / 1000).toFixed(2);
+
+                    if (response.success) {
+                        ordenesData = response.data;
+                        ordenesFiltered = ordenesData;
+
+                        console.log('✅ Vista reciente cargada:', ordenesData.length, 'órdenes en', loadTime,
+                            's');
+
+                        actualizarEstadisticas(response.stats);
+                        currentPage = 1;
+                        renderizarTabla();
+
+                        $('#loadingSpinner').hide();
+                        $('#tablaContainer').show();
+                        $('#paginacionContainer').show();
+                        $('#tiempoCarga').text(`Cargado en ${loadTime}s`);
+
+                        if (forceRefresh) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: '¡Actualizado!',
+                                text: `Datos recientes cargados en ${loadTime}s`,
+                                timer: 2000
+                            });
+                        }
+                    }
+                },
+                error: function(xhr) {
+                    mostrarError('Error al cargar datos recientes');
+                    console.error('❌ Error:', xhr);
+                }
+            });
+        }
+
+        /**
+         * CARGAR HISTÓRICO COMPLETO (LENTO - solo cuando buscan)
+         */
+        function cargarHistorico(forceRefresh = false) {
+            const startTime = Date.now();
+
+            $('#loadingSpinner').show();
+            $('#errorMessage').hide();
+            $('#tablaContainer').hide();
+            $('#paginacionContainer').hide();
+
+            const params = {
+                sede: $('#filtroSede').val(),
+                estado: $('#filtroEstado').val(),
+                tipo_orden: $('#filtroTipoOrden').val(),
+                buscar: $('#buscarPedido').val()
+            };
+
+            if (forceRefresh) {
+                params.nocache = Date.now();
+            }
+
+            $.ajax({
+                url: "{{ route('comercial.ordenes.obtener') }}", // RUTA ORIGINAL
+                method: 'GET',
+                data: params,
+                timeout: 120000,
+                success: function(response) {
+                    const endTime = Date.now();
+                    const loadTime = ((endTime - startTime) / 1000).toFixed(2);
+
+                    if (response.success) {
+                        ordenesData = response.data;
+                        ordenesFiltered = ordenesData;
+
+                        console.log('✅ Histórico completo cargado:', ordenesData.length, 'órdenes en', loadTime,
+                            's');
+
+                        actualizarEstadisticas(response.stats);
+                        currentPage = 1;
+                        renderizarTabla();
+
+                        $('#loadingSpinner').hide();
+                        $('#tablaContainer').show();
+                        $('#paginacionContainer').show();
+                        $('#tiempoCarga').text(`Cargado en ${loadTime}s`);
+
+                        if (forceRefresh) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: '¡Histórico Cargado!',
+                                text: `${ordenesData.length} registros en ${loadTime}s`,
+                                timer: 3000
+                            });
+                        }
+                    }
+                },
+                error: function(xhr) {
+                    mostrarError('Error al cargar histórico completo');
+                    console.error('❌ Error:', xhr);
+                }
+            });
+        }
+
+        function aplicarFiltros() {
+            currentPage = 1;
+            cargarVista();
+        }
 
         function cargarSedes() {
             $.ajax({
@@ -391,7 +634,7 @@
         }
 
         /**
-         * 🔥 CARGA PROGRESIVA - Solo cargar datos cuando se necesiten
+         * CARGA PROGRESIVA - Solo cargar datos cuando se necesiten
          */
         function cargarEstadisticas(forceRefresh = false) {
             const startTime = Date.now();
@@ -476,10 +719,39 @@
             $('#ordenesTransito').html(
                 `<span class="text-warning">${stats.en_transito}</span> / <span class="text-info">${stats.en_sede}</span>`
             );
+
+            // NUEVO - Mostrar importes
+            $('#importeTotal').html(`S/ ${formatearImporte(stats.importe_total || 0)}`);
+            $('#importeSede').text(`S/ ${formatearImporte(stats.importe_sede || 0)}`);
+            $('#importeTransito').text(`S/ ${formatearImporte(stats.importe_transito || 0)}`);
+        }
+
+        function formatearImporte(valor) {
+            if (!valor || isNaN(valor)) return '0.00';
+            return parseFloat(valor).toLocaleString('es-PE', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
         }
 
         /**
-         * 🔥 RENDERIZAR SOLO LA PÁGINA ACTUAL (Estilo Minecraft)
+         * NUEVA FUNCIÓN - Limpiar importe (quitar S/, comas, etc)
+         */
+        function limpiarImporte(importeStr) {
+            if (!importeStr) return 0;
+
+            // Convertir a string y limpiar
+            let limpio = String(importeStr)
+                .replace(/S\/\s?/g, '') // Quitar S/
+                .replace(/\s/g, '') // Quitar espacios
+                .replace(/,/g, ''); // Quitar comas
+
+            const numero = parseFloat(limpio);
+            return isNaN(numero) ? 0 : numero;
+        }
+
+        /**
+         * RENDERIZAR SOLO LA PÁGINA ACTUAL (Estilo Minecraft)
          */
         function renderizarTabla() {
             const inicio = (currentPage - 1) * perPage;
@@ -492,22 +764,22 @@
 
             if (ordenesPagina.length === 0) {
                 html = `
-                <tr>
-                    <td colspan="18" class="text-center py-5">
-                        <i class="mdi mdi-database-search mdi-48px text-muted"></i>
-                        <p class="mt-3 text-muted">No se encontraron órdenes</p>
-                    </td>
-                </tr>
-            `;
+            <tr>
+                <td colspan="19" class="text-center py-5">
+                    <i class="mdi mdi-database-search mdi-48px text-muted"></i>
+                    <p class="mt-3 text-muted">No se encontraron órdenes</p>
+                </td>
+            </tr>
+        `;
             } else {
                 ordenesPagina.forEach((orden, index) => {
-                    // 🔥 Acceso con soporte para "diseño" (con ñ)
                     const sede = orden.descripcion_sede || '-';
                     const numeroOrden = orden.numero_orden || '-';
                     const ruc = orden.ruc || '-';
                     const cliente = orden.cliente || '-';
-                    const diseno = orden.diseño || orden.diseno || '-'; // 🔥 Probar ambos
+                    const diseno = orden.diseño || orden.diseno || '-';
                     const descripcionProducto = orden.descripcion_producto || '-';
+                    const importe = orden.importe || '0.00'; // 🔥 NUEVO
                     const ordenCompra = orden.orden_compra || '-';
                     const fechaOrden = orden.fecha_orden || '-';
                     const horaOrden = orden.hora_orden || '-';
@@ -524,37 +796,35 @@
                     const badgeTipoOrden = obtenerBadgeTipoOrden(tipoOrden);
 
                     html += `
-                    <tr>
-                        <td>
-                            
-                            <input class="form-check-input row-checkbox" type="checkbox" value="${numeroOrden}">
-                            
-                        </td>
-                        <td>${badgeSede}</td>
-                        <td><strong>${numeroOrden}</strong></td>
-                        <td>${ruc}</td>
-                        <td title="${cliente}">${cliente}</td>
-                        <td>${diseno}</td>
-                        <td title="${descripcionProducto}">${descripcionProducto}</td>
-                        <td>${ordenCompra}</td>
-                        <td><small>${fechaOrden}</small></td>
-                        <td><small>${horaOrden}</small></td>
-                        <td>${badgeTipoOrden}</td>
-                        <td title="${nombreUsuario}">${truncar(nombreUsuario, 20)}</td>
-                        <td><small>${estadoOrden}</small></td>
-                        <td>${badgeEstado}</td>
-                        <td>${truncar(descripcionTallado, 20)}</td>
-                        <td>${tratamiento}</td>
-                        <td class="font-weight-bold text-info">${leadTime}</td>
-                    </tr>
-                `;
+                <tr>
+                    <td>
+                        <input class="form-check-input row-checkbox" type="checkbox" value="${numeroOrden}">
+                    </td>
+                    <td>${badgeSede}</td>
+                    <td><strong>${numeroOrden}</strong></td>
+                    <td>${ruc}</td>
+                    <td title="${cliente}">${truncar(cliente, 25)}</td>
+                    <td>${diseno}</td>
+                    <td title="${descripcionProducto}">${truncar(descripcionProducto, 25)}</td>
+                    <td class="text-end"><strong>S/ ${formatearImporte(limpiarImporte(importe))}</strong></td>
+                    <td>${ordenCompra}</td>
+                    <td><small>${fechaOrden}</small></td>
+                    <td><small>${horaOrden}</small></td>
+                    <td>${badgeTipoOrden}</td>
+                    <td title="${nombreUsuario}">${truncar(nombreUsuario, 20)}</td>
+                    <td><small>${estadoOrden}</small></td>
+                    <td>${badgeEstado}</td>
+                    <td>${truncar(descripcionTallado, 20)}</td>
+                    <td>${tratamiento}</td>
+                    <td class="font-weight-bold text-info">${leadTime}</td>
+                </tr>
+            `;
                 });
             }
 
             $('#tablaOrdenesBody').html(html);
             actualizarPaginacion();
 
-            // Actualizar información de rango
             const rangoInicio = ordenesPagina.length > 0 ? inicio + 1 : 0;
             const rangoFin = inicio + ordenesPagina.length;
             $('#rangoInicio').text(rangoInicio);
