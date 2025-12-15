@@ -691,15 +691,42 @@
             });
         }
 
+        /**
+         * 🔥 Limpiar importe - VERSIÓN CON DETECCIÓN DE FECHAS
+         */
         function limpiarImporte(importeStr) {
             if (!importeStr) return 0;
 
-            let limpio = String(importeStr)
-                .replace(/S\/\s?/g, '')
-                .replace(/\s/g, '')
-                .replace(/,/g, '');
+            // Convertir a string
+            let limpio = String(importeStr).trim();
 
+            // Si está vacío, retornar 0
+            if (limpio === '' || limpio === '-') return 0;
+
+            // 🔥 DETECTAR FECHAS (2 o más barras = fecha)
+            if ((limpio.match(/\//g) || []).length >= 2) {
+                return 0;
+            }
+
+            // 🔥 DETECTAR si tiene 4 dígitos después de barra (año)
+            if (/\/\d{4}/.test(limpio)) {
+                return 0;
+            }
+
+            // Quitar símbolos de moneda
+            limpio = limpio.replace(/S\/\s?/g, '').replace(/\s/g, '');
+
+            // Quitar comas (separador de miles)
+            limpio = limpio.replace(/,/g, '');
+
+            // Convertir a número
             const numero = parseFloat(limpio);
+
+            // 🔥 VALIDAR que no sea un número absurdo
+            if (numero > 100000) {
+                return 0;
+            }
+
             return isNaN(numero) ? 0 : numero;
         }
 

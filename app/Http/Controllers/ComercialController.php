@@ -904,6 +904,9 @@ class ComercialController extends Controller
         ];
     }
 
+    /**
+     * 🔥 Limpiar importe para cálculos - CON PROTECCIÓN ANTI-FECHAS
+     */
     private function limpiarImporte($importeStr)
     {
         // Si está vacío, null o es guion, retornar 0
@@ -911,7 +914,7 @@ class ComercialController extends Controller
             return 0;
         }
 
-        // Convertir a string por si viene como número
+        // Convertir a string
         $limpio = trim((string)$importeStr);
 
         // Si es un string vacío después del trim, retornar 0
@@ -919,7 +922,15 @@ class ComercialController extends Controller
             return 0;
         }
 
-        // Quitar cualquier cosa que no sea número, punto o coma
+        if (substr_count($limpio, '/') >= 2) {
+            return 0;
+        }
+
+        // Si tiene 4 dígitos consecutivos después de una barra, es fecha
+        if (preg_match('/\/\d{4}/', $limpio)) {
+            return 0;
+        }
+
         $limpio = preg_replace('/[^0-9.,\-]/', '', $limpio);
 
         // Si tiene coma, convertirla a punto (para decimales: 2,5 -> 2.5)
@@ -928,7 +939,12 @@ class ComercialController extends Controller
         // Convertir a float
         $numero = floatval($limpio);
 
-        // Retornar el número (puede ser 0 si no es válido)
+        // 🔥 VALIDACIÓN ADICIONAL: Si el número es mayor a 100,000 es sospechoso
+        // (asumiendo que ninguna orden individual cuesta más de 100k)
+        if ($numero > 100000) {
+            return 0;
+        }
+
         return $numero;
     }
 
