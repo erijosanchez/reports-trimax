@@ -24,6 +24,34 @@ class ComercialController extends Controller
         $this->googleSheets = $googleSheets;
     }
 
+    public function obtenerEstadisticasGenerales(Request $request)
+    {
+        try {
+            ini_set('memory_limit', '512M');
+            ini_set('max_execution_time', '60');
+
+            $cacheKey = 'google_sheets_stats_generales';
+
+            $stats = \Cache::store('file')->remember($cacheKey, 300, function () {
+                $rawData = $this->googleSheets->getSheetData('Historico');
+                $ordenes = $this->googleSheets->parseSheetData($rawData);
+
+                return $this->calcularEstadisticas($ordenes);
+            });
+
+            return response()->json([
+                'success' => true,
+                'stats' => $stats
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('❌ Error en obtenerEstadisticasGenerales: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
     public function acuerdos()
     {
         $acuerdos = AcuerdoComercial::with(['creador', 'validador', 'aprobador'])

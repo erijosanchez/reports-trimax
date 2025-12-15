@@ -17,7 +17,7 @@
 
                             {{-- Cards de Estadísticas --}}
                             <div class="row mb-4">
-                                <div class="col-md-3">
+                                <div class="col-md-3 mb-3 mb-md-0">
                                     <div class="card h-100">
                                         <div class="card-body">
                                             <div class="d-flex justify-content-between align-items-center">
@@ -38,7 +38,7 @@
                                     </div>
                                 </div>
 
-                                <div class="col-md-3">
+                                <div class="col-md-3 mb-3 mb-md-0">
                                     <div class="card h-100">
                                         <div class="card-body">
                                             <div class="d-flex justify-content-between align-items-center">
@@ -59,7 +59,7 @@
                                     </div>
                                 </div>
 
-                                <div class="col-md-3">
+                                <div class="col-md-3 mb-3 mb-md-0">
                                     <div class="card h-100">
                                         <div class="card-body">
                                             <div class="d-flex justify-content-between align-items-center">
@@ -78,8 +78,8 @@
                                     </div>
                                 </div>
 
-                                {{-- 🔥 NUEVO CARD DE IMPORTE --}}
-                                <div class="col-md-3">
+                                {{-- CARD DE IMPORTE --}}
+                                <div class="col-md-3 mb-3 mb-md-0">
                                     <div class="card h-100 border-info">
                                         <div class="card-body">
                                             <div class="d-flex justify-content-between align-items-center">
@@ -397,32 +397,34 @@
 
 @section('scripts')
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
-        // 🔥 SISTEMA DE CARGA PROGRESIVA ESTILO MINECRAFT
-        let ordenesData = []; // Todos los datos
-        let ordenesFiltered = []; // Datos filtrados
+        let ordenesData = [];
+        let ordenesFiltered = [];
         let currentPage = 1;
-        const perPage = 20; // Solo 20 por página
+        const perPage = 20;
         let modoHistorico = false;
 
         $(document).ready(function() {
-            // 🔥 CARGAR VISTA RECIENTE POR DEFECTO
+            // Cargar estadísticas primero
+            cargarEstadisticasGenerales();
+
+            // Cargar vista de tabla
             cargarVista();
             cargarSedes();
 
-            // 🔥 TOGGLE ENTRE VISTAS
+            // Toggle entre vistas
             $('input[name="vistaMode"]').on('change', function() {
                 modoHistorico = $('#vistaHistorico').is(':checked');
 
                 if (modoHistorico) {
                     $('#mensajeVista').html(
-                        '🔍 <strong>Modo histórico activado</strong> - Buscando en todos los registros (puede tardar)'
+                        '🔍 <strong>Modo histórico activado</strong> - Buscando en 88,000 registros (puede tardar)'
                     );
                 } else {
                     $('#mensajeVista').html('⚡ Mostrando las 100 órdenes más recientes para carga rápida');
                 }
 
-                // Limpiar filtros al cambiar
                 $('#filtroSede').val('');
                 $('#filtroEstado').val('');
                 $('#filtroTipoOrden').val('');
@@ -462,6 +464,7 @@
                 ordenesData = [];
                 ordenesFiltered = [];
                 currentPage = 1;
+                cargarEstadisticasGenerales(true);
                 cargarVista(true);
             });
 
@@ -472,6 +475,41 @@
                 $(this).find('i').toggleClass('mdi-sort-calendar-ascending mdi-sort-calendar-descending');
             });
         });
+
+        /**
+         * Cargar estadísticas generales
+         */
+        function cargarEstadisticasGenerales(forceRefresh = false) {
+            const startTime = Date.now();
+
+            const params = {};
+            if (forceRefresh) {
+                params.nocache = Date.now();
+            }
+
+            $.ajax({
+                url: "{{ route('comercial.ordenes.estadisticas') }}",
+                method: 'GET',
+                data: params,
+                timeout: 60000,
+                success: function(response) {
+                    const endTime = Date.now();
+                    const loadTime = ((endTime - startTime) / 1000).toFixed(2);
+
+                    if (response.success) {
+                        console.log('📊 Estadísticas generales cargadas en', loadTime, 's');
+                        actualizarEstadisticas(response.stats);
+
+                        if (forceRefresh) {
+                            console.log('✅ Estadísticas actualizadas');
+                        }
+                    }
+                },
+                error: function(xhr) {
+                    console.error('❌ Error al cargar estadísticas:', xhr);
+                }
+            });
+        }
 
         /**
          * Cargar vista según el modo
@@ -485,7 +523,7 @@
         }
 
         /**
-         * Cargar solo 100 recientes (RÁPIDO)
+         * Cargar solo 100 recientes
          */
         function cargarRecientes(forceRefresh = false) {
             const startTime = Date.now();
@@ -507,7 +545,7 @@
             }
 
             $.ajax({
-                url: "{{ route('comercial.ordenes.recientes') }}", // 🔥 NUEVA RUTA
+                url: "{{ route('comercial.ordenes.recientes') }}",
                 method: 'GET',
                 data: params,
                 timeout: 60000,
@@ -522,7 +560,6 @@
                         console.log('✅ Vista reciente cargada:', ordenesData.length, 'órdenes en', loadTime,
                             's');
 
-                        actualizarEstadisticas(response.stats);
                         currentPage = 1;
                         renderizarTabla();
 
@@ -536,7 +573,8 @@
                                 icon: 'success',
                                 title: '¡Actualizado!',
                                 text: `Datos recientes cargados en ${loadTime}s`,
-                                timer: 2000
+                                timer: 2000,
+                                showConfirmButton: false
                             });
                         }
                     }
@@ -549,7 +587,7 @@
         }
 
         /**
-         * CARGAR HISTÓRICO COMPLETO (LENTO - solo cuando buscan)
+         * Cargar histórico completo
          */
         function cargarHistorico(forceRefresh = false) {
             const startTime = Date.now();
@@ -571,7 +609,7 @@
             }
 
             $.ajax({
-                url: "{{ route('comercial.ordenes.obtener') }}", // RUTA ORIGINAL
+                url: "{{ route('comercial.ordenes.obtener') }}",
                 method: 'GET',
                 data: params,
                 timeout: 120000,
@@ -586,7 +624,6 @@
                         console.log('✅ Histórico completo cargado:', ordenesData.length, 'órdenes en', loadTime,
                             's');
 
-                        actualizarEstadisticas(response.stats);
                         currentPage = 1;
                         renderizarTabla();
 
@@ -600,7 +637,8 @@
                                 icon: 'success',
                                 title: '¡Histórico Cargado!',
                                 text: `${ordenesData.length} registros en ${loadTime}s`,
-                                timer: 3000
+                                timer: 3000,
+                                showConfirmButton: false
                             });
                         }
                     }
@@ -633,86 +671,6 @@
             });
         }
 
-        /**
-         * CARGA PROGRESIVA - Solo cargar datos cuando se necesiten
-         */
-        function cargarEstadisticas(forceRefresh = false) {
-            const startTime = Date.now();
-
-            $('#loadingSpinner').show();
-            $('#errorMessage').hide();
-            $('#tablaContainer').hide();
-            $('#paginacionContainer').hide();
-
-            const params = {
-                sede: $('#filtroSede').val(),
-                estado: $('#filtroEstado').val(),
-                tipo_orden: $('#filtroTipoOrden').val(),
-                buscar: $('#buscarPedido').val()
-            };
-
-            if (forceRefresh) {
-                params.nocache = Date.now();
-            }
-
-            $.ajax({
-                url: "{{ route('comercial.ordenes.obtener') }}",
-                method: 'GET',
-                data: params,
-                timeout: 120000, // 2 minutos
-                success: function(response) {
-                    const endTime = Date.now();
-                    const loadTime = ((endTime - startTime) / 1000).toFixed(2);
-
-                    if (response.success) {
-                        ordenesData = response.data;
-                        ordenesFiltered = ordenesData;
-
-                        console.log('✅ Datos cargados:', ordenesData.length, 'órdenes en', loadTime,
-                            'segundos');
-
-                        if (ordenesData.length > 0) {
-                            console.log('📋 Columnas:', Object.keys(ordenesData[0]));
-                            console.log('📄 Primera orden:', ordenesData[0]);
-                        }
-
-                        actualizarEstadisticas(response.stats);
-                        currentPage = 1;
-                        renderizarTabla();
-
-                        $('#loadingSpinner').hide();
-                        $('#tablaContainer').show();
-                        $('#paginacionContainer').show();
-                        $('#leyendaEstados').show();
-                        $('#tiempoCarga').text(`Cargado en ${loadTime}s`);
-
-                        inicializarGrafico();
-
-                        if (forceRefresh) {
-                            alert('✅ Datos actualizados correctamente en ' + loadTime + ' segundos');
-                        }
-                    } else {
-                        mostrarError(response.message || 'Error al cargar los datos');
-                    }
-                },
-                error: function(xhr) {
-                    let mensaje = 'Error de conexión';
-                    if (xhr.status === 500) {
-                        mensaje = 'Error del servidor. ' + (xhr.responseJSON?.message || '');
-                    } else if (xhr.responseJSON && xhr.responseJSON.message) {
-                        mensaje = xhr.responseJSON.message;
-                    }
-                    mostrarError(mensaje);
-                    console.error('❌ Error:', xhr);
-                }
-            });
-        }
-
-        function aplicarFiltros() {
-            currentPage = 1;
-            cargarEstadisticas();
-        }
-
         function actualizarEstadisticas(stats) {
             $('#totalOrdenes').text(stats.total.toLocaleString());
             $('#ordenesFacturar').text(stats.disponibles_facturar.toLocaleString());
@@ -720,7 +678,6 @@
                 `<span class="text-warning">${stats.en_transito}</span> / <span class="text-info">${stats.en_sede}</span>`
             );
 
-            // NUEVO - Mostrar importes
             $('#importeTotal').html(`S/ ${formatearImporte(stats.importe_total || 0)}`);
             $('#importeSede').text(`S/ ${formatearImporte(stats.importe_sede || 0)}`);
             $('#importeTransito').text(`S/ ${formatearImporte(stats.importe_transito || 0)}`);
@@ -734,25 +691,18 @@
             });
         }
 
-        /**
-         * NUEVA FUNCIÓN - Limpiar importe (quitar S/, comas, etc)
-         */
         function limpiarImporte(importeStr) {
             if (!importeStr) return 0;
 
-            // Convertir a string y limpiar
             let limpio = String(importeStr)
-                .replace(/S\/\s?/g, '') // Quitar S/
-                .replace(/\s/g, '') // Quitar espacios
-                .replace(/,/g, ''); // Quitar comas
+                .replace(/S\/\s?/g, '')
+                .replace(/\s/g, '')
+                .replace(/,/g, '');
 
             const numero = parseFloat(limpio);
             return isNaN(numero) ? 0 : numero;
         }
 
-        /**
-         * RENDERIZAR SOLO LA PÁGINA ACTUAL (Estilo Minecraft)
-         */
         function renderizarTabla() {
             const inicio = (currentPage - 1) * perPage;
             const fin = inicio + perPage;
@@ -764,13 +714,13 @@
 
             if (ordenesPagina.length === 0) {
                 html = `
-            <tr>
-                <td colspan="19" class="text-center py-5">
-                    <i class="mdi mdi-database-search mdi-48px text-muted"></i>
-                    <p class="mt-3 text-muted">No se encontraron órdenes</p>
-                </td>
-            </tr>
-        `;
+                    <tr>
+                        <td colspan="18" class="text-center py-5">
+                            <i class="mdi mdi-database-search mdi-48px text-muted"></i>
+                            <p class="mt-3 text-muted">No se encontraron órdenes</p>
+                        </td>
+                    </tr>
+                `;
             } else {
                 ordenesPagina.forEach((orden, index) => {
                     const sede = orden.descripcion_sede || '-';
@@ -779,7 +729,7 @@
                     const cliente = orden.cliente || '-';
                     const diseno = orden.diseño || orden.diseno || '-';
                     const descripcionProducto = orden.descripcion_producto || '-';
-                    const importe = orden.importe || '0.00'; // 🔥 NUEVO
+                    const importe = orden.importe || '0.00';
                     const ordenCompra = orden.orden_compra || '-';
                     const fechaOrden = orden.fecha_orden || '-';
                     const horaOrden = orden.hora_orden || '-';
@@ -796,29 +746,27 @@
                     const badgeTipoOrden = obtenerBadgeTipoOrden(tipoOrden);
 
                     html += `
-                <tr>
-                    <td>
-                        <input class="form-check-input row-checkbox" type="checkbox" value="${numeroOrden}">
-                    </td>
-                    <td>${badgeSede}</td>
-                    <td><strong>${numeroOrden}</strong></td>
-                    <td>${ruc}</td>
-                    <td title="${cliente}">${truncar(cliente, 25)}</td>
-                    <td>${diseno}</td>
-                    <td title="${descripcionProducto}">${truncar(descripcionProducto, 25)}</td>
-                    <td class="text-end"><strong>S/ ${formatearImporte(limpiarImporte(importe))}</strong></td>
-                    <td>${ordenCompra}</td>
-                    <td><small>${fechaOrden}</small></td>
-                    <td><small>${horaOrden}</small></td>
-                    <td>${badgeTipoOrden}</td>
-                    <td title="${nombreUsuario}">${truncar(nombreUsuario, 20)}</td>
-                    <td><small>${estadoOrden}</small></td>
-                    <td>${badgeEstado}</td>
-                    <td>${truncar(descripcionTallado, 20)}</td>
-                    <td>${tratamiento}</td>
-                    <td class="font-weight-bold text-info">${leadTime}</td>
-                </tr>
-            `;
+                        <tr>
+                            <td><input class="form-check-input row-checkbox" type="checkbox" value="${numeroOrden}"></td>
+                            <td>${badgeSede}</td>
+                            <td><strong>${numeroOrden}</strong></td>
+                            <td>${ruc}</td>
+                            <td title="${cliente}">${truncar(cliente, 25)}</td>
+                            <td>${diseno}</td>
+                            <td title="${descripcionProducto}">${truncar(descripcionProducto, 25)}</td>
+                            <td class="text-end"><strong>S/ ${formatearImporte(limpiarImporte(importe))}</strong></td>
+                            <td>${ordenCompra}</td>
+                            <td><small>${fechaOrden}</small></td>
+                            <td><small>${horaOrden}</small></td>
+                            <td>${badgeTipoOrden}</td>
+                            <td title="${nombreUsuario}">${truncar(nombreUsuario, 20)}</td>
+                            <td><small>${estadoOrden}</small></td>
+                            <td>${badgeEstado}</td>
+                            <td>${truncar(descripcionTallado, 20)}</td>
+                            <td>${tratamiento}</td>
+                            <td class="font-weight-bold text-info">${leadTime}</td>
+                        </tr>
+                    `;
                 });
             }
 
@@ -835,67 +783,25 @@
         function truncar(texto, max) {
             if (!texto || texto === '-') return '-';
             texto = String(texto);
-            if (texto.length <= max) return texto;
-            return texto.substring(0, max) + '...';
+            return texto.length > max ? texto.substring(0, max) + '...' : texto;
         }
 
         function obtenerBadgeEstado(ubicacion) {
             if (!ubicacion || ubicacion === '-') return '<span class="badge badge-secondary">Sin estado</span>';
-
             const ub = String(ubicacion).toUpperCase();
-
             if (ub.includes('FACTURADO') || ub.includes('ENTREGADO')) {
-                return `<span class="badge badge-success">
-                <i class="mdi mdi-check-circle"></i> ${truncar(ubicacion, 20)}
-            </span>`;
+                return `<span class="badge badge-success"><i class="mdi mdi-check-circle"></i> ${truncar(ubicacion, 20)}</span>`;
             } else if (ub.includes('TRANSITO')) {
-                return `<span class="badge badge-warning text-dark">
-                <i class="mdi mdi-truck"></i> ${truncar(ubicacion, 20)}
-            </span>`;
+                return `<span class="badge badge-warning text-dark"><i class="mdi mdi-truck"></i> ${truncar(ubicacion, 20)}</span>`;
             } else if (ub.includes('SEDE')) {
-                return `<span class="badge badge-warning text-dark">
-                <i class="mdi mdi-home"></i> ${truncar(ubicacion, 20)}
-            </span>`;
-            } else {
-                return `<span class="badge badge-dark">${truncar(ubicacion, 20)}</span>`;
+                return `<span class="badge badge-warning text-dark"><i class="mdi mdi-home"></i> ${truncar(ubicacion, 20)}</span>`;
             }
+            return `<span class="badge badge-dark">${truncar(ubicacion, 20)}</span>`;
         }
 
         function obtenerBadgeSede(sede) {
             if (!sede || sede === '-') return '-';
-            const sedeUpper = String(sede).toUpperCase();
-            const badges = {
-                'LOS OLIVOS': 'primary',
-                'AREQUIPA': 'primary',
-                'TRUJILLO': 'primary',
-                'CUSCO': 'primary',
-                'PIURA': 'primary',
-                'CHICLAYO': 'primary',
-                'JUNIN': 'primary',
-                'ICA': 'primary',
-                'HUANCAYO': 'primary',
-                'CALLAO': 'success',
-                'VENTANILLA': 'success',
-                'CAILLOMA': 'primary',
-                'SJM': 'primary',
-                'COMAS': 'primary',
-                'LINCE': 'primary',
-                'HUARAZ': 'primary',
-                'AYACUCHO': 'primary',
-                'HUANUCO': 'primary',
-                'CHIMBOTE': 'primary',
-                'PUENTE PIEDRA': 'primary',
-                'NAPO': 'primary',
-                'TACNA': 'primary',
-                'ATE': 'primary',
-                'CALL CENTER': 'primary',
-                'IQUITOS': 'primary',
-                'CAJAMARCA': 'primary',
-                'PUCALLPA': 'primary',
-                'SJL': 'primary',
-            };
-            const tipo = badges[sedeUpper] || 'secondary';
-            return `<span class="badge badge-${tipo}">${sede}</span>`;
+            return `<span class="badge badge-primary">${sede}</span>`;
         }
 
         function obtenerBadgeTipoOrden(tipo) {
@@ -911,12 +817,10 @@
                 return;
             }
 
-            let html = '';
-            html += `<li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
-            <a class="page-link" href="#" onclick="cambiarPagina(${currentPage - 1}); return false;">Anterior</a>
-        </li>`;
+            let html = `<li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+                <a class="page-link" href="#" onclick="cambiarPagina(${currentPage - 1}); return false;">Anterior</a>
+            </li>`;
 
-            // Mostrar páginas inteligentemente
             const maxVisible = 7;
             let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
             let endPage = Math.min(totalPaginas, startPage + maxVisible - 1);
@@ -935,8 +839,8 @@
 
             for (let i = startPage; i <= endPage; i++) {
                 html += `<li class="page-item ${i === currentPage ? 'active' : ''}">
-                <a class="page-link" href="#" onclick="cambiarPagina(${i}); return false;">${i}</a>
-            </li>`;
+                    <a class="page-link" href="#" onclick="cambiarPagina(${i}); return false;">${i}</a>
+                </li>`;
             }
 
             if (endPage < totalPaginas) {
@@ -948,8 +852,8 @@
             }
 
             html += `<li class="page-item ${currentPage === totalPaginas ? 'disabled' : ''}">
-            <a class="page-link" href="#" onclick="cambiarPagina(${currentPage + 1}); return false;">Siguiente</a>
-        </li>`;
+                <a class="page-link" href="#" onclick="cambiarPagina(${currentPage + 1}); return false;">Siguiente</a>
+            </li>`;
 
             $('#paginacion').html(html);
         }
@@ -983,58 +887,10 @@
             return new Date(fechaStr);
         }
 
-        function verDetalle(numeroOrden) {
-            const orden = ordenesData.find(o => o.numero_orden === numeroOrden);
-            if (orden) {
-                alert('📋 Detalle de orden #' + numeroOrden + '\n\n✨ Función a implementar');
-            }
-        }
-
         function mostrarError(mensaje) {
             $('#loadingSpinner').hide();
             $('#errorMessage').show();
             $('#errorText').text(mensaje);
-        }
-
-        function inicializarGrafico() {
-            const ctx = document.getElementById('sparklineChart');
-            if (ctx && !ctx.chartInstance) {
-                ctx.chartInstance = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: ['', '', '', '', '', '', '', ''],
-                        datasets: [{
-                            data: [12, 19, 15, 25, 22, 30, 28, 35],
-                            borderColor: '#667eea',
-                            backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                            borderWidth: 2,
-                            fill: true,
-                            tension: 0.4,
-                            pointRadius: 0
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                display: false
-                            },
-                            tooltip: {
-                                enabled: false
-                            }
-                        },
-                        scales: {
-                            x: {
-                                display: false
-                            },
-                            y: {
-                                display: false
-                            }
-                        }
-                    }
-                });
-            }
         }
     </script>
 @endsection

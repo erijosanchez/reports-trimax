@@ -110,6 +110,8 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
             ->name('ordenes.exportar');
         Route::get('obtener-ordenes-recientes', [ComercialController::class, 'obtenerOrdenesRecientes'])
             ->name('ordenes.recientes');
+        Route::get('obtener-estadisticas-generales', [ComercialController::class, 'obtenerEstadisticasGenerales'])
+            ->name('ordenes.estadisticas');
     });
 
     // Admin Routes (Admin + Super Admin only)
