@@ -871,30 +871,23 @@ class ComercialController extends Controller
         $facturados = 0;
         $entregados = 0;
 
-        // 🔥 NUEVO - Contadores de importes
         $importeTransito = 0;
         $importeSede = 0;
 
         foreach ($ordenes as $orden) {
             $ubicacion = mb_strtoupper($orden['ubicacion_orden'] ?? '');
-            $importe = $this->limpiarImporte($orden['importe'] ?? 0);
+            $importeOriginal = $orden['importe'] ?? null;
+            $importe = $this->limpiarImporte($importeOriginal);
 
-            if (stripos($ubicacion, 'TRANSITO') !== false) {
-                $enTransito++;
-                $importeTransito += $importe; // 🔥 SUMAR IMPORTE
-            }
-
-            if (stripos($ubicacion, 'SEDE') !== false) {
-                $enSede++;
-                $importeSede += $importe; // 🔥 SUMAR IMPORTE
-            }
-
-            if (stripos($ubicacion, 'FACTURADO') !== false) {
+            if (stripos($ubicacion, 'FACTURADO') !== false || stripos($ubicacion, 'ENTREGADO') !== false) {
                 $facturados++;
-            }
-
-            if (stripos($ubicacion, 'ENTREGADO') !== false) {
-                $entregados++;
+                // NO sumar importe aquí (ya está facturado)
+            } elseif (stripos($ubicacion, 'SEDE') !== false) {
+                $enSede++;
+                $importeSede += $importe;
+            } elseif (stripos($ubicacion, 'TRANSITO') !== false) {
+                $enTransito++;
+                $importeTransito += $importe;
             }
         }
 
@@ -905,7 +898,6 @@ class ComercialController extends Controller
             'facturados' => $facturados,
             'entregados' => $entregados,
             'disponibles_facturar' => $enSede + $enTransito,
-            // 🔥 NUEVO - Importes
             'importe_transito' => round($importeTransito, 2),
             'importe_sede' => round($importeSede, 2),
             'importe_total' => round($importeTransito + $importeSede, 2)
@@ -914,14 +906,29 @@ class ComercialController extends Controller
 
     private function limpiarImporte($importeStr)
     {
-        if (!$importeStr || $importeStr === '-') {
+        // Si está vacío, null o es guion, retornar 0
+        if (!$importeStr || $importeStr === '-' || $importeStr === '' || $importeStr === null) {
             return 0;
         }
 
-        // Convertir a string y limpiar
-        $limpio = preg_replace('/[^0-9.]/', '', (string)$importeStr);
+        // Convertir a string por si viene como número
+        $limpio = trim((string)$importeStr);
 
+        // Si es un string vacío después del trim, retornar 0
+        if ($limpio === '') {
+            return 0;
+        }
+
+        // Quitar cualquier cosa que no sea número, punto o coma
+        $limpio = preg_replace('/[^0-9.,\-]/', '', $limpio);
+
+        // Si tiene coma, convertirla a punto (para decimales: 2,5 -> 2.5)
+        $limpio = str_replace(',', '.', $limpio);
+
+        // Convertir a float
         $numero = floatval($limpio);
+
+        // Retornar el número (puede ser 0 si no es válido)
         return $numero;
     }
 
