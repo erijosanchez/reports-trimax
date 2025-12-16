@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\LocationController;
 use App\Http\Controllers\LocationApiController;
 use App\Http\Controllers\ComercialController;
+use App\Http\Controllers\MarketingController;
 
 // ============================================================
 // RUTAS PARA LARAVEL 11
@@ -79,6 +80,13 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
         Route::get('/{id}/view', [FileController::class, 'view'])->name('view');
         Route::get('/{id}/download', [FileController::class, 'download'])->name('download');
         Route::delete('/{id}', [FileController::class, 'destroy'])->name('destroy');
+    });
+
+    // Marketing Routes (All authenticated users)
+    Route::prefix('marketing')->name('marketing.')->group(function () {
+        // Marketing Dashboard
+        Route::get('/dashboard', [MarketingController::class, 'index'])->name('dashboard.index');
+        
     });
 
     // Comercial Routes (Consultor + Super Admin only)

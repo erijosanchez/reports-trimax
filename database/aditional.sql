@@ -88,3 +88,55 @@ CREATE TABLE `acuerdos_comerciales` (
         FOREIGN KEY (`aprobado_por`) REFERENCES `users`(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*END TABLA ACUERDOS COMERCIALES*/
+
+/* USUARIOS DE MARKETING */
+CREATE TABLE users_marketing (
+    id BIGINT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    email_verified_at TIMESTAMP NULL,
+    password VARCHAR(255) NOT NULL,
+    role VARCHAR(50) NOT NULL,
+    location VARCHAR(255) NULL,
+    unique_token VARCHAR(32) UNIQUE NULL,
+    is_active BOOLEAN DEFAULT TRUE,
+    remember_token VARCHAR(100) NULL,
+    created_at TIMESTAMP NULL,
+    updated_at TIMESTAMP NULL
+);
+
+-- Índices para mejorar el rendimiento
+CREATE INDEX idx_users_marketing_email ON users_marketing(email);
+CREATE INDEX idx_users_marketing_unique_token ON users_marketing(unique_token);
+CREATE INDEX idx_users_marketing_role ON users_marketing(role);
+CREATE INDEX idx_users_marketing_location ON users_marketing(location);
+CREATE INDEX idx_users_marketing_is_active ON users_marketing(is_active);
+
+/* END USUARIOS DE MARKETING */
+
+/* ENCUESTAS*/
+CREATE TABLE surveys (
+    id BIGINT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    client_name VARCHAR(255) NULL,
+    experience_rating SMALLINT NOT NULL,
+    service_quality_rating SMALLINT NOT NULL,
+    comments TEXT NULL,
+    ip_address VARCHAR(45) NULL,
+    user_agent TEXT NULL,
+    created_at TIMESTAMP NULL,
+    updated_at TIMESTAMP NULL,
+    
+    -- Foreign key apuntando a users_marketing
+    CONSTRAINT fk_surveys_user_id 
+        FOREIGN KEY (user_id) 
+        REFERENCES users_marketing(id) 
+        ON DELETE CASCADE
+);
+
+-- Índices para mejorar el rendimiento
+CREATE INDEX idx_surveys_user_id ON surveys(user_id);
+CREATE INDEX idx_surveys_experience_rating ON surveys(experience_rating);
+CREATE INDEX idx_surveys_service_quality_rating ON surveys(service_quality_rating);
+CREATE INDEX idx_surveys_created_at ON surveys(created_at);
+/* END ENCUESTAS */
