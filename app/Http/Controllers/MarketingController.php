@@ -7,7 +7,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
-class DashboardController extends Controller
+class MarketingController extends Controller
 {
     /**
      * Dashboard principal
