@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Survey;
-use App\Models\User;
+use App\Models\UsersMarketing;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -18,8 +18,8 @@ class MarketingController extends Controller
         $endDate = $request->get('end_date', now()->format('Y-m-d'));
         $userId = $request->get('user_id');
 
-        // Construir query base
-        $query = Survey::with('user:id,name,role,location')
+        // Construir query base - CAMBIADO: usar userMarketing en vez de user
+        $query = Survey::with('userMarketing:id,name,role,location')
             ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
 
         if ($userId) {
@@ -40,7 +40,7 @@ class MarketingController extends Controller
         ];
 
         // Estadísticas por usuario (consultores/sedes)
-        $userStats = User::whereIn('role', ['consultor', 'sede'])
+        $userStats = UsersMarketing::whereIn('role', ['consultor', 'sede'])
             ->where('is_active', true)
             ->withCount(['surveys' => function ($query) use ($startDate, $endDate) {
                 $query->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
@@ -66,13 +66,13 @@ class MarketingController extends Controller
             });
 
         // Lista de usuarios para filtro
-        $users = User::whereIn('role', ['consultor', 'sede'])
+        $users = UsersMarketing::whereIn('role', ['consultor', 'sede'])
             ->where('is_active', true)
             ->orderBy('name')
             ->get(['id', 'name', 'role', 'location']);
 
-        // Encuestas recientes
-        $recentSurveys = Survey::with('user:id,name,role,location')
+        // Encuestas recientes - CAMBIADO: usar userMarketing en vez de user
+        $recentSurveys = Survey::with('userMarketing:id,name,role,location')
             ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
             ->when($userId, function ($query, $userId) {
                 return $query->where('user_id', $userId);
@@ -81,7 +81,7 @@ class MarketingController extends Controller
             ->limit(50)
             ->get();
 
-        return view('dashboard.index', compact('stats', 'userStats', 'users', 'recentSurveys', 'startDate', 'endDate', 'userId'));
+        return view('marketing.dashboard.index', compact('stats', 'userStats', 'users', 'recentSurveys', 'startDate', 'endDate', 'userId'));
     }
 
     /**

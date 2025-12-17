@@ -24,9 +24,9 @@ class Survey extends Model
         'service_quality_rating' => 'integer',
     ];
 
-    public function user()
+    public function userMarketing()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(UsersMarketing::class, 'user_id', 'id');
     }
 
     public function getRatingTextAttribute()

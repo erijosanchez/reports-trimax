@@ -11,6 +11,8 @@ class UsersMarketing extends Model
 {
     use HasFactory, Notifiable;
 
+    protected $table = 'users_marketing';
+
     protected $fillable = [
         'name',
         'email',
@@ -37,17 +39,17 @@ class UsersMarketing extends Model
     {
         parent::boot();
 
-        static::creating(function ($user) {
-            if (empty($user->unique_token)) {
-                $user->unique_token = Str::random(32);
+        static::creating(function ($usersMarketing) {
+            if (empty($usersMarketing->unique_token)) {
+                $usersMarketing->unique_token = Str::random(32);
             }
         });
     }
 
-    // Relación con encuestas
+    // CORREGIDO: Especificar explícitamente la foreign key 'user_id'
     public function surveys()
     {
-        return $this->hasMany(Survey::class);
+        return $this->hasMany(Survey::class, 'user_id');
     }
 
     // Obtener URL de la encuesta
