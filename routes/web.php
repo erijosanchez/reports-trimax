@@ -12,11 +12,16 @@ use App\Http\Controllers\Admin\LocationController;
 use App\Http\Controllers\LocationApiController;
 use App\Http\Controllers\ComercialController;
 use App\Http\Controllers\MarketingController;
+use App\Http\Controllers\UserMarketingController;
+use App\Http\Controllers\SurveyController;
 
 // ============================================================
 // RUTAS PARA LARAVEL 11
 // El middleware se aplica AQUÍ, no en los constructores
 // ============================================================
+
+// Public Survey Route
+Route::get('/encuesta/{token}', [SurveyController::class, 'show'])->name('survey.show');
 
 // Auth Routes (Guest)
 Route::middleware(['guest'])->group(function () {
@@ -86,7 +91,23 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
     Route::prefix('marketing')->name('marketing.')->group(function () {
         // Marketing Dashboard
         Route::get('/dashboard', [MarketingController::class, 'index'])->name('dashboard.index');
-        
+
+        Route::prefix('users')->name('users.')->group(function () {
+            // User Management (Super Admin and Marketing only)
+            Route::get('/', [UserMarketingController::class, 'index'])->name('index');
+            Route::get('/create', [UserMarketingController::class, 'create'])->name('create');
+            Route::post('/', [UserMarketingController::class, 'store'])->name('store');
+            Route::get('/{id}', [UserMarketingController::class, 'show'])->name('show');
+            Route::get('/{id}/edit', [UserMarketingController::class, 'edit'])->name('edit');
+            Route::put('/{id}', [UserMarketingController::class, 'update'])->name('update');
+            Route::delete('/{id}', [UserMarketingController::class, 'destroy'])->name('destroy');
+
+            // Acciones especiales
+            Route::post('/{id}/toggle-status', [UserMarketingController::class, 'toggleStatus'])->name('toggle-status');
+            Route::post('/{id}/regenerate-token', [UserMarketingController::class, 'regenerateToken'])->name('regenerate-token');
+            Route::get('/{id}/preview', [UserMarketingController::class, 'preview'])->name('preview');
+            Route::get('/{id}/qr', [UserMarketingController::class, 'generateQR'])->name('qr');
+        });
     });
 
     // Comercial Routes (Consultor + Super Admin only)

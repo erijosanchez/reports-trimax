@@ -64,6 +64,13 @@
                     <span class="menu-title">Dashboard Marketing</span>
                 </a>
             </li>
+            <li class="nav-item">
+                <a class="nav-link {{ request()->routeIs('marketing.users.index') ? 'active' : '' }}"
+                    href="{{ route('marketing.users.index') }}">
+                    <i class="mdi mdi-account-multiple menu-icon"></i>
+                    <span class="menu-title">Usuarios Marketing</span>
+                </a>
+            </li>
         @endif
 
         {{-- MÓDULO ADMINISTRADOR (Solo admin y superadmin) --}}
