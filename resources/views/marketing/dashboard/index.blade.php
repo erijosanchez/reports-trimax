@@ -1,293 +1,12 @@
-<!DOCTYPE html>
-<html lang="es">
+@extends('layouts.app')
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - Encuestas TRIMAX</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        :root {
-            --primary-color: #1565C0;
-            --success-color: #4CAF50;
-            --warning-color: #FF9800;
-            --danger-color: #F44336;
-            --info-color: #2196F3;
-        }
+@section('title', 'Dashboard Marketing')
 
-        body {
-            background: #f5f7fa;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
+@push('styles')
+    <link rel="stylesheet" href="{{ asset('assets/css/sistemaencuestas.css') }}">
+@endpush
 
-        .navbar {
-            background: var(--primary-color);
-            padding: 1rem 2rem;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-
-        .navbar-brand {
-            color: white !important;
-            font-size: 28px;
-            font-weight: 900;
-            letter-spacing: 2px;
-        }
-
-        .main-content {
-            padding: 30px;
-        }
-
-        .nav-tabs {
-            border-bottom: 3px solid var(--primary-color);
-            margin-bottom: 30px;
-        }
-
-        .nav-tabs .nav-link {
-            color: #666;
-            font-weight: 600;
-            padding: 15px 25px;
-            border: none;
-            transition: all 0.3s;
-        }
-
-        .nav-tabs .nav-link:hover {
-            color: var(--primary-color);
-            background: #f0f4ff;
-        }
-
-        .nav-tabs .nav-link.active {
-            color: var(--primary-color);
-            background: white;
-            border: none;
-            border-bottom: 3px solid var(--primary-color);
-        }
-
-        .stats-card {
-            background: white;
-            border-radius: 15px;
-            padding: 25px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
-            margin-bottom: 25px;
-            transition: transform 0.3s;
-        }
-
-        .stats-card:hover {
-            transform: translateY(-5px);
-        }
-
-        .stats-card .icon {
-            font-size: 48px;
-            margin-bottom: 15px;
-        }
-
-        .stats-card .number {
-            font-size: 36px;
-            font-weight: 700;
-            margin: 10px 0;
-        }
-
-        .stats-card .label {
-            color: #666;
-            font-size: 14px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .stats-card.total {
-            border-left: 5px solid var(--primary-color);
-        }
-
-        .stats-card.muy-feliz {
-            border-left: 5px solid var(--success-color);
-        }
-
-        .stats-card.feliz {
-            border-left: 5px solid var(--info-color);
-        }
-
-        .stats-card.insatisfecho {
-            border-left: 5px solid var(--warning-color);
-        }
-
-        .stats-card.muy-insatisfecho {
-            border-left: 5px solid var(--danger-color);
-        }
-
-        .section-title {
-            font-size: 24px;
-            font-weight: 700;
-            color: var(--primary-color);
-            margin: 30px 0 20px 0;
-            padding-bottom: 10px;
-            border-bottom: 3px solid var(--primary-color);
-        }
-
-        .filters-card {
-            background: white;
-            border-radius: 15px;
-            padding: 25px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
-            margin-bottom: 30px;
-        }
-
-        .table-card {
-            background: white;
-            border-radius: 15px;
-            padding: 25px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
-            overflow-x: auto;
-        }
-
-        .table thead {
-            background: #f8f9fa;
-        }
-
-        .table thead th {
-            border: none;
-            color: #666;
-            font-weight: 600;
-            text-transform: uppercase;
-            font-size: 12px;
-            letter-spacing: 1px;
-            padding: 15px;
-        }
-
-        .table tbody td {
-            padding: 15px;
-            vertical-align: middle;
-        }
-
-        .badge-rating {
-            padding: 8px 15px;
-            border-radius: 20px;
-            font-weight: 600;
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .badge-muy-feliz {
-            background: #E8F5E9;
-            color: #2E7D32;
-        }
-
-        .badge-feliz {
-            background: #E3F2FD;
-            color: #1565C0;
-        }
-
-        .badge-insatisfecho {
-            background: #FFF3E0;
-            color: #E65100;
-        }
-
-        .badge-muy-insatisfecho {
-            background: #FFEBEE;
-            color: #C62828;
-        }
-
-        .emoji-rating {
-            font-size: 24px;
-            margin-right: 8px;
-        }
-
-        .progress-bar-container {
-            background: #f0f0f0;
-            border-radius: 10px;
-            height: 25px;
-            overflow: hidden;
-            margin: 10px 0;
-            display: flex;
-        }
-
-        .progress-segment {
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: 600;
-            font-size: 11px;
-            transition: width 0.6s ease;
-        }
-
-        .chart-container {
-            background: white;
-            border-radius: 15px;
-            padding: 25px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
-            margin-bottom: 30px;
-        }
-
-        .btn-primary {
-            background: var(--primary-color);
-            border: none;
-            padding: 10px 25px;
-            border-radius: 50px;
-            font-weight: 600;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-        }
-
-        .btn-primary:hover {
-            background: #0D47A1;
-        }
-
-        .alert-item {
-            background: white;
-            border-left: 4px solid;
-            padding: 15px 20px;
-            margin-bottom: 15px;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        .alert-item.alert-danger {
-            border-color: var(--danger-color);
-        }
-
-        .alert-item.alert-warning {
-            border-color: var(--warning-color);
-        }
-
-        .recognition-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-radius: 15px;
-            padding: 25px;
-            margin-bottom: 20px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-        }
-
-        .recognition-card .trophy {
-            font-size: 48px;
-            margin-bottom: 10px;
-        }
-
-        .recognition-card h4 {
-            margin-bottom: 10px;
-        }
-
-        @media (max-width: 768px) {
-            .main-content {
-                padding: 15px;
-            }
-
-            .stats-card .number {
-                font-size: 28px;
-            }
-        }
-    </style>
-</head>
-
-<body>
-    <nav class="navbar">
-        <div class="container-fluid">
-            <span class="navbar-brand">TRIMAX Dashboard</span>
-        </div>
-    </nav>
+@section('content')
 
     <div class="main-content">
         <!-- Filtros -->
@@ -451,8 +170,7 @@
                                     <td><span class="badge badge-muy-feliz">{{ $stat['muy_feliz'] }}</span></td>
                                     <td><span class="badge badge-feliz">{{ $stat['feliz'] }}</span></td>
                                     <td><span class="badge badge-insatisfecho">{{ $stat['insatisfecho'] }}</span></td>
-                                    <td><span
-                                            class="badge badge-muy-insatisfecho">{{ $stat['muy_insatisfecho'] }}</span>
+                                    <td><span class="badge badge-muy-insatisfecho">{{ $stat['muy_insatisfecho'] }}</span>
                                     </td>
                                     <td><strong>{{ number_format($stat['avg_experience'], 2) }}</strong></td>
                                     <td style="width: 200px;">
@@ -784,7 +502,9 @@
             </div>
         </div>
     </div>
+@endsection
 
+@push('scripts')
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         // Gráfico de distribución de calificaciones
@@ -885,6 +605,4 @@
             });
         }
     </script>
-</body>
-
-</html>
+@endpush

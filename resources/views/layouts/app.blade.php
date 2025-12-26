@@ -21,8 +21,10 @@
     <!-- End plugin css for this page -->
     <!-- inject:css -->
     <link rel="stylesheet" href="{{ asset('assets/css/vertical-layout-light/style.css') }}">
+    @stack('styles')
     <!-- endinject -->
     <link rel="shortcut icon" href="{{ asset('assets/img/fv.png') }}" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body>
@@ -71,6 +73,7 @@
     <!-- End custom js for this page-->
     <!-- GPS Tracking solo para usuarios autenticados -->
     @yield('scripts')
+    @stack('scripts')
     @auth
         <script src="{{ asset('assets/js/gps-tracking.js') }}"></script>
     @endauth

@@ -64,52 +64,6 @@
                     <span class="menu-title">Dashboard Marketing</span>
                 </a>
             </li>
-            <li class="nav-item">
-                <a class="nav-link {{ request()->routeIs('marketing.detalles.*') || request()->routeIs('marketing.alertas.*') ? '' : 'collapsed' }}"
-                    data-bs-toggle="collapse" href="#marketing-detalles"
-                    aria-expanded="{{ request()->routeIs('marketing.detalles.*') || request()->routeIs('marketing.alertas.*') ? 'true' : 'false' }}"
-                    aria-controls="marketing-detalles">
-                    <i class="mdi mdi-clipboard-alert menu-icon"></i>
-                    <span class="menu-title">Detalles & Alertas</span>
-                    <i class="menu-arrow"></i>
-                </a>
-                <div class="collapse {{ request()->routeIs('marketing.detalles.*') || request()->routeIs('marketing.alertas.*') ? 'show' : '' }}"
-                    id="marketing-detalles">
-                    <ul class="flex-column nav sub-menu">
-                        <li class="nav-item">
-                            <a class="nav-link {{ request()->routeIs('marketing.detalles.zona') ? 'active' : '' }}"
-                                href="">Detalle por Zona</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {{ request()->routeIs('marketing.alertas.atencion') ? 'active' : '' }}"
-                                href="">Alertas de atención</a>
-                        </li>
-                    </ul>
-                </div>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link {{ request()->routeIs('marketing.analisis.*') ? '' : 'collapsed' }}"
-                    data-bs-toggle="collapse" href="#marketing-analisis"
-                    aria-expanded="{{ request()->routeIs('marketing.analisis.*') ? 'true' : 'false' }}"
-                    aria-controls="marketing-analisis">
-                    <i class="mdi mdi-chart-line menu-icon"></i>
-                    <span class="menu-title">Análisis</span>
-                    <i class="menu-arrow"></i>
-                </a>
-                <div class="collapse {{ request()->routeIs('marketing.analisis.*') ? 'show' : '' }}"
-                    id="marketing-analisis">
-                    <ul class="flex-column nav sub-menu">
-                        <li class="nav-item">
-                            <a class="nav-link {{ request()->routeIs('marketing.analisis.tendencias') ? 'active' : '' }}"
-                                href="">Tendencias</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {{ request()->routeIs('marketing.analisis.reconocimientos') ? 'active' : '' }}"
-                                href="">Reconocimientos</a>
-                        </li>
-                    </ul>
-                </div>
-            </li>
         @endif
 
         {{-- MÓDULO ADMINISTRADOR (Solo admin y superadmin) --}}
