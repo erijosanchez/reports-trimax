@@ -94,7 +94,7 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
 
         Route::prefix('users')->name('users.')->group(function () {
             // User Management (Super Admin and Marketing only)
-            Route::get('/', [UserMarketingController::class, 'index'])->name('index');
+            Route::get('/dasoboard', [UserMarketingController::class, 'index'])->name('index');
             Route::get('/create', [UserMarketingController::class, 'create'])->name('create');
             Route::post('/', [UserMarketingController::class, 'store'])->name('store');
             Route::get('/{id}', [UserMarketingController::class, 'show'])->name('show');
