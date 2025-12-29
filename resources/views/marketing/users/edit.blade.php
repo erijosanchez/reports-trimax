@@ -113,7 +113,7 @@
         <div class="form-card">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2><i class="bi bi-pencil-fill"></i> Editar Usuario</h2>
-                <a href="{{ route('users.show', $user->id) }}" class="btn btn-outline-secondary">
+                <a href="{{ route('marketing.users.show', $user->id) }}" class="btn btn-outline-secondary">
                     <i class="bi bi-arrow-left"></i> Volver
                 </a>
             </div>
@@ -129,7 +129,7 @@
             </div>
             @endif
 
-            <form method="POST" action="{{ route('users.update', $user->id) }}" id="createUserForm">
+            <form method="POST" action="{{ route('marketing.users.update', $user->id) }}" id="createUserForm">
                 @csrf
                 @method('PUT')
 
@@ -199,7 +199,7 @@
                     <button type="submit" class="btn btn-primary">
                         <i class="bi bi-check-circle"></i> Guardar Cambios
                     </button>
-                    <a href="{{ route('users.show', $user->id) }}" class="btn btn-outline-secondary">
+                    <a href="{{ route('marketing.users.show', $user->id) }}" class="btn btn-outline-secondary">
                         <i class="bi bi-x-circle"></i> Cancelar
                     </a>
                 </div>

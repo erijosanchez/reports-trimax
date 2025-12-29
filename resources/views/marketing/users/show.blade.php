@@ -242,7 +242,7 @@
                     </div>
                 </div>
                 <div>
-                    <a href="{{ route('users.index') }}" class="btn btn-light">
+                    <a href="{{ route('marketing.users.index') }}" class="btn btn-light">
                         <i class="bi bi-arrow-left"></i> Volver
                     </a>
                 </div>
@@ -298,7 +298,7 @@
                         <button onclick="copyLink('{{ $user->survey_url }}')" class="btn-action btn-light">
                             <i class="bi bi-clipboard"></i> Copiar Link
                         </button>
-                        <a href="{{ route('users.preview', $user->id) }}" target="_blank" class="btn-action btn-light">
+                        <a href="{{ route('marketing.users.preview', $user->id) }}" target="_blank" class="btn-action btn-light">
                             <i class="bi bi-eye"></i> Vista Previa
                         </a>
                         <button onclick="shareWhatsApp('{{ $user->survey_url }}')" class="btn-action btn-success">
@@ -406,25 +406,25 @@
                 <div class="card">
                     <h3><i class="bi bi-tools"></i> Acciones</h3>
                     <div class="d-grid gap-2">
-                        <a href="{{ route('users.edit', $user->id) }}" class="btn btn-warning">
+                        <a href="{{ route('marketing.users.edit', $user->id) }}" class="btn btn-warning">
                             <i class="bi bi-pencil"></i> Editar Usuario
                         </a>
-                        
-                        <form method="POST" action="{{ route('users.toggle-status', $user->id) }}">
+
+                        <form method="POST" action="{{ route('marketing.users.toggle-status', $user->id) }}">
                             @csrf
                             <button type="submit" class="btn {{ $user->is_active ? 'btn-danger' : 'btn-success' }} w-100">
                                 <i class="bi bi-power"></i> {{ $user->is_active ? 'Desactivar' : 'Activar' }}
                             </button>
                         </form>
 
-                        <form method="POST" action="{{ route('users.regenerate-token', $user->id) }}" onsubmit="return confirm('¿Regenerar token? El link anterior dejará de funcionar.')">
+                        <form method="POST" action="{{ route('marketing.users.regenerate-token', $user->id) }}" onsubmit="return confirm('¿Regenerar token? El link anterior dejará de funcionar.')">
                             @csrf
                             <button type="submit" class="btn btn-dark w-100">
                                 <i class="bi bi-arrow-clockwise"></i> Regenerar Token
                             </button>
                         </form>
 
-                        <form method="POST" action="{{ route('users.destroy', $user->id) }}" onsubmit="return confirm('¿Eliminar usuario? Esta acción no se puede deshacer.')">
+                        <form method="POST" action="{{ route('marketing.users.destroy', $user->id) }}" onsubmit="return confirm('¿Eliminar usuario? Esta acción no se puede deshacer.')">
                             @csrf
                             @method('DELETE')
                             <button type="submit" class="btn btn-outline-danger w-100">

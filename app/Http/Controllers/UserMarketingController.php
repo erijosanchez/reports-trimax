@@ -30,7 +30,6 @@ class UserMarketingController extends Controller
         if ($search) {
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('email', 'like', "%{$search}%")
                     ->orWhere('location', 'like', "%{$search}%");
             });
         }
@@ -69,10 +68,9 @@ class UserMarketingController extends Controller
      */
     public function store(Request $request)
     {
+
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
-            'password' => 'required|string|min:8|confirmed',
             'role' => 'required|in:consultor,sede',
             'location' => 'required_if:role,sede|nullable|string|max:255',
         ]);
@@ -86,8 +84,6 @@ class UserMarketingController extends Controller
 
             $user = UsersMarketing::create([
                 'name' => $request->name,
-                'email' => $request->email,
-                'password' => Hash::make($request->password),
                 'role' => $request->role,
                 'location' => $request->location,
                 'unique_token' => Str::random(32),
@@ -157,8 +153,6 @@ class UserMarketingController extends Controller
 
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,' . $user->id,
-            'password' => 'nullable|string|min:8|confirmed',
             'role' => 'required|in:consultor,sede',
             'location' => 'required_if:role,sede|nullable|string|max:255',
         ]);
@@ -171,14 +165,8 @@ class UserMarketingController extends Controller
             DB::beginTransaction();
 
             $user->name = $request->name;
-            $user->email = $request->email;
             $user->role = $request->role;
             $user->location = $request->location;
-
-            if ($request->filled('password')) {
-                $user->password = Hash::make($request->password);
-            }
-
             $user->save();
 
             DB::commit();
@@ -212,7 +200,6 @@ class UserMarketingController extends Controller
     public function regenerateToken($id)
     {
         $user = UsersMarketing::findOrFail($id);
-        $oldToken = $user->unique_token;
         $user->unique_token = Str::random(32);
         $user->save();
 
@@ -220,7 +207,7 @@ class UserMarketingController extends Controller
     }
 
     /**
-     * Eliminar usuario (soft delete o hard delete)
+     * Eliminar usuario
      */
     public function destroy($id)
     {
@@ -286,7 +273,6 @@ class UserMarketingController extends Controller
             fputcsv($file, [
                 'ID',
                 'Nombre',
-                'Email',
                 'Rol',
                 'Ubicación',
                 'Estado',
@@ -301,7 +287,6 @@ class UserMarketingController extends Controller
                 fputcsv($file, [
                     $user->id,
                     $user->name,
-                    $user->email,
                     $user->role === 'consultor' ? 'Consultor' : 'Sede',
                     $user->location ?? 'N/A',
                     $user->is_active ? 'Activo' : 'Inactivo',
