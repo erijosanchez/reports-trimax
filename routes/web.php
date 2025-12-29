@@ -107,6 +107,9 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
             Route::post('/{id}/regenerate-token', [UserMarketingController::class, 'regenerateToken'])->name('regenerate-token');
             Route::get('/{id}/preview', [UserMarketingController::class, 'preview'])->name('preview');
             Route::get('/{id}/qr', [UserMarketingController::class, 'generateQR'])->name('qr');
+
+            Route::get('/{id}/assign-sedes', [UserMarketingController::class, 'assignSedesForm'])->name('assign-sedes');
+            Route::post('/{id}/assign-sedes', [UserMarketingController::class, 'assignSedes'])->name('update-sedes');
         });
     });
 

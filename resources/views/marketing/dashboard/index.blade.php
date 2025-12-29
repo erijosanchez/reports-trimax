@@ -158,21 +158,49 @@
                         <tbody>
                             @foreach ($userStats as $stat)
                                 <tr>
-                                    <td><strong>{{ $stat['name'] }}</strong></td>
                                     <td>
-                                        @if ($stat['role'] === 'consultor')
-                                            <span class="bg-primary badge">Consultor</span>
-                                        @else
-                                            <span class="bg-info badge">Sede {{ $stat['location'] }}</span>
+                                        <strong>{{ $stat['name'] }}</strong>
+                                        {{-- 🆕 Indicador de sedes asignadas --}}
+                                        @if ($stat['role'] === 'consultor' && $stat['sedes_count'] > 0)
+                                            <br>
+                                            <small class="text-muted">
+                                                <i class="bi bi-building"></i> {{ $stat['sedes_count'] }}
+                                                {{ $stat['sedes_count'] == 1 ? 'sede asignada' : 'sedes asignadas' }}
+                                            </small>
                                         @endif
                                     </td>
-                                    <td><strong>{{ $stat['total_surveys'] }}</strong></td>
+                                    <td>
+                                        @if ($stat['role'] === 'consultor')
+                                            <span class="badge bg-primary">Consultor</span>
+                                            @if ($stat['sedes_count'] > 0)
+                                                <br>
+                                                <small class="badge bg-info mt-1">+ Sedes</small>
+                                            @endif
+                                        @else
+                                            <span class="badge bg-info">Sede {{ $stat['location'] }}</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        <strong>{{ $stat['total_surveys'] }}</strong>
+                                        @if ($stat['role'] === 'consultor' && $stat['sedes_count'] > 0)
+                                            <i class="bi bi-info-circle text-primary" data-bs-toggle="tooltip"
+                                                title="Incluye encuestas de {{ $stat['sedes_count'] }} sede(s) asignada(s)">
+                                            </i>
+                                        @endif
+                                    </td>
                                     <td><span class="badge badge-muy-feliz">{{ $stat['muy_feliz'] }}</span></td>
                                     <td><span class="badge badge-feliz">{{ $stat['feliz'] }}</span></td>
                                     <td><span class="badge badge-insatisfecho">{{ $stat['insatisfecho'] }}</span></td>
                                     <td><span class="badge badge-muy-insatisfecho">{{ $stat['muy_insatisfecho'] }}</span>
                                     </td>
-                                    <td><strong>{{ number_format($stat['avg_experience'], 2) }}</strong></td>
+                                    <td>
+                                        <strong>{{ number_format($stat['avg_experience'], 2) }}</strong>
+                                        @if ($stat['role'] === 'consultor' && $stat['sedes_count'] > 0)
+                                            <i class="bi bi-info-circle text-primary" data-bs-toggle="tooltip"
+                                                title="Promedio consolidado (consultor + sedes)">
+                                            </i>
+                                        @endif
+                                    </td>
                                     <td style="width: 200px;">
                                         @if ($stat['total_surveys'] > 0)
                                             <div class="progress-bar-container">

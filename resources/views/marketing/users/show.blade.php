@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -21,7 +22,7 @@
         .navbar {
             background: var(--primary-color);
             padding: 1rem 2rem;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
 
         .navbar-brand {
@@ -38,7 +39,7 @@
             background: white;
             border-radius: 15px;
             padding: 25px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
             margin-bottom: 25px;
         }
 
@@ -80,7 +81,7 @@
             background: white;
             padding: 25px;
             border-radius: 15px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
             text-align: center;
             transition: transform 0.3s;
         }
@@ -115,7 +116,7 @@
         }
 
         .link-display {
-            background: rgba(255,255,255,0.2);
+            background: rgba(255, 255, 255, 0.2);
             padding: 15px 20px;
             border-radius: 10px;
             font-family: monospace;
@@ -139,7 +140,7 @@
 
         .btn-action:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
         }
 
         .qr-container {
@@ -153,7 +154,7 @@
             max-width: 300px;
             border: 5px solid white;
             border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
         }
 
         .table-responsive {
@@ -196,6 +197,7 @@
         }
     </style>
 </head>
+
 <body>
     <nav class="navbar">
         <div class="container-fluid">
@@ -204,11 +206,11 @@
     </nav>
 
     <div class="main-content">
-        @if(session('success'))
-        <div class="alert alert-success-custom alert-dismissible fade show">
-            <i class="bi bi-check-circle"></i> {{ session('success') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
+        @if (session('success'))
+            <div class="alert alert-success-custom alert-dismissible fade show">
+                <i class="bi bi-check-circle"></i> {{ session('success') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
         @endif
 
         <!-- Header de Usuario -->
@@ -220,7 +222,7 @@
                         <i class="bi bi-envelope"></i> {{ $user->email }}
                     </p>
                     <div class="d-flex gap-2">
-                        @if($user->role === 'consultor')
+                        @if ($user->role === 'consultor')
                             <span class="badge-large bg-primary">
                                 <i class="bi bi-person"></i> Consultor
                             </span>
@@ -230,7 +232,7 @@
                             </span>
                         @endif
 
-                        @if($user->is_active)
+                        @if ($user->is_active)
                             <span class="badge-large bg-success">
                                 <i class="bi bi-check-circle"></i> Activo
                             </span>
@@ -283,13 +285,94 @@
             </div>
         </div>
 
+        @if ($user->isConsultor())
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="card-title mb-0">
+                                    <i class="mdi mdi-office-building"></i> Sedes Asignadas
+                                </h5>
+                                <a href="{{ route('marketing.users.assign-sedes', $user->id) }}"
+                                    class="btn btn-primary btn-sm">
+                                    <i class="mdi mdi-cog"></i> Gestionar Sedes
+                                </a>
+                            </div>
+
+                            @if ($user->sedes->count() > 0)
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Sede</th>
+                                                <th>Ubicación</th>
+                                                <th>Encuestas</th>
+                                                <th>Promedio</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach ($user->sedes as $sede)
+                                                <tr>
+                                                    <td>
+                                                        <a href="{{ route('marketing.users.show', $sede->id) }}">
+                                                            {{ $sede->name }}
+                                                        </a>
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge bg-secondary">
+                                                            <i class="mdi mdi-map-marker"></i> {{ $sede->location }}
+                                                        </span>
+                                                    </td>
+                                                    <td>{{ $sede->total_surveys }}</td>
+                                                    <td>
+                                                        <span class="badge bg-warning">
+                                                            ⭐ {{ number_format($sede->average_rating, 2) }}
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <div class="alert alert-info mt-3">
+                                    <strong><i class="mdi mdi-chart-line"></i> Estadísticas Consolidadas:</strong><br>
+                                    <div class="row mt-2">
+                                        <div class="col-md-6">
+                                            <strong>Encuestas Propias:</strong> {{ $stats['total_surveys'] }}<br>
+                                            <strong>Promedio Propio:</strong> ⭐
+                                            {{ number_format($stats['average_rating'], 2) }}
+                                        </div>
+                                        <div class="col-md-6">
+                                            <strong>Total con Sedes:</strong>
+                                            {{ $stats['total_surveys_with_sedes'] }}<br>
+                                            <strong>Promedio General:</strong> ⭐
+                                            {{ number_format($stats['average_rating_with_sedes'], 2) }}
+                                        </div>
+                                    </div>
+                                </div>
+                            @else
+                                <div class="alert alert-warning">
+                                    <i class="mdi mdi-alert"></i> No hay sedes asignadas a este consultor.
+                                    <a href="{{ route('marketing.users.assign-sedes', $user->id) }}"
+                                        class="alert-link">Asignar ahora</a>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
+
         <div class="row">
             <div class="col-md-8">
                 <!-- Link de Encuesta -->
                 <div class="link-box">
                     <h3 style="color: white;"><i class="bi bi-link-45deg"></i> Link de Encuesta Única</h3>
-                    <p style="color: rgba(255,255,255,0.9);">Comparte este link con tus clientes para recibir feedback</p>
-                    
+                    <p style="color: rgba(255,255,255,0.9);">Comparte este link con tus clientes para recibir feedback
+                    </p>
+
                     <div class="link-display">
                         {{ $user->survey_url }}
                     </div>
@@ -298,89 +381,93 @@
                         <button onclick="copyLink('{{ $user->survey_url }}')" class="btn-action btn-light">
                             <i class="bi bi-clipboard"></i> Copiar Link
                         </button>
-                        <a href="{{ route('marketing.users.preview', $user->id) }}" target="_blank" class="btn-action btn-light">
+                        <a href="{{ route('marketing.users.preview', $user->id) }}" target="_blank"
+                            class="btn-action btn-light">
                             <i class="bi bi-eye"></i> Vista Previa
                         </a>
                         <button onclick="shareWhatsApp('{{ $user->survey_url }}')" class="btn-action btn-success">
                             <i class="bi bi-whatsapp"></i> Compartir WhatsApp
                         </button>
-                        <button onclick="shareEmail('{{ $user->survey_url }}', '{{ $user->name }}')" class="btn-action btn-info">
+                        <button onclick="shareEmail('{{ $user->survey_url }}', '{{ $user->name }}')"
+                            class="btn-action btn-info">
                             <i class="bi bi-envelope"></i> Enviar Email
                         </button>
                     </div>
 
                     <div class="mt-3">
                         <small style="color: rgba(255,255,255,0.7);">
-                            <i class="bi bi-shield-check"></i> Este link es único y permanente. 
+                            <i class="bi bi-shield-check"></i> Este link es único y permanente.
                             Si necesitas regenerarlo, contacta al administrador.
                         </small>
                     </div>
                 </div>
 
                 <!-- Gráfico -->
-                @if($stats['total_surveys'] > 0)
-                <div class="card">
-                    <h3><i class="bi bi-bar-chart"></i> Distribución de Calificaciones</h3>
-                    <canvas id="ratingsChart"></canvas>
-                </div>
+                @if ($stats['total_surveys'] > 0)
+                    <div class="card">
+                        <h3><i class="bi bi-bar-chart"></i> Distribución de Calificaciones</h3>
+                        <canvas id="ratingsChart"></canvas>
+                    </div>
                 @endif
 
                 <!-- Encuestas Recientes -->
                 <div class="card">
                     <h3><i class="bi bi-clock-history"></i> Encuestas Recientes</h3>
-                    @if($recentSurveys->count() > 0)
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Fecha</th>
-                                    <th>Cliente</th>
-                                    <th>Experiencia</th>
-                                    <th>Atención</th>
-                                    <th>Comentario</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($recentSurveys as $survey)
-                                <tr>
-                                    <td>{{ $survey->created_at->format('d/m/Y H:i') }}</td>
-                                    <td>{{ $survey->client_name ?? 'Anónimo' }}</td>
-                                    <td>
-                                        @if($survey->experience_rating == 4)
-                                            <span class="badge-rating badge-muy-feliz">😊 Muy Feliz</span>
-                                        @elseif($survey->experience_rating == 3)
-                                            <span class="badge-rating badge-feliz">🙂 Feliz</span>
-                                        @elseif($survey->experience_rating == 2)
-                                            <span class="badge-rating badge-insatisfecho">😐 Insatisfecho</span>
-                                        @else
-                                            <span class="badge-rating badge-muy-insatisfecho">😞 Muy Insatisfecho</span>
-                                        @endif
-                                    </td>
-                                    <td>
-                                        @if($survey->service_quality_rating == 4)
-                                            <span class="badge-rating badge-muy-feliz">😊</span>
-                                        @elseif($survey->service_quality_rating == 3)
-                                            <span class="badge-rating badge-feliz">🙂</span>
-                                        @elseif($survey->service_quality_rating == 2)
-                                            <span class="badge-rating badge-insatisfecho">😐</span>
-                                        @else
-                                            <span class="badge-rating badge-muy-insatisfecho">😞</span>
-                                        @endif
-                                    </td>
-                                    <td>
-                                        @if($survey->comments)
-                                            <small>{{ Str::limit($survey->comments, 50) }}</small>
-                                        @else
-                                            <small class="text-muted">Sin comentarios</small>
-                                        @endif
-                                    </td>
-                                </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
+                    @if ($recentSurveys->count() > 0)
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha</th>
+                                        <th>Cliente</th>
+                                        <th>Experiencia</th>
+                                        <th>Atención</th>
+                                        <th>Comentario</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach ($recentSurveys as $survey)
+                                        <tr>
+                                            <td>{{ $survey->created_at->format('d/m/Y H:i') }}</td>
+                                            <td>{{ $survey->client_name ?? 'Anónimo' }}</td>
+                                            <td>
+                                                @if ($survey->experience_rating == 4)
+                                                    <span class="badge-rating badge-muy-feliz">😊 Muy Feliz</span>
+                                                @elseif($survey->experience_rating == 3)
+                                                    <span class="badge-rating badge-feliz">🙂 Feliz</span>
+                                                @elseif($survey->experience_rating == 2)
+                                                    <span class="badge-rating badge-insatisfecho">😐
+                                                        Insatisfecho</span>
+                                                @else
+                                                    <span class="badge-rating badge-muy-insatisfecho">😞 Muy
+                                                        Insatisfecho</span>
+                                                @endif
+                                            </td>
+                                            <td>
+                                                @if ($survey->service_quality_rating == 4)
+                                                    <span class="badge-rating badge-muy-feliz">😊</span>
+                                                @elseif($survey->service_quality_rating == 3)
+                                                    <span class="badge-rating badge-feliz">🙂</span>
+                                                @elseif($survey->service_quality_rating == 2)
+                                                    <span class="badge-rating badge-insatisfecho">😐</span>
+                                                @else
+                                                    <span class="badge-rating badge-muy-insatisfecho">😞</span>
+                                                @endif
+                                            </td>
+                                            <td>
+                                                @if ($survey->comments)
+                                                    <small>{{ Str::limit($survey->comments, 50) }}</small>
+                                                @else
+                                                    <small class="text-muted">Sin comentarios</small>
+                                                @endif
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
                     @else
-                    <p class="text-muted text-center py-4">No hay encuestas aún</p>
+                        <p class="text-muted text-center py-4">No hay encuestas aún</p>
                     @endif
                 </div>
             </div>
@@ -390,9 +477,11 @@
                 <div class="card">
                     <h3><i class="bi bi-qr-code"></i> Código QR</h3>
                     <div class="qr-container">
-                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data={{ urlencode($user->survey_url) }}" alt="QR Code">
+                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data={{ urlencode($user->survey_url) }}"
+                            alt="QR Code">
                         <div class="mt-3">
-                            <a href="https://api.qrserver.com/v1/create-qr-code/?size=1000x1000&data={{ urlencode($user->survey_url) }}" download="qr_{{ $user->id }}.png" class="btn btn-primary w-100">
+                            <a href="https://api.qrserver.com/v1/create-qr-code/?size=1000x1000&data={{ urlencode($user->survey_url) }}"
+                                download="qr_{{ $user->id }}.png" class="btn btn-primary w-100">
                                 <i class="bi bi-download"></i> Descargar QR
                             </a>
                         </div>
@@ -412,19 +501,22 @@
 
                         <form method="POST" action="{{ route('marketing.users.toggle-status', $user->id) }}">
                             @csrf
-                            <button type="submit" class="btn {{ $user->is_active ? 'btn-danger' : 'btn-success' }} w-100">
+                            <button type="submit"
+                                class="btn {{ $user->is_active ? 'btn-danger' : 'btn-success' }} w-100">
                                 <i class="bi bi-power"></i> {{ $user->is_active ? 'Desactivar' : 'Activar' }}
                             </button>
                         </form>
 
-                        <form method="POST" action="{{ route('marketing.users.regenerate-token', $user->id) }}" onsubmit="return confirm('¿Regenerar token? El link anterior dejará de funcionar.')">
+                        <form method="POST" action="{{ route('marketing.users.regenerate-token', $user->id) }}"
+                            onsubmit="return confirm('¿Regenerar token? El link anterior dejará de funcionar.')">
                             @csrf
                             <button type="submit" class="btn btn-dark w-100">
                                 <i class="bi bi-arrow-clockwise"></i> Regenerar Token
                             </button>
                         </form>
 
-                        <form method="POST" action="{{ route('marketing.users.destroy', $user->id) }}" onsubmit="return confirm('¿Eliminar usuario? Esta acción no se puede deshacer.')">
+                        <form method="POST" action="{{ route('marketing.users.destroy', $user->id) }}"
+                            onsubmit="return confirm('¿Eliminar usuario? Esta acción no se puede deshacer.')">
                             @csrf
                             @method('DELETE')
                             <button type="submit" class="btn btn-outline-danger w-100">
@@ -448,39 +540,44 @@
 
         // Compartir en WhatsApp
         function shareWhatsApp(url) {
-            const text = `Hola, por favor completa esta breve encuesta de satisfacción sobre tu experiencia en TRIMAX: ${url}`;
+            const text =
+                `Hola, por favor completa esta breve encuesta de satisfacción sobre tu experiencia en TRIMAX: ${url}`;
             window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
         }
 
         // Compartir por Email
         function shareEmail(url, name) {
             const subject = `Encuesta de Satisfacción - ${name}`;
-            const body = `Hola,\n\nNos gustaría conocer tu opinión sobre la atención recibida.\n\nPor favor completa esta breve encuesta:\n${url}\n\nGracias,\nEquipo TRIMAX`;
+            const body =
+                `Hola,\n\nNos gustaría conocer tu opinión sobre la atención recibida.\n\nPor favor completa esta breve encuesta:\n${url}\n\nGracias,\nEquipo TRIMAX`;
             window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
         }
 
         // Gráfico de calificaciones
-        @if($stats['total_surveys'] > 0)
-        const ctx = document.getElementById('ratingsChart');
-        new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                labels: ['Muy Feliz 😊', 'Feliz 🙂', 'Insatisfecho 😐', 'Muy Insatisfecho 😞'],
-                datasets: [{
-                    data: [{{ $stats['muy_feliz'] }}, {{ $stats['feliz'] }}, {{ $stats['insatisfecho'] }}, {{ $stats['muy_insatisfecho'] }}],
-                    backgroundColor: ['#4CAF50', '#2196F3', '#FF9800', '#F44336']
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        position: 'bottom'
+        @if ($stats['total_surveys'] > 0)
+            const ctx = document.getElementById('ratingsChart');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Muy Feliz 😊', 'Feliz 🙂', 'Insatisfecho 😐', 'Muy Insatisfecho 😞'],
+                    datasets: [{
+                        data: [{{ $stats['muy_feliz'] }}, {{ $stats['feliz'] }},
+                            {{ $stats['insatisfecho'] }}, {{ $stats['muy_insatisfecho'] }}
+                        ],
+                        backgroundColor: ['#4CAF50', '#2196F3', '#FF9800', '#F44336']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
                     }
                 }
-            }
-        });
+            });
         @endif
     </script>
 </body>
+
 </html>

@@ -106,17 +106,32 @@ class UserMarketingController extends Controller
      */
     public function show($id)
     {
-        $user = UsersMarketing::with('surveys')->findOrFail($id);
+        $user = UsersMarketing::with(['surveys', 'sedes.surveys'])->findOrFail($id);
 
         // Estadísticas del usuario
-        $stats = [
-            'total_surveys' => $user->surveys->count(),
-            'average_rating' => round($user->surveys->avg('experience_rating'), 2),
-            'muy_feliz' => $user->surveys->where('experience_rating', 4)->count(),
-            'feliz' => $user->surveys->where('experience_rating', 3)->count(),
-            'insatisfecho' => $user->surveys->where('experience_rating', 2)->count(),
-            'muy_insatisfecho' => $user->surveys->where('experience_rating', 1)->count(),
-        ];
+        if ($user->isConsultor()) {
+            // Para consultores, incluir estadísticas de sedes asignadas
+            $stats = [
+                'total_surveys' => $user->total_surveys,
+                'total_surveys_with_sedes' => $user->total_surveys_with_sedes,
+                'average_rating' => $user->average_rating,
+                'average_rating_with_sedes' => $user->average_rating_with_sedes,
+                'muy_feliz' => $user->surveys->where('experience_rating', 4)->count(),
+                'feliz' => $user->surveys->where('experience_rating', 3)->count(),
+                'insatisfecho' => $user->surveys->where('experience_rating', 2)->count(),
+                'muy_insatisfecho' => $user->surveys->where('experience_rating', 1)->count(),
+            ];
+        } else {
+            // Para sedes, estadísticas normales
+            $stats = [
+                'total_surveys' => $user->surveys->count(),
+                'average_rating' => round($user->surveys->avg('experience_rating'), 2),
+                'muy_feliz' => $user->surveys->where('experience_rating', 4)->count(),
+                'feliz' => $user->surveys->where('experience_rating', 3)->count(),
+                'insatisfecho' => $user->surveys->where('experience_rating', 2)->count(),
+                'muy_insatisfecho' => $user->surveys->where('experience_rating', 1)->count(),
+            ];
+        }
 
         // Encuestas recientes
         $recentSurveys = $user->surveys()
@@ -177,6 +192,56 @@ class UserMarketingController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->with('error', 'Error al actualizar usuario: ' . $e->getMessage())->withInput();
+        }
+    }
+
+    /**
+     * Mostrar formulario para asignar sedes a un consultor
+     */
+    public function assignSedesForm($id)
+    {
+        $consultor = UsersMarketing::where('role', 'consultor')->findOrFail($id);
+
+        $sedes = UsersMarketing::where('role', 'sede')
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
+        $sedesAsignadas = $consultor->sedes()->pluck('users_marketing.id')->toArray();
+
+        return view('marketing.users.assign-sedes', compact('consultor', 'sedes', 'sedesAsignadas'));
+    }
+
+    /**
+     * Actualizar sedes asignadas
+     */
+    public function assignSedes(Request $request, $id)
+    {
+        $consultor = UsersMarketing::where('role', 'consultor')->findOrFail($id);
+
+        $validator = Validator::make($request->all(), [
+            'sedes' => 'nullable|array',
+            'sedes.*' => 'exists:users_marketing,id'
+        ]);
+
+        if ($validator->fails()) {
+            return back()->withErrors($validator)->withInput();
+        }
+
+        try {
+            DB::beginTransaction();
+
+            // Sincronizar sedes (elimina las viejas y agrega las nuevas)
+            $consultor->sedes()->sync($request->sedes ?? []);
+
+            DB::commit();
+
+            return redirect()
+                ->route('marketing.users.show', $consultor->id)
+                ->with('success', 'Sedes asignadas correctamente al consultor');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Error al asignar sedes: ' . $e->getMessage());
         }
     }
 

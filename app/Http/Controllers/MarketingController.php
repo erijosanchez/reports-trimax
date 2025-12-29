@@ -18,7 +18,7 @@ class MarketingController extends Controller
         $endDate = $request->get('end_date', now()->format('Y-m-d'));
         $userId = $request->get('user_id');
 
-        // Construir query base - CAMBIADO: usar userMarketing en vez de user
+        // Construir query base
         $query = Survey::with('userMarketing:id,name,role,location')
             ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
 
@@ -39,31 +39,63 @@ class MarketingController extends Controller
             'average_service' => round($surveys->avg('service_quality_rating'), 2),
         ];
 
-        // Estadísticas por usuario (consultores/sedes)
+        // 🆕 Estadísticas por usuario con sedes consolidadas
         $userStats = UsersMarketing::whereIn('role', ['consultor', 'sede'])
             ->where('is_active', true)
-            ->withCount(['surveys' => function ($query) use ($startDate, $endDate) {
-                $query->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
-            }])
-            ->with(['surveys' => function ($query) use ($startDate, $endDate) {
-                $query->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
-            }])
+            ->with([
+                'surveys' => function ($query) use ($startDate, $endDate) {
+                    $query->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
+                },
+                'sedes.surveys' => function ($query) use ($startDate, $endDate) {
+                    $query->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
+                }
+            ])
             ->get()
-            ->map(function ($user) {
-                return [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'role' => $user->role,
-                    'location' => $user->location,
-                    'total_surveys' => $user->surveys_count,
-                    'avg_experience' => round($user->surveys->avg('experience_rating'), 2),
-                    'avg_service' => round($user->surveys->avg('service_quality_rating'), 2),
-                    'muy_feliz' => $user->surveys->where('experience_rating', 4)->count(),
-                    'feliz' => $user->surveys->where('experience_rating', 3)->count(),
-                    'insatisfecho' => $user->surveys->where('experience_rating', 2)->count(),
-                    'muy_insatisfecho' => $user->surveys->where('experience_rating', 1)->count(),
-                ];
-            });
+            ->map(function ($user) use ($startDate, $endDate) {
+                // Para consultores: incluir encuestas de sus sedes
+                if ($user->isConsultor()) {
+                    // Obtener IDs de sedes asignadas
+                    $sedeIds = $user->sedes->pluck('id')->toArray();
+                    $allIds = array_merge([$user->id], $sedeIds);
+
+                    // Obtener todas las encuestas (propias + de sedes)
+                    $allSurveys = Survey::whereIn('user_id', $allIds)
+                        ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
+                        ->get();
+
+                    return [
+                        'id' => $user->id,
+                        'name' => $user->name,
+                        'role' => $user->role,
+                        'location' => $user->location,
+                        'sedes_count' => $sedeIds ? count($sedeIds) : 0,
+                        'total_surveys' => $allSurveys->count(),
+                        'avg_experience' => round($allSurveys->avg('experience_rating') ?? 0, 2),
+                        'avg_service' => round($allSurveys->avg('service_quality_rating') ?? 0, 2),
+                        'muy_feliz' => $allSurveys->where('experience_rating', 4)->count(),
+                        'feliz' => $allSurveys->where('experience_rating', 3)->count(),
+                        'insatisfecho' => $allSurveys->where('experience_rating', 2)->count(),
+                        'muy_insatisfecho' => $allSurveys->where('experience_rating', 1)->count(),
+                    ];
+                } else {
+                    // Para sedes: solo sus encuestas
+                    return [
+                        'id' => $user->id,
+                        'name' => $user->name,
+                        'role' => $user->role,
+                        'location' => $user->location,
+                        'sedes_count' => 0,
+                        'total_surveys' => $user->surveys->count(),
+                        'avg_experience' => round($user->surveys->avg('experience_rating') ?? 0, 2),
+                        'avg_service' => round($user->surveys->avg('service_quality_rating') ?? 0, 2),
+                        'muy_feliz' => $user->surveys->where('experience_rating', 4)->count(),
+                        'feliz' => $user->surveys->where('experience_rating', 3)->count(),
+                        'insatisfecho' => $user->surveys->where('experience_rating', 2)->count(),
+                        'muy_insatisfecho' => $user->surveys->where('experience_rating', 1)->count(),
+                    ];
+                }
+            })
+            ->sortByDesc('avg_experience'); // Ordenar por mejor promedio
 
         // Lista de usuarios para filtro
         $users = UsersMarketing::whereIn('role', ['consultor', 'sede'])
@@ -71,7 +103,7 @@ class MarketingController extends Controller
             ->orderBy('name')
             ->get(['id', 'name', 'role', 'location']);
 
-        // Encuestas recientes - CAMBIADO: usar userMarketing en vez de user
+        // Encuestas recientes
         $recentSurveys = Survey::with('userMarketing:id,name,role,location')
             ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
             ->when($userId, function ($query, $userId) {
