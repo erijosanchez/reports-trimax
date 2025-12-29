@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Encuesta de satisfacción - TRIMAX</title>
     <link rel="stylesheet" href="{{ asset('assets/css/survey.css') }}">
+    <link rel="icon" type="image/x-icon" href="{{ asset('assets/img/fv.png') }}">
 </head>
 
 <body>
@@ -30,19 +31,19 @@
                         <div class="question-text">¿Cómo calificarías tu experiencia en TRIMAX?</div>
                         <div class="ratings">
                             <div class="rating-btn muy-feliz" data-question="1" data-value="4">
-                                <span class="emoji">😊</span>
+                                <img class="emoji" src="{{ asset('assets/img/caras/muysatisfecho.png') }}" alt="">
                                 <div class="rating-label">Muy<br>Feliz</div>
                             </div>
                             <div class="rating-btn feliz" data-question="1" data-value="3">
-                                <span class="emoji">🙂</span>
+                                <img class="emoji" src="{{ asset('assets/img/caras/satisfecho.png') }}" alt="">
                                 <div class="rating-label">Feliz</div>
                             </div>
                             <div class="rating-btn insatisfecho" data-question="1" data-value="2">
-                                <span class="emoji">😐</span>
+                                <img class="emoji" src="{{ asset('assets/img/caras/insatisfecho.png') }}" alt="">
                                 <div class="rating-label">Insatisfecho</div>
                             </div>
                             <div class="rating-btn muy-insatisfecho" data-question="1" data-value="1">
-                                <span class="emoji">😞</span>
+                                <img class="emoji" src="{{ asset('assets/img/caras/muyinsatisfecho.png') }}" alt="">
                                 <div class="rating-label">Muy<br>Insatisfecho</div>
                             </div>
                         </div>
@@ -58,19 +59,19 @@
                         </div>
                         <div class="ratings">
                             <div class="rating-btn muy-feliz" data-question="2" data-value="4">
-                                <span class="emoji">😊</span>
+                                <img class="emoji" src="{{ asset('assets/img/caras/muysatisfecho.png') }}" alt="">
                                 <div class="rating-label">Muy<br>Feliz</div>
                             </div>
                             <div class="rating-btn feliz" data-question="2" data-value="3">
-                                <span class="emoji">🙂</span>
+                                <img class="emoji" src="{{ asset('assets/img/caras/satisfecho.png') }}" alt="">
                                 <div class="rating-label">Feliz</div>
                             </div>
                             <div class="rating-btn insatisfecho" data-question="2" data-value="2">
-                                <span class="emoji">😐</span>
+                                <img class="emoji" src="{{ asset('assets/img/caras/insatisfecho.png') }}" alt="">
                                 <div class="rating-label">Insatisfecho</div>
                             </div>
                             <div class="rating-btn muy-insatisfecho" data-question="2" data-value="1">
-                                <span class="emoji">😞</span>
+                                <img class="emoji" src="{{ asset('assets/img/caras/muyinsatisfecho.png') }}" alt="">
                                 <div class="rating-label">Muy<br>Insatisfecho</div>
                             </div>
                         </div>
@@ -91,10 +92,7 @@
                 <button type="submit" class="submit-btn" id="submit-btn">ENVIAR</button>
 
                 <div class="trimax-logo">
-                    <svg viewBox="0 0 200 50" xmlns="http://www.w3.org/2000/svg">
-                        <text x="10" y="35" font-family="Arial, sans-serif" font-size="32" font-weight="900"
-                            fill="#1565C0">TRIMAX</text>
-                    </svg>
+                    <img src="{{ asset('assets/img/ltr.png') }}" alt="">
                 </div>
             </form>
         </div>

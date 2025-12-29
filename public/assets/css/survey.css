@@ -7,25 +7,12 @@
 
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: #f5f5f5;
-    min-height: 100vh;
-    padding: 20px 10px;
-    position: relative;
-}
-
-/* ===== MARCA DE AGUA TRIMAX ===== */
-body::before {
-    content: "TRIMAX";
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 280px;
-    font-weight: 900;
-    color: rgba(200, 200, 200, 0.15);
-    letter-spacing: 20px;
-    pointer-events: none;
-    z-index: 0;
+    background-image: url('/assets/img/fondo.webp');
+    background-position: center;
+    background-size: 100%;
+    background-repeat: no-repeat;
+    padding: 2rem;
+    
 }
 
 /* ===== CONTAINER PRINCIPAL ===== */
@@ -156,21 +143,6 @@ body::before {
 }
 
 /* Colores específicos para cada emoji */
-.rating-btn.muy-feliz .emoji {
-    background: #4CAF50;
-}
-
-.rating-btn.feliz .emoji {
-    background: #2196F3;
-}
-
-.rating-btn.insatisfecho .emoji {
-    background: #FF9800;
-}
-
-.rating-btn.muy-insatisfecho .emoji {
-    background: #F44336;
-}
 
 .rating-btn:hover .emoji {
     transform: scale(1.1);
@@ -294,6 +266,11 @@ body::before {
 
 .trimax-logo svg {
     width: 150px;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+}
+
+.trimax-logo img {
+    width: 250px;
     filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
 }
 
