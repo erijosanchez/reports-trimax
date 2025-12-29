@@ -90,11 +90,11 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
     // Marketing Routes (All authenticated users)
     Route::prefix('marketing')->name('marketing.')->group(function () {
         // Marketing Dashboard
-        Route::get('/dashboard', [MarketingController::class, 'index'])->name('dashboard.index');
+        Route::get('/panel', [MarketingController::class, 'index'])->name('index');
 
         Route::prefix('users')->name('users.')->group(function () {
             // User Management (Super Admin and Marketing only)
-            Route::get('/dasoboard', [UserMarketingController::class, 'index'])->name('index');
+            Route::get('/adminpanel', [UserMarketingController::class, 'index'])->name('index');
             Route::get('/create', [UserMarketingController::class, 'create'])->name('create');
             Route::post('/', [UserMarketingController::class, 'store'])->name('store');
             Route::get('/{id}', [UserMarketingController::class, 'show'])->name('show');

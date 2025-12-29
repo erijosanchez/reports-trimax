@@ -12,7 +12,7 @@
         <!-- Filtros -->
         <div class="filters-card">
             <h5 class="mb-4"><i class="bi bi-funnel"></i> Filtros</h5>
-            <form method="GET" action="{{ route('marketing.dashboard.index') }}">
+            <form method="GET" action="{{ route('marketing.index') }}">
                 <div class="row">
                     <div class="col-md-3">
                         <label class="form-label">Fecha Inicio</label>

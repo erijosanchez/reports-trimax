@@ -326,6 +326,6 @@ class UserMarketingController extends Controller
         $user = UsersMarketing::findOrFail($id);
         $token = $user->unique_token;
 
-        return redirect()->route('marketing.survey.show', $token);
+        return redirect()->route('survey.show', $token);
     }
 }

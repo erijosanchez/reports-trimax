@@ -58,8 +58,8 @@
         @if (auth()->user()->isMarketing() || auth()->user()->isSuperAdmin())
             <li class="nav-item nav-category">MARKETING</li>
             <li class="nav-item">
-                <a class="nav-link {{ request()->routeIs('marketing.dashboard.index') ? 'active' : '' }}"
-                    href="{{ route('marketing.dashboard.index') }}">
+                <a class="nav-link {{ request()->routeIs('marketing.index') ? 'active' : '' }}"
+                    href="{{ route('marketing.index') }}">
                     <i class="mdi-grid menu-icon mdi"></i>
                     <span class="menu-title">Dashboard Marketing</span>
                 </a>
@@ -77,9 +77,9 @@
         @if (auth()->user()->isAdmin() || auth()->user()->isSuperAdmin())
             <li class="nav-item nav-category">Administrador</li>
             <li class="nav-item">
-                <a class="nav-link {{ request()->routeIs('admin.dashboard') ? '' : 'collapsed' }}"
+                <a class="nav-link {{ request()->routeIs('admin.dashboard*') ? '' : 'collapsed' }}"
                     data-bs-toggle="collapse" href="#form-elements"
-                    aria-expanded="{{ request()->routeIs('admin.dashboard') ? 'true' : 'false' }}"
+                    aria-expanded="{{ request()->routeIs('admin.dashboard*') ? 'true' : 'false' }}"
                     aria-controls="form-elements">
                     <i class="mdi-grid menu-icon mdi"></i>
                     <span class="menu-title">Admin Dashboard</span>
@@ -95,15 +95,15 @@
                 </div>
             </li>
             <li class="nav-item">
-                <a class="nav-link {{ request()->routeIs('admin.users') || request()->routeIs('admin.locations.*') ? '' : 'collapsed' }}"
+                <a class="nav-link {{ request()->routeIs('admin.users*') || request()->routeIs('admin.locations.*') ? '' : 'collapsed' }}"
                     data-bs-toggle="collapse" href="#charts"
-                    aria-expanded="{{ request()->routeIs('admin.users') || request()->routeIs('admin.locations.*') ? 'true' : 'false' }}"
+                    aria-expanded="{{ request()->routeIs('admin.users*') || request()->routeIs('admin.locations.*') ? 'true' : 'false' }}"
                     aria-controls="charts">
                     <i class="menu-icon mdi mdi-account-switch"></i>
                     <span class="menu-title">Admin Usuarios</span>
                     <i class="menu-arrow"></i>
                 </a>
-                <div class="collapse {{ request()->routeIs('admin.users') || request()->routeIs('admin.locations.*') ? 'show' : '' }}"
+                <div class="collapse {{ request()->routeIs('admin.users*') || request()->routeIs('admin.locations.*') ? 'show' : '' }}"
                     id="charts">
                     <ul class="flex-column nav sub-menu">
                         <li class="nav-item">
@@ -122,15 +122,15 @@
                 </div>
             </li>
             <li class="nav-item">
-                <a class="nav-link {{ request()->routeIs('admin.security') || request()->routeIs('admin.activity-logs') ? '' : 'collapsed' }}"
+                <a class="nav-link {{ request()->routeIs('admin.security*') || request()->routeIs('admin.activity-logs*') ? '' : 'collapsed' }}"
                     data-bs-toggle="collapse" href="#icons"
-                    aria-expanded="{{ request()->routeIs('admin.security') || request()->routeIs('admin.activity-logs') ? 'true' : 'false' }}"
+                    aria-expanded="{{ request()->routeIs('admin.security*') || request()->routeIs('admin.activity-logs*') ? 'true' : 'false' }}"
                     aria-controls="icons">
                     <i class="mdi-lock-outline menu-icon mdi"></i>
                     <span class="menu-title">Seguridad</span>
                     <i class="menu-arrow"></i>
                 </a>
-                <div class="collapse {{ request()->routeIs('admin.security') || request()->routeIs('admin.activity-logs') ? 'show' : '' }}"
+                <div class="collapse {{ request()->routeIs('admin.security*') || request()->routeIs('admin.activity-logs*') ? 'show' : '' }}"
                     id="icons">
                     <ul class="flex-column nav sub-menu">
                         <li class="nav-item">
