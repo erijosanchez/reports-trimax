@@ -40,7 +40,7 @@ class AdminController extends Controller
 
         $users = User::with('roles')
             ->withCount('sessions')
-            ->paginate(20);
+            ->paginate(10);
 
         $usersOnline = User::online()
             ->with(['activeSessions' => function ($query) {
