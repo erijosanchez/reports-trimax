@@ -90,7 +90,7 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
     // Marketing Routes (All authenticated users)
     Route::prefix('marketing')->name('marketing.')->group(function () {
         // Marketing Dashboard
-        Route::get('/panel', [MarketingController::class, 'index'])->name('index');
+        Route::get('/amdpanel', [MarketingController::class, 'index'])->name('index');
 
         Route::prefix('users')->name('users.')->group(function () {
             // User Management (Super Admin and Marketing only)

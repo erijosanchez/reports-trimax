@@ -2,562 +2,1024 @@
 
 @section('title', 'Dashboard Marketing')
 
-@push('styles')
-    <link rel="stylesheet" href="{{ asset('assets/css/sistemaencuestas.css') }}">
-@endpush
-
 @section('content')
+    <div class="content-wrapper">
+        <div class="row">
+            <div class="col-sm-12">
+                <div class="home-tab">
+                    <div class="tab-content-basic tab-content">
+                        <div class="tab-pane fade show active" id="overview" role="tabpanel" aria-labelledby="overview">
 
-    <div class="main-content">
-        <!-- Filtros -->
-        <div class="filters-card">
-            <h5 class="mb-4"><i class="bi bi-funnel"></i> Filtros</h5>
-            <form method="GET" action="{{ route('marketing.index') }}">
-                <div class="row">
-                    <div class="col-md-3">
-                        <label class="form-label">Fecha Inicio</label>
-                        <input type="date" name="start_date" class="form-control" value="{{ $startDate }}">
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Fecha Fin</label>
-                        <input type="date" name="end_date" class="form-control" value="{{ $endDate }}">
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Consultor/Sede</label>
-                        <select name="user_id" class="form-select">
-                            <option value="">Todos</option>
-                            @foreach ($users as $userMkt)
-                                <option value="{{ $userMkt->id }}" {{ $userId == $userMkt->id ? 'selected' : '' }}>
-                                    {{ $userMkt->name }} -
-                                    {{ $userMkt->role === 'consultor' ? 'Consultor' : 'Sede ' . $userMkt->location }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="d-flex align-items-end col-md-2">
-                        <button type="submit" class="w-100 btn btn-primary">
-                            <i class="bi bi-search"></i> Filtrar
-                        </button>
-                    </div>
-                </div>
-            </form>
-        </div>
-
-        <!-- Tabs de navegación -->
-        <ul class="nav nav-tabs" id="dashboardTabs" role="tablist">
-            <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="dashboard-tab" data-bs-toggle="tab" data-bs-target="#dashboard"
-                    type="button">
-                    <i class="bi bi-speedometer2"></i> Dashboard
-                </button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="zona-tab" data-bs-toggle="tab" data-bs-target="#zona" type="button">
-                    <i class="bi bi-geo-alt"></i> Detalles por Zona
-                </button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="reconocimientos-tab" data-bs-toggle="tab" data-bs-target="#reconocimientos"
-                    type="button">
-                    <i class="bi bi-trophy"></i> Reconocimientos
-                </button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="tendencias-tab" data-bs-toggle="tab" data-bs-target="#tendencias"
-                    type="button">
-                    <i class="bi bi-graph-up"></i> Tendencias
-                </button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="alertas-tab" data-bs-toggle="tab" data-bs-target="#alertas" type="button">
-                    <i class="bi bi-exclamation-triangle"></i> Alertas
-                </button>
-            </li>
-        </ul>
-
-        <!-- Contenido de los tabs -->
-        <div class="tab-content" id="dashboardTabsContent">
-            <!-- TAB 1: Dashboard General -->
-            <div class="tab-pane fade show active" id="dashboard" role="tabpanel">
-                <h2 class="section-title"><i class="bi bi-graph-up"></i> Estadísticas Generales</h2>
-                <div class="row">
-                    <div class="col-md-2">
-                        <div class="stats-card total">
-                            <div class="icon">📊</div>
-                            <div class="number">{{ $stats['total'] }}</div>
-                            <div class="label">Total Encuestas</div>
-                        </div>
-                    </div>
-                    <div class="col-md-2">
-                        <div class="stats-card muy-feliz">
-                            <div class="icon">😊</div>
-                            <div class="number">{{ $stats['muy_feliz'] }}</div>
-                            <div class="label">Muy Feliz</div>
-                        </div>
-                    </div>
-                    <div class="col-md-2">
-                        <div class="stats-card feliz">
-                            <div class="icon">🙂</div>
-                            <div class="number">{{ $stats['feliz'] }}</div>
-                            <div class="label">Feliz</div>
-                        </div>
-                    </div>
-                    <div class="col-md-2">
-                        <div class="stats-card insatisfecho">
-                            <div class="icon">😐</div>
-                            <div class="number">{{ $stats['insatisfecho'] }}</div>
-                            <div class="label">Insatisfecho</div>
-                        </div>
-                    </div>
-                    <div class="col-md-2">
-                        <div class="stats-card muy-insatisfecho">
-                            <div class="icon">😞</div>
-                            <div class="number">{{ $stats['muy_insatisfecho'] }}</div>
-                            <div class="label">Muy Insatisfecho</div>
-                        </div>
-                    </div>
-                    <div class="col-md-2">
-                        <div class="stats-card total">
-                            <div class="icon">⭐</div>
-                            <div class="number">{{ number_format($stats['average_experience'], 2) }}</div>
-                            <div class="label">Promedio</div>
-                        </div>
-                    </div>
-                </div>
-
-                <h2 class="section-title"><i class="bi bi-bar-chart"></i> Gráfico de Distribución</h2>
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="chart-container">
-                            <canvas id="ratingChart"></canvas>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="chart-container">
-                            <canvas id="serviceChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-
-                <h2 class="section-title"><i class="bi bi-people"></i> Estadísticas por Consultor/Sede</h2>
-                <div class="table-card">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>Nombre</th>
-                                <th>Tipo</th>
-                                <th>Total</th>
-                                <th>😊 Muy Feliz</th>
-                                <th>🙂 Feliz</th>
-                                <th>😐 Insatis.</th>
-                                <th>😞 Muy Insatis.</th>
-                                <th>Promedio</th>
-                                <th>Distribución</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach ($userStats as $stat)
-                                <tr>
-                                    <td>
-                                        <strong>{{ $stat['name'] }}</strong>
-                                        {{-- 🆕 Indicador de sedes asignadas --}}
-                                        @if ($stat['role'] === 'consultor' && $stat['sedes_count'] > 0)
-                                            <br>
-                                            <small class="text-muted">
-                                                <i class="bi bi-building"></i> {{ $stat['sedes_count'] }}
-                                                {{ $stat['sedes_count'] == 1 ? 'sede asignada' : 'sedes asignadas' }}
-                                            </small>
-                                        @endif
-                                    </td>
-                                    <td>
-                                        @if ($stat['role'] === 'consultor')
-                                            <span class="badge bg-primary">Consultor</span>
-                                            @if ($stat['sedes_count'] > 0)
-                                                <br>
-                                                <small class="badge bg-info mt-1">+ Sedes</small>
-                                            @endif
-                                        @else
-                                            <span class="badge bg-info">Sede {{ $stat['location'] }}</span>
-                                        @endif
-                                    </td>
-                                    <td>
-                                        <strong>{{ $stat['total_surveys'] }}</strong>
-                                        @if ($stat['role'] === 'consultor' && $stat['sedes_count'] > 0)
-                                            <i class="bi bi-info-circle text-primary" data-bs-toggle="tooltip"
-                                                title="Incluye encuestas de {{ $stat['sedes_count'] }} sede(s) asignada(s)">
-                                            </i>
-                                        @endif
-                                    </td>
-                                    <td><span class="badge badge-muy-feliz">{{ $stat['muy_feliz'] }}</span></td>
-                                    <td><span class="badge badge-feliz">{{ $stat['feliz'] }}</span></td>
-                                    <td><span class="badge badge-insatisfecho">{{ $stat['insatisfecho'] }}</span></td>
-                                    <td><span class="badge badge-muy-insatisfecho">{{ $stat['muy_insatisfecho'] }}</span>
-                                    </td>
-                                    <td>
-                                        <strong>{{ number_format($stat['avg_experience'], 2) }}</strong>
-                                        @if ($stat['role'] === 'consultor' && $stat['sedes_count'] > 0)
-                                            <i class="bi bi-info-circle text-primary" data-bs-toggle="tooltip"
-                                                title="Promedio consolidado (consultor + sedes)">
-                                            </i>
-                                        @endif
-                                    </td>
-                                    <td style="width: 200px;">
-                                        @if ($stat['total_surveys'] > 0)
-                                            <div class="progress-bar-container">
-                                                @php
-                                                    $total = $stat['total_surveys'];
-                                                    $muyFelizPct = ($stat['muy_feliz'] / $total) * 100;
-                                                    $felizPct = ($stat['feliz'] / $total) * 100;
-                                                    $insatisfechoPct = ($stat['insatisfecho'] / $total) * 100;
-                                                    $muyInsatisfechoPct = ($stat['muy_insatisfecho'] / $total) * 100;
-                                                @endphp
-                                                @if ($muyFelizPct > 0)
-                                                    <div class="progress-segment"
-                                                        style="width: {{ $muyFelizPct }}%; background: #4CAF50;">
-                                                        {{ round($muyFelizPct) }}%
-                                                    </div>
-                                                @endif
-                                                @if ($felizPct > 0)
-                                                    <div class="progress-segment"
-                                                        style="width: {{ $felizPct }}%; background: #2196F3;">
-                                                        {{ round($felizPct) }}%
-                                                    </div>
-                                                @endif
-                                                @if ($insatisfechoPct > 0)
-                                                    <div class="progress-segment"
-                                                        style="width: {{ $insatisfechoPct }}%; background: #FF9800;">
-                                                        {{ round($insatisfechoPct) }}%
-                                                    </div>
-                                                @endif
-                                                @if ($muyInsatisfechoPct > 0)
-                                                    <div class="progress-segment"
-                                                        style="width: {{ $muyInsatisfechoPct }}%; background: #F44336;">
-                                                        {{ round($muyInsatisfechoPct) }}%
-                                                    </div>
-                                                @endif
-                                            </div>
-                                        @endif
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-
-                <h2 class="section-title"><i class="bi bi-clock-history"></i> Encuestas Recientes</h2>
-                <div class="table-card">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>Fecha</th>
-                                <th>Cliente</th>
-                                <th>Evaluado</th>
-                                <th>Experiencia</th>
-                                <th>Atención</th>
-                                <th>Comentarios</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach ($recentSurveys as $survey)
-                                <tr>
-                                    <td>{{ $survey->created_at->format('d/m/Y H:i') }}</td>
-                                    <td>
-                                        @if ($survey->client_name)
-                                            <strong>{{ $survey->client_name }}</strong>
-                                        @else
-                                            <span class="text-muted">Anónimo</span>
-                                        @endif
-                                    </td>
-                                    <td>
-                                        <strong>{{ $survey->userMarketing->name }}</strong><br>
-                                        <small class="text-muted">
-                                            {{ $survey->userMarketing->role === 'consultor' ? 'Consultor' : 'Sede ' . $survey->userMarketing->location }}
-                                        </small>
-                                    </td>
-                                    <td>
-                                        <span class="emoji-rating">{{ $survey->rating_emoji }}</span>
-                                        @if ($survey->experience_rating == 4)
-                                            <span class="badge badge-muy-feliz">Muy Feliz</span>
-                                        @elseif($survey->experience_rating == 3)
-                                            <span class="badge badge-feliz">Feliz</span>
-                                        @elseif($survey->experience_rating == 2)
-                                            <span class="badge badge-insatisfecho">Insatisfecho</span>
-                                        @else
-                                            <span class="badge badge-muy-insatisfecho">Muy Insatisfecho</span>
-                                        @endif
-                                    </td>
-                                    <td>
-                                        @if ($survey->service_quality_rating == 4)
-                                            <span class="badge badge-muy-feliz">😊 Muy Feliz</span>
-                                        @elseif($survey->service_quality_rating == 3)
-                                            <span class="badge badge-feliz">🙂 Feliz</span>
-                                        @elseif($survey->service_quality_rating == 2)
-                                            <span class="badge badge-insatisfecho">😐 Insatisfecho</span>
-                                        @else
-                                            <span class="badge badge-muy-insatisfecho">😞 Muy Insatisfecho</span>
-                                        @endif
-                                    </td>
-                                    <td>
-                                        @if ($survey->comments)
-                                            <small>{{ Str::limit($survey->comments, 80) }}</small>
-                                        @else
-                                            <small class="text-muted">Sin comentarios</small>
-                                        @endif
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- TAB 2: Detalles por Zona -->
-            <div class="tab-pane fade" id="zona" role="tabpanel">
-                <h2 class="section-title"><i class="bi bi-geo-alt"></i> Análisis por Ubicación</h2>
-
-                @php
-                    $sedeStats = $userStats->where('role', 'sede');
-                    $zonas = $sedeStats->groupBy('location');
-                @endphp
-
-                <div class="row">
-                    @foreach ($zonas as $location => $sedes)
-                        @php
-                            $totalZona = $sedes->sum('total_surveys');
-                            $avgZona = $sedes->avg('avg_experience');
-                            $muyFelizZona = $sedes->sum('muy_feliz');
-                            $felizZona = $sedes->sum('feliz');
-                            $insatisfechoZona = $sedes->sum('insatisfecho');
-                            $muyInsatisfechoZona = $sedes->sum('muy_insatisfecho');
-                        @endphp
-                        <div class="col-md-4">
-                            <div class="stats-card">
-                                <h4 class="text-primary">📍 {{ $location }}</h4>
-                                <div class="mt-3 row">
-                                    <div class="col-6">
-                                        <div class="text-center">
-                                            <div class="number" style="font-size: 32px;">{{ $totalZona }}</div>
-                                            <div class="label">Encuestas</div>
+                            <!-- Header -->
+                            <div class="row">
+                                <div class="col-sm-12">
+                                    <div class="d-flex align-items-center justify-content-between mb-4">
+                                        <div>
+                                            <h3 class="rate-percentage mb-0">
+                                                <i class="mdi mdi-chart-line text-primary me-2"></i>
+                                                Dashboard Marketing
+                                            </h3>
+                                            <p class="text-muted mt-1">Análisis de satisfacción y encuestas</p>
                                         </div>
-                                    </div>
-                                    <div class="col-6">
-                                        <div class="text-center">
-                                            <div class="number" style="font-size: 32px;">
-                                                {{ number_format($avgZona, 2) }}</div>
-                                            <div class="label">Promedio</div>
+                                        <div>
+                                            <button type="button" class="btn btn-sm btn-outline-primary"
+                                                data-bs-toggle="collapse" data-bs-target="#filterCollapse">
+                                                <i class="mdi mdi-filter-variant"></i> Filtros
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
-                                @if ($totalZona > 0)
-                                    <div class="mt-3 progress-bar-container">
-                                        @php
-                                            $mfPct = ($muyFelizZona / $totalZona) * 100;
-                                            $fPct = ($felizZona / $totalZona) * 100;
-                                            $iPct = ($insatisfechoZona / $totalZona) * 100;
-                                            $miPct = ($muyInsatisfechoZona / $totalZona) * 100;
-                                        @endphp
-                                        @if ($mfPct > 0)
-                                            <div class="progress-segment"
-                                                style="width: {{ $mfPct }}%; background: #4CAF50;">
-                                                {{ round($mfPct) }}%</div>
-                                        @endif
-                                        @if ($fPct > 0)
-                                            <div class="progress-segment"
-                                                style="width: {{ $fPct }}%; background: #2196F3;">
-                                                {{ round($fPct) }}%</div>
-                                        @endif
-                                        @if ($iPct > 0)
-                                            <div class="progress-segment"
-                                                style="width: {{ $iPct }}%; background: #FF9800;">
-                                                {{ round($iPct) }}%</div>
-                                        @endif
-                                        @if ($miPct > 0)
-                                            <div class="progress-segment"
-                                                style="width: {{ $miPct }}%; background: #F44336;">
-                                                {{ round($miPct) }}%</div>
-                                        @endif
-                                    </div>
-                                @endif
                             </div>
-                        </div>
-                    @endforeach
-                </div>
 
-                <div class="mt-4 chart-container">
-                    <canvas id="zonaChart"></canvas>
-                </div>
-            </div>
+                            <!-- Filtros Colapsables -->
+                            <div class="collapse mb-4" id="filterCollapse">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h5 class="card-title mb-3">
+                                            <i class="mdi mdi-filter-variant text-primary me-2"></i>
+                                            Filtros de Búsqueda
+                                        </h5>
+                                        <form method="GET" action="{{ route('marketing.index') }}">
+                                            <div class="row">
+                                                <div class="col-md-3">
+                                                    <label class="form-label">Fecha Inicio</label>
+                                                    <input type="date" name="start_date" class="form-control"
+                                                        value="{{ $startDate }}">
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <label class="form-label">Fecha Fin</label>
+                                                    <input type="date" name="end_date" class="form-control"
+                                                        value="{{ $endDate }}">
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="form-label">Consultor/Sede</label>
+                                                    <select name="user_id" class="form-select">
+                                                        <option value="">Todos</option>
+                                                        @foreach ($users as $userMkt)
+                                                            <option value="{{ $userMkt->id }}"
+                                                                {{ $userId == $userMkt->id ? 'selected' : '' }}>
+                                                                {{ $userMkt->name }} -
+                                                                {{ $userMkt->role === 'consultor' ? 'Consultor' : 'Sede ' . $userMkt->location }}
+                                                            </option>
+                                                        @endforeach
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-2 d-flex align-items-end">
+                                                    <button type="submit" class="btn btn-primary w-100 text-white">
+                                                        <i class="mdi mdi-magnify me-1"></i> Filtrar
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
 
-            <!-- TAB 3: Reconocimientos -->
-            <div class="tab-pane fade" id="reconocimientos" role="tabpanel">
-                <h2 class="section-title"><i class="bi bi-trophy"></i> Reconocimientos y Destacados</h2>
+                            <!-- Stats Cards -->
+                            <div class="row">
+                                <div class="col-xl-2 col-lg-4 col-md-6 col-sm-6 grid-margin stretch-card">
+                                    <div class="card card-statistics">
+                                        <div class="card-body">
+                                            <div class="d-flex flex-column align-items-center">
+                                                <div class="icon-wrapper bg-primary-subtle rounded mb-3">
+                                                    <i class="mdi mdi-file-document text-primary icon-lg"></i>
+                                                </div>
+                                                <h3 class="rate-percentage mb-1">{{ $stats['total'] }}</h3>
+                                                <p class="statistics-title mb-0">Total Encuestas</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
 
-                @php
-                    $topRated = $userStats->sortByDesc('avg_experience')->take(3);
-                    $mostSurveys = $userStats->sortByDesc('total_surveys')->take(3);
-                @endphp
+                                <div class="col-xl-2 col-lg-4 col-md-6 col-sm-6 grid-margin stretch-card">
+                                    <div class="card card-statistics">
+                                        <div class="card-body">
+                                            <div class="d-flex flex-column align-items-center">
+                                                <div class="icon-wrapper bg-success-subtle rounded mb-3">
+                                                    <i class="mdi mdi-emoticon-excited text-success icon-lg"></i>
+                                                </div>
+                                                <h3 class="rate-percentage mb-1">{{ $stats['muy_feliz'] }}</h3>
+                                                <p class="statistics-title mb-0">Muy Feliz</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
 
-                <div class="row">
-                    <div class="col-md-6">
-                        <h4 class="mb-3">🏆 Mejor Calificados</h4>
-                        @foreach ($topRated as $index => $user)
-                            <div class="recognition-card">
-                                <div class="trophy">
-                                    @if ($index == 0)
-                                        🥇
-                                    @elseif($index == 1)
-                                        🥈
-                                    @else
-                                        🥉
+                                <div class="col-xl-2 col-lg-4 col-md-6 col-sm-6 grid-margin stretch-card">
+                                    <div class="card card-statistics">
+                                        <div class="card-body">
+                                            <div class="d-flex flex-column align-items-center">
+                                                <div class="icon-wrapper bg-info-subtle rounded mb-3">
+                                                    <i class="mdi mdi-emoticon-happy text-info icon-lg"></i>
+                                                </div>
+                                                <h3 class="rate-percentage mb-1">{{ $stats['feliz'] }}</h3>
+                                                <p class="statistics-title mb-0">Feliz</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-xl-2 col-lg-4 col-md-6 col-sm-6 grid-margin stretch-card">
+                                    <div class="card card-statistics">
+                                        <div class="card-body">
+                                            <div class="d-flex flex-column align-items-center">
+                                                <div class="icon-wrapper bg-warning-subtle rounded mb-3">
+                                                    <i class="mdi mdi-emoticon-neutral text-warning icon-lg"></i>
+                                                </div>
+                                                <h3 class="rate-percentage mb-1">{{ $stats['insatisfecho'] }}</h3>
+                                                <p class="statistics-title mb-0">Insatisfecho</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-xl-2 col-lg-4 col-md-6 col-sm-6 grid-margin stretch-card">
+                                    <div class="card card-statistics">
+                                        <div class="card-body">
+                                            <div class="d-flex flex-column align-items-center">
+                                                <div class="icon-wrapper bg-danger-subtle rounded mb-3">
+                                                    <i class="mdi mdi-emoticon-sad text-danger icon-lg"></i>
+                                                </div>
+                                                <h3 class="rate-percentage mb-1">{{ $stats['muy_insatisfecho'] }}</h3>
+                                                <p class="statistics-title mb-0">Muy Insatisfecho</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-xl-2 col-lg-4 col-md-6 col-sm-6 grid-margin stretch-card">
+                                    <div class="card card-statistics">
+                                        <div class="card-body">
+                                            <div class="d-flex flex-column align-items-center">
+                                                <div class="icon-wrapper bg-primary-subtle rounded mb-3">
+                                                    <i class="mdi mdi-star text-primary icon-lg"></i>
+                                                </div>
+                                                <h3 class="rate-percentage mb-1">
+                                                    {{ number_format($stats['average_experience'], 2) }}</h3>
+                                                <p class="statistics-title mb-0">Promedio General</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Tabs de navegación -->
+                            <ul class="nav nav-tabs nav-tabs-line mb-4" id="dashboardTabs" role="tablist">
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link active" id="dashboard-tab" data-bs-toggle="tab"
+                                        data-bs-target="#dashboard" type="button">
+                                        <i class="mdi mdi-view-dashboard me-1"></i> General
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="zona-tab" data-bs-toggle="tab" data-bs-target="#zona"
+                                        type="button">
+                                        <i class="mdi mdi-map-marker me-1"></i> Por Zona
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="reconocimientos-tab" data-bs-toggle="tab"
+                                        data-bs-target="#reconocimientos" type="button">
+                                        <i class="mdi mdi-trophy me-1"></i> Reconocimientos
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="tendencias-tab" data-bs-toggle="tab"
+                                        data-bs-target="#tendencias" type="button">
+                                        <i class="mdi mdi-chart-line me-1"></i> Tendencias
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="alertas-tab" data-bs-toggle="tab"
+                                        data-bs-target="#alertas" type="button">
+                                        <i class="mdi mdi-alert-circle me-1"></i> Alertas
+                                    </button>
+                                </li>
+                            </ul>
+
+                            <!-- Contenido de los tabs -->
+                            <div class="tab-content" id="dashboardTabsContent">
+                                <!-- TAB 1: Dashboard General -->
+                                <div class="tab-pane fade show active" id="dashboard" role="tabpanel">
+                                    <!-- Gráficos -->
+                                    <div class="row">
+                                        <div class="col-lg-6 grid-margin stretch-card">
+                                            <div class="card">
+                                                <div class="card-body">
+                                                    <h4 class="card-title mb-3">
+                                                        <i class="mdi mdi-chart-donut text-primary me-2"></i>
+                                                        Distribución de Experiencia
+                                                    </h4>
+                                                    <canvas id="ratingChart" height="250"></canvas>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-lg-6 grid-margin stretch-card">
+                                            <div class="card">
+                                                <div class="card-body">
+                                                    <h4 class="card-title mb-3">
+                                                        <i class="mdi mdi-chart-bar text-info me-2"></i>
+                                                        Calidad de Atención por Usuario
+                                                    </h4>
+                                                    <canvas id="serviceChart" height="250"></canvas>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Tabla por Consultor/Sede -->
+                                    <div class="row">
+                                        <div class="col-lg-12 grid-margin stretch-card">
+                                            <div class="card">
+                                                <div class="card-body">
+                                                    <h4 class="card-title mb-4">
+                                                        <i class="mdi mdi-account-group text-primary me-2"></i>
+                                                        Estadísticas por Consultor/Sede
+                                                    </h4>
+                                                    <div class="table-responsive">
+                                                        <table class="table table-hover">
+                                                            <thead>
+                                                                <tr>
+                                                                    <th>Nombre</th>
+                                                                    <th>Tipo</th>
+                                                                    <th>Total</th>
+                                                                    <th class="text-center">Muy Feliz</th>
+                                                                    <th class="text-center">Feliz</th>
+                                                                    <th class="text-center">Insatis.</th>
+                                                                    <th class="text-center">Muy Insatis.</th>
+                                                                    <th>Promedio</th>
+                                                                    <th style="width: 200px;">Distribución</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                @foreach ($userStats as $stat)
+                                                                    <tr>
+                                                                        <td>
+                                                                            <div class="d-flex align-items-center">
+                                                                                <img class="img-xs rounded-circle me-2"
+                                                                                    src="https://ui-avatars.com/api/?name={{ urlencode($stat['name']) }}&background=6366f1&color=fff"
+                                                                                    alt="profile">
+                                                                                <div>
+                                                                                    <strong>{{ $stat['name'] }}</strong>
+                                                                                    @if ($stat['role'] === 'consultor' && $stat['sedes_count'] > 0)
+                                                                                        <br>
+                                                                                        <small class="text-muted">
+                                                                                            <i
+                                                                                                class="mdi mdi-office-building"></i>
+                                                                                            {{ $stat['sedes_count'] }}
+                                                                                            {{ $stat['sedes_count'] == 1 ? 'sede' : 'sedes' }}
+                                                                                        </small>
+                                                                                    @endif
+                                                                                </div>
+                                                                            </div>
+                                                                        </td>
+                                                                        <td>
+                                                                            @if ($stat['role'] === 'consultor')
+                                                                                <span
+                                                                                    class="badge badge-primary">Consultor</span>
+                                                                                @if ($stat['sedes_count'] > 0)
+                                                                                    <span
+                                                                                        class="badge badge-info">+Sedes</span>
+                                                                                @endif
+                                                                            @else
+                                                                                <span class="badge badge-info">Sede
+                                                                                    {{ $stat['location'] }}</span>
+                                                                            @endif
+                                                                        </td>
+                                                                        <td>
+                                                                            <strong
+                                                                                class="text-primary">{{ $stat['total_surveys'] }}</strong>
+                                                                        </td>
+                                                                        <td class="text-center">
+                                                                            <span
+                                                                                class="badge badge-success">{{ $stat['muy_feliz'] }}</span>
+                                                                        </td>
+                                                                        <td class="text-center">
+                                                                            <span
+                                                                                class="badge badge-info">{{ $stat['feliz'] }}</span>
+                                                                        </td>
+                                                                        <td class="text-center">
+                                                                            <span
+                                                                                class="badge badge-warning">{{ $stat['insatisfecho'] }}</span>
+                                                                        </td>
+                                                                        <td class="text-center">
+                                                                            <span
+                                                                                class="badge badge-danger">{{ $stat['muy_insatisfecho'] }}</span>
+                                                                        </td>
+                                                                        <td>
+                                                                            <strong>{{ number_format($stat['avg_experience'], 2) }}</strong>
+                                                                            <i class="mdi mdi-star text-warning"></i>
+                                                                        </td>
+                                                                        <td>
+                                                                            @if ($stat['total_surveys'] > 0)
+                                                                                <div class="progress"
+                                                                                    style="height: 25px;">
+                                                                                    @php
+                                                                                        $total = $stat['total_surveys'];
+                                                                                        $muyFelizPct =
+                                                                                            ($stat['muy_feliz'] /
+                                                                                                $total) *
+                                                                                            100;
+                                                                                        $felizPct =
+                                                                                            ($stat['feliz'] / $total) *
+                                                                                            100;
+                                                                                        $insatisfechoPct =
+                                                                                            ($stat['insatisfecho'] /
+                                                                                                $total) *
+                                                                                            100;
+                                                                                        $muyInsatisfechoPct =
+                                                                                            ($stat['muy_insatisfecho'] /
+                                                                                                $total) *
+                                                                                            100;
+                                                                                    @endphp
+                                                                                    @if ($muyFelizPct > 0)
+                                                                                        <div class="progress-bar bg-success"
+                                                                                            style="width: {{ $muyFelizPct }}%"
+                                                                                            data-bs-toggle="tooltip"
+                                                                                            title="{{ round($muyFelizPct) }}%">
+                                                                                            {{ round($muyFelizPct) > 10 ? round($muyFelizPct) . '%' : '' }}
+                                                                                        </div>
+                                                                                    @endif
+                                                                                    @if ($felizPct > 0)
+                                                                                        <div class="progress-bar bg-info"
+                                                                                            style="width: {{ $felizPct }}%"
+                                                                                            data-bs-toggle="tooltip"
+                                                                                            title="{{ round($felizPct) }}%">
+                                                                                            {{ round($felizPct) > 10 ? round($felizPct) . '%' : '' }}
+                                                                                        </div>
+                                                                                    @endif
+                                                                                    @if ($insatisfechoPct > 0)
+                                                                                        <div class="progress-bar bg-warning"
+                                                                                            style="width: {{ $insatisfechoPct }}%"
+                                                                                            data-bs-toggle="tooltip"
+                                                                                            title="{{ round($insatisfechoPct) }}%">
+                                                                                            {{ round($insatisfechoPct) > 10 ? round($insatisfechoPct) . '%' : '' }}
+                                                                                        </div>
+                                                                                    @endif
+                                                                                    @if ($muyInsatisfechoPct > 0)
+                                                                                        <div class="progress-bar bg-danger"
+                                                                                            style="width: {{ $muyInsatisfechoPct }}%"
+                                                                                            data-bs-toggle="tooltip"
+                                                                                            title="{{ round($muyInsatisfechoPct) }}%">
+                                                                                            {{ round($muyInsatisfechoPct) > 10 ? round($muyInsatisfechoPct) . '%' : '' }}
+                                                                                        </div>
+                                                                                    @endif
+                                                                                </div>
+                                                                            @endif
+                                                                        </td>
+                                                                    </tr>
+                                                                @endforeach
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Encuestas Recientes -->
+                                    <div class="row">
+                                        <div class="col-lg-12 grid-margin stretch-card">
+                                            <div class="card">
+                                                <div class="card-body">
+                                                    <h4 class="card-title mb-4">
+                                                        <i class="mdi mdi-clock-outline text-info me-2"></i>
+                                                        Encuestas Recientes
+                                                    </h4>
+                                                    <div class="table-responsive">
+                                                        <table class="table table-hover">
+                                                            <thead>
+                                                                <tr>
+                                                                    <th>Fecha</th>
+                                                                    <th>Cliente</th>
+                                                                    <th>Evaluado</th>
+                                                                    <th>Experiencia</th>
+                                                                    <th>Atención</th>
+                                                                    <th>Comentarios</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                @foreach ($recentSurveys as $survey)
+                                                                    <tr>
+                                                                        <td>
+                                                                            <small
+                                                                                class="text-muted">{{ $survey->created_at->format('d/m/Y') }}</small><br>
+                                                                            <small>{{ $survey->created_at->format('H:i') }}</small>
+                                                                        </td>
+                                                                        <td>
+                                                                            @if ($survey->client_name)
+                                                                                <div class="d-flex align-items-center">
+                                                                                    <img class="img-xs rounded-circle me-2"
+                                                                                        src="https://ui-avatars.com/api/?name={{ urlencode($survey->client_name) }}&background=10b981&color=fff"
+                                                                                        alt="client">
+                                                                                    <strong>{{ $survey->client_name }}</strong>
+                                                                                </div>
+                                                                            @else
+                                                                                <span class="text-muted">
+                                                                                    <i class="mdi mdi-account-off"></i>
+                                                                                    Anónimo
+                                                                                </span>
+                                                                            @endif
+                                                                        </td>
+                                                                        <td>
+                                                                            <strong>{{ $survey->userMarketing->name }}</strong><br>
+                                                                            <small class="text-muted">
+                                                                                {{ $survey->userMarketing->role === 'consultor' ? 'Consultor' : 'Sede ' . $survey->userMarketing->location }}
+                                                                            </small>
+                                                                        </td>
+                                                                        <td>
+                                                                            @if ($survey->experience_rating == 4)
+                                                                                <span class="badge badge-success">
+                                                                                    <i
+                                                                                        class="mdi mdi-emoticon-excited"></i>
+                                                                                    Muy Feliz
+                                                                                </span>
+                                                                            @elseif($survey->experience_rating == 3)
+                                                                                <span class="badge badge-info">
+                                                                                    <i class="mdi mdi-emoticon-happy"></i>
+                                                                                    Feliz
+                                                                                </span>
+                                                                            @elseif($survey->experience_rating == 2)
+                                                                                <span class="badge badge-warning">
+                                                                                    <i
+                                                                                        class="mdi mdi-emoticon-neutral"></i>
+                                                                                    Insatisfecho
+                                                                                </span>
+                                                                            @else
+                                                                                <span class="badge badge-danger">
+                                                                                    <i class="mdi mdi-emoticon-sad"></i>
+                                                                                    Muy Insatisfecho
+                                                                                </span>
+                                                                            @endif
+                                                                        </td>
+                                                                        <td>
+                                                                            @if ($survey->service_quality_rating == 4)
+                                                                                <span class="badge badge-success">Muy
+                                                                                    Feliz</span>
+                                                                            @elseif($survey->service_quality_rating == 3)
+                                                                                <span class="badge badge-info">Feliz</span>
+                                                                            @elseif($survey->service_quality_rating == 2)
+                                                                                <span
+                                                                                    class="badge badge-warning">Insatisfecho</span>
+                                                                            @else
+                                                                                <span class="badge badge-danger">Muy
+                                                                                    Insatisfecho</span>
+                                                                            @endif
+                                                                        </td>
+                                                                        <td>
+                                                                            @if ($survey->comments)
+                                                                                <small>{{ Str::limit($survey->comments, 60) }}</small>
+                                                                            @else
+                                                                                <small class="text-muted">Sin
+                                                                                    comentarios</small>
+                                                                            @endif
+                                                                        </td>
+                                                                    </tr>
+                                                                @endforeach
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- TAB 2: Detalles por Zona -->
+                                <div class="tab-pane fade" id="zona" role="tabpanel">
+                                    <div class="row">
+                                        <div class="col-sm-12 mb-3">
+                                            <h4 class="card-title">
+                                                <i class="mdi mdi-map-marker text-primary me-2"></i>
+                                                Análisis por Ubicación
+                                            </h4>
+                                        </div>
+                                    </div>
+
+                                    @php
+                                        $sedeStats = $userStats->where('role', 'sede');
+                                        $zonas = $sedeStats->groupBy('location');
+                                    @endphp
+
+                                    <div class="row">
+                                        @foreach ($zonas as $location => $sedes)
+                                            @php
+                                                $totalZona = $sedes->sum('total_surveys');
+                                                $avgZona = $sedes->avg('avg_experience');
+                                                $muyFelizZona = $sedes->sum('muy_feliz');
+                                                $felizZona = $sedes->sum('feliz');
+                                                $insatisfechoZona = $sedes->sum('insatisfecho');
+                                                $muyInsatisfechoZona = $sedes->sum('muy_insatisfecho');
+                                            @endphp
+                                            <div class="col-xl-4 col-lg-6 col-md-6 grid-margin stretch-card">
+                                                <div class="card">
+                                                    <div class="card-body">
+                                                        <div class="d-flex justify-content-between align-items-start mb-3">
+                                                            <h4 class="card-title mb-0">
+                                                                <i class="mdi mdi-map-marker text-primary me-1"></i>
+                                                                {{ $location }}
+                                                            </h4>
+                                                            <span class="badge badge-primary">{{ $sedes->count() }}
+                                                                {{ $sedes->count() == 1 ? 'Sede' : 'Sedes' }}</span>
+                                                        </div>
+
+                                                        <div class="row text-center mb-3">
+                                                            <div class="col-6">
+                                                                <div class="icon-wrapper bg-primary-subtle rounded mb-2">
+                                                                    <i class="mdi mdi-chart-box text-primary icon-lg"></i>
+                                                                </div>
+                                                                <h3 class="rate-percentage mb-0">{{ $totalZona }}</h3>
+                                                                <p class="statistics-title mb-0">Encuestas</p>
+                                                            </div>
+                                                            <div class="col-6">
+                                                                <div class="icon-wrapper bg-warning-subtle rounded mb-2">
+                                                                    <i class="mdi mdi-star text-warning icon-lg"></i>
+                                                                </div>
+                                                                <h3 class="rate-percentage mb-0">
+                                                                    {{ number_format($avgZona, 2) }}</h3>
+                                                                <p class="statistics-title mb-0">Promedio</p>
+                                                            </div>
+                                                        </div>
+
+                                                        @if ($totalZona > 0)
+                                                            <div class="border-top pt-3">
+                                                                <small class="text-muted d-block mb-2">Distribución de
+                                                                    satisfacción</small>
+                                                                <div class="progress" style="height: 25px;">
+                                                                    @php
+                                                                        $mfPct = ($muyFelizZona / $totalZona) * 100;
+                                                                        $fPct = ($felizZona / $totalZona) * 100;
+                                                                        $iPct = ($insatisfechoZona / $totalZona) * 100;
+                                                                        $miPct =
+                                                                            ($muyInsatisfechoZona / $totalZona) * 100;
+                                                                    @endphp
+                                                                    @if ($mfPct > 0)
+                                                                        <div class="progress-bar bg-success"
+                                                                            style="width: {{ $mfPct }}%"
+                                                                            data-bs-toggle="tooltip"
+                                                                            title="Muy Feliz: {{ round($mfPct) }}%">
+                                                                            {{ round($mfPct) > 10 ? round($mfPct) . '%' : '' }}
+                                                                        </div>
+                                                                    @endif
+                                                                    @if ($fPct > 0)
+                                                                        <div class="progress-bar bg-info"
+                                                                            style="width: {{ $fPct }}%"
+                                                                            data-bs-toggle="tooltip"
+                                                                            title="Feliz: {{ round($fPct) }}%">
+                                                                            {{ round($fPct) > 10 ? round($fPct) . '%' : '' }}
+                                                                        </div>
+                                                                    @endif
+                                                                    @if ($iPct > 0)
+                                                                        <div class="progress-bar bg-warning"
+                                                                            style="width: {{ $iPct }}%"
+                                                                            data-bs-toggle="tooltip"
+                                                                            title="Insatisfecho: {{ round($iPct) }}%">
+                                                                            {{ round($iPct) > 10 ? round($iPct) . '%' : '' }}
+                                                                        </div>
+                                                                    @endif
+                                                                    @if ($miPct > 0)
+                                                                        <div class="progress-bar bg-danger"
+                                                                            style="width: {{ $miPct }}%"
+                                                                            data-bs-toggle="tooltip"
+                                                                            title="Muy Insatisfecho: {{ round($miPct) }}%">
+                                                                            {{ round($miPct) > 10 ? round($miPct) . '%' : '' }}
+                                                                        </div>
+                                                                    @endif
+                                                                </div>
+                                                            </div>
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-lg-12 grid-margin stretch-card">
+                                            <div class="card">
+                                                <div class="card-body">
+                                                    <h4 class="card-title mb-3">
+                                                        <i class="mdi mdi-chart-bar text-info me-2"></i>
+                                                        Comparativa de Zonas
+                                                    </h4>
+                                                    <canvas id="zonaChart" height="80"></canvas>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- TAB 3: Reconocimientos -->
+                                <div class="tab-pane fade" id="reconocimientos" role="tabpanel">
+                                    <div class="row">
+                                        <div class="col-sm-12 mb-3">
+                                            <h4 class="card-title">
+                                                <i class="mdi mdi-trophy text-warning me-2"></i>
+                                                Reconocimientos y Destacados
+                                            </h4>
+                                        </div>
+                                    </div>
+
+                                    @php
+                                        $topRated = $userStats->sortByDesc('avg_experience')->take(3);
+                                        $mostSurveys = $userStats->sortByDesc('total_surveys')->take(3);
+                                    @endphp
+
+                                    <div class="row">
+                                        <!-- Mejor Calificados -->
+                                        <div class="col-lg-6 grid-margin stretch-card">
+                                            <div class="card">
+                                                <div class="card-body">
+                                                    <h4 class="card-title mb-4">
+                                                        <i class="mdi mdi-trophy text-warning me-2"></i>
+                                                        Mejor Calificados
+                                                    </h4>
+                                                    @foreach ($topRated as $index => $user)
+                                                        <div class="d-flex align-items-center border-bottom py-3">
+                                                            <div class="me-3">
+                                                                @if ($index == 0)
+                                                                    <div
+                                                                        class="icon-wrapper bg-warning-subtle rounded-circle">
+                                                                        <span style="font-size: 2rem;">🥇</span>
+                                                                    </div>
+                                                                @elseif($index == 1)
+                                                                    <div class="icon-wrapper bg-secondary rounded-circle">
+                                                                        <span style="font-size: 2rem;">🥈</span>
+                                                                    </div>
+                                                                @else
+                                                                    <div
+                                                                        class="icon-wrapper bg-danger-subtle rounded-circle">
+                                                                        <span style="font-size: 2rem;">🥉</span>
+                                                                    </div>
+                                                                @endif
+                                                            </div>
+                                                            <div class="flex-grow-1">
+                                                                <h5 class="mb-1">{{ $user['name'] }}</h5>
+                                                                <div class="d-flex align-items-center">
+                                                                    <span class="badge badge-success me-2">
+                                                                        <i class="mdi mdi-star"></i>
+                                                                        {{ number_format($user['avg_experience'], 2) }}
+                                                                    </span>
+                                                                    <small class="text-muted">
+                                                                        {{ $user['total_surveys'] }} encuestas |
+                                                                        {{ $user['muy_feliz'] }} Muy Feliz
+                                                                    </small>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    @endforeach
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Más Evaluados -->
+                                        <div class="col-lg-6 grid-margin stretch-card">
+                                            <div class="card">
+                                                <div class="card-body">
+                                                    <h4 class="card-title mb-4">
+                                                        <i class="mdi mdi-chart-line text-primary me-2"></i>
+                                                        Más Evaluados
+                                                    </h4>
+                                                    @foreach ($mostSurveys as $index => $user)
+                                                        <div class="card mb-3"
+                                                            style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                                                            <div class="card-body text-white">
+                                                                <div
+                                                                    class="d-flex justify-content-between align-items-center">
+                                                                    <div>
+                                                                        <h5 class="text-white mb-1">{{ $user['name'] }}
+                                                                        </h5>
+                                                                        <p class="mb-0 opacity-75">
+                                                                            <i class="mdi mdi-star"></i>
+                                                                            {{ number_format($user['avg_experience'], 2) }}
+                                                                            Promedio
+                                                                        </p>
+                                                                    </div>
+                                                                    <div class="text-end">
+                                                                        <h2 class="text-white mb-0">
+                                                                            {{ $user['total_surveys'] }}</h2>
+                                                                        <small class="opacity-75">Encuestas</small>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    @endforeach
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- TAB 4: Tendencias -->
+                                <div class="tab-pane fade" id="tendencias" role="tabpanel">
+                                    <div class="row">
+                                        <div class="col-sm-12 mb-3">
+                                            <h4 class="card-title">
+                                                <i class="mdi mdi-chart-line text-success me-2"></i>
+                                                Tendencias Temporales
+                                            </h4>
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-lg-12 grid-margin stretch-card">
+                                            <div class="card">
+                                                <div class="card-body">
+                                                    <h4 class="card-title mb-3">
+                                                        <i class="mdi mdi-chart-timeline text-info me-2"></i>
+                                                        Tendencia General
+                                                    </h4>
+                                                    <canvas id="trendChart" height="80"></canvas>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-lg-6 grid-margin stretch-card">
+                                            <div class="card">
+                                                <div class="card-body">
+                                                    <h4 class="card-title mb-3">
+                                                        <i class="mdi mdi-calendar-week text-primary me-2"></i>
+                                                        Evolución Semanal
+                                                    </h4>
+                                                    <canvas id="weeklyTrendChart" height="250"></canvas>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-lg-6 grid-margin stretch-card">
+                                            <div class="card">
+                                                <div class="card-body">
+                                                    <h4 class="card-title mb-3">
+                                                        <i class="mdi mdi-calendar-month text-success me-2"></i>
+                                                        Comparativa Mensual
+                                                    </h4>
+                                                    <canvas id="monthlyComparisonChart" height="250"></canvas>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- TAB 5: Alertas -->
+                                <div class="tab-pane fade" id="alertas" role="tabpanel">
+                                    <div class="row">
+                                        <div class="col-sm-12 mb-3">
+                                            <h4 class="card-title">
+                                                <i class="mdi mdi-alert-circle text-danger me-2"></i>
+                                                Alertas y Atención Requerida
+                                            </h4>
+                                        </div>
+                                    </div>
+
+                                    @php
+                                        $lowRated = $userStats
+                                            ->where('avg_experience', '<', 2.5)
+                                            ->sortBy('avg_experience');
+                                        $recentBad = $recentSurveys->where('experience_rating', '<=', 2)->take(10);
+                                    @endphp
+
+                                    <div class="row">
+                                        <div class="col-lg-12 grid-margin stretch-card">
+                                            <div class="card">
+                                                <div class="card-body">
+                                                    @if ($lowRated->count() > 0)
+                                                        <div class="alert alert-danger border-0" role="alert">
+                                                            <h5 class="mb-3">
+                                                                <i class="mdi mdi-alert-circle me-2"></i>
+                                                                Usuarios con Calificación Baja
+                                                            </h5>
+                                                            <div class="table-responsive">
+                                                                <table class="table table-sm">
+                                                                    <thead>
+                                                                        <tr>
+                                                                            <th>Usuario</th>
+                                                                            <th>Promedio</th>
+                                                                            <th>Calificaciones Negativas</th>
+                                                                        </tr>
+                                                                    </thead>
+                                                                    <tbody>
+                                                                        @foreach ($lowRated as $user)
+                                                                            <tr>
+                                                                                <td><strong>{{ $user['name'] }}</strong>
+                                                                                </td>
+                                                                                <td>
+                                                                                    <span
+                                                                                        class="badge badge-danger">{{ number_format($user['avg_experience'], 2) }}</span>
+                                                                                </td>
+                                                                                <td>{{ $user['muy_insatisfecho'] + $user['insatisfecho'] }}
+                                                                                </td>
+                                                                            </tr>
+                                                                        @endforeach
+                                                                    </tbody>
+                                                                </table>
+                                                            </div>
+                                                        </div>
+                                                    @else
+                                                        <div class="alert alert-success border-0" role="alert">
+                                                            <h5 class="mb-2">
+                                                                <i class="mdi mdi-check-circle me-2"></i>
+                                                                Todo en Orden
+                                                            </h5>
+                                                            <p class="mb-0">No hay usuarios con calificaciones críticas
+                                                                en
+                                                                este periodo.</p>
+                                                        </div>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    @if ($recentBad->count() > 0)
+                                        <div class="row">
+                                            <div class="col-lg-12 grid-margin stretch-card">
+                                                <div class="card">
+                                                    <div class="card-body">
+                                                        <h4 class="card-title mb-4">
+                                                            <i class="mdi mdi-alert text-warning me-2"></i>
+                                                            Encuestas Negativas Recientes
+                                                        </h4>
+                                                        <div class="table-responsive">
+                                                            <table class="table table-hover">
+                                                                <thead>
+                                                                    <tr>
+                                                                        <th>Fecha</th>
+                                                                        <th>Cliente</th>
+                                                                        <th>Evaluado</th>
+                                                                        <th>Calificación</th>
+                                                                        <th>Comentario</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody>
+                                                                    @foreach ($recentBad as $survey)
+                                                                        <tr>
+                                                                            <td>
+                                                                                <small>{{ $survey->created_at->format('d/m H:i') }}</small>
+                                                                            </td>
+                                                                            <td>{{ $survey->client_name ?? 'Anónimo' }}
+                                                                            </td>
+                                                                            <td>{{ $survey->userMarketing->name }}</td>
+                                                                            <td>
+                                                                                @if ($survey->experience_rating == 2)
+                                                                                    <span class="badge badge-warning">
+                                                                                        <i
+                                                                                            class="mdi mdi-emoticon-neutral"></i>
+                                                                                        Insatisfecho
+                                                                                    </span>
+                                                                                @else
+                                                                                    <span class="badge badge-danger">
+                                                                                        <i
+                                                                                            class="mdi mdi-emoticon-sad"></i>
+                                                                                        Muy Insatisfecho
+                                                                                    </span>
+                                                                                @endif
+                                                                            </td>
+                                                                            <td>
+                                                                                <small>{{ Str::limit($survey->comments ?? 'Sin comentarios', 50) }}</small>
+                                                                            </td>
+                                                                        </tr>
+                                                                    @endforeach
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
                                     @endif
                                 </div>
-                                <h4>{{ $user['name'] }}</h4>
-                                <p class="mb-2">
-                                    <strong>Promedio: {{ number_format($user['avg_experience'], 2) }}</strong> ⭐
-                                </p>
-                                <p class="mb-0">
-                                    {{ $user['total_surveys'] }} encuestas |
-                                    {{ $user['muy_feliz'] }} Muy Feliz 😊
-                                </p>
                             </div>
-                        @endforeach
-                    </div>
 
-                    <div class="col-md-6">
-                        <h4 class="mb-3">📊 Más Evaluados</h4>
-                        @foreach ($mostSurveys as $index => $user)
-                            <div class="stats-card"
-                                style="background: linear-gradient(135deg, #3a7bd5 0%, #3a6073 100%); color: white;">
-                                <h5>{{ $user['name'] }}</h5>
-                                <div class="number" style="color: white;">{{ $user['total_surveys'] }}</div>
-                                <p class="mb-0">
-                                    Promedio: {{ number_format($user['avg_experience'], 2) }} ⭐
-                                </p>
-                            </div>
-                        @endforeach
-                    </div>
-                </div>
-            </div>
-
-            <!-- TAB 4: Tendencias -->
-            <div class="tab-pane fade" id="tendencias" role="tabpanel">
-                <h2 class="section-title"><i class="bi bi-graph-up"></i> Tendencias Temporales</h2>
-                <div class="chart-container">
-                    <canvas id="trendChart"></canvas>
-                </div>
-
-                <div class="mt-4 row">
-                    <div class="col-md-6">
-                        <div class="chart-container">
-                            <h5 class="mb-3">📈 Evolución Semanal</h5>
-                            <canvas id="weeklyTrendChart"></canvas>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="chart-container">
-                            <h5 class="mb-3">📊 Comparativa Mensual</h5>
-                            <canvas id="monthlyComparisonChart"></canvas>
                         </div>
                     </div>
                 </div>
-            </div>
-
-            <!-- TAB 5: Alertas -->
-            <div class="tab-pane fade" id="alertas" role="tabpanel">
-                <h2 class="section-title"><i class="bi bi-exclamation-triangle"></i> Alertas y Atención Requerida</h2>
-
-                @php
-                    $lowRated = $userStats->where('avg_experience', '<', 2.5)->sortBy('avg_experience');
-                    $recentBad = $recentSurveys->where('experience_rating', '<=', 2)->take(10);
-                @endphp
-
-                @if ($lowRated->count() > 0)
-                    <div class="alert-item alert-danger">
-                        <h5><i class="bi bi-exclamation-circle"></i> Usuarios con Calificación Baja</h5>
-                        <ul class="mt-2 mb-0">
-                            @foreach ($lowRated as $user)
-                                <li>
-                                    <strong>{{ $user['name'] }}</strong> - Promedio:
-                                    {{ number_format($user['avg_experience'], 2) }}
-                                    ({{ $user['muy_insatisfecho'] + $user['insatisfecho'] }} calificaciones negativas)
-                                </li>
-                            @endforeach
-                        </ul>
-                    </div>
-                @else
-                    <div class="alert-item" style="border-color: #4CAF50; background: #E8F5E9;">
-                        <h5 class="text-success"><i class="bi bi-check-circle"></i> Todo en orden</h5>
-                        <p class="mb-0">No hay usuarios con calificaciones críticas en este periodo.</p>
-                    </div>
-                @endif
-
-                @if ($recentBad->count() > 0)
-                    <div class="alert-item alert-warning">
-                        <h5><i class="bi bi-exclamation-triangle"></i> Encuestas Negativas Recientes</h5>
-                        <div class="table-responsive">
-                            <table class="table table-sm">
-                                <thead>
-                                    <tr>
-                                        <th>Fecha</th>
-                                        <th>Cliente</th>
-                                        <th>Evaluado</th>
-                                        <th>Calificación</th>
-                                        <th>Comentario</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach ($recentBad as $survey)
-                                        <tr>
-                                            <td>{{ $survey->created_at->format('d/m H:i') }}</td>
-                                            <td>{{ $survey->client_name ?? 'Anónimo' }}</td>
-                                            <td>{{ $survey->userMarketing->name }}</td>
-                                            <td>
-                                                @if ($survey->experience_rating == 2)
-                                                    <span class="badge badge-insatisfecho">😐 Insatisfecho</span>
-                                                @else
-                                                    <span class="badge badge-muy-insatisfecho">😞 Muy
-                                                        Insatisfecho</span>
-                                                @endif
-                                            </td>
-                                            <td>{{ Str::limit($survey->comments ?? 'Sin comentarios', 60) }}</td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                @endif
             </div>
         </div>
     </div>
+
+    <style>
+        /* Stats Cards Customization */
+        .card-statistics .icon-wrapper {
+            width: 56px;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .icon-lg {
+            font-size: 2rem;
+        }
+
+        .bg-info-subtle {
+            background-color: rgba(13, 202, 240, 0.1) !important;
+        }
+
+        /* Tabs Styling */
+        .nav-tabs-line .nav-link {
+            border: none;
+            border-bottom: 3px solid transparent;
+            color: #6c757d;
+            padding: 0.75rem 1.5rem;
+        }
+
+        .nav-tabs-line .nav-link.active {
+            color: #6366f1;
+            border-bottom-color: #6366f1;
+            background: transparent;
+        }
+
+        .nav-tabs-line .nav-link:hover {
+            border-bottom-color: #6366f1;
+            color: #6366f1;
+        }
+
+        /* Progress bars */
+        .progress {
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 0.75rem;
+        }
+
+        /* Table improvements */
+        .table th {
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            color: #6c757d;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .table-hover tbody tr:hover {
+            background-color: rgba(99, 102, 241, 0.05);
+        }
+
+        /* Tooltips */
+        [data-bs-toggle="tooltip"] {
+            cursor: help;
+        }
+    </style>
 @endsection
 
 @push('scripts')
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // Initialize tooltips
+        document.addEventListener('DOMContentLoaded', function() {
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+            var tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl)
+            });
+        });
+
         // Gráfico de distribución de calificaciones
         const ratingCtx = document.getElementById('ratingChart');
         if (ratingCtx) {
             new Chart(ratingCtx, {
                 type: 'doughnut',
                 data: {
-                    labels: ['Muy Feliz 😊', 'Feliz 🙂', 'Insatisfecho 😐', 'Muy Insatisfecho 😞'],
+                    labels: ['Muy Feliz', 'Feliz', 'Insatisfecho', 'Muy Insatisfecho'],
                     datasets: [{
                         data: [{{ $stats['muy_feliz'] }}, {{ $stats['feliz'] }},
                             {{ $stats['insatisfecho'] }}, {{ $stats['muy_insatisfecho'] }}
                         ],
-                        backgroundColor: ['#4CAF50', '#2196F3', '#FF9800', '#F44336']
+                        backgroundColor: ['#4CAF50', '#0dcaf0', '#ffc107', '#dc3545'],
+                        borderWidth: 0
                     }]
                 },
                 options: {
                     responsive: true,
+                    maintainAspectRatio: true,
                     plugins: {
-                        title: {
-                            display: true,
-                            text: 'Distribución de Experiencia General'
-                        },
                         legend: {
-                            position: 'bottom'
+                            position: 'bottom',
+                            labels: {
+                                padding: 15,
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.label || '';
+                                    let value = context.parsed || 0;
+                                    let total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    let percentage = ((value / total) * 100).toFixed(1);
+                                    return label + ': ' + value + ' (' + percentage + '%)';
+                                }
+                            }
                         }
                     }
                 }
@@ -574,21 +1036,31 @@
                     datasets: [{
                         label: 'Promedio de Atención',
                         data: @json($userStats->pluck('avg_service')),
-                        backgroundColor: '#2196F3'
+                        backgroundColor: '#0dcaf0',
+                        borderRadius: 4
                     }]
                 },
                 options: {
                     responsive: true,
+                    maintainAspectRatio: true,
                     plugins: {
-                        title: {
-                            display: true,
-                            text: 'Calidad de Atención por Usuario'
+                        legend: {
+                            display: false
                         }
                     },
                     scales: {
                         y: {
                             beginAtZero: true,
-                            max: 4
+                            max: 4,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                maxRotation: 45,
+                                minRotation: 45
+                            }
                         }
                     }
                 }
@@ -612,21 +1084,25 @@
                     datasets: [{
                         label: 'Promedio por Zona',
                         data: @json($zonaData->values()),
-                        backgroundColor: '#1565C0'
+                        backgroundColor: '#6366f1',
+                        borderRadius: 4
                     }]
                 },
                 options: {
                     responsive: true,
+                    maintainAspectRatio: true,
                     plugins: {
-                        title: {
-                            display: true,
-                            text: 'Comparativa de Zonas'
+                        legend: {
+                            display: false
                         }
                     },
                     scales: {
                         y: {
                             beginAtZero: true,
-                            max: 4
+                            max: 4,
+                            ticks: {
+                                stepSize: 1
+                            }
                         }
                     }
                 }

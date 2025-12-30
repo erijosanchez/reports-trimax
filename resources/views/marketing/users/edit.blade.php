@@ -1,279 +1,297 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nuevo Usuario - TRIMAX</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-    <style>
-        :root {
-            --primary-color: #1565C0;
-        }
+@extends('layouts.app')
 
-        body {
-            background: #f5f7fa;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
+@section('title', 'Editar Usuario')
 
-        .navbar {
-            background: var(--primary-color);
-            padding: 1rem 2rem;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
+@section('content')
+    <div class="content-wrapper">
+        <div class="row">
+            <div class="col-sm-12">
+                <div class="home-tab">
+                    <div class="tab-content-basic tab-content">
+                        <div class="tab-pane fade show active" id="overview" role="tabpanel" aria-labelledby="overview">
 
-        .navbar-brand {
-            color: white !important;
-            font-size: 28px;
-            font-weight: 900;
-        }
+                            <!-- Header -->
+                            <div class="row">
+                                <div class="col-sm-12">
+                                    <div class="d-flex align-items-center justify-content-between mb-4">
+                                        <div>
+                                            <h3 class="rate-percentage mb-0">
+                                                <i class="mdi mdi-account-edit text-warning me-2"></i>
+                                                Editar Usuario
+                                            </h3>
+                                            <p class="text-muted mt-1">Modifica la información de {{ $user->name }}</p>
+                                        </div>
+                                        <div>
+                                            <a href="{{ route('marketing.users.show', $user->id) }}"
+                                                class="btn btn-outline-secondary">
+                                                <i class="mdi mdi-arrow-left me-1"></i> Volver
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
 
-        .main-content {
-            padding: 30px;
-            max-width: 800px;
-            margin: 0 auto;
-        }
+                            <!-- Errores de Validación -->
+                            @if ($errors->any())
+                                <div class="row">
+                                    <div class="col-sm-12">
+                                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                            <h6 class="alert-heading">
+                                                <i class="mdi mdi-alert-circle me-2"></i>
+                                                Errores de validación
+                                            </h6>
+                                            <ul class="mb-0 mt-2">
+                                                @foreach ($errors->all() as $error)
+                                                    <li>{{ $error }}</li>
+                                                @endforeach
+                                            </ul>
+                                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endif
 
-        .form-card {
-            background: white;
-            border-radius: 15px;
-            padding: 40px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
-        }
+                            <div class="row">
+                                <!-- Formulario Principal -->
+                                <div class="col-lg-8 grid-margin stretch-card">
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <h4 class="card-title mb-4">
+                                                <i class="mdi mdi-form-select text-primary me-2"></i>
+                                                Información del Usuario
+                                            </h4>
 
-        .form-card h2 {
-            color: var(--primary-color);
-            margin-bottom: 30px;
-        }
+                                            <form method="POST" action="{{ route('marketing.users.update', $user->id) }}"
+                                                id="editUserForm">
+                                                @csrf
+                                                @method('PUT')
 
-        .form-label {
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 8px;
-        }
+                                                <div class="form-group">
+                                                    <label class="form-label">
+                                                        <i class="mdi mdi-account me-1"></i>
+                                                        Nombre Completo
+                                                        <span class="text-danger">*</span>
+                                                    </label>
+                                                    <input type="text" name="name"
+                                                        class="form-control form-control-lg"
+                                                        value="{{ old('name', $user->name) }}" required
+                                                        placeholder="Ej: Juan Pérez - Consultor Lima">
+                                                    <small class="form-text text-muted">
+                                                        <i class="mdi mdi-information"></i>
+                                                        Nombre que aparecerá en las encuestas
+                                                    </small>
+                                                </div>
 
-        .form-control, .form-select {
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
-            padding: 12px;
-            transition: border-color 0.3s;
-        }
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <div class="form-group">
+                                                            <label class="form-label">
+                                                                <i class="mdi mdi-account-switch me-1"></i>
+                                                                Tipo de Usuario
+                                                                <span class="text-danger">*</span>
+                                                            </label>
+                                                            <select name="role" id="role"
+                                                                class="form-select form-control-lg" required>
+                                                                <option value="">Seleccionar tipo...</option>
+                                                                <option value="consultor"
+                                                                    {{ old('role', $user->role) == 'consultor' ? 'selected' : '' }}>
+                                                                    Consultor
+                                                                </option>
+                                                                <option value="sede"
+                                                                    {{ old('role', $user->role) == 'sede' ? 'selected' : '' }}>
+                                                                    Sede
+                                                                </option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
 
-        .form-control:focus, .form-select:focus {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 0.2rem rgba(21, 101, 192, 0.25);
-        }
+                                                    <div class="col-md-6">
+                                                        <div class="form-group" id="locationField"
+                                                            style="{{ old('role', $user->role) == 'sede' ? '' : 'display: none;' }}">
+                                                            <label class="form-label">
+                                                                <i class="mdi mdi-map-marker me-1"></i>
+                                                                Ubicación de la Sede
+                                                                <span class="text-danger">*</span>
+                                                            </label>
+                                                            <input type="text" name="location"
+                                                                class="form-control form-control-lg"
+                                                                value="{{ old('location', $user->location) }}"
+                                                                placeholder="Ej: Lima Centro, Arequipa, Cusco">
+                                                            <small class="form-text text-muted">
+                                                                <i class="mdi mdi-information"></i>
+                                                                Campo requerido solo para sedes
+                                                            </small>
+                                                        </div>
+                                                    </div>
+                                                </div>
 
-        .btn-primary {
-            background: var(--primary-color);
-            border: none;
-            padding: 12px 40px;
-            border-radius: 50px;
-            font-weight: 600;
-        }
+                                                <div class="border-top pt-4 mt-4">
+                                                    <div class="d-flex gap-2">
+                                                        <button type="submit" class="btn btn-warning text-white">
+                                                            <i class="mdi mdi-content-save me-1"></i>
+                                                            Guardar Cambios
+                                                        </button>
+                                                        <a href="{{ route('marketing.users.show', $user->id) }}"
+                                                            class="btn btn-light">
+                                                            <i class="mdi mdi-close-circle me-1"></i>
+                                                            Cancelar
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
 
-        .btn-primary:hover {
-            background: #0D47A1;
-        }
+                                <!-- Panel de Información -->
+                                <div class="col-lg-4 grid-margin stretch-card">
+                                    <!-- Estado Actual -->
+                                    <div class="card mb-3">
+                                        <div class="card-body">
+                                            <h4 class="card-title mb-3">
+                                                <i class="mdi mdi-information text-info me-2"></i>
+                                                Estado Actual
+                                            </h4>
 
-        .alert-danger {
-            border-left: 4px solid #F44336;
-            background: #FFEBEE;
-            color: #C62828;
-        }
+                                            <div class="d-flex align-items-center mb-3 pb-3 border-bottom">
+                                                <img class="img-md rounded-circle me-3"
+                                                    src="https://ui-avatars.com/api/?name={{ urlencode($user->name) }}&background=6366f1&color=fff&size=128"
+                                                    alt="profile">
+                                                <div>
+                                                    <h6 class="mb-1">{{ $user->name }}</h6>
+                                                    <small class="text-muted">ID: #{{ $user->id }}</small>
+                                                </div>
+                                            </div>
 
-        .location-field {
-            display: none;
-        }
+                                            <div class="mb-3">
+                                                <small class="text-muted d-block mb-1">Tipo</small>
+                                                @if ($user->role === 'consultor')
+                                                    <span class="badge badge-primary">
+                                                        <i class="mdi mdi-account-tie"></i> Consultor
+                                                    </span>
+                                                @else
+                                                    <span class="badge badge-info">
+                                                        <i class="mdi mdi-office-building"></i> Sede
+                                                    </span>
+                                                @endif
+                                            </div>
 
-        .location-field.show {
-            display: block;
-        }
+                                            @if ($user->location)
+                                                <div class="mb-3">
+                                                    <small class="text-muted d-block mb-1">Ubicación</small>
+                                                    <div>
+                                                        <i class="mdi mdi-map-marker text-danger"></i>
+                                                        <strong>{{ $user->location }}</strong>
+                                                    </div>
+                                                </div>
+                                            @endif
 
-        .password-strength {
-            height: 5px;
-            border-radius: 3px;
-            margin-top: 8px;
-            transition: all 0.3s;
-        }
+                                            <div class="mb-3">
+                                                <small class="text-muted d-block mb-1">Estado</small>
+                                                @if ($user->is_active)
+                                                    <span class="badge badge-success">
+                                                        <i class="mdi mdi-check-circle"></i> Activo
+                                                    </span>
+                                                @else
+                                                    <span class="badge badge-danger">
+                                                        <i class="mdi mdi-close-circle"></i> Inactivo
+                                                    </span>
+                                                @endif
+                                            </div>
 
-        .strength-weak { background: #F44336; width: 33%; }
-        .strength-medium { background: #FF9800; width: 66%; }
-        .strength-strong { background: #4CAF50; width: 100%; }
-    </style>
-</head>
-<body>
-    <nav class="navbar">
-        <div class="container-fluid">
-            <span class="navbar-brand">TRIMAX Admin</span>
-        </div>
-    </nav>
+                                            <div class="mb-0">
+                                                <small class="text-muted d-block mb-1">Creado</small>
+                                                <div>
+                                                    <i class="mdi mdi-calendar text-primary"></i>
+                                                    <small>{{ $user->created_at->format('d/m/Y H:i') }}</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
 
-    <div class="main-content">
-        <div class="form-card">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2><i class="bi bi-pencil-fill"></i> Editar Usuario</h2>
-                <a href="{{ route('marketing.users.show', $user->id) }}" class="btn btn-outline-secondary">
-                    <i class="bi bi-arrow-left"></i> Volver
-                </a>
+                                   
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
             </div>
-
-            @if($errors->any())
-            <div class="alert alert-danger">
-                <strong><i class="bi bi-exclamation-triangle"></i> Errores de validación:</strong>
-                <ul class="mb-0 mt-2">
-                    @foreach($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                    @endforeach
-                </ul>
-            </div>
-            @endif
-
-            <form method="POST" action="{{ route('marketing.users.update', $user->id) }}" id="createUserForm">
-                @csrf
-                @method('PUT')
-
-                <div class="row">
-                    <div class="col-md-12 mb-3">
-                        <label class="form-label">
-                            <i class="bi bi-person"></i> Nombre Completo *
-                        </label>
-                        <input type="text" name="name" class="form-control" value="{{ old('name', $user->name) }}" required placeholder="Ej: Juan Pérez Consultor">
-                        <small class="text-muted">Nombre que aparecerá en las encuestas</small>
-                    </div>
-
-                    <div class="col-md-12 mb-3">
-                        <label class="form-label">
-                            <i class="bi bi-envelope"></i> Email *
-                        </label>
-                        <input type="email" name="email" class="form-control" value="{{ old('email', $user->email) }}" required placeholder="ejemplo@trimax.com">
-                        <small class="text-muted">Email único para acceso al sistema</small>
-                    </div>
-
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">
-                            <i class="bi bi-lock"></i> Nueva Contraseña (opcional)
-                        </label>
-                        <input type="password" name="password" id="password" class="form-control" minlength="8" placeholder="Dejar en blanco para mantener">
-                        <div class="password-strength" id="passwordStrength"></div>
-                        <small class="text-muted" id="strengthText"></small>
-                    </div>
-
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">
-                            <i class="bi bi-lock-fill"></i> Confirmar Nueva Contraseña
-                        </label>
-                        <input type="password" name="password_confirmation" class="form-control" minlength="8" placeholder="Confirmar si cambia contraseña">
-                    </div>
-
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">
-                            <i class="bi bi-tag"></i> Tipo de Usuario *
-                        </label>
-                        <select name="role" id="role" class="form-select" required>
-                            <option value="">Seleccionar...</option>
-                            <option value="consultor" {{ old('role', $user->role) == 'consultor' ? 'selected' : '' }}>Consultor</option>
-                            <option value="sede" {{ old('role', $user->role) == 'sede' ? 'selected' : '' }}>Sede</option>
-                        </select>
-                    </div>
-
-                    <div class="col-md-6 mb-3 location-field {{ $user->role == 'sede' ? 'show' : '' }}" id="locationField">
-                        <label class="form-label">
-                            <i class="bi bi-geo-alt"></i> Ubicación *
-                        </label>
-                        <input type="text" name="location" class="form-control" value="{{ old('location', $user->location) }}" placeholder="Ej: Lima Centro, Arequipa">
-                        <small class="text-muted">Requerido solo para sedes</small>
-                    </div>
-                </div>
-
-                <div class="alert alert-info mt-4">
-                    <strong><i class="bi bi-info-circle"></i> Información:</strong>
-                    <ul class="mb-0 mt-2">
-                        <li>Si no cambias la contraseña, se mantendrá la actual</li>
-                        <li>El <strong>link de encuesta</strong> no cambiará al editar</li>
-                        <li>Las estadísticas y encuestas se mantendrán intactas</li>
-                    </ul>
-                </div>
-
-                <div class="d-flex gap-2 mt-4">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="bi bi-check-circle"></i> Guardar Cambios
-                    </button>
-                    <a href="{{ route('marketing.users.show', $user->id) }}" class="btn btn-outline-secondary">
-                        <i class="bi bi-x-circle"></i> Cancelar
-                    </a>
-                </div>
-            </form>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // Mostrar/ocultar campo de ubicación
-        document.getElementById('role').addEventListener('change', function() {
-            const locationField = document.getElementById('locationField');
-            if (this.value === 'sede') {
-                locationField.classList.add('show');
-                locationField.querySelector('input').required = true;
-            } else {
-                locationField.classList.remove('show');
-                locationField.querySelector('input').required = false;
-                locationField.querySelector('input').value = '';
-            }
-        });
-
-        // Verificar estado inicial
-        if (document.getElementById('role').value === 'sede') {
-            document.getElementById('locationField').classList.add('show');
+    <style>
+        /* Gap utility for older browsers */
+        .gap-2>*+* {
+            margin-left: 0.5rem;
         }
 
-        // Password strength checker
-        document.getElementById('password').addEventListener('input', function() {
-            const password = this.value;
-            const strengthBar = document.getElementById('passwordStrength');
-            const strengthText = document.getElementById('strengthText');
-            
-            let strength = 0;
-            
-            if (password.length >= 8) strength++;
-            if (password.match(/[a-z]/) && password.match(/[A-Z]/)) strength++;
-            if (password.match(/[0-9]/)) strength++;
-            if (password.match(/[^a-zA-Z0-9]/)) strength++;
-            
-            strengthBar.className = 'password-strength';
-            
-            if (strength <= 2) {
-                strengthBar.classList.add('strength-weak');
-                strengthText.textContent = 'Contraseña débil';
-                strengthText.style.color = '#F44336';
-            } else if (strength == 3) {
-                strengthBar.classList.add('strength-medium');
-                strengthText.textContent = 'Contraseña media';
-                strengthText.style.color = '#FF9800';
-            } else {
-                strengthBar.classList.add('strength-strong');
-                strengthText.textContent = 'Contraseña fuerte';
-                strengthText.style.color = '#4CAF50';
-            }
-        });
+        /* Icon wrapper for info cards */
+        .icon-wrapper {
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
 
-        // Validación antes de enviar
-        document.getElementById('createUserForm').addEventListener('submit', function(e) {
-            const password = document.querySelector('[name="password"]').value;
-            const passwordConfirm = document.querySelector('[name="password_confirmation"]').value;
-            
-            if (password !== passwordConfirm) {
-                e.preventDefault();
-                alert('Las contraseñas no coinciden');
-                return false;
+        .icon-wrapper i {
+            font-size: 24px;
+        }
+
+        /* Image sizing */
+        .img-md {
+            width: 64px;
+            height: 64px;
+        }
+
+        /* Form controls improvements */
+        .form-control-lg,
+        .form-select.form-control-lg {
+            height: calc(2.875rem + 2px);
+            padding: 0.75rem 1rem;
+            font-size: 1rem;
+            border-radius: 0.25rem;
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            border-color: #6366f1;
+            box-shadow: 0 0 0 0.2rem rgba(99, 102, 241, 0.25);
+        }
+
+        /* Alert improvements */
+        .alert {
+            border-radius: 0.375rem;
+        }
+    </style>
+@endsection
+
+@push('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const roleSelect = document.getElementById('role');
+            const locationField = document.getElementById('locationField');
+            const locationInput = locationField.querySelector('input[name="location"]');
+
+            // Function to toggle location field
+            function toggleLocationField() {
+                if (roleSelect.value === 'sede') {
+                    locationField.style.display = 'block';
+                    locationInput.required = true;
+                } else {
+                    locationField.style.display = 'none';
+                    locationInput.required = false;
+                    // No limpiar el valor al cambiar, mantener el original
+                }
             }
-            
-            if (password.length < 8) {
-                e.preventDefault();
-                alert('La contraseña debe tener al menos 8 caracteres');
-                return false;
-            }
+
+            // Event listener for role change
+            roleSelect.addEventListener('change', toggleLocationField);
+
+            // Check initial state
+            toggleLocationField();
         });
     </script>
-</body>
-</html>
+@endpush

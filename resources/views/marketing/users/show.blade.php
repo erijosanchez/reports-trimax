@@ -1,553 +1,597 @@
-<!DOCTYPE html>
-<html lang="es">
+@extends('layouts.app')
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ $user->name }} - TRIMAX</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        :root {
-            --primary-color: #1565C0;
-            --success-color: #4CAF50;
-        }
+@section('title', $user->name . ' - Detalle')
 
-        body {
-            background: #f5f7fa;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
+@section('content')
+    <div class="content-wrapper">
+        <div class="row">
+            <div class="col-sm-12">
+                <div class="home-tab">
+                    <div class="tab-content-basic tab-content">
+                        <div class="tab-pane fade show active" id="overview" role="tabpanel" aria-labelledby="overview">
 
-        .navbar {
-            background: var(--primary-color);
-            padding: 1rem 2rem;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-
-        .navbar-brand {
-            color: white !important;
-            font-size: 28px;
-            font-weight: 900;
-        }
-
-        .main-content {
-            padding: 30px;
-        }
-
-        .card {
-            background: white;
-            border-radius: 15px;
-            padding: 25px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
-            margin-bottom: 25px;
-        }
-
-        .card h3 {
-            color: var(--primary-color);
-            margin-bottom: 20px;
-            font-size: 20px;
-            font-weight: 700;
-        }
-
-        .user-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 40px;
-            border-radius: 15px;
-            margin-bottom: 30px;
-        }
-
-        .user-header h1 {
-            font-size: 32px;
-            margin-bottom: 10px;
-        }
-
-        .badge-large {
-            padding: 10px 20px;
-            border-radius: 20px;
-            font-size: 14px;
-            font-weight: 600;
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .stat-card {
-            background: white;
-            padding: 25px;
-            border-radius: 15px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
-            text-align: center;
-            transition: transform 0.3s;
-        }
-
-        .stat-card:hover {
-            transform: translateY(-5px);
-        }
-
-        .stat-card .icon {
-            font-size: 48px;
-            margin-bottom: 15px;
-        }
-
-        .stat-card .number {
-            font-size: 36px;
-            font-weight: 700;
-            margin: 10px 0;
-        }
-
-        .stat-card .label {
-            color: #666;
-            font-size: 14px;
-            text-transform: uppercase;
-        }
-
-        .link-box {
-            background: linear-gradient(135deg, #1565C0 0%, #0D47A1 100%);
-            color: white;
-            padding: 30px;
-            border-radius: 15px;
-            margin-bottom: 30px;
-        }
-
-        .link-display {
-            background: rgba(255, 255, 255, 0.2);
-            padding: 15px 20px;
-            border-radius: 10px;
-            font-family: monospace;
-            word-break: break-all;
-            margin: 15px 0;
-        }
-
-        .action-buttons {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-
-        .btn-action {
-            padding: 12px 25px;
-            border-radius: 50px;
-            font-weight: 600;
-            border: none;
-            transition: all 0.3s;
-        }
-
-        .btn-action:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-        }
-
-        .qr-container {
-            text-align: center;
-            padding: 20px;
-            background: #f8f9fa;
-            border-radius: 10px;
-        }
-
-        .qr-container img {
-            max-width: 300px;
-            border: 5px solid white;
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-        }
-
-        .table-responsive {
-            margin-top: 20px;
-        }
-
-        .badge-rating {
-            padding: 8px 15px;
-            border-radius: 20px;
-            font-weight: 600;
-            font-size: 11px;
-        }
-
-        .badge-muy-feliz {
-            background: #E8F5E9;
-            color: #2E7D32;
-        }
-
-        .badge-feliz {
-            background: #E3F2FD;
-            color: #1565C0;
-        }
-
-        .badge-insatisfecho {
-            background: #FFF3E0;
-            color: #E65100;
-        }
-
-        .badge-muy-insatisfecho {
-            background: #FFEBEE;
-            color: #C62828;
-        }
-
-        .alert-success-custom {
-            background: #E8F5E9;
-            border-left: 4px solid var(--success-color);
-            color: #2E7D32;
-            padding: 15px 20px;
-            border-radius: 8px;
-        }
-    </style>
-</head>
-
-<body>
-    <nav class="navbar">
-        <div class="container-fluid">
-            <span class="navbar-brand">TRIMAX Admin</span>
-        </div>
-    </nav>
-
-    <div class="main-content">
-        @if (session('success'))
-            <div class="alert alert-success-custom alert-dismissible fade show">
-                <i class="bi bi-check-circle"></i> {{ session('success') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        @endif
-
-        <!-- Header de Usuario -->
-        <div class="user-header">
-            <div class="d-flex justify-content-between align-items-start">
-                <div>
-                    <h1><i class="bi bi-person-circle"></i> {{ $user->name }}</h1>
-                    <p class="mb-3">
-                        <i class="bi bi-envelope"></i> {{ $user->email }}
-                    </p>
-                    <div class="d-flex gap-2">
-                        @if ($user->role === 'consultor')
-                            <span class="badge-large bg-primary">
-                                <i class="bi bi-person"></i> Consultor
-                            </span>
-                        @else
-                            <span class="badge-large bg-info">
-                                <i class="bi bi-building"></i> Sede - {{ $user->location }}
-                            </span>
-                        @endif
-
-                        @if ($user->is_active)
-                            <span class="badge-large bg-success">
-                                <i class="bi bi-check-circle"></i> Activo
-                            </span>
-                        @else
-                            <span class="badge-large bg-danger">
-                                <i class="bi bi-x-circle"></i> Inactivo
-                            </span>
-                        @endif
-                    </div>
-                </div>
-                <div>
-                    <a href="{{ route('marketing.users.index') }}" class="btn btn-light">
-                        <i class="bi bi-arrow-left"></i> Volver
-                    </a>
-                </div>
-            </div>
-        </div>
-
-        <!-- Estadísticas -->
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="icon">📊</div>
-                <div class="number">{{ $stats['total_surveys'] }}</div>
-                <div class="label">Total Encuestas</div>
-            </div>
-            <div class="stat-card">
-                <div class="icon">⭐</div>
-                <div class="number">{{ number_format($stats['average_rating'], 2) }}</div>
-                <div class="label">Promedio</div>
-            </div>
-            <div class="stat-card">
-                <div class="icon">😊</div>
-                <div class="number">{{ $stats['muy_feliz'] }}</div>
-                <div class="label">Muy Feliz</div>
-            </div>
-            <div class="stat-card">
-                <div class="icon">🙂</div>
-                <div class="number">{{ $stats['feliz'] }}</div>
-                <div class="label">Feliz</div>
-            </div>
-            <div class="stat-card">
-                <div class="icon">😐</div>
-                <div class="number">{{ $stats['insatisfecho'] }}</div>
-                <div class="label">Insatisfecho</div>
-            </div>
-            <div class="stat-card">
-                <div class="icon">😞</div>
-                <div class="number">{{ $stats['muy_insatisfecho'] }}</div>
-                <div class="label">Muy Insatisfecho</div>
-            </div>
-        </div>
-
-        @if ($user->isConsultor())
-            <div class="row mt-4">
-                <div class="col-12">
-                    <div class="card">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h5 class="card-title mb-0">
-                                    <i class="mdi mdi-office-building"></i> Sedes Asignadas
-                                </h5>
-                                <a href="{{ route('marketing.users.assign-sedes', $user->id) }}"
-                                    class="btn btn-primary btn-sm">
-                                    <i class="mdi mdi-cog"></i> Gestionar Sedes
-                                </a>
-                            </div>
-
-                            @if ($user->sedes->count() > 0)
-                                <div class="table-responsive">
-                                    <table class="table table-hover">
-                                        <thead>
-                                            <tr>
-                                                <th>Sede</th>
-                                                <th>Ubicación</th>
-                                                <th>Encuestas</th>
-                                                <th>Promedio</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @foreach ($user->sedes as $sede)
-                                                <tr>
-                                                    <td>
-                                                        <a href="{{ route('marketing.users.show', $sede->id) }}">
-                                                            {{ $sede->name }}
-                                                        </a>
-                                                    </td>
-                                                    <td>
-                                                        <span class="badge bg-secondary">
-                                                            <i class="mdi mdi-map-marker"></i> {{ $sede->location }}
-                                                        </span>
-                                                    </td>
-                                                    <td>{{ $sede->total_surveys }}</td>
-                                                    <td>
-                                                        <span class="badge bg-warning">
-                                                            ⭐ {{ number_format($sede->average_rating, 2) }}
-                                                        </span>
-                                                    </td>
-                                                </tr>
-                                            @endforeach
-                                        </tbody>
-                                    </table>
-                                </div>
-
-                                <div class="alert alert-info mt-3">
-                                    <strong><i class="mdi mdi-chart-line"></i> Estadísticas Consolidadas:</strong><br>
-                                    <div class="row mt-2">
-                                        <div class="col-md-6">
-                                            <strong>Encuestas Propias:</strong> {{ $stats['total_surveys'] }}<br>
-                                            <strong>Promedio Propio:</strong> ⭐
-                                            {{ number_format($stats['average_rating'], 2) }}
-                                        </div>
-                                        <div class="col-md-6">
-                                            <strong>Total con Sedes:</strong>
-                                            {{ $stats['total_surveys_with_sedes'] }}<br>
-                                            <strong>Promedio General:</strong> ⭐
-                                            {{ number_format($stats['average_rating_with_sedes'], 2) }}
+                            <!-- Alertas -->
+                            @if (session('success'))
+                                <div class="row">
+                                    <div class="col-sm-12">
+                                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                                            <i class="mdi mdi-check-circle me-2"></i>
+                                            {{ session('success') }}
+                                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                                         </div>
                                     </div>
                                 </div>
-                            @else
-                                <div class="alert alert-warning">
-                                    <i class="mdi mdi-alert"></i> No hay sedes asignadas a este consultor.
-                                    <a href="{{ route('marketing.users.assign-sedes', $user->id) }}"
-                                        class="alert-link">Asignar ahora</a>
+                            @endif
+
+                            <!-- Header de Usuario -->
+                            <div class="row pb-3">
+                                <div class="col-sm-12">
+                                    <div class="card"
+                                        style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                                        <div class="card-body">
+                                            <div class="d-flex justify-content-between align-items-start">
+                                                <div class="text-white">
+                                                    <div class="d-flex align-items-center mb-3">
+                                                        <img class="img-lg rounded-circle me-3"
+                                                            src="https://ui-avatars.com/api/?name={{ urlencode($user->name) }}&background=fff&color=667eea&size=128"
+                                                            alt="profile">
+                                                        <div>
+                                                            <h2 class="text-white mb-2">{{ $user->name }}</h2>
+                                                            <p class="mb-0 opacity-75">
+                                                                <i class="mdi mdi-email me-1"></i>{{ $user->email }}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                    <div class="d-flex gap-2 flex-wrap">
+                                                        @if ($user->role === 'consultor')
+                                                            <span class="badge badge-light badge-pill px-3 py-2">
+                                                                <i class="mdi mdi-account-tie"></i> Consultor
+                                                            </span>
+                                                        @else
+                                                            <span class="badge badge-info badge-pill px-3 py-2">
+                                                                <i class="mdi mdi-office-building"></i> Sede -
+                                                                {{ $user->location }}
+                                                            </span>
+                                                        @endif
+
+                                                        @if ($user->is_active)
+                                                            <span class="badge badge-success badge-pill px-3 py-2">
+                                                                <i class="mdi mdi-check-circle"></i> Activo
+                                                            </span>
+                                                        @else
+                                                            <span class="badge badge-danger badge-pill px-3 py-2">
+                                                                <i class="mdi mdi-close-circle"></i> Inactivo
+                                                            </span>
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <a href="{{ route('marketing.users.index') }}" class="btn btn-light">
+                                                        <i class="mdi mdi-arrow-left me-1"></i> Volver
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Stats Cards -->
+                            <div class="row">
+                                <div class="col-xl-2 col-lg-4 col-md-6 grid-margin stretch-card">
+                                    <div class="card card-statistics">
+                                        <div class="card-body">
+                                            <div class="d-flex flex-column align-items-center">
+                                                <div class="icon-wrapper bg-primary-subtle rounded mb-3">
+                                                    <i class="mdi mdi-file-document text-primary icon-lg"></i>
+                                                </div>
+                                                <h3 class="rate-percentage mb-1">{{ $stats['total_surveys'] }}</h3>
+                                                <p class="statistics-title mb-0">Total Encuestas</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-xl-2 col-lg-4 col-md-6 grid-margin stretch-card">
+                                    <div class="card card-statistics">
+                                        <div class="card-body">
+                                            <div class="d-flex flex-column align-items-center">
+                                                <div class="icon-wrapper bg-warning-subtle rounded mb-3">
+                                                    <i class="mdi mdi-star text-warning icon-lg"></i>
+                                                </div>
+                                                <h3 class="rate-percentage mb-1">
+                                                    {{ number_format($stats['average_rating'], 2) }}</h3>
+                                                <p class="statistics-title mb-0">Promedio</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-xl-2 col-lg-4 col-md-6 grid-margin stretch-card">
+                                    <div class="card card-statistics">
+                                        <div class="card-body">
+                                            <div class="d-flex flex-column align-items-center">
+                                                <div class="icon-wrapper bg-success-subtle rounded mb-3">
+                                                    <i class="mdi mdi-emoticon-excited text-success icon-lg"></i>
+                                                </div>
+                                                <h3 class="rate-percentage mb-1">{{ $stats['muy_feliz'] }}</h3>
+                                                <p class="statistics-title mb-0">Muy Feliz</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-xl-2 col-lg-4 col-md-6 grid-margin stretch-card">
+                                    <div class="card card-statistics">
+                                        <div class="card-body">
+                                            <div class="d-flex flex-column align-items-center">
+                                                <div class="icon-wrapper bg-info-subtle rounded mb-3">
+                                                    <i class="mdi mdi-emoticon-happy text-info icon-lg"></i>
+                                                </div>
+                                                <h3 class="rate-percentage mb-1">{{ $stats['feliz'] }}</h3>
+                                                <p class="statistics-title mb-0">Feliz</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-xl-2 col-lg-4 col-md-6 grid-margin stretch-card">
+                                    <div class="card card-statistics">
+                                        <div class="card-body">
+                                            <div class="d-flex flex-column align-items-center">
+                                                <div class="icon-wrapper bg-warning-subtle rounded mb-3">
+                                                    <i class="mdi mdi-emoticon-neutral text-warning icon-lg"></i>
+                                                </div>
+                                                <h3 class="rate-percentage mb-1">{{ $stats['insatisfecho'] }}</h3>
+                                                <p class="statistics-title mb-0">Insatisfecho</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-xl-2 col-lg-4 col-md-6 grid-margin stretch-card">
+                                    <div class="card card-statistics">
+                                        <div class="card-body">
+                                            <div class="d-flex flex-column align-items-center">
+                                                <div class="icon-wrapper bg-danger-subtle rounded mb-3">
+                                                    <i class="mdi mdi-emoticon-sad text-danger icon-lg"></i>
+                                                </div>
+                                                <h3 class="rate-percentage mb-1">{{ $stats['muy_insatisfecho'] }}</h3>
+                                                <p class="statistics-title mb-0">Muy Insatisfecho</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Sedes Asignadas (solo para consultores) -->
+                            @if ($user->isConsultor())
+                                <div class="row">
+                                    <div class="col-lg-12 grid-margin stretch-card">
+                                        <div class="card">
+                                            <div class="card-body">
+                                                <div class="d-flex justify-content-between align-items-center mb-4">
+                                                    <h4 class="card-title mb-0">
+                                                        <i class="mdi mdi-office-building text-primary me-2"></i>
+                                                        Sedes Asignadas
+                                                    </h4>
+                                                    <a href="{{ route('marketing.users.assign-sedes', $user->id) }}"
+                                                        class="btn btn-primary text-white btn-sm">
+                                                        <i class="mdi mdi-cog me-1"></i> Gestionar Sedes
+                                                    </a>
+                                                </div>
+
+                                                @if ($user->sedes->count() > 0)
+                                                    <div class="table-responsive">
+                                                        <table class="table table-hover">
+                                                            <thead>
+                                                                <tr>
+                                                                    <th>Sede</th>
+                                                                    <th>Ubicación</th>
+                                                                    <th>Encuestas</th>
+                                                                    <th>Promedio</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                @foreach ($user->sedes as $sede)
+                                                                    <tr>
+                                                                        <td>
+                                                                            <div class="d-flex align-items-center">
+                                                                                <img class="img-xs rounded-circle me-2"
+                                                                                    src="https://ui-avatars.com/api/?name={{ urlencode($sede->name) }}&background=0dcaf0&color=fff"
+                                                                                    alt="sede">
+
+                                                                                href="{{ route('marketing.users.show', $sede->id) }}">
+                                                                                <strong>{{ $sede->name }}</strong>
+                                                                                </a>
+                                                                            </div>
+                                                                        </td>
+                                                                        <td>
+                                                                            <span class="badge badge-secondary">
+                                                                                <i class="mdi mdi-map-marker"></i>
+                                                                                {{ $sede->location }}
+                                                                            </span>
+                                                                        </td>
+                                                                        <td>
+                                                                            <strong
+                                                                                class="text-primary">{{ $sede->total_surveys }}</strong>
+                                                                        </td>
+                                                                        <td>
+                                                                            <span class="badge badge-warning">
+                                                                                <i class="mdi mdi-star"></i>
+                                                                                {{ number_format($sede->average_rating, 2) }}
+                                                                            </span>
+                                                                        </td>
+                                                                    </tr>
+                                                                @endforeach
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+
+                                                    <div class="alert alert-info border-0 mt-3" role="alert">
+                                                        <h6 class="alert-heading">
+                                                            <i class="mdi mdi-chart-line me-2"></i>
+                                                            Estadísticas Consolidadas
+                                                        </h6>
+                                                        <div class="row mt-3">
+                                                            <div class="col-md-6">
+                                                                <p class="mb-1">
+                                                                    <strong>Encuestas Propias:</strong>
+                                                                    {{ $stats['total_surveys'] }}
+                                                                </p>
+                                                                <p class="mb-0">
+                                                                    <strong>Promedio Propio:</strong>
+                                                                    <i class="mdi mdi-star text-warning"></i>
+                                                                    {{ number_format($stats['average_rating'], 2) }}
+                                                                </p>
+                                                            </div>
+                                                            <div class="col-md-6">
+                                                                <p class="mb-1">
+                                                                    <strong>Total con Sedes:</strong>
+                                                                    {{ $stats['total_surveys_with_sedes'] }}
+                                                                </p>
+                                                                <p class="mb-0">
+                                                                    <strong>Promedio General:</strong>
+                                                                    <i class="mdi mdi-star text-warning"></i>
+                                                                    {{ number_format($stats['average_rating_with_sedes'], 2) }}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                @else
+                                                    <div class="alert alert-warning border-0" role="alert">
+                                                        <i class="mdi mdi-alert me-2"></i>
+                                                        No hay sedes asignadas a este consultor.
+                                                        <a href="{{ route('marketing.users.assign-sedes', $user->id) }}"
+                                                            class="alert-link">Asignar ahora</a>
+                                                    </div>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             @endif
+
+                            <div class="row">
+                                <!-- Columna Principal -->
+                                <div class="col-lg-8">
+                                    <!-- Link de Encuesta -->
+                                    <div class="card grid-margin stretch-card">
+                                        <div class="card-body"
+                                            style="background: linear-gradient(135deg, #1565C0 0%, #0D47A1 100%); color: white; border-radius: 10px;">
+                                            <h4 class="card-title text-white mb-3">
+                                                <i class="mdi mdi-link-variant me-2"></i>
+                                                Link de Encuesta Única
+                                            </h4>
+                                            <p class="opacity-75 mb-3">Comparte este link con tus clientes para recibir
+                                                feedback</p>
+
+                                            <div class="input-group mb-3 bg-white rounded overflow-hidden">
+                                                <input type="text" class="form-control border-0"
+                                                    value="{{ $user->survey_url }}" readonly id="surveyLink">
+                                                <button class="btn btn-primary text-white" type="button"
+                                                    onclick="copyLink()">
+                                                    <i class="mdi mdi-content-copy"></i> Copiar
+                                                </button>
+                                            </div>
+
+                                            <div class="d-flex flex-wrap gap-2">
+                                                <a href="{{ route('marketing.users.preview', $user->id) }}"
+                                                    target="_blank" class="btn btn-light btn-sm">
+                                                    <i class="mdi mdi-eye me-1"></i> Vista Previa
+                                                </a>
+                                                <button onclick="shareWhatsApp()" class="btn btn-success btn-sm">
+                                                    <i class="mdi mdi-whatsapp me-1"></i> Compartir WhatsApp
+                                                </button>
+                                                <button onclick="shareEmail()" class="btn btn-info btn-sm">
+                                                    <i class="mdi mdi-email me-1"></i> Enviar Email
+                                                </button>
+                                            </div>
+
+                                            <div class="mt-3">
+                                                <small class="opacity-75">
+                                                    <i class="mdi mdi-shield-check me-1"></i>
+                                                    Este link es único y permanente. Si necesitas regenerarlo, usa el botón
+                                                    en la sección de acciones.
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Gráfico -->
+                                    @if ($stats['total_surveys'] > 0)
+                                        <div class="card grid-margin stretch-card">
+                                            <div class="card-body">
+                                                <h4 class="card-title mb-3">
+                                                    <i class="mdi mdi-chart-donut text-primary me-2"></i>
+                                                    Distribución de Calificaciones
+                                                </h4>
+                                                <canvas id="ratingsChart" height="250"></canvas>
+                                            </div>
+                                        </div>
+                                    @endif
+
+                                    <!-- Encuestas Recientes -->
+                                    <div class="card grid-margin stretch-card">
+                                        <div class="card-body">
+                                            <h4 class="card-title mb-4">
+                                                <i class="mdi mdi-clock-outline text-info me-2"></i>
+                                                Encuestas Recientes
+                                            </h4>
+
+                                            @if ($recentSurveys->count() > 0)
+                                                <div class="table-responsive">
+                                                    <table class="table table-hover">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>Fecha</th>
+                                                                <th>Cliente</th>
+                                                                <th>Experiencia</th>
+                                                                <th>Atención</th>
+                                                                <th>Comentario</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            @foreach ($recentSurveys as $survey)
+                                                                <tr>
+                                                                    <td>
+                                                                        <small
+                                                                            class="text-muted">{{ $survey->created_at->format('d/m/Y') }}</small><br>
+                                                                        <small>{{ $survey->created_at->format('H:i') }}</small>
+                                                                    </td>
+                                                                    <td>
+                                                                        @if ($survey->client_name)
+                                                                            <div class="d-flex align-items-center">
+                                                                                <img class="img-xs rounded-circle me-2"
+                                                                                    src="https://ui-avatars.com/api/?name={{ urlencode($survey->client_name) }}&background=10b981&color=fff"
+                                                                                    alt="client">
+                                                                                {{ $survey->client_name }}
+                                                                            </div>
+                                                                        @else
+                                                                            <span class="text-muted">
+                                                                                <i class="mdi mdi-account-off"></i>
+                                                                                Anónimo
+                                                                            </span>
+                                                                        @endif
+                                                                    </td>
+                                                                    <td>
+                                                                        @if ($survey->experience_rating == 4)
+                                                                            <span class="badge badge-success">
+                                                                                <i class="mdi mdi-emoticon-excited"></i>
+                                                                                Muy Feliz
+                                                                            </span>
+                                                                        @elseif($survey->experience_rating == 3)
+                                                                            <span class="badge badge-info">
+                                                                                <i class="mdi mdi-emoticon-happy"></i>
+                                                                                Feliz
+                                                                            </span>
+                                                                        @elseif($survey->experience_rating == 2)
+                                                                            <span class="badge badge-warning">
+                                                                                <i class="mdi mdi-emoticon-neutral"></i>
+                                                                                Insatisfecho
+                                                                            </span>
+                                                                        @else
+                                                                            <span class="badge badge-danger">
+                                                                                <i class="mdi mdi-emoticon-sad"></i>
+                                                                                Muy Insatisfecho
+                                                                            </span>
+                                                                        @endif
+                                                                    </td>
+                                                                    <td>
+                                                                        @if ($survey->service_quality_rating == 4)
+                                                                            <span class="badge badge-success">
+                                                                                <i class="mdi mdi-emoticon-excited"></i>
+                                                                            </span>
+                                                                        @elseif($survey->service_quality_rating == 3)
+                                                                            <span class="badge badge-info">
+                                                                                <i class="mdi mdi-emoticon-happy"></i>
+                                                                            </span>
+                                                                        @elseif($survey->service_quality_rating == 2)
+                                                                            <span class="badge badge-warning">
+                                                                                <i class="mdi mdi-emoticon-neutral"></i>
+                                                                            </span>
+                                                                        @else
+                                                                            <span class="badge badge-danger">
+                                                                                <i class="mdi mdi-emoticon-sad"></i>
+                                                                            </span>
+                                                                        @endif
+                                                                    </td>
+                                                                    <td>
+                                                                        @if ($survey->comments)
+                                                                            <small>{{ Str::limit($survey->comments, 40) }}</small>
+                                                                        @else
+                                                                            <small class="text-muted">Sin
+                                                                                comentarios</small>
+                                                                        @endif
+                                                                    </td>
+                                                                </tr>
+                                                            @endforeach
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            @else
+                                                <div class="text-center py-5">
+                                                    <i class="mdi mdi-inbox mdi-48px text-muted mb-3 d-block"></i>
+                                                    <p class="text-muted">No hay encuestas registradas aún</p>
+                                                </div>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Columna Lateral -->
+                                <div class="col-lg-4">
+                                    <!-- Código QR -->
+                                    <div class="card grid-margin stretch-card">
+                                        <div class="card-body">
+                                            <h4 class="card-title mb-4">
+                                                <i class="mdi mdi-qrcode text-primary me-2"></i>
+                                                Código QR
+                                            </h4>
+                                            <div class="text-center">
+                                                <div class="bg-light p-4 rounded mb-3">
+                                                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data={{ urlencode($user->survey_url) }}"
+                                                        alt="QR Code" class="img-fluid"
+                                                        style="max-width: 250px; border-radius: 10px;">
+                                                </div>
+                                                <a href="https://api.qrserver.com/v1/create-qr-code/?size=1000x1000&data={{ urlencode($user->survey_url) }}"
+                                                    download="qr_{{ $user->id }}.png"
+                                                    class="btn btn-primary text-white w-100 mb-2">
+                                                    <i class="mdi mdi-download me-1"></i> Descargar QR en Alta Calidad
+                                                </a>
+                                                <small class="text-muted d-block">
+                                                    Imprime este código para recibir encuestas presenciales
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Acciones -->
+                                    <div class="card grid-margin stretch-card">
+                                        <div class="card-body">
+                                            <h4 class="card-title mb-4">
+                                                <i class="mdi mdi-wrench text-warning me-2"></i>
+                                                Acciones
+                                            </h4>
+                                            <div class="d-grid gap-2">
+                                                <a href="{{ route('marketing.users.edit', $user->id) }}"
+                                                    class="btn btn-warning">
+                                                    <i class="mdi mdi-pencil me-1"></i> Editar Usuario
+                                                </a>
+
+                                                <form method="POST"
+                                                    action="{{ route('marketing.users.toggle-status', $user->id) }}">
+                                                    @csrf
+                                                    <button type="submit"
+                                                        class="btn {{ $user->is_active ? 'btn-danger' : 'btn-success' }} w-100">
+                                                        <i class="mdi mdi-power me-1"></i>
+                                                        {{ $user->is_active ? 'Desactivar Usuario' : 'Activar Usuario' }}
+                                                    </button>
+                                                </form>
+
+                                                <form method="POST"
+                                                    action="{{ route('marketing.users.regenerate-token', $user->id) }}"
+                                                    onsubmit="return confirm('¿Regenerar token? El link anterior dejará de funcionar.')">
+                                                    @csrf
+                                                    <button type="submit" class="btn btn-dark w-100">
+                                                        <i class="mdi mdi-refresh me-1"></i> Regenerar Token
+                                                    </button>
+                                                </form>
+
+                                                <hr>
+
+                                                <form method="POST"
+                                                    action="{{ route('marketing.users.destroy', $user->id) }}"
+                                                    onsubmit="return confirm('¿Eliminar usuario? Esta acción no se puede deshacer.')">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="btn btn-outline-danger w-100">
+                                                        <i class="mdi mdi-delete me-1"></i> Eliminar Usuario
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                         </div>
-                    </div>
-                </div>
-            </div>
-        @endif
-
-        <div class="row">
-            <div class="col-md-8">
-                <!-- Link de Encuesta -->
-                <div class="link-box">
-                    <h3 style="color: white;"><i class="bi bi-link-45deg"></i> Link de Encuesta Única</h3>
-                    <p style="color: rgba(255,255,255,0.9);">Comparte este link con tus clientes para recibir feedback
-                    </p>
-
-                    <div class="link-display">
-                        {{ $user->survey_url }}
-                    </div>
-
-                    <div class="action-buttons">
-                        <button onclick="copyLink('{{ $user->survey_url }}')" class="btn-action btn-light">
-                            <i class="bi bi-clipboard"></i> Copiar Link
-                        </button>
-                        <a href="{{ route('marketing.users.preview', $user->id) }}" target="_blank"
-                            class="btn-action btn-light">
-                            <i class="bi bi-eye"></i> Vista Previa
-                        </a>
-                        <button onclick="shareWhatsApp('{{ $user->survey_url }}')" class="btn-action btn-success">
-                            <i class="bi bi-whatsapp"></i> Compartir WhatsApp
-                        </button>
-                        <button onclick="shareEmail('{{ $user->survey_url }}', '{{ $user->name }}')"
-                            class="btn-action btn-info">
-                            <i class="bi bi-envelope"></i> Enviar Email
-                        </button>
-                    </div>
-
-                    <div class="mt-3">
-                        <small style="color: rgba(255,255,255,0.7);">
-                            <i class="bi bi-shield-check"></i> Este link es único y permanente.
-                            Si necesitas regenerarlo, contacta al administrador.
-                        </small>
-                    </div>
-                </div>
-
-                <!-- Gráfico -->
-                @if ($stats['total_surveys'] > 0)
-                    <div class="card">
-                        <h3><i class="bi bi-bar-chart"></i> Distribución de Calificaciones</h3>
-                        <canvas id="ratingsChart"></canvas>
-                    </div>
-                @endif
-
-                <!-- Encuestas Recientes -->
-                <div class="card">
-                    <h3><i class="bi bi-clock-history"></i> Encuestas Recientes</h3>
-                    @if ($recentSurveys->count() > 0)
-                        <div class="table-responsive">
-                            <table class="table table-hover">
-                                <thead>
-                                    <tr>
-                                        <th>Fecha</th>
-                                        <th>Cliente</th>
-                                        <th>Experiencia</th>
-                                        <th>Atención</th>
-                                        <th>Comentario</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach ($recentSurveys as $survey)
-                                        <tr>
-                                            <td>{{ $survey->created_at->format('d/m/Y H:i') }}</td>
-                                            <td>{{ $survey->client_name ?? 'Anónimo' }}</td>
-                                            <td>
-                                                @if ($survey->experience_rating == 4)
-                                                    <span class="badge-rating badge-muy-feliz">😊 Muy Feliz</span>
-                                                @elseif($survey->experience_rating == 3)
-                                                    <span class="badge-rating badge-feliz">🙂 Feliz</span>
-                                                @elseif($survey->experience_rating == 2)
-                                                    <span class="badge-rating badge-insatisfecho">😐
-                                                        Insatisfecho</span>
-                                                @else
-                                                    <span class="badge-rating badge-muy-insatisfecho">😞 Muy
-                                                        Insatisfecho</span>
-                                                @endif
-                                            </td>
-                                            <td>
-                                                @if ($survey->service_quality_rating == 4)
-                                                    <span class="badge-rating badge-muy-feliz">😊</span>
-                                                @elseif($survey->service_quality_rating == 3)
-                                                    <span class="badge-rating badge-feliz">🙂</span>
-                                                @elseif($survey->service_quality_rating == 2)
-                                                    <span class="badge-rating badge-insatisfecho">😐</span>
-                                                @else
-                                                    <span class="badge-rating badge-muy-insatisfecho">😞</span>
-                                                @endif
-                                            </td>
-                                            <td>
-                                                @if ($survey->comments)
-                                                    <small>{{ Str::limit($survey->comments, 50) }}</small>
-                                                @else
-                                                    <small class="text-muted">Sin comentarios</small>
-                                                @endif
-                                            </td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                    @else
-                        <p class="text-muted text-center py-4">No hay encuestas aún</p>
-                    @endif
-                </div>
-            </div>
-
-            <div class="col-md-4">
-                <!-- Código QR -->
-                <div class="card">
-                    <h3><i class="bi bi-qr-code"></i> Código QR</h3>
-                    <div class="qr-container">
-                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data={{ urlencode($user->survey_url) }}"
-                            alt="QR Code">
-                        <div class="mt-3">
-                            <a href="https://api.qrserver.com/v1/create-qr-code/?size=1000x1000&data={{ urlencode($user->survey_url) }}"
-                                download="qr_{{ $user->id }}.png" class="btn btn-primary w-100">
-                                <i class="bi bi-download"></i> Descargar QR
-                            </a>
-                        </div>
-                        <small class="text-muted mt-2 d-block">
-                            Imprime este código para recibir encuestas presenciales
-                        </small>
-                    </div>
-                </div>
-
-                <!-- Acciones -->
-                <div class="card">
-                    <h3><i class="bi bi-tools"></i> Acciones</h3>
-                    <div class="d-grid gap-2">
-                        <a href="{{ route('marketing.users.edit', $user->id) }}" class="btn btn-warning">
-                            <i class="bi bi-pencil"></i> Editar Usuario
-                        </a>
-
-                        <form method="POST" action="{{ route('marketing.users.toggle-status', $user->id) }}">
-                            @csrf
-                            <button type="submit"
-                                class="btn {{ $user->is_active ? 'btn-danger' : 'btn-success' }} w-100">
-                                <i class="bi bi-power"></i> {{ $user->is_active ? 'Desactivar' : 'Activar' }}
-                            </button>
-                        </form>
-
-                        <form method="POST" action="{{ route('marketing.users.regenerate-token', $user->id) }}"
-                            onsubmit="return confirm('¿Regenerar token? El link anterior dejará de funcionar.')">
-                            @csrf
-                            <button type="submit" class="btn btn-dark w-100">
-                                <i class="bi bi-arrow-clockwise"></i> Regenerar Token
-                            </button>
-                        </form>
-
-                        <form method="POST" action="{{ route('marketing.users.destroy', $user->id) }}"
-                            onsubmit="return confirm('¿Eliminar usuario? Esta acción no se puede deshacer.')">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="btn btn-outline-danger w-100">
-                                <i class="bi bi-trash"></i> Eliminar Usuario
-                            </button>
-                        </form>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <style>
+        /* Gap utility for older browsers */
+        .gap-2>*+* {
+            margin-left: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .d-grid.gap-2>* {
+            margin-bottom: 0.5rem;
+        }
+
+        /* Badge pills */
+        .badge-pill {
+            border-radius: 50rem;
+        }
+
+        /* Image sizing */
+        .img-lg {
+            width: 80px;
+            height: 80px;
+        }
+
+        /* Gradient card improvements */
+        .card-body .opacity-75 {
+            opacity: 0.75;
+        }
+    </style>
+@endsection
+
+@push('scripts')
     <script>
+        // Auto-hide alerts
+        setTimeout(() => {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(alert => {
+                const bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            });
+        }, 5000);
+
         // Copiar link
-        function copyLink(url) {
-            navigator.clipboard.writeText(url).then(() => {
-                alert('¡Link copiado al portapapeles!');
+        function copyLink() {
+            const input = document.getElementById('surveyLink');
+            input.select();
+            navigator.clipboard.writeText(input.value).then(() => {
+                const button = event.target.closest('button');
+                const originalHTML = button.innerHTML;
+                button.innerHTML = '<i class="mdi mdi-check"></i> ¡Copiado!';
+
+                setTimeout(() => {
+                    button.innerHTML = originalHTML;
+                }, 2000);
+            }).catch(err => {
+                console.error('Error al copiar:', err);
+                alert('Error al copiar el link');
             });
         }
 
         // Compartir en WhatsApp
-        function shareWhatsApp(url) {
+        function shareWhatsApp() {
+            const url = document.getElementById('surveyLink').value;
             const text =
                 `Hola, por favor completa esta breve encuesta de satisfacción sobre tu experiencia en TRIMAX: ${url}`;
             window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
         }
 
         // Compartir por Email
-        function shareEmail(url, name) {
-            const subject = `Encuesta de Satisfacción - ${name}`;
+        function shareEmail() {
+            const url = document.getElementById('surveyLink').value;
+            const subject = `Encuesta de Satisfacción - {{ $user->name }}`;
             const body =
                 `Hola,\n\nNos gustaría conocer tu opinión sobre la atención recibida.\n\nPor favor completa esta breve encuesta:\n${url}\n\nGracias,\nEquipo TRIMAX`;
             window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
@@ -555,29 +599,51 @@
 
         // Gráfico de calificaciones
         @if ($stats['total_surveys'] > 0)
-            const ctx = document.getElementById('ratingsChart');
-            new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Muy Feliz 😊', 'Feliz 🙂', 'Insatisfecho 😐', 'Muy Insatisfecho 😞'],
-                    datasets: [{
-                        data: [{{ $stats['muy_feliz'] }}, {{ $stats['feliz'] }},
-                            {{ $stats['insatisfecho'] }}, {{ $stats['muy_insatisfecho'] }}
-                        ],
-                        backgroundColor: ['#4CAF50', '#2196F3', '#FF9800', '#F44336']
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: {
-                            position: 'bottom'
+            document.addEventListener('DOMContentLoaded', function() {
+                const ctx = document.getElementById('ratingsChart');
+                if (ctx) {
+                    new Chart(ctx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: ['Muy Feliz', 'Feliz', 'Insatisfecho', 'Muy Insatisfecho'],
+                            datasets: [{
+                                data: [{{ $stats['muy_feliz'] }}, {{ $stats['feliz'] }},
+                                    {{ $stats['insatisfecho'] }},
+                                    {{ $stats['muy_insatisfecho'] }}
+                                ],
+                                backgroundColor: ['#4CAF50', '#0dcaf0', '#ffc107', '#dc3545'],
+                                borderWidth: 0
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                    labels: {
+                                        padding: 15,
+                                        font: {
+                                            size: 12
+                                        }
+                                    }
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            let label = context.label || '';
+                                            let value = context.parsed || 0;
+                                            let total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                            let percentage = ((value / total) * 100).toFixed(1);
+                                            return label + ': ' + value + ' (' + percentage + '%)';
+                                        }
+                                    }
+                                }
+                            }
                         }
-                    }
+                    });
                 }
             });
         @endif
     </script>
-</body>
-
-</html>
+@endpush

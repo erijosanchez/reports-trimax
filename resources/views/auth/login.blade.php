@@ -15,7 +15,7 @@
         <!-- Left Panel - Branding -->
         <div class="brand-panel">
             <div class="logo-wrapper">
-                <img src="{{ asset('assets/img/LOGOTIPO TRIMAX 2025-01.png') }}" alt="Laboratorio Trimax Óptico">
+                <img src="{{ asset('assets/img/logoblanco.png') }}" alt="Laboratorio Trimax Óptico">
                 <h1 class="brand-title">Inteligencia Comercial</h1>
                 <p class="brand-subtitle">Laboratorio Óptico Trimax</p>
             </div>
