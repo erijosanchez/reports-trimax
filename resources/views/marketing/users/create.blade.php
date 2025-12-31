@@ -92,11 +92,11 @@
                                                         <option value="">Seleccionar tipo...</option>
                                                         <option value="consultor"
                                                             {{ old('role') == 'consultor' ? 'selected' : '' }}>
-                                                            <i class="mdi mdi-account-tie"></i> Consultor
+                                                            Consultor
                                                         </option>
                                                         <option value="sede"
                                                             {{ old('role') == 'sede' ? 'selected' : '' }}>
-                                                            <i class="mdi mdi-office-building"></i> Sede
+                                                            Sede
                                                         </option>
                                                     </select>
                                                 </div>
@@ -134,10 +134,10 @@
                                     </div>
                                 </div>
 
-                                <!-- Panel de Información -->
-                                <div class="col-lg-4 grid-margin stretch-card">
+                                <!-- Panel Lateral -->
+                                <div class="col-lg-4">
                                     <!-- Información del Sistema -->
-                                    <div class="card mb-3">
+                                    <div class="card mb-3 grid-margin stretch-card">
                                         <div class="card-body">
                                             <h4 class="card-title mb-3">
                                                 <i class="mdi mdi-information text-info me-2"></i>
@@ -189,11 +189,7 @@
                                     </div>
 
                                     <!-- Tipos de Usuario -->
-
-                                </div>
-
-                                <div class="col-lg-4 grid-margin stretch-card">
-                                    <div class="card">
+                                    <div class="card grid-margin stretch-card">
                                         <div class="card-body">
                                             <h4 class="card-title mb-3">
                                                 <i class="mdi mdi-help-circle text-primary me-2"></i>
@@ -206,7 +202,8 @@
                                                         style="font-size: 24px;"></i>
                                                     <div>
                                                         <h6 class="mb-1 text-primary">Consultor</h6>
-                                                        <small style="color: #525353;">Personal que atiende directamente a clientes. Puede tener
+                                                        <small class="text-muted">Personal que atiende directamente a
+                                                            clientes. Puede tener
                                                             sedes asignadas.</small>
                                                     </div>
                                                 </div>
@@ -218,9 +215,9 @@
                                                         style="font-size: 24px;"></i>
                                                     <div>
                                                         <h6 class="mb-1 text-info">Sede</h6>
-                                                        <small style="color: #525353;">Ubicación física donde se brinda atención. Requiere
-                                                            especificar
-                                                            la ubicación.</small>
+                                                        <small class="text-muted">Ubicación física donde se brinda
+                                                            atención. Requiere
+                                                            especificar la ubicación.</small>
                                                     </div>
                                                 </div>
                                             </div>
@@ -228,6 +225,7 @@
                                     </div>
                                 </div>
                             </div>
+
                         </div>
                     </div>
                 </div>
@@ -286,18 +284,25 @@
 
             // Function to toggle location field
             function toggleLocationField() {
+                console.log('Role selected:', roleSelect.value); // Debug
+
                 if (roleSelect.value === 'sede') {
                     locationField.style.display = 'block';
                     locationInput.required = true;
+                    console.log('Showing location field'); // Debug
                 } else {
                     locationField.style.display = 'none';
                     locationInput.required = false;
                     locationInput.value = '';
+                    console.log('Hiding location field'); // Debug
                 }
             }
 
             // Event listener for role change
-            roleSelect.addEventListener('change', toggleLocationField);
+            roleSelect.addEventListener('change', function() {
+                console.log('Change event triggered'); // Debug
+                toggleLocationField();
+            });
 
             // Check initial state (for old() values)
             toggleLocationField();
