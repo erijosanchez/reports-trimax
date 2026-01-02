@@ -44,6 +44,18 @@ class UserMarketingController extends Controller
             $query->where('is_active', $status);
         }
 
+        // ⭐ OBTENER CONTADORES TOTALES ANTES DE PAGINAR
+        $totalSedes = UsersMarketing::where('role', 'sede')->count();
+        $totalConsultores = UsersMarketing::where('role', 'consultor')->count();
+
+        // Para total de encuestas, necesitamos sumar desde la tabla de encuestas
+        // o si tienes una columna 'total_surveys' en users_marketing
+        $totalSurveys = UsersMarketing::whereIn('role', ['consultor', 'sede'])
+            ->withCount('surveys')
+            ->get()
+            ->sum('surveys_count');
+
+        // Paginar
         $users = $query->orderBy('created_at', 'desc')->paginate(20);
 
         // Calcular promedios para cada usuario
@@ -52,7 +64,15 @@ class UserMarketingController extends Controller
             $user->total_surveys = $user->surveys->count();
         });
 
-        return view('marketing.users.index', compact('users', 'search', 'role', 'status'));
+        return view('marketing.users.index', compact(
+            'users',
+            'search',
+            'role',
+            'status',
+            'totalSedes',
+            'totalConsultores',
+            'totalSurveys'
+        ));
     }
 
     /**

@@ -88,8 +88,7 @@
                                             <div class="d-flex align-items-center justify-content-between">
                                                 <div>
                                                     <p class="statistics-title">Consultores</p>
-                                                    <h3 class="rate-percentage">
-                                                        {{ $users->where('role', 'consultor')->count() }}</h3>
+                                                    <h3 class="rate-percentage">{{ $totalConsultores }}</h3>
                                                     <p class="text-info d-flex align-items-center">
                                                         <i class="mdi mdi-account-tie"></i>
                                                         <span class="ms-1">Activos</span>
@@ -109,8 +108,7 @@
                                             <div class="d-flex align-items-center justify-content-between">
                                                 <div>
                                                     <p class="statistics-title">Sedes</p>
-                                                    <h3 class="rate-percentage">{{ $users->where('role', 'sede')->count() }}
-                                                    </h3>
+                                                    <h3 class="rate-percentage">{{ $totalSedes }}</h3>
                                                     <p class="text-success d-flex align-items-center">
                                                         <i class="mdi mdi-office-building"></i>
                                                         <span class="ms-1">Ubicaciones</span>
@@ -130,7 +128,7 @@
                                             <div class="d-flex align-items-center justify-content-between">
                                                 <div>
                                                     <p class="statistics-title">Total Encuestas</p>
-                                                    <h3 class="rate-percentage">{{ $users->sum('total_surveys') }}</h3>
+                                                    <h3 class="rate-percentage">{{ $totalSurveys }}</h3>
                                                     <p class="text-warning d-flex align-items-center">
                                                         <i class="mdi mdi-file-document"></i>
                                                         <span class="ms-1">Completadas</span>
@@ -416,8 +414,16 @@
 
                                             <!-- Paginación -->
                                             @if ($users->hasPages())
-                                                <div class="d-flex justify-content-center mt-4">
-                                                    {{ $users->links() }}
+                                                <div class="d-flex justify-content-between align-items-center mt-4">
+                                                    <div>
+                                                        <small class="text-muted">
+                                                            Mostrando {{ $users->firstItem() }} - {{ $users->lastItem() }}
+                                                            de {{ $users->total() }} usuarios
+                                                        </small>
+                                                    </div>
+                                                    <div class="d-flex justify-content-end">
+                                                        {{ $users->onEachSide(1)->links('pagination::bootstrap-5') }}
+                                                    </div>
                                                 </div>
                                             @endif
                                         </div>
