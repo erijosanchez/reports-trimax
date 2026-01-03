@@ -19,12 +19,12 @@ class DashboardPolicy
 
     public function create(User $user): bool
     {
-        return $user->isAdmin();
+        return $user->isAdmin() || $user->isSuperAdmin();
     }
 
     public function update(User $user, Dashboard $dashboard): bool
     {
-        return $user->isAdmin();
+        return $user->isAdmin() || $user->isSuperAdmin();
     }
 
     public function delete(User $user, Dashboard $dashboard): bool
