@@ -51,6 +51,16 @@ class UsersMarketing extends Model
         )->wherePivot('is_active', true);
     }
 
+    public function consultores()
+    {
+        return $this->belongsToMany(
+            UsersMarketing::class,
+            'consultor_sede', // Nombre de la tabla pivot
+            'sede_id',         // Foreign key de la sede en la tabla pivot
+            'consultor_id'     // Foreign key del consultor en la tabla pivot
+        )->wherePivot('consultor_id', '!=', null);
+    }
+
     public function getSurveyUrlAttribute()
     {
         return url("/encuesta/{$this->unique_token}");

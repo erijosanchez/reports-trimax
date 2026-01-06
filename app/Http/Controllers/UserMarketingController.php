@@ -48,8 +48,7 @@ class UserMarketingController extends Controller
         $totalSedes = UsersMarketing::where('role', 'sede')->count();
         $totalConsultores = UsersMarketing::where('role', 'consultor')->count();
 
-        // Para total de encuestas, necesitamos sumar desde la tabla de encuestas
-        // o si tienes una columna 'total_surveys' en users_marketing
+        // Para total de encuestas
         $totalSurveys = UsersMarketing::whereIn('role', ['consultor', 'sede'])
             ->withCount('surveys')
             ->get()
@@ -58,10 +57,20 @@ class UserMarketingController extends Controller
         // Paginar
         $users = $query->orderBy('created_at', 'desc')->paginate(20);
 
-        // Calcular promedios para cada usuario
+        // Calcular promedios para cada usuario y cargar relaciones
         $users->each(function ($user) {
             $user->average_rating = $user->surveys->avg('experience_rating') ?? 0;
             $user->total_surveys = $user->surveys->count();
+
+            // Cargar sedes asignadas para consultores
+            if ($user->role === 'consultor') {
+                $user->load('sedes');
+            }
+
+            // Cargar consultores a cargo para sedes
+            if ($user->role === 'sede') {
+                $user->load('consultores');
+            }
         });
 
         return view('marketing.users.index', compact(

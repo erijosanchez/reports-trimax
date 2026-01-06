@@ -221,34 +221,35 @@
                                             </div>
 
                                             <div class="table-responsive">
-                                                <table class="table table-hover">
+                                                <table class="table table-hover table-modern">
                                                     <thead>
                                                         <tr>
-                                                            <th>ID</th>
-                                                            <th>Usuario</th>
-                                                            <th>Tipo</th>
-                                                            <th>Estado</th>
-                                                            <th>Estadísticas</th>
-                                                            <th style="width: 300px;">Link de Encuesta</th>
-                                                            <th style="width: 200px;">Acciones</th>
+                                                            <th style="min-width: 80px;">ID</th>
+                                                            <th style="min-width: 280px;">Usuario</th>
+                                                            <th style="min-width: 180px;">Tipo</th>
+                                                            <th style="min-width: 250px;">Asignación</th>
+                                                            <th style="min-width: 130px;">Estado</th>
+                                                            <th style="min-width: 180px;">Estadísticas</th>
+                                                            <th style="min-width: 400px;">Link de Encuesta</th>
+                                                            <th style="min-width: 300px;">Acciones</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody>
                                                         @forelse($users as $user)
-                                                            <tr>
+                                                            <tr class="align-middle">
                                                                 <td>
-                                                                    <strong
-                                                                        class="text-primary">#{{ $user->id }}</strong>
+                                                                    <strong class="text-primary">#{{ $user->id }}</strong>
                                                                 </td>
                                                                 <td>
                                                                     <div class="d-flex align-items-center">
-                                                                        <img class="img-xs rounded-circle me-2"
+                                                                        <img class="img-xs rounded-circle me-3"
                                                                             src="https://ui-avatars.com/api/?name={{ urlencode($user->name) }}&background=6366f1&color=fff"
-                                                                            alt="profile">
-                                                                        <div>
-                                                                            <strong>{{ $user->name }}</strong><br>
+                                                                            alt="profile"
+                                                                            style="min-width: 45px;">
+                                                                        <div style="min-width: 200px;">
+                                                                            <div class="fw-bold mb-1" style="font-size: 0.95rem;">{{ $user->name }}</div>
                                                                             <small class="text-muted">
-                                                                                <i class="mdi mdi-email"></i>
+                                                                                <i class="mdi mdi-email me-1"></i>
                                                                                 {{ $user->email }}
                                                                             </small>
                                                                         </div>
@@ -256,53 +257,101 @@
                                                                 </td>
                                                                 <td>
                                                                     @if ($user->role === 'consultor')
-                                                                        <span class="badge badge-primary">
-                                                                            <i class="mdi mdi-account-tie"></i> Consultor
+                                                                        <span class="badge badge-primary px-3 py-2">
+                                                                            <i class="mdi mdi-account-tie me-1"></i> Consultor
                                                                         </span>
                                                                     @else
-                                                                        <span class="badge badge-info">
-                                                                            <i class="mdi mdi-office-building"></i> Sede
-                                                                        </span>
-                                                                        @if ($user->location)
-                                                                            <br><small
-                                                                                class="text-muted">{{ $user->location }}</small>
+                                                                        <div>
+                                                                            <span class="badge badge-info px-3 py-2 mb-1">
+                                                                                <i class="mdi mdi-office-building me-1"></i> Sede
+                                                                            </span>
+                                                                            @if ($user->location)
+                                                                                <br><small class="text-muted mt-1">{{ $user->location }}</small>
+                                                                            @endif
+                                                                        </div>
+                                                                    @endif
+                                                                </td>
+                                                                <td>
+                                                                    @if ($user->role === 'consultor')
+                                                                        <div class="d-flex align-items-center mb-2">
+                                                                            <i class="mdi mdi-office-building text-success me-2" style="font-size: 1.2rem;"></i>
+                                                                            <strong class="text-success" style="font-size: 1.1rem;">{{ $user->sedes->count() }}</strong>
+                                                                            <span class="ms-2 text-muted">sedes asignadas</span>
+                                                                        </div>
+                                                                        @if ($user->sedes->count() > 0)
+                                                                            <div class="mt-2" style="line-height: 1.8;">
+                                                                                @foreach($user->sedes->take(3) as $sede)
+                                                                                    <span class="badge badge-light me-1 mb-1" style="padding: 0.4rem 0.8rem;">
+                                                                                        <i class="mdi mdi-map-marker me-1"></i>{{ $sede->name }}
+                                                                                    </span>
+                                                                                @endforeach
+                                                                                @if ($user->sedes->count() > 3)
+                                                                                    <span class="badge badge-secondary" data-bs-toggle="tooltip" 
+                                                                                        title="{{ $user->sedes->pluck('name')->slice(3)->join(', ') }}"
+                                                                                        style="padding: 0.4rem 0.8rem;">
+                                                                                        +{{ $user->sedes->count() - 3 }} más
+                                                                                    </span>
+                                                                                @endif
+                                                                            </div>
+                                                                        @endif
+                                                                    @elseif ($user->role === 'sede')
+                                                                        @if ($user->consultores->count() > 0)
+                                                                            <div class="d-flex align-items-center mb-2">
+                                                                                <i class="mdi mdi-account-tie text-info me-2" style="font-size: 1.2rem;"></i>
+                                                                                <div>
+                                                                                    <div class="fw-bold" style="font-size: 0.95rem;">
+                                                                                        {{ $user->consultores->first()->name }}
+                                                                                    </div>
+                                                                                    <small class="text-muted">Consultor a cargo</small>
+                                                                                </div>
+                                                                            </div>
+                                                                            @if ($user->consultores->count() > 1)
+                                                                                <small class="badge badge-info mt-1" style="padding: 0.35rem 0.7rem;">
+                                                                                    +{{ $user->consultores->count() - 1 }} consultor(es) más
+                                                                                </small>
+                                                                            @endif
+                                                                        @else
+                                                                            <div class="d-flex align-items-center">
+                                                                                <span class="badge badge-warning" style="padding: 0.5rem 1rem; font-size: 0.85rem;">
+                                                                                    <i class="mdi mdi-alert-circle me-1"></i> Sin consultor asignado
+                                                                                </span>
+                                                                            </div>
                                                                         @endif
                                                                     @endif
                                                                 </td>
                                                                 <td>
                                                                     @if ($user->is_active)
-                                                                        <span class="badge badge-success">
-                                                                            <i class="mdi mdi-check-circle"></i> Activo
+                                                                        <span class="badge badge-success px-3 py-2">
+                                                                            <i class="mdi mdi-check-circle me-1"></i> Activo
                                                                         </span>
                                                                     @else
-                                                                        <span class="badge badge-danger">
-                                                                            <i class="mdi mdi-close-circle"></i> Inactivo
+                                                                        <span class="badge badge-danger px-3 py-2">
+                                                                            <i class="mdi mdi-close-circle me-1"></i> Inactivo
                                                                         </span>
                                                                     @endif
                                                                 </td>
                                                                 <td>
-                                                                    <div class="mb-1">
-                                                                        <i class="mdi mdi-file-document text-primary"></i>
+                                                                    <div class="mb-2">
+                                                                        <i class="mdi mdi-file-document text-primary me-1"></i>
                                                                         <strong>{{ $user->total_surveys }}</strong>
-                                                                        encuestas
+                                                                        <small class="text-muted">encuestas</small>
                                                                     </div>
                                                                     @if ($user->total_surveys > 0)
                                                                         <div>
-                                                                            <i class="mdi mdi-star text-warning"></i>
+                                                                            <i class="mdi mdi-star text-warning me-1"></i>
                                                                             <strong>{{ number_format($user->average_rating, 2) }}</strong>
-                                                                            promedio
+                                                                            <small class="text-muted">promedio</small>
                                                                         </div>
                                                                     @endif
                                                                 </td>
                                                                 <td>
-                                                                    <div
-                                                                        class="input-group input-group-sm border rounded overflow-hidden">
+                                                                    <div class="input-group input-group-sm">
                                                                         <input type="text"
-                                                                            class="form-control border-0"
-                                                                            value="{{ Str::limit($user->survey_url, 35) }}"
+                                                                            class="form-control"
+                                                                            value="{{ Str::limit($user->survey_url, 30) }}"
                                                                             readonly
-                                                                            style="background: transparent; font-size: 0.75rem;">
-                                                                        <button class="btn btn-primary text-white"
+                                                                            style="font-size: 0.8rem;">
+                                                                        <button class="btn btn-primary text-white px-3"
                                                                             type="button"
                                                                             onclick="copyToClipboard('{{ $user->survey_url }}', this)">
                                                                             <i class="mdi mdi-content-copy"></i>
@@ -321,6 +370,13 @@
                                                                             data-bs-toggle="tooltip" title="Editar">
                                                                             <i class="mdi mdi-pencil"></i>
                                                                         </a>
+                                                                        @if ($user->role === 'consultor')
+                                                                            <a href="{{ route('marketing.users.assign-sedes', $user->id) }}"
+                                                                                class="btn btn-sm btn-primary"
+                                                                                data-bs-toggle="tooltip" title="Asignar Sedes">
+                                                                                <i class="mdi mdi-store"></i>
+                                                                            </a>
+                                                                        @endif
                                                                         <button
                                                                             onclick="showQR('{{ $user->id }}', '{{ $user->name }}')"
                                                                             class="btn btn-sm btn-secondary"
@@ -353,8 +409,7 @@
                                                                                         @csrf
                                                                                         <button type="submit"
                                                                                             class="dropdown-item">
-                                                                                            <i
-                                                                                                class="mdi mdi-refresh me-2"></i>
+                                                                                            <i class="mdi mdi-refresh me-2"></i>
                                                                                             Regenerar Link
                                                                                         </button>
                                                                                     </form>
@@ -363,8 +418,7 @@
                                                                                     <a href="{{ route('marketing.users.preview', $user->id) }}"
                                                                                         class="dropdown-item"
                                                                                         target="_blank">
-                                                                                        <i
-                                                                                            class="mdi mdi-eye-outline me-2"></i>
+                                                                                        <i class="mdi mdi-eye-outline me-2"></i>
                                                                                         Vista Previa
                                                                                     </a>
                                                                                 </li>
@@ -380,8 +434,7 @@
                                                                                         @method('DELETE')
                                                                                         <button type="submit"
                                                                                             class="dropdown-item text-danger">
-                                                                                            <i
-                                                                                                class="mdi mdi-delete me-2"></i>
+                                                                                            <i class="mdi mdi-delete me-2"></i>
                                                                                             Eliminar
                                                                                         </button>
                                                                                     </form>
@@ -393,7 +446,7 @@
                                                             </tr>
                                                         @empty
                                                             <tr>
-                                                                <td colspan="7" class="text-center py-5">
+                                                                <td colspan="8" class="text-center py-5">
                                                                     <i
                                                                         class="mdi mdi-inbox mdi-48px text-muted mb-3 d-block"></i>
                                                                     <h5 class="text-muted">No se encontraron usuarios</h5>
@@ -469,27 +522,74 @@
     </div>
 
     <style>
-        /* Gap utility for older browsers */
-        .gap-1>*+* {
-            margin-left: 0.25rem;
+        /* Mejoras de espaciado y diseño de tabla */
+        .table-modern {
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        .table-modern thead th {
+            background-color: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.5px;
+            padding: 1rem 0.75rem;
+            white-space: nowrap;
+        }
+
+        .table-modern tbody tr {
+            transition: all 0.2s ease;
+        }
+
+        .table-modern tbody tr:hover {
+            background-color: #f8f9fa;
+            transform: scale(1.01);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .table-modern tbody td {
+            padding: 1.25rem 0.75rem;
+            vertical-align: middle;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        /* Mejorar badges */
+        .badge {
+            font-size: 0.8rem;
+            font-weight: 500;
+            padding: 0.4rem 0.8rem;
+        }
+
+        /* Gap utility mejorado */
+        .gap-1 {
+            gap: 0.35rem;
         }
 
         /* Dropdown menu improvements */
         .dropdown-menu {
             box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+            border: none;
         }
 
         .dropdown-item {
-            padding: 0.5rem 1rem;
+            padding: 0.6rem 1.25rem;
+            font-size: 0.875rem;
         }
 
         .dropdown-item:hover {
             background-color: rgba(99, 102, 241, 0.1);
         }
 
-        /* Input group styling */
+        /* Input group styling mejorado */
         .input-group-sm .form-control {
-            font-size: 0.75rem;
+            font-size: 0.8rem;
+            padding: 0.5rem 0.75rem;
+        }
+
+        .input-group-sm .btn {
+            padding: 0.5rem 0.75rem;
         }
 
         /* Tooltips improvement */
@@ -505,6 +605,23 @@
 
         .bg-light {
             background-color: #f8f9fa !important;
+        }
+
+        /* Mejorar imagen de avatar */
+        .img-xs {
+            width: 40px;
+            height: 40px;
+        }
+
+        /* Botones más compactos y legibles */
+        .btn-sm {
+            padding: 0.4rem 0.7rem;
+            font-size: 0.875rem;
+        }
+
+        /* Espaciado de iconos */
+        .mdi {
+            vertical-align: middle;
         }
     </style>
 @endsection
