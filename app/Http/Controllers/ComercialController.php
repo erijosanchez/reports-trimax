@@ -13,6 +13,7 @@ use App\Notifications\AcuerdoAprobado;
 use App\Notifications\AcuerdoDeshabilitado;
 use App\Notifications\AcuerdoExtendido;
 use App\Notifications\AcuerdoRehabilitado;
+use App\Notifications\AcuerdoVigente;
 
 
 class ComercialController extends Controller
@@ -210,6 +211,9 @@ class ComercialController extends Controller
                 'accion' => 'required|in:Aprobado,Rechazado'
             ]);
 
+            // Guardar estado anterior
+            $estadoAnterior = $acuerdo->estado;
+
             $acuerdo->update([
                 'validado' => $validated['accion'],
                 'validado_por' => Auth::id(),
@@ -218,6 +222,11 @@ class ComercialController extends Controller
 
             // Actualizar estado
             $acuerdo->actualizarEstado();
+
+            // Si pasa a Vigente, notificar a Juancho
+            if ($estadoAnterior !== 'Vigente' && $acuerdo->estado === 'Vigente') {
+                $this->enviarNotificacionVigente($acuerdo);
+            }
 
             // Enviar notificación si está completamente aprobado
             if ($acuerdo->validado === 'Aprobado' && $acuerdo->aprobado === 'Aprobado') {
@@ -259,6 +268,9 @@ class ComercialController extends Controller
                 'accion' => 'required|in:Aprobado,Rechazado'
             ]);
 
+            // Guardar estado anterior
+            $estadoAnterior = $acuerdo->estado;
+
             $acuerdo->update([
                 'aprobado' => $validated['accion'],
                 'aprobado_por' => Auth::id(),
@@ -267,6 +279,11 @@ class ComercialController extends Controller
 
             // Actualizar estado
             $acuerdo->actualizarEstado();
+
+            // Si pasa a Vigente, notificar a Juancho
+            if ($estadoAnterior !== 'Vigente' && $acuerdo->estado === 'Vigente') {
+                $this->enviarNotificacionVigente($acuerdo);
+            }
 
             // Enviar notificación si está completamente aprobado
             if ($acuerdo->validado === 'Aprobado' && $acuerdo->aprobado === 'Aprobado') {
@@ -597,6 +614,26 @@ class ComercialController extends Controller
                 'success' => false,
                 'message' => 'Error: ' . $e->getMessage()
             ], 500);
+        }
+    }
+
+    /**
+     * Enviar notificación cuando acuerdo pasa a Vigente
+     */
+    private function enviarNotificacionVigente($acuerdo)
+    {
+        try {
+            // Obtener usuario de auditoría
+            $auditor = User::where('email', 'auditor.junior@trimaxperu.com')->first();
+
+            if ($auditor) {
+                $auditor->notify(new AcuerdoVigente($acuerdo));
+                \Log::info('✅ Notificación de acuerdo vigente enviada a auditor.junior@trimaxperu.com');
+            } else {
+                \Log::warning('⚠️ Usuario auditor.junior@trimaxperu.com no encontrado');
+            }
+        } catch (\Exception $e) {
+            \Log::error('Error al enviar notificación de acuerdo vigente: ' . $e->getMessage());
         }
     }
 
