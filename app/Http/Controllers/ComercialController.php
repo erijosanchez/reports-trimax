@@ -897,6 +897,185 @@ class ComercialController extends Controller
     }
 
     /**
+     * Editar acuerdo
+     */
+    public function editarAcuerdo(Request $request, $id)
+    {
+        try {
+            $acuerdo = AcuerdoComercial::findOrFail($id);
+
+            // Verificar permisos: solo el creador o usuarios autorizados pueden editar
+            $emailsAutorizados = ['smonopoli@trimaxperu.com', 'planeamiento.comercial@trimaxperu.com'];
+            if (Auth::id() !== $acuerdo->user_id && !in_array(Auth::user()->email, $emailsAutorizados)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No tienes permisos para editar este acuerdo'
+                ], 403);
+            }
+
+            $validated = $request->validate([
+                'sede' => 'required|string',
+                'ruc' => 'required|string',
+                'razon_social' => 'required|string',
+                'consultor' => 'required|string',
+                'ciudad' => 'required|string',
+                'acuerdo_comercial' => 'required|string',
+                'tipo_promocion' => 'required|string',
+                'marca' => 'required|string',
+                'ar' => 'nullable|string',
+                'disenos' => 'nullable|string',
+                'material' => 'nullable|string',
+                'comentarios' => 'nullable|string',
+                'fecha_inicio' => 'required|date',
+                'fecha_fin' => 'required|date|after_or_equal:fecha_inicio',
+                'archivos.*' => 'nullable|file|max:10240'
+            ]);
+
+            // Subir nuevos archivos si existen
+            $archivosActuales = $acuerdo->archivos_adjuntos ?? [];
+            if ($request->hasFile('archivos')) {
+                foreach ($request->file('archivos') as $archivo) {
+                    $path = $archivo->store('acuerdos/' . $acuerdo->numero_acuerdo, 'public');
+                    $archivosActuales[] = [
+                        'nombre' => $archivo->getClientOriginalName(),
+                        'path' => $path,
+                        'size' => $archivo->getSize()
+                    ];
+                }
+            }
+
+            // Actualizar acuerdo y resetear validaciones
+            $acuerdo->update([
+                'sede' => $validated['sede'],
+                'ruc' => $validated['ruc'],
+                'razon_social' => $validated['razon_social'],
+                'consultor' => $validated['consultor'],
+                'ciudad' => $validated['ciudad'],
+                'acuerdo_comercial' => $validated['acuerdo_comercial'],
+                'tipo_promocion' => $validated['tipo_promocion'],
+                'marca' => $validated['marca'],
+                'ar' => $validated['ar'] ?? null,
+                'disenos' => $validated['disenos'] ?? null,
+                'material' => $validated['material'] ?? null,
+                'comentarios' => $validated['comentarios'] ?? null,
+                'fecha_inicio' => $validated['fecha_inicio'],
+                'fecha_fin' => $validated['fecha_fin'],
+                'archivos_adjuntos' => $archivosActuales,
+
+                // 🔥 RESETEAR VALIDACIONES
+                'estado' => 'Solicitado',
+                'validado' => 'Pendiente',
+                'aprobado' => 'Pendiente',
+                'validado_por' => null,
+                'aprobado_por' => null,
+                'validado_at' => null,
+                'aprobado_at' => null
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Acuerdo actualizado exitosamente. Las validaciones se han reseteado.',
+                'acuerdo' => $acuerdo->load(['creador', 'validador', 'aprobador'])
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error al editar acuerdo: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al editar acuerdo: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Cambiar estado de validación (para corregir errores)
+     */
+    public function cambiarValidacion(Request $request, $id)
+    {
+        try {
+            $acuerdo = AcuerdoComercial::findOrFail($id);
+
+            // Solo planeamiento puede cambiar validación
+            if (Auth::user()->email !== 'planeamiento.comercial@trimaxperu.com') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No tienes permisos para cambiar la validación'
+                ], 403);
+            }
+
+            $validated = $request->validate([
+                'nuevo_estado' => 'required|in:Aprobado,Rechazado,Pendiente'
+            ]);
+
+            $acuerdo->update([
+                'validado' => $validated['nuevo_estado'],
+                'validado_por' => Auth::id(),
+                'validado_at' => now()
+            ]);
+
+            // Actualizar estado general
+            $acuerdo->actualizarEstado();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Validación actualizada correctamente',
+                'acuerdo' => $acuerdo->load(['creador', 'validador', 'aprobador'])
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error al cambiar validación: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Cambiar estado de aprobación (para corregir errores)
+     */
+    public function cambiarAprobacion(Request $request, $id)
+    {
+        try {
+            $acuerdo = AcuerdoComercial::findOrFail($id);
+
+            // Solo gerencia puede cambiar aprobación
+            if (Auth::user()->email !== 'smonopoli@trimaxperu.com') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No tienes permisos para cambiar la aprobación'
+                ], 403);
+            }
+
+            $validated = $request->validate([
+                'nuevo_estado' => 'required|in:Aprobado,Rechazado,Pendiente'
+            ]);
+
+            $acuerdo->update([
+                'aprobado' => $validated['nuevo_estado'],
+                'aprobado_por' => Auth::id(),
+                'aprobado_at' => now()
+            ]);
+
+            // Actualizar estado general
+            $acuerdo->actualizarEstado();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Aprobación actualizada correctamente',
+                'acuerdo' => $acuerdo->load(['creador', 'validador', 'aprobador'])
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error al cambiar aprobación: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Calcular estadísticas de las órdenes
      */
     private function calcularEstadisticas($ordenes)

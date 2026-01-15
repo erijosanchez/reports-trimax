@@ -912,6 +912,8 @@
 
                     const esDeshabilitado = acuerdo.estado === 'Deshabilitado';
                     const esVigente = acuerdo.estado === 'Vigente';
+                    const esCreador = acuerdo.creador && acuerdo.creador.id == {{ Auth::id() }};
+                    const puedeEditar = esCreador || canManageAcuerdos;
 
                     html += `
                     <tr ${esDeshabilitado ? 'class="table-secondary"' : ''}>
@@ -934,28 +936,28 @@
                         <td>
                             ${badgeValidado}
                             ${canValidate && acuerdo.validado === 'Pendiente' && !esDeshabilitado ? `
-                                                    <div class="btn-group mt-1" role="group">
-                                                        <button class="btn btn-sm btn-success" onclick="validarAcuerdo(${acuerdo.id}, 'Aprobado')">
-                                                            <i class="mdi mdi-check"></i>
-                                                        </button>
-                                                        <button class="btn btn-sm btn-danger" onclick="validarAcuerdo(${acuerdo.id}, 'Rechazado')">
-                                                            <i class="mdi mdi-close"></i>
-                                                        </button>
-                                                    </div>
-                                                ` : ''}
+                                                            <div class="btn-group mt-1" role="group">
+                                                                <button class="btn btn-sm btn-success" onclick="validarAcuerdo(${acuerdo.id}, 'Aprobado')">
+                                                                    <i class="mdi mdi-check"></i>
+                                                                </button>
+                                                                <button class="btn btn-sm btn-danger" onclick="validarAcuerdo(${acuerdo.id}, 'Rechazado')">
+                                                                    <i class="mdi mdi-close"></i>
+                                                                </button>
+                                                            </div>
+                                                        ` : ''}
                         </td>
                         <td>
                             ${badgeAprobado}
                             ${canApprove && acuerdo.aprobado === 'Pendiente' && !esDeshabilitado ? `
-                                                    <div class="btn-group mt-1" role="group">
-                                                        <button class="btn btn-sm btn-success" onclick="aprobarAcuerdo(${acuerdo.id}, 'Aprobado')">
-                                                            <i class="mdi mdi-check"></i>
-                                                        </button>
-                                                        <button class="btn btn-sm btn-danger" onclick="aprobarAcuerdo(${acuerdo.id}, 'Rechazado')">
-                                                            <i class="mdi mdi-close"></i>
-                                                        </button>
-                                                    </div>
-                                                ` : ''}
+                                                            <div class="btn-group mt-1" role="group">
+                                                                <button class="btn btn-sm btn-success" onclick="aprobarAcuerdo(${acuerdo.id}, 'Aprobado')">
+                                                                    <i class="mdi mdi-check"></i>
+                                                                </button>
+                                                                <button class="btn btn-sm btn-danger" onclick="aprobarAcuerdo(${acuerdo.id}, 'Rechazado')">
+                                                                    <i class="mdi mdi-close"></i>
+                                                                </button>
+                                                            </div>
+                                                        ` : ''}
                         </td>
                         <td>${acuerdo.creador ? acuerdo.creador.name : '-'}</td>
                         <td class="text-center">
@@ -963,21 +965,26 @@
                                 <button class="btn btn-sm btn-info" onclick="verDetalles(${acuerdo.id})" title="Ver detalles">
                                     <i class="mdi mdi-eye"></i>
                                 </button>
+                                ${puedeEditar && !esDeshabilitado ? `
+                                        <button class="btn btn-sm btn-warning" onclick="editarAcuerdo(${acuerdo.id})" title="Editar">
+                                            <i class="mdi mdi-pencil"></i>
+                                        </button>
+                                    ` : ''}
                                 ${canManageAcuerdos && !esDeshabilitado ? `
-                                                    <button class="btn btn-sm btn-success" onclick="abrirModalExtender(${acuerdo.id})" title="Extender vigencia">
-                                                        <i class="mdi mdi-calendar-clock"></i>
-                                                    </button>
-                                                ` : ''}
+                                        <button class="btn btn-sm btn-success" onclick="abrirModalExtender(${acuerdo.id})" title="Extender vigencia">
+                                            <i class="mdi mdi-calendar-clock"></i>
+                                        </button>
+                                    ` : ''}
                                 ${canManageAcuerdos && !esDeshabilitado ? `
-                                                    <button class="btn btn-sm btn-danger" onclick="abrirModalDeshabilitar(${acuerdo.id})" title="Deshabilitar">
-                                                        <i class="mdi mdi-cancel"></i>
-                                                    </button>
-                                                ` : ''}
+                                        <button class="btn btn-sm btn-danger" onclick="abrirModalDeshabilitar(${acuerdo.id})" title="Deshabilitar">
+                                            <i class="mdi mdi-cancel"></i>
+                                        </button>
+                                    ` : ''}
                                 ${canManageAcuerdos && esDeshabilitado ? `
-                                                    <button class="btn btn-sm btn-success" onclick="abrirModalRehabilitar(${acuerdo.id})" title="Rehabilitar">
-                                                        <i class="mdi mdi-check-circle"></i>
-                                                    </button>
-                                                ` : ''}
+                                        <button class="btn btn-sm btn-success" onclick="abrirModalRehabilitar(${acuerdo.id})" title="Rehabilitar">
+                                            <i class="mdi mdi-check-circle"></i>
+                                        </button>
+                                    ` : ''}
                             </div>
                         </td>
                     </tr>
@@ -1462,13 +1469,13 @@
                 </div>
             </div>
             ${historialHTML ? `
-                            <div class="row mt-3">
-                                <div class="col-md-12">
-                                    <h6 class="text-primary"><i class="mdi mdi-history"></i> Historial</h6>
-                                    ${historialHTML}
-                                </div>
-                            </div>
-                            ` : ''}
+                                    <div class="row mt-3">
+                                        <div class="col-md-12">
+                                            <h6 class="text-primary"><i class="mdi mdi-history"></i> Historial</h6>
+                                            ${historialHTML}
+                                        </div>
+                                    </div>
+                                    ` : ''}
             <div class="row mt-3">
                 <div class="col-md-12">
                     <h6 class="text-primary"><i class="mdi mdi-comment-text"></i> Comentarios</h6>
