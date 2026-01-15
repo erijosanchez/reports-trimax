@@ -380,23 +380,23 @@ class ComercialController extends Controller
             ini_set('memory_limit', '512M');
             ini_set('max_execution_time', '60');
 
-            $cacheKey = 'google_sheets_ultimas_100';
+            $cacheKey = 'google_sheets_ultimas_1000';
 
             $ordenes = \Cache::store('file')->remember($cacheKey, 300, function () {
                 $rawData = $this->googleSheets->getSheetData('Historico');
                 $todasOrdenes = $this->googleSheets->parseSheetData($rawData);
 
-                // Ordenar por fecha descendente y tomar solo 100
+                // Ordenar por fecha descendente y tomar solo 1000
                 usort($todasOrdenes, function ($a, $b) {
                     $fechaA = $this->convertirFechaParaComparar($a['fecha_orden'] ?? '');
                     $fechaB = $this->convertirFechaParaComparar($b['fecha_orden'] ?? '');
                     return $fechaB <=> $fechaA; // Descendente (más recientes primero)
                 });
 
-                return array_slice($todasOrdenes, 0, 100);
+                return array_slice($todasOrdenes, 0, 1000);
             });
 
-            // Aplicar filtros solo a las 100
+            // Aplicar filtros solo a las 1000
             if ($request->filled('sede')) {
                 $ordenes = array_filter($ordenes, function ($orden) use ($request) {
                     return ($orden['descripcion_sede'] ?? '') === $request->sede;
@@ -432,7 +432,7 @@ class ComercialController extends Controller
                 'stats' => $stats,
                 'total' => count($ordenes),
                 'es_reciente' => true,
-                'mensaje' => 'Mostrando las 100 órdenes más recientes'
+                'mensaje' => 'Mostrando las 1000 órdenes más recientes'
             ]);
         } catch (\Exception $e) {
             \Log::error('❌ Error en obtenerOrdenesRecientes: ' . $e->getMessage());

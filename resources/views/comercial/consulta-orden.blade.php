@@ -117,7 +117,7 @@
                                         <input type="radio" class="btn-check" name="vistaMode" id="vistaReciente"
                                             autocomplete="off" checked>
                                         <label class="btn btn-outline-primary" for="vistaReciente">
-                                            <i class="mdi mdi-clock-fast"></i> Últimas 100 Órdenes (Carga Rápida)
+                                            <i class="mdi mdi-clock-fast"></i> Últimas 1000 Órdenes (Carga Rápida)
                                         </label>
 
                                         <input type="radio" class="btn-check" name="vistaMode" id="vistaHistorico"
@@ -127,7 +127,7 @@
                                         </label>
                                     </div>
                                     <small class="text-muted d-block mt-2" id="mensajeVista">
-                                        ⚡ Mostrando las 100 órdenes más recientes para carga rápida
+                                        ⚡ Mostrando las 1000 órdenes más recientes para carga rápida
                                     </small>
                                 </div>
                             </div>
@@ -179,6 +179,7 @@
                                                         <option value="FACTURADO">Facturado y Entregado</option>
                                                         <option value="EN TRANSITO">En Tránsito</option>
                                                         <option value="EN SEDE">En Sede</option>
+                                                        <option value="SOLICITADO">Solicitado</option>
                                                         <option value="OTROS">Otros Estados</option>
                                                     </select>
                                                 </div>
@@ -402,7 +403,7 @@
         let ordenesData = [];
         let ordenesFiltered = [];
         let currentPage = 1;
-        const perPage = 20;
+        const perPage = 100;
         let modoHistorico = false;
 
         $(document).ready(function() {
@@ -419,10 +420,10 @@
 
                 if (modoHistorico) {
                     $('#mensajeVista').html(
-                        '🔍 <strong>Modo histórico activado</strong> - Buscando en 88,000 registros (puede tardar)'
+                        '🔍 <strong>Modo histórico activado</strong> - Buscando todos los registros registros (puede tardar)'
                     );
                 } else {
-                    $('#mensajeVista').html('⚡ Mostrando las 100 órdenes más recientes para carga rápida');
+                    $('#mensajeVista').html('⚡ Mostrando las 1000 órdenes más recientes para carga rápida');
                 }
 
                 $('#filtroSede').val('');
