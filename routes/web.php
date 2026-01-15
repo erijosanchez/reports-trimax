@@ -128,9 +128,9 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
         Route::post('/acuerdos/{id}/extender', [ComercialController::class, 'extenderAcuerdo'])->name('acuerdos.extender');
         Route::get('/acuerdos/{id}/archivo/{index}', [ComercialController::class, 'descargarArchivo'])->name('acuerdos.descargar');
         Route::post('/acuerdos/{id}/rehabilitar', [ComercialController::class, 'rehabilitarAcuerdo'])->name('acuerdos.rehabilitar');
-        Route::put('/comercial/acuerdos/{id}/editar', [ComercialController::class, 'editarAcuerdo'])->name('acuerdos.editar');
-        Route::post('/comercial/acuerdos/{id}/cambiar-validacion', [ComercialController::class, 'cambiarValidacion'])->name('acuerdos.cambiar-validacion');
-        Route::post('/comercial/acuerdos/{id}/cambiar-aprobacion', [ComercialController::class, 'cambiarAprobacion'])->name('acuerdos.cambiar-aprobacion');
+        Route::put('/acuerdos/{id}/editar', [ComercialController::class, 'editarAcuerdo'])->name('acuerdos.editar');
+        Route::post('/acuerdos/{id}/cambiar-validacion', [ComercialController::class, 'cambiarValidacion'])->name('acuerdos.cambiar-validacion');
+        Route::post('/acuerdos/{id}/cambiar-aprobacion', [ComercialController::class, 'cambiarAprobacion'])->name('acuerdos.cambiar-aprobacion');
 
         /* CONSULTAR ORDENES -> SHEET */
         Route::get('consultar-orden', [ComercialController::class, 'consultarOrden'])

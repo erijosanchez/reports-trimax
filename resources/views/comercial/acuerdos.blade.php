@@ -568,6 +568,11 @@
             color: white;
         }
 
+        .badge-rechazado {
+            background-color: #EF4444;
+            color: white;
+        }
+
         .card-stat:hover {
             transform: translateY(-5px);
             box-shadow: 0 5px 20px rgba(0, 0, 0, 0.12);
@@ -643,12 +648,12 @@
         }
 
         .badge-vencido {
-            background-color: #EF4444;
+            background-color: #e9681d;
             color: white;
         }
 
         .badge-pendiente {
-            background-color: #F59E0B;
+            background-color: #fcd914;
             color: white;
         }
 
@@ -936,28 +941,38 @@
                         <td>
                             ${badgeValidado}
                             ${canValidate && acuerdo.validado === 'Pendiente' && !esDeshabilitado ? `
-                                                            <div class="btn-group mt-1" role="group">
-                                                                <button class="btn btn-sm btn-success" onclick="validarAcuerdo(${acuerdo.id}, 'Aprobado')">
-                                                                    <i class="mdi mdi-check"></i>
-                                                                </button>
-                                                                <button class="btn btn-sm btn-danger" onclick="validarAcuerdo(${acuerdo.id}, 'Rechazado')">
-                                                                    <i class="mdi mdi-close"></i>
-                                                                </button>
-                                                            </div>
-                                                        ` : ''}
+                                            <div class="btn-group mt-1" role="group">
+                                                <button class="btn btn-sm btn-success" onclick="validarAcuerdo(${acuerdo.id}, 'Aprobado')">
+                                                    <i class="mdi mdi-check"></i>
+                                                </button>
+                                                <button class="btn btn-sm btn-danger" onclick="validarAcuerdo(${acuerdo.id}, 'Rechazado')">
+                                                    <i class="mdi mdi-close"></i>
+                                                </button>
+                                            </div>
+                                        ` : ''}
+                            ${canValidate && (acuerdo.validado === 'Aprobado' || acuerdo.validado === 'Rechazado') && !esDeshabilitado ? `
+                                            <button class="btn btn-sm btn-outline-info mt-1" onclick="cambiarValidacion(${acuerdo.id})" title="Cambiar validación">
+                                                <i class="mdi mdi-swap-horizontal"></i>
+                                            </button>
+                                        ` : ''}
                         </td>
                         <td>
                             ${badgeAprobado}
                             ${canApprove && acuerdo.aprobado === 'Pendiente' && !esDeshabilitado ? `
-                                                            <div class="btn-group mt-1" role="group">
-                                                                <button class="btn btn-sm btn-success" onclick="aprobarAcuerdo(${acuerdo.id}, 'Aprobado')">
-                                                                    <i class="mdi mdi-check"></i>
-                                                                </button>
-                                                                <button class="btn btn-sm btn-danger" onclick="aprobarAcuerdo(${acuerdo.id}, 'Rechazado')">
-                                                                    <i class="mdi mdi-close"></i>
-                                                                </button>
-                                                            </div>
-                                                        ` : ''}
+                                        <div class="btn-group mt-1" role="group">
+                                            <button class="btn btn-sm btn-success" onclick="aprobarAcuerdo(${acuerdo.id}, 'Aprobado')">
+                                                <i class="mdi mdi-check"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-danger" onclick="aprobarAcuerdo(${acuerdo.id}, 'Rechazado')">
+                                                <i class="mdi mdi-close"></i>
+                                            </button>
+                                        </div>
+                                    ` : ''}
+                            ${canApprove && (acuerdo.aprobado === 'Aprobado' || acuerdo.aprobado === 'Rechazado') && !esDeshabilitado ? `
+                                        <button class="btn btn-sm btn-outline-info mt-1" onclick="cambiarAprobacion(${acuerdo.id})" title="Cambiar aprobación">
+                                            <i class="mdi mdi-swap-horizontal"></i>
+                                        </button>
+                                    ` : ''}
                         </td>
                         <td>${acuerdo.creador ? acuerdo.creador.name : '-'}</td>
                         <td class="text-center">
@@ -966,25 +981,25 @@
                                     <i class="mdi mdi-eye"></i>
                                 </button>
                                 ${puedeEditar && !esDeshabilitado ? `
-                                        <button class="btn btn-sm btn-warning" onclick="editarAcuerdo(${acuerdo.id})" title="Editar">
-                                            <i class="mdi mdi-pencil"></i>
-                                        </button>
-                                    ` : ''}
+                                                    <button class="btn btn-sm btn-warning" onclick="editarAcuerdo(${acuerdo.id})" title="Editar">
+                                                        <i class="mdi mdi-pencil"></i>
+                                                    </button>
+                                                ` : ''}
                                 ${canManageAcuerdos && !esDeshabilitado ? `
-                                        <button class="btn btn-sm btn-success" onclick="abrirModalExtender(${acuerdo.id})" title="Extender vigencia">
-                                            <i class="mdi mdi-calendar-clock"></i>
-                                        </button>
-                                    ` : ''}
+                                                    <button class="btn btn-sm btn-success" onclick="abrirModalExtender(${acuerdo.id})" title="Extender vigencia">
+                                                        <i class="mdi mdi-calendar-clock"></i>
+                                                    </button>
+                                                ` : ''}
                                 ${canManageAcuerdos && !esDeshabilitado ? `
-                                        <button class="btn btn-sm btn-danger" onclick="abrirModalDeshabilitar(${acuerdo.id})" title="Deshabilitar">
-                                            <i class="mdi mdi-cancel"></i>
-                                        </button>
-                                    ` : ''}
+                                                    <button class="btn btn-sm btn-danger" onclick="abrirModalDeshabilitar(${acuerdo.id})" title="Deshabilitar">
+                                                        <i class="mdi mdi-cancel"></i>
+                                                    </button>
+                                                ` : ''}
                                 ${canManageAcuerdos && esDeshabilitado ? `
-                                        <button class="btn btn-sm btn-success" onclick="abrirModalRehabilitar(${acuerdo.id})" title="Rehabilitar">
-                                            <i class="mdi mdi-check-circle"></i>
-                                        </button>
-                                    ` : ''}
+                                                    <button class="btn btn-sm btn-success" onclick="abrirModalRehabilitar(${acuerdo.id})" title="Rehabilitar">
+                                                        <i class="mdi mdi-check-circle"></i>
+                                                    </button>
+                                                ` : ''}
                             </div>
                         </td>
                     </tr>
@@ -1469,13 +1484,13 @@
                 </div>
             </div>
             ${historialHTML ? `
-                                    <div class="row mt-3">
-                                        <div class="col-md-12">
-                                            <h6 class="text-primary"><i class="mdi mdi-history"></i> Historial</h6>
-                                            ${historialHTML}
-                                        </div>
-                                    </div>
-                                    ` : ''}
+                                                <div class="row mt-3">
+                                                    <div class="col-md-12">
+                                                        <h6 class="text-primary"><i class="mdi mdi-history"></i> Historial</h6>
+                                                        ${historialHTML}
+                                                    </div>
+                                                </div>
+                                                ` : ''}
             <div class="row mt-3">
                 <div class="col-md-12">
                     <h6 class="text-primary"><i class="mdi mdi-comment-text"></i> Comentarios</h6>
@@ -1502,10 +1517,228 @@
                 'Solicitado': '<span class="badge badge-estado badge-solicitado">Solicitado</span>',
                 'Vigente': '<span class="badge badge-estado badge-vigente">Vigente</span>',
                 'Vencido': '<span class="badge badge-estado badge-vencido">Vencido</span>',
-                'Deshabilitado': '<span class="badge badge-estado badge-deshabilitado">Deshabilitado</span>'
+                'Deshabilitado': '<span class="badge badge-estado badge-deshabilitado">Deshabilitado</span>',
+                'Rechazado': '<span class="badge badge-estado badge-rechazado">Rechazado</span>'
             };
             return badges[estado] || '<span class="badge badge-secondary">' + estado + '</span>';
         }
+
+        /**
+         * Editar acuerdo
+         */
+        function editarAcuerdo(id) {
+            const acuerdo = acuerdosData.find(a => a.id === id);
+            if (!acuerdo) return;
+
+            // Llenar el formulario con los datos existentes
+            $('select[name="sede"]', '#formAcuerdo').val(acuerdo.sede);
+            $('input[name="ruc"]', '#formAcuerdo').val(acuerdo.ruc);
+            $('input[name="razon_social"]', '#formAcuerdo').val(acuerdo.razon_social);
+            $('input[name="consultor"]', '#formAcuerdo').val(acuerdo.consultor);
+            $('input[name="ciudad"]', '#formAcuerdo').val(acuerdo.ciudad);
+            $('input[name="acuerdo_comercial"]', '#formAcuerdo').val(acuerdo.acuerdo_comercial);
+            $('input[name="tipo_promocion"]', '#formAcuerdo').val(acuerdo.tipo_promocion);
+            $('input[name="marca"]', '#formAcuerdo').val(acuerdo.marca);
+            $('input[name="ar"]', '#formAcuerdo').val(acuerdo.ar || '');
+            $('input[name="disenos"]', '#formAcuerdo').val(acuerdo.disenos || '');
+            $('input[name="material"]', '#formAcuerdo').val(acuerdo.material || '');
+            $('input[name="fecha_inicio"]', '#formAcuerdo').val(acuerdo.fecha_inicio);
+            $('input[name="fecha_fin"]', '#formAcuerdo').val(acuerdo.fecha_fin);
+            $('textarea[name="comentarios"]', '#formAcuerdo').val(acuerdo.comentarios || '');
+
+            // Cambiar título y agregar ID al formulario
+            $('#modalTitle').text('Editar Acuerdo Comercial');
+            $('#formAcuerdo').attr('data-acuerdo-id', id);
+
+            $('#modalAcuerdo').modal('show');
+        }
+
+        /**
+         * Modificar la función crearAcuerdo para manejar edición
+         */
+        function crearAcuerdo() {
+            const acuerdoId = $('#formAcuerdo').attr('data-acuerdo-id');
+            const formData = new FormData($('#formAcuerdo')[0]);
+
+            let url = "{{ route('comercial.acuerdos.crear') }}";
+            let method = 'POST';
+
+            // Si es edición
+            if (acuerdoId) {
+                url = `/comercial/acuerdos/${acuerdoId}/editar`;
+                formData.append('_method', 'PUT');
+            }
+
+            $('#btnGuardarAcuerdo').prop('disabled', true).html('<i class="mdi mdi-loading mdi-spin"></i> Guardando...');
+
+            $.ajax({
+                url: url,
+                method: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    if (response.success) {
+                        $('#modalAcuerdo').modal('hide');
+
+                        // Mostrar alerta diferente si es edición
+                        let mensaje = response.message;
+                        if (acuerdoId) {
+                            mensaje += '\n\n⚠️ Las validaciones y aprobaciones se han reseteado a Pendiente.';
+                        }
+
+                        Swal.fire({
+                            icon: 'success',
+                            title: '¡Éxito!',
+                            text: mensaje,
+                            confirmButtonColor: '#3B82F6'
+                        });
+
+                        // Limpiar el ID del formulario
+                        $('#formAcuerdo').removeAttr('data-acuerdo-id');
+                        cargarAcuerdos();
+                        cargarUsuarios();
+                    }
+                },
+                error: function(xhr) {
+                    let mensaje = 'Error al guardar acuerdo';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        mensaje = xhr.responseJSON.message;
+                    }
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: mensaje,
+                        confirmButtonColor: '#EF4444'
+                    });
+                },
+                complete: function() {
+                    $('#btnGuardarAcuerdo').prop('disabled', false).html(
+                        '<i class="mdi mdi-content-save"></i> Guardar Acuerdo');
+                }
+            });
+        }
+
+        /**
+         * Cambiar validación
+         */
+        function cambiarValidacion(id) {
+            const acuerdo = acuerdosData.find(a => a.id === id);
+            if (!acuerdo) return;
+
+            Swal.fire({
+                title: 'Cambiar Validación',
+                text: `Estado actual: ${acuerdo.validado}`,
+                input: 'select',
+                inputOptions: {
+                    'Aprobado': 'Aprobado',
+                    'Rechazado': 'Rechazado',
+                    'Pendiente': 'Pendiente'
+                },
+                inputPlaceholder: 'Seleccionar nuevo estado',
+                showCancelButton: true,
+                confirmButtonText: 'Cambiar',
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: '#3B82F6',
+                inputValidator: (value) => {
+                    if (!value) {
+                        return 'Debes seleccionar un estado';
+                    }
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: `/comercial/acuerdos/${id}/cambiar-validacion`,
+                        method: 'POST',
+                        data: {
+                            _token: '{{ csrf_token() }}',
+                            nuevo_estado: result.value
+                        },
+                        success: function(response) {
+                            if (response.success) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: '¡Actualizado!',
+                                    text: response.message,
+                                    confirmButtonColor: '#3B82F6'
+                                });
+                                cargarAcuerdos();
+                            }
+                        },
+                        error: function(xhr) {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: xhr.responseJSON?.message ||
+                                    'Error al cambiar validación',
+                                confirmButtonColor: '#EF4444'
+                            });
+                        }
+                    });
+                }
+            });
+        }
+
+        /**
+         * Cambiar aprobación
+         */
+        function cambiarAprobacion(id) {
+            const acuerdo = acuerdosData.find(a => a.id === id);
+            if (!acuerdo) return;
+
+            Swal.fire({
+                title: 'Cambiar Aprobación',
+                text: `Estado actual: ${acuerdo.aprobado}`,
+                input: 'select',
+                inputOptions: {
+                    'Aprobado': 'Aprobado',
+                    'Rechazado': 'Rechazado',
+                    'Pendiente': 'Pendiente'
+                },
+                inputPlaceholder: 'Seleccionar nuevo estado',
+                showCancelButton: true,
+                confirmButtonText: 'Cambiar',
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: '#3B82F6',
+                inputValidator: (value) => {
+                    if (!value) {
+                        return 'Debes seleccionar un estado';
+                    }
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: `/comercial/acuerdos/${id}/cambiar-aprobacion`,
+                        method: 'POST',
+                        data: {
+                            _token: '{{ csrf_token() }}',
+                            nuevo_estado: result.value
+                        },
+                        success: function(response) {
+                            if (response.success) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: '¡Actualizado!',
+                                    text: response.message,
+                                    confirmButtonColor: '#3B82F6'
+                                });
+                                cargarAcuerdos();
+                            }
+                        },
+                        error: function(xhr) {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: xhr.responseJSON?.message ||
+                                    'Error al cambiar aprobación',
+                                confirmButtonColor: '#EF4444'
+                            });
+                        }
+                    });
+                }
+            });
+        }
+
 
         function obtenerBadgeAprobacion(estado) {
             const badges = {
