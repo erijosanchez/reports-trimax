@@ -876,6 +876,7 @@ class ComercialController extends Controller
 
         foreach ($ordenes as $orden) {
             $ubicacion = mb_strtoupper($orden['ubicacion_orden'] ?? '');
+            $estado = mb_strtoupper($orden['estado_orden'] ?? '');
             $importeOriginal = $orden['importe'] ?? null;
             $importe = $this->limpiarImporte($importeOriginal);
 
@@ -884,10 +885,18 @@ class ComercialController extends Controller
                 // NO sumar importe aquí (ya está facturado)
             } elseif (stripos($ubicacion, 'SEDE') !== false) {
                 $enSede++;
-                $importeSede += $importe;
+
+                // SOLO sumar importe si el estado es "SOLICITADO"
+                if ($estado === 'SOLICITADO') {
+                    $importeSede += $importe;
+                }
             } elseif (stripos($ubicacion, 'TRANSITO') !== false) {
                 $enTransito++;
-                $importeTransito += $importe;
+
+                // SOLO sumar importe si el estado es "SOLICITADO"
+                if ($estado === 'SOLICITADO') {
+                    $importeTransito += $importe;
+                }
             }
         }
 
