@@ -657,7 +657,7 @@
 
         // Mostrar modal QR
         function showQR(userId, userName) {
-            fetch(`/users/${userId}/qr`)
+            fetch(`/marketing/users/${userId}/qr`)
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
