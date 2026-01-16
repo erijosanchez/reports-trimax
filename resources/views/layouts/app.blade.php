@@ -32,8 +32,6 @@
         @include('includes._navbar')
         <!-- partial -->
         <div class="container-fluid page-body-wrapper">
-            <!-- partial:partials/_settings-panel.html -->
-            @include('includes._settings-panel')
             <!-- partial -->
             <!-- partial:partials/_sidebar.html -->
             @include('includes.sidebar')
@@ -49,7 +47,9 @@
         </div>
         <!-- page-body-wrapper ends -->
     </div>
-    <!-- container-scroller -->
+    
+    <!-- Asistente IA Trimax -->
+    @include('components.trimax-assistant')
 
     <!-- plugins:js -->
     <script src="{{ asset('assets/vendors/js/vendor.bundle.base.js') }}"></script>
