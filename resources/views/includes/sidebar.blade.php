@@ -8,7 +8,7 @@
         </li>
 
         {{-- MÓDULO USUARIOS (Solo usuarios normales, consultores y superadmin) --}}
-        @if (!auth()->user()->isConsultor() && !auth()->user()->isAdmin())
+        @if (!auth()->user()->isMarketing())
             <li class="nav-item nav-category">Vistas</li>
             <li class="nav-item">
                 <a class="nav-link {{ request()->routeIs('dashboards.*') || request()->routeIs('files.*') ? '' : 'collapsed' }}"
