@@ -140,3 +140,60 @@ CREATE INDEX idx_surveys_experience_rating ON surveys(experience_rating);
 CREATE INDEX idx_surveys_service_quality_rating ON surveys(service_quality_rating);
 CREATE INDEX idx_surveys_created_at ON surveys(created_at);
 /* END ENCUESTAS */
+
+
+/*Asistente*/
+CREATE TABLE knowledge_base (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    categoria VARCHAR(100),
+    pregunta TEXT,
+    respuesta TEXT,
+    keywords TEXT,
+    ejemplos TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- database/migrations/xxxx_create_ventas_table.php
+CREATE TABLE ventas (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    fecha DATE NOT NULL,
+    tipo_documento VARCHAR(50),
+    nro_documento VARCHAR(100),
+    nro_orden_fabricacion VARCHAR(100),
+    ruc_dni VARCHAR(20),
+    razon_social VARCHAR(255),
+    tipo_cliente VARCHAR(100),
+    motorizado VARCHAR(100),
+    sede VARCHAR(100),
+    zona VARCHAR(100),
+    cod_producto VARCHAR(50),
+    descripcion TEXT,
+    importe DECIMAL(12, 2),
+    igv DECIMAL(12, 2),
+    importe_global DECIMAL(12, 2),
+    cantidad INT,
+    anio INT,
+    mes INT,
+    tallado VARCHAR(100),
+    marca VARCHAR(100),
+    diseno VARCHAR(100),
+    material VARCHAR(100),
+    tipo_fotocromatico VARCHAR(100),
+    color VARCHAR(100),
+    tipo_articulo VARCHAR(100),
+    tipo_articulo2 VARCHAR(100),
+    tipo_tributo VARCHAR(100),
+    doc_referencia_nc VARCHAR(100),
+    motivo_nc TEXT,
+    observacion_nc TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    INDEX idx_fecha (fecha),
+    INDEX idx_cliente (ruc_dni),
+    INDEX idx_sede (sede),
+    INDEX idx_producto (cod_producto),
+    INDEX idx_marca (marca),
+    INDEX idx_anio_mes (anio, mes)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
