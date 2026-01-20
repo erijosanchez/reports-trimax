@@ -14,6 +14,7 @@ use App\Http\Controllers\ComercialController;
 use App\Http\Controllers\MarketingController;
 use App\Http\Controllers\UserMarketingController;
 use App\Http\Controllers\SurveyController;
+use App\Http\Controllers\ImportController;
 
 // ============================================================
 // RUTAS PARA LARAVEL 11
