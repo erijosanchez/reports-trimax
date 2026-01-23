@@ -8,7 +8,7 @@
         </li>
 
         {{-- MÓDULO USUARIOS (Solo usuarios normales, consultores y superadmin) --}}
-        @if (!auth()->user()->isMarketing() && !auth()->user()->isSede())
+        @if (!auth()->user()->isMarketing())
             <li class="nav-item nav-category">General</li>
             <li class="nav-item">
                 <a class="nav-link {{ request()->routeIs('dashboards.index') ? 'active' : '' }}"

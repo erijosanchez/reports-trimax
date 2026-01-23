@@ -152,7 +152,7 @@ class HomeController extends Controller
             'junio' => 6,
             'julio' => 7,
             'agosto' => 8,
-            'septiembre' => 9,
+            'setiembre' => 9,
             'octubre' => 10,
             'noviembre' => 11,
             'diciembre' => 12
