@@ -92,6 +92,25 @@
                                     </div>
                                 </div>
 
+                                <!-- Card 2: Venta Proyectada -->
+                                <div class="col-lg-3 col-md-6 mb-3">
+                                    <div class="card card-light-blue h-100">
+                                        <div class="card-body">
+                                            <div class="d-flex align-items-center">
+                                                <div class="icon-wrapper bg-white rounded me-3">
+                                                    <i class="mdi mdi-currency-usd text-info mdi-36px"></i>
+                                                </div>
+                                                <div>
+                                                    <p class="mb-1 text-white">Venta Proyectada</p>
+                                                    <h4 class="mb-0 text-white fw-bold" id="ventaTotal">
+                                                        S/ {{ number_format($datos['venta_proyectada'], 0, '.', ',') }}
+                                                    </h4>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <!-- Card 2: Cuota -->
                                 <div class="col-lg-3 col-md-6 mb-3">
                                     <div class="card card-dark-blue h-100">
@@ -130,25 +149,6 @@
                                             <div class="progress" style="height: 8px;">
                                                 <div class="progress-bar bg-success" id="progressCumplimiento"
                                                     style="width: {{ min($datos['cumplimiento_cuota'], 100) }}%">
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Card 4: Venta Total -->
-                                <div class="col-lg-3 col-md-6 mb-3">
-                                    <div class="card card-light-blue h-100">
-                                        <div class="card-body">
-                                            <div class="d-flex align-items-center">
-                                                <div class="icon-wrapper bg-white rounded me-3">
-                                                    <i class="mdi mdi-currency-usd text-info mdi-36px"></i>
-                                                </div>
-                                                <div>
-                                                    <p class="mb-1 text-white">Venta Total</p>
-                                                    <h4 class="mb-0 text-white fw-bold" id="ventaTotal">
-                                                        S/ {{ number_format($datos['venta_total'], 0, '.', ',') }}
-                                                    </h4>
                                                 </div>
                                             </div>
                                         </div>
