@@ -16,6 +16,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'sede',
         'is_active',
         'last_login_at',
         'two_factor_secret',
@@ -98,6 +99,27 @@ class User extends Authenticatable
         return $this->hasRole('consultor');
     }
 
+    public function isSede(): bool
+    {
+        return $this->hasRole(['sede']);
+    }
+
+    /**
+     * Obtener el nombre de la sede del usuario
+     */
+    public function getSedeName(): string
+    {
+        return $this->sede ? ucfirst(strtolower($this->sede)) : 'Sin asignar';
+    }
+
+    /**
+     * Verificar si el usuario tiene una sede asignada
+     */
+    public function hasSede(): bool
+    {
+        return !is_null($this->sede) && !empty($this->sede);
+    }
+
     public function isOnline(): bool
     {
         return $this->activeSessions()
@@ -140,6 +162,7 @@ class User extends Authenticatable
         if ($this->isAdmin()) return 'Admin';
         if ($this->isMarketing()) return 'Marketing';
         if ($this->isConsultor()) return 'Consultor';
+        if ($this->isSede()) return 'Sede - ' . $this->getSedeName();
 
         return 'Usuario';
     }

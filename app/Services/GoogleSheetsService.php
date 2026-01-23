@@ -142,13 +142,6 @@ class GoogleSheetsService
     $executionTime = round($endTime - $startTime, 2);
     $memoryUsed = round(($endMemory - $startMemory) / 1024 / 1024, 2);
 
-    \Log::info("✅ Parseo completado", [
-        'procesadas' => $processedCount,
-        'saltadas' => $skippedCount,
-        'tiempo' => $executionTime . 's',
-        'memoria' => $memoryUsed . ' MB'
-    ]);
-
     return $result;
 }
 

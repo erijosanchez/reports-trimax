@@ -141,7 +141,7 @@
                                                         <span class="input-group-text">
                                                             <i class="mdi mdi-shield-account"></i>
                                                         </span>
-                                                        <select name="role"
+                                                        <select name="role" id="role"
                                                             class="form-select @error('role') is-invalid @enderror"
                                                             required>
                                                             <option value="">Seleccionar rol...</option>
@@ -160,6 +160,36 @@
                                                     @enderror
                                                     <small class="text-muted">
                                                         Define los permisos de acceso del usuario
+                                                    </small>
+                                                </div>
+
+                                                <!-- Campo Sede (solo visible cuando rol = sede) -->
+                                                <div class="mb-4" id="sedeField" style="display: none;">
+                                                    <label class="form-label">
+                                                        Sede <span class="text-danger">*</span>
+                                                    </label>
+                                                    <div class="input-group">
+                                                        <span class="input-group-text">
+                                                            <i class="mdi mdi-office-building"></i>
+                                                        </span>
+                                                        <select name="sede" id="sede"
+                                                            class="form-select @error('sede') is-invalid @enderror">
+                                                            <option value="">Seleccionar sede...</option>
+                                                            @foreach ($sedes as $key => $nombre)
+                                                                <option value="{{ $key }}"
+                                                                    {{ old('sede') === $key ? 'selected' : '' }}>
+                                                                    {{ $nombre }}
+                                                                </option>
+                                                            @endforeach
+                                                        </select>
+                                                    </div>
+                                                    @error('sede')
+                                                        <div class="text-danger mt-1">
+                                                            <small>{{ $message }}</small>
+                                                        </div>
+                                                    @enderror
+                                                    <small class="text-muted">
+                                                        Asigna la sede a la que pertenece este usuario
                                                     </small>
                                                 </div>
 
@@ -194,6 +224,10 @@
                                                 </li>
                                                 <li class="mb-2">
                                                     <strong>Admin:</strong> Puede gestionar usuarios y dashboards
+                                                </li>
+                                                <li class="mb-2">
+                                                    <strong>Sede:</strong> Acceso al dashboard de ventas de su sede
+                                                    asignada
                                                 </li>
                                                 <li class="mb-0">
                                                     <strong>Usuario:</strong> Acceso limitado solo a dashboards asignados
@@ -237,6 +271,28 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            const roleSelect = document.getElementById('role');
+            const sedeField = document.getElementById('sedeField');
+            const sedeSelect = document.getElementById('sede');
+
+            // Función para mostrar/ocultar el campo sede
+            function toggleSedeField() {
+                if (roleSelect.value === 'sede') {
+                    sedeField.style.display = 'block';
+                    sedeSelect.setAttribute('required', 'required');
+                } else {
+                    sedeField.style.display = 'none';
+                    sedeSelect.removeAttribute('required');
+                    sedeSelect.value = '';
+                }
+            }
+
+            // Ejecutar al cargar la página (por si hay un old('role'))
+            toggleSedeField();
+
+            // Ejecutar cuando cambie el rol
+            roleSelect.addEventListener('change', toggleSedeField);
+
             // Toggle password visibility
             const togglePassword = document.getElementById('togglePassword');
             const password = document.getElementById('password');

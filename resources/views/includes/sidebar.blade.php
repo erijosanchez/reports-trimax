@@ -8,30 +8,21 @@
         </li>
 
         {{-- MÓDULO USUARIOS (Solo usuarios normales, consultores y superadmin) --}}
-        @if (!auth()->user()->isMarketing())
-            <li class="nav-item nav-category">Vistas</li>
+        @if (!auth()->user()->isMarketing() && !auth()->user()->isSede())
+            <li class="nav-item nav-category">General</li>
             <li class="nav-item">
-                <a class="nav-link {{ request()->routeIs('dashboards.*') || request()->routeIs('files.*') ? '' : 'collapsed' }}"
-                    data-bs-toggle="collapse" href="#vistas"
-                    aria-expanded="{{ request()->routeIs('dashboards.*') || request()->routeIs('files.*') ? 'true' : 'false' }}"
-                    aria-controls="vistas">
-                    <i class="mdi mdi-account-multiple menu-icon"></i>
-                    <span class="menu-title">Usuarios</span>
-                    <i class="menu-arrow"></i>
+                <a class="nav-link {{ request()->routeIs('dashboards.index') ? 'active' : '' }}"
+                    href="{{ route('dashboards.index') }}">
+                    <i class="mdi mdi-chart-bar menu-icon"></i>
+                    <span class="menu-title">Reportes</span>
                 </a>
-                <div class="collapse {{ request()->routeIs('dashboards.*') || request()->routeIs('files.*') ? 'show' : '' }}"
-                    id="vistas">
-                    <ul class="flex-column nav sub-menu">
-                        <li class="nav-item">
-                            <a class="nav-link {{ request()->routeIs('dashboards.index') ? 'active' : '' }}"
-                                href="{{ route('dashboards.index') }}">Dashboard</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {{ request()->routeIs('files.index') ? 'active' : '' }}"
-                                href="{{ route('files.index') }}">Archivos</a>
-                        </li>
-                    </ul>
-                </div>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {{ request()->routeIs('files.index') ? 'active' : '' }}"
+                    href="{{ route('files.index') }}">
+                    <i class="mdi mdi-archive menu-icon"></i>
+                    <span class="menu-title">Archivos</span>
+                </a>
             </li>
         @endif
 

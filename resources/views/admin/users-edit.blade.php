@@ -100,12 +100,12 @@
                                                         <span class="input-group-text">
                                                             <i class="mdi mdi-shield-account"></i>
                                                         </span>
-                                                        <select name="role"
+                                                        <select name="role" id="role"
                                                             class="form-select @error('role') is-invalid @enderror"
                                                             required>
                                                             @foreach ($roles as $role)
                                                                 <option value="{{ $role->name }}"
-                                                                    {{ $user->hasRole($role->name) ? 'selected' : '' }}>
+                                                                    {{ old('role', $user->hasRole($role->name) ? $role->name : '') === $role->name ? 'selected' : '' }}>
                                                                     {{ ucfirst($role->name) }}
                                                                 </option>
                                                             @endforeach
@@ -116,6 +116,37 @@
                                                             <small>{{ $message }}</small>
                                                         </div>
                                                     @enderror
+                                                </div>
+
+                                                <!-- Campo Sede (solo visible cuando rol = sede) -->
+                                                <div class="mb-4" id="sedeField"
+                                                    style="{{ old('role', $user->hasRole('sede') ? 'sede' : '') === 'sede' ? 'display: block;' : 'display: none;' }}">
+                                                    <label class="form-label">
+                                                        Sede <span class="text-danger">*</span>
+                                                    </label>
+                                                    <div class="input-group">
+                                                        <span class="input-group-text">
+                                                            <i class="mdi mdi-office-building"></i>
+                                                        </span>
+                                                        <select name="sede" id="sede"
+                                                            class="form-select @error('sede') is-invalid @enderror">
+                                                            <option value="">Seleccionar sede...</option>
+                                                            @foreach ($sedes as $key => $nombre)
+                                                                <option value="{{ $key }}"
+                                                                    {{ old('sede', $user->sede) === $key ? 'selected' : '' }}>
+                                                                    {{ $nombre }}
+                                                                </option>
+                                                            @endforeach
+                                                        </select>
+                                                    </div>
+                                                    @error('sede')
+                                                        <div class="text-danger mt-1">
+                                                            <small>{{ $message }}</small>
+                                                        </div>
+                                                    @enderror
+                                                    <small class="text-muted">
+                                                        Asigna la sede a la que pertenece este usuario
+                                                    </small>
                                                 </div>
 
                                                 <!-- Estado -->
@@ -224,6 +255,17 @@
                                                 </div>
                                             </div>
 
+                                            @if ($user->hasRole('sede') && $user->sede)
+                                                <div class="mb-3 pb-3 border-bottom">
+                                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                                        <span class="text-muted">Sede asignada</span>
+                                                        <span class="badge badge-info">
+                                                            {{ $user->getSedeName() }}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            @endif
+
                                             <div class="mb-3 pb-3 border-bottom">
                                                 <div class="d-flex justify-content-between align-items-center mb-2">
                                                     <span class="text-muted">Estado</span>
@@ -266,7 +308,9 @@
                                 </div>
 
                                 <div class="col-lg-12 grid-margin stretch-card">
-                                    @if (auth()->user()->isSuperAdmin() && $user->id !== auth()->id() && !in_array($user->roles->first()->name, ['superadmin']))
+                                    @if (auth()->user()->isSuperAdmin() &&
+                                            $user->id !== auth()->id() &&
+                                            !in_array($user->roles->first()->name, ['superadmin']))
                                         <div class="card border-danger">
                                             <div class="card-body">
                                                 <h5 class="text-danger mb-3">
@@ -324,6 +368,28 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            const roleSelect = document.getElementById('role');
+            const sedeField = document.getElementById('sedeField');
+            const sedeSelect = document.getElementById('sede');
+
+            // Función para mostrar/ocultar el campo sede
+            function toggleSedeField() {
+                if (roleSelect.value === 'sede') {
+                    sedeField.style.display = 'block';
+                    sedeSelect.setAttribute('required', 'required');
+                } else {
+                    sedeField.style.display = 'none';
+                    sedeSelect.removeAttribute('required');
+                    sedeSelect.value = '';
+                }
+            }
+
+            // Ejecutar al cargar la página
+            toggleSedeField();
+
+            // Ejecutar cuando cambie el rol
+            roleSelect.addEventListener('change', toggleSedeField);
+
             // Toggle password visibility
             const togglePassword = document.getElementById('togglePassword');
             const password = document.getElementById('password');

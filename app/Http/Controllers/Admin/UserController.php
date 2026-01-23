@@ -10,26 +10,67 @@ use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
+    // Lista de sedes disponibles
+    private function getSedes()
+    {
+        return [
+            'AREQUIPA' => 'Arequipa',
+            'ATE' => 'Ate',
+            'AYACUCHO' => 'Ayacucho',
+            'CAILLOMA' => 'Cailloma',
+            'CAJAMARCA' => 'Cajamarca',
+            'CHICLAYO' => 'Chiclayo',
+            'CHIMBOTE' => 'Chimbote',
+            'COMAS' => 'Comas',
+            'CUSCO' => 'Cusco',
+            'HUANCAYO' => 'Huancayo',
+            'HUARAZ' => 'Huaraz',
+            'HUÁNUCO' => 'Huánuco',
+            'ICA' => 'Ica',
+            'IQUITOS' => 'Iquitos',
+            'LINCE' => 'Lince',
+            'LOS OLIVOS' => 'Los Olivos',
+            'NAPO' => 'Napo',
+            'PIURA' => 'Piura',
+            'PUCALLPA' => 'Pucallpa',
+            'PUENTE PIEDRA' => 'Puente Piedra',
+            'SJL' => 'San Juan de Lurigancho',
+            'SJM' => 'San Juan de Miraflores',
+            'SURQUILLO' => 'Surquillo',
+            'TACNA' => 'Tacna',
+            'TARAPOTO' => 'Tarapoto',
+            'TRUJILLO' => 'Trujillo',
+        ];
+    }
 
     public function create()
     {
         $roles = Role::all();
-        return view('admin.users-create', compact('roles'));
+        $sedes = $this->getSedes();
+        return view('admin.users-create', compact('roles', 'sedes'));
     }
 
     public function store(Request $request)
     {
-        $request->validate([
+        $rules = [
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|min:8|confirmed',
             'role' => 'required|exists:roles,name',
-        ]);
+        ];
+
+        // Si el rol es 'sede', la sede es obligatoria
+        if ($request->role === 'sede') {
+            $rules['sede'] = 'required|string|max:50';
+        }
+
+        $request->validate($rules);
 
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            'sede' => $request->role === 'sede' ? strtoupper($request->sede) : null,
             'is_active' => true,
         ]);
 
@@ -43,8 +84,9 @@ class UserController extends Controller
     {
         $user = User::with('roles')->findOrFail($id);
         $roles = Role::all();
+        $sedes = $this->getSedes();
 
-        return view('admin.users-edit', compact('user', 'roles'));
+        return view('admin.users-edit', compact('user', 'roles', 'sedes'));
     }
 
     public function update(Request $request, $id)
@@ -52,18 +94,26 @@ class UserController extends Controller
         $user = User::findOrFail($id);
 
         // Validación
-        $request->validate([
+        $rules = [
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $id,
             'role' => 'required|exists:roles,name',
-            'password' => 'nullable|min:8|confirmed',  // ← nullable para que sea opcional
+            'password' => 'nullable|min:8|confirmed',
             'is_active' => 'boolean',
-        ]);
+        ];
+
+        // Si el rol es 'sede', la sede es obligatoria
+        if ($request->role === 'sede') {
+            $rules['sede'] = 'required|string|max:50';
+        }
+
+        $request->validate($rules);
 
         // Actualizar datos básicos
         $user->update([
             'name' => $request->name,
             'email' => $request->email,
+            'sede' => $request->role === 'sede' ? strtoupper($request->sede) : null,
             'is_active' => $request->boolean('is_active'),
         ]);
 
