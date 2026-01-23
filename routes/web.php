@@ -54,6 +54,7 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
 
     // Home
     Route::get('/home', [HomeController::class, 'index'])->name('home');
+    Route::get('/api/ventas-data', [HomeController::class, 'getVentasData'])->name('api.ventas.data');
 
     Route::post('/gps-location', [LocationApiController::class, 'storeGpsLocation'])
         ->name('location.store-gps'); //API gps automatico
