@@ -14,6 +14,9 @@ use App\Notifications\AcuerdoDeshabilitado;
 use App\Notifications\AcuerdoExtendido;
 use App\Notifications\AcuerdoRehabilitado;
 use App\Notifications\AcuerdoVigente;
+use Google\Client;
+use Google\Service\Sheets;
+use carbon\Carbon;
 
 
 class ComercialController extends Controller
@@ -1218,5 +1221,300 @@ class ComercialController extends Controller
                 'message' => 'Error al exportar: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Dashboard consolidado de ventas de todas las sedes
+     */
+    public function ventasSedes()
+    {
+        // Verificar que sea super admin o admin
+        if (!auth()->user()->isSuperAdmin() && !auth()->user()->isAdmin()) {
+            abort(403, 'No autorizado');
+        }
+
+        $mesActual = ucfirst(Carbon::now()->locale('es')->translatedFormat('F'));
+        $anioActual = Carbon::now()->year;
+
+        $spreadsheetId = '1zQ8h0cX8YdQ4Jko69vGpDNMXMRrXD0ICCH6G4O6ubiY';
+
+        try {
+            // Configurar Google Sheets
+            $client = new Client();
+            $client->setApplicationName('TRIMAX Ventas');
+            $client->setScopes([Sheets::SPREADSHEETS_READONLY]);
+            $client->setAuthConfig(storage_path('app/google/service-account.json'));
+            $client->setAccessType('offline');
+
+            $service = new Sheets($client);
+
+            // Obtener todas las sedes con sus datos
+            $todasLasSedes = $this->obtenerDatosTodasLasSedes($service, $spreadsheetId, $mesActual, $anioActual);
+
+            // Obtener años disponibles
+            $aniosDisponibles = $this->obtenerAniosDisponiblesGlobal($service, $spreadsheetId);
+
+            // Obtener datos consolidados por año
+            $datosConsolidados = $this->obtenerDatosConsolidados($service, $spreadsheetId, $anioActual);
+
+            // Obtener comparación anual
+            $comparacionAnual = $this->obtenerComparacionAnual($service, $spreadsheetId);
+        } catch (\Exception $e) {
+            Log::error('Error en ventasSedes: ' . $e->getMessage());
+
+            $todasLasSedes = [];
+            $aniosDisponibles = [$anioActual];
+            $datosConsolidados = ['meses' => [], 'ventas' => [], 'cuotas' => []];
+            $comparacionAnual = ['anios' => [], 'ventas' => []];
+        }
+
+        return view('comercial.ventas-sedes', compact(
+            'todasLasSedes',
+            'mesActual',
+            'anioActual',
+            'aniosDisponibles',
+            'datosConsolidados',
+            'comparacionAnual'
+        ));
+    }
+
+    /**
+     * API para obtener datos filtrados (AJAX)
+     */
+    public function getVentasSedesData(Request $request)
+    {
+        if (!auth()->user()->isSuperAdmin() && !auth()->user()->isAdmin()) {
+            return response()->json(['error' => 'No autorizado'], 403);
+        }
+
+        $anio = $request->input('anio', Carbon::now()->year);
+        $mes = $request->input('mes', ucfirst(Carbon::now()->locale('es')->translatedFormat('F')));
+
+        $spreadsheetId = '1zQ8h0cX8YdQ4Jko69vGpDNMXMRrXD0ICCH6G4O6ubiY';
+
+        try {
+            $client = new Client();
+            $client->setApplicationName('TRIMAX Ventas');
+            $client->setScopes([Sheets::SPREADSHEETS_READONLY]);
+            $client->setAuthConfig(storage_path('app/google/service-account.json'));
+            $client->setAccessType('offline');
+
+            $service = new Sheets($client);
+
+            $todasLasSedes = $this->obtenerDatosTodasLasSedes($service, $spreadsheetId, $mes, $anio);
+            $datosConsolidados = $this->obtenerDatosConsolidados($service, $spreadsheetId, $anio);
+
+            return response()->json([
+                'sedes' => $todasLasSedes,
+                'consolidado' => $datosConsolidados,
+                'anio' => $anio,
+                'mes' => $mes
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error en getVentasSedesData: ' . $e->getMessage());
+            return response()->json(['error' => 'Error al obtener datos'], 500);
+        }
+    }
+
+    /**
+     * Obtener datos de todas las sedes para un mes específico
+     */
+    private function obtenerDatosTodasLasSedes($service, $spreadsheetId, $mes, $anio)
+    {
+        $range = 'Historico!A:H';
+        $response = $service->spreadsheets_values->get($spreadsheetId, $range);
+        $values = $response->getValues();
+
+        $sedes = [];
+
+        if (empty($values)) {
+            return $sedes;
+        }
+
+        foreach ($values as $index => $row) {
+            if ($index == 0) continue;
+
+            if (!empty($row[0]) && !empty($row[1]) && !empty($row[2])) {
+                $sede = trim(strtoupper($row[0]));
+                $anioSheet = trim($row[1]);
+                $mesSheet = trim(ucfirst(strtolower($row[2])));
+
+                if ($anioSheet == $anio && $mesSheet == $mes) {
+                    $ventaGeneral = $this->limpiarNumero($row[3] ?? 0);
+                    $cuota = $this->limpiarNumero($row[5] ?? 0);
+                    $cumplimiento = $this->limpiarPorcentaje($row[6] ?? '0%');
+
+                    $sedes[] = [
+                        'sede' => $sede,
+                        'venta_general' => $ventaGeneral,
+                        'venta_proyectada' => $this->limpiarNumero($row[4] ?? 0),
+                        'cuota' => $cuota,
+                        'cumplimiento_cuota' => $cumplimiento,
+                        'venta_total' => $this->limpiarNumero($row[7] ?? 0),
+                        'diferencia' => $ventaGeneral - $cuota,
+                    ];
+                }
+            }
+        }
+
+        // Ordenar por cumplimiento descendente
+        usort($sedes, function ($a, $b) {
+            return $b['cumplimiento_cuota'] <=> $a['cumplimiento_cuota'];
+        });
+
+        return $sedes;
+    }
+
+    /**
+     * Obtener datos consolidados por mes (suma de todas las sedes)
+     */
+    private function obtenerDatosConsolidados($service, $spreadsheetId, $anio)
+    {
+        $range = 'Historico!A:H';
+        $response = $service->spreadsheets_values->get($spreadsheetId, $range);
+        $values = $response->getValues();
+
+        $ordenMeses = [
+            'enero' => 1,
+            'febrero' => 2,
+            'marzo' => 3,
+            'abril' => 4,
+            'mayo' => 5,
+            'junio' => 6,
+            'julio' => 7,
+            'agosto' => 8,
+            'septiembre' => 9,
+            'setiembre' => 9,
+            'octubre' => 10,
+            'noviembre' => 11,
+            'diciembre' => 12
+        ];
+
+        $datosPorMes = [];
+
+        foreach ($values as $index => $row) {
+            if ($index == 0) continue;
+
+            if (!empty($row[0]) && !empty($row[1]) && !empty($row[2])) {
+                $anioSheet = trim($row[1]);
+
+                if ($anioSheet == $anio) {
+                    $mes = trim(ucfirst(strtolower($row[2])));
+                    $mesKey = strtolower($mes);
+
+                    if (!isset($datosPorMes[$mesKey])) {
+                        $datosPorMes[$mesKey] = [
+                            'mes' => $mes,
+                            'orden' => $ordenMeses[$mesKey] ?? 99,
+                            'ventas' => 0,
+                            'cuotas' => 0,
+                        ];
+                    }
+
+                    $datosPorMes[$mesKey]['ventas'] += $this->limpiarNumero($row[3] ?? 0);
+                    $datosPorMes[$mesKey]['cuotas'] += $this->limpiarNumero($row[5] ?? 0);
+                }
+            }
+        }
+
+        // Ordenar por mes
+        usort($datosPorMes, function ($a, $b) {
+            return $a['orden'] <=> $b['orden'];
+        });
+
+        return [
+            'meses' => array_column($datosPorMes, 'mes'),
+            'ventas' => array_column($datosPorMes, 'ventas'),
+            'cuotas' => array_column($datosPorMes, 'cuotas'),
+        ];
+    }
+
+    /**
+     * Obtener años disponibles
+     */
+    private function obtenerAniosDisponiblesGlobal($service, $spreadsheetId)
+    {
+        $range = 'Historico!B:B';
+        $response = $service->spreadsheets_values->get($spreadsheetId, $range);
+        $values = $response->getValues();
+
+        $anios = [];
+
+        foreach ($values as $index => $row) {
+            if ($index == 0) continue;
+
+            if (!empty($row[0]) && is_numeric($row[0])) {
+                $anios[] = (int)$row[0];
+            }
+        }
+
+        $anios = array_unique($anios);
+        rsort($anios);
+
+        return $anios;
+    }
+
+    /**
+     * Obtener comparación anual (suma total por año)
+     */
+    private function obtenerComparacionAnual($service, $spreadsheetId)
+    {
+        $range = 'Historico!A:H';
+        $response = $service->spreadsheets_values->get($spreadsheetId, $range);
+        $values = $response->getValues();
+
+        $datosPorAnio = [];
+
+        foreach ($values as $index => $row) {
+            if ($index == 0) continue;
+
+            if (!empty($row[0]) && !empty($row[1]) && !empty($row[3])) {
+                $anio = trim($row[1]);
+
+                if (!isset($datosPorAnio[$anio])) {
+                    $datosPorAnio[$anio] = 0;
+                }
+
+                $datosPorAnio[$anio] += $this->limpiarNumero($row[3] ?? 0);
+            }
+        }
+
+        ksort($datosPorAnio);
+
+        return [
+            'anios' => array_keys($datosPorAnio),
+            'ventas' => array_values($datosPorAnio),
+        ];
+    }
+
+    /**
+     * Helpers para limpiar datos
+     */
+    private function limpiarNumero($valor)
+    {
+        if (empty($valor)) return 0;
+
+        $valor = (string) $valor;
+        $valor = trim($valor);
+
+        if (strpos($valor, '.') !== false && strpos($valor, ',') !== false) {
+            $valor = str_replace('.', '', $valor);
+            $valor = str_replace(',', '.', $valor);
+        } elseif (strpos($valor, ',') !== false) {
+            $valor = str_replace(',', '.', $valor);
+        }
+
+        return floatval($valor);
+    }
+
+    private function limpiarPorcentaje($valor)
+    {
+        if (empty($valor)) return 0;
+
+        $valor = str_replace('%', '', $valor);
+        $valor = trim($valor);
+        $valor = str_replace(',', '.', $valor);
+
+        return floatval($valor);
     }
 }

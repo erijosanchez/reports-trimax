@@ -31,7 +31,7 @@ class FileController extends Controller
     public function upload(Request $request)
     {
         $request->validate([
-            'file' => 'required|file|max:10240|mimes:pdf,xlsx,xls,csv',
+            'file' => 'required|file|max:120|mimes:pdf,xlsx,xls,csv',
             'description' => 'nullable|string|max:500',
             'is_public' => 'boolean',
         ]);

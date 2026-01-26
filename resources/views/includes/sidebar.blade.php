@@ -43,6 +43,13 @@
                     <span class="menu-title">Acuerdos Comerciales</span>
                 </a>
             </li>
+            <li class="nav-item">
+                <a class="nav-link {{ request()->routeIs('comercial.ventas.sedes') ? 'active' : '' }}"
+                    href="{{ route('comercial.ventas.sedes') }}">
+                    <i class="mdi mdi-cart-outline menu-icon"></i>
+                    <span class="menu-title">Ventas</span>
+                </a>
+            </li>
         @endif
 
         {{-- MÓDULO MARKETING (Solo marketing y superadmin) --}}

@@ -149,6 +149,10 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
             ->name('ordenes.recientes');
         Route::get('obtener-estadisticas-generales', [ComercialController::class, 'obtenerEstadisticasGenerales'])
             ->name('ordenes.estadisticas');
+
+        //Ver ventas de las sedes 
+        Route::get('/ventas-sedes', [ComercialController::class, 'ventasSedes'])->name('ventas.sedes');
+        Route::get('/api/ventas-sedes-data', [ComercialController::class, 'getVentasSedesData'])->name('ventas.sedes.data');
     });
 
     // Admin Routes (Admin + Super Admin only)
