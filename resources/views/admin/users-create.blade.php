@@ -193,6 +193,33 @@
                                                     </small>
                                                 </div>
 
+                                                {{-- ✅ NUEVO: Permiso de Ventas Consolidadas --}}
+                                                @if (auth()->user()->isSuperAdmin())
+                                                    <div class="mb-4">
+                                                        <div class="border-top pt-4">
+                                                            <h5 class="mb-3">
+                                                                <i class="mdi mdi-shield-check text-success me-2"></i>
+                                                                Permisos Especiales
+                                                            </h5>
+
+                                                            <div class="form-check form-check-success">
+                                                                <label class="form-check-label">
+                                                                    <input type="checkbox"
+                                                                        name="puede_ver_ventas_consolidadas"
+                                                                        value="1" class="form-check-input"
+                                                                        {{ old('puede_ver_ventas_consolidadas') ? 'checked' : '' }}>
+                                                                    Puede ver ventas consolidadas
+                                                                    <i class="input-helper"></i>
+                                                                </label>
+                                                            </div>
+                                                            <small class="text-muted ms-4">
+                                                                Permite al usuario acceder al dashboard de ventas
+                                                                consolidadas de todas las sedes
+                                                            </small>
+                                                        </div>
+                                                    </div>
+                                                @endif
+
                                                 <!-- Botones -->
                                                 <div class="d-flex gap-2 justify-content-end pt-3 border-top">
                                                     <a href="{{ route('admin.users') }}" class="btn btn-light">
@@ -229,10 +256,27 @@
                                                     <strong>Sede:</strong> Acceso al dashboard de ventas de su sede
                                                     asignada
                                                 </li>
+                                                <li class="mb-2">
+                                                    <strong>Consultor:</strong> Acceso a módulos comerciales
+                                                </li>
                                                 <li class="mb-0">
                                                     <strong>Usuario:</strong> Acceso limitado solo a dashboards asignados
                                                 </li>
                                             </ul>
+
+                                            @if (auth()->user()->isSuperAdmin())
+                                                <div class="mt-3 pt-3 border-top">
+                                                    <h6 class="text-success mb-2">
+                                                        <i class="mdi mdi-shield-check me-1"></i>
+                                                        Permisos Especiales
+                                                    </h6>
+                                                    <p class="text-muted small mb-0">
+                                                        <strong>Ventas Consolidadas:</strong> Permite ver el dashboard con
+                                                        las ventas de todas las sedes.
+                                                        Solo el Super Admin puede otorgar este permiso.
+                                                    </p>
+                                                </div>
+                                            @endif
                                         </div>
                                     </div>
                                 </div>

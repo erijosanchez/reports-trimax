@@ -17,6 +17,7 @@ class User extends Authenticatable
         'email',
         'password',
         'sede',
+        'puede_ver_ventas_consolidadas',
         'is_active',
         'last_login_at',
         'two_factor_secret',
@@ -35,6 +36,7 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
         'is_active' => 'boolean',
+        'puede_ver_ventas_consolidadas' => 'boolean',
         'last_login_at' => 'datetime',
         'two_factor_confirmed_at' => 'datetime',
     ];
@@ -154,6 +156,11 @@ class User extends Authenticatable
         return $query->whereHas('activeSessions', function ($q) {
             $q->where('last_activity', '>=', now()->subMinutes(5));
         });
+    }
+
+    public function puedeVerVentasConsolidadas(): bool
+    {
+        return $this->isSuperAdmin() || $this->puede_ver_ventas_consolidadas;
     }
 
     public function getRoleName()

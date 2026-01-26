@@ -165,6 +165,33 @@
                                                     </small>
                                                 </div>
 
+                                                {{-- ✅ NUEVO: Permiso de Ventas Consolidadas --}}
+                                                @if (auth()->user()->isSuperAdmin())
+                                                    <div class="mb-4">
+                                                        <div class="border-top pt-4">
+                                                            <h5 class="mb-3">
+                                                                <i class="mdi mdi-shield-check text-success me-2"></i>
+                                                                Permisos Especiales
+                                                            </h5>
+
+                                                            <div class="form-check form-check-success">
+                                                                <label class="form-check-label">
+                                                                    <input type="checkbox"
+                                                                        name="puede_ver_ventas_consolidadas" value="1"
+                                                                        class="form-check-input"
+                                                                        {{ old('puede_ver_ventas_consolidadas', $user->puede_ver_ventas_consolidadas) ? 'checked' : '' }}>
+                                                                    Puede ver ventas consolidadas
+                                                                    <i class="input-helper"></i>
+                                                                </label>
+                                                            </div>
+                                                            <small class="text-muted ms-4">
+                                                                Permite al usuario acceder al dashboard de ventas
+                                                                consolidadas de todas las sedes
+                                                            </small>
+                                                        </div>
+                                                    </div>
+                                                @endif
+
                                                 <!-- Cambiar contraseña (opcional) -->
                                                 <div class="border-top pt-4 mb-4">
                                                     <h5 class="mb-3">
@@ -266,6 +293,19 @@
                                                 </div>
                                             @endif
 
+                                            {{-- ✅ NUEVO: Mostrar si tiene permiso de ventas --}}
+                                            @if ($user->puede_ver_ventas_consolidadas)
+                                                <div class="mb-3 pb-3 border-bottom">
+                                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                                        <span class="text-muted">Permisos Especiales</span>
+                                                        <span class="badge badge-success">
+                                                            <i class="mdi mdi-chart-line me-1"></i>
+                                                            Ventas Consolidadas
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            @endif
+
                                             <div class="mb-3 pb-3 border-bottom">
                                                 <div class="d-flex justify-content-between align-items-center mb-2">
                                                     <span class="text-muted">Estado</span>
@@ -310,7 +350,7 @@
                                 <div class="col-lg-12 grid-margin stretch-card">
                                     @if (auth()->user()->isSuperAdmin() &&
                                             $user->id !== auth()->id() &&
-                                            !in_array($user->roles->first()->name, ['superadmin']))
+                                            !in_array($user->roles->first()->name, ['super_admin']))
                                         <div class="card border-danger">
                                             <div class="card-body">
                                                 <h5 class="text-danger mb-3">

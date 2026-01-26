@@ -197,3 +197,7 @@ CREATE TABLE ventas (
     INDEX idx_marca (marca),
     INDEX idx_anio_mes (anio, mes)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+ALTER TABLE users
+ADD COLUMN puede_ver_ventas_consolidadas TINYINT(1) NOT NULL DEFAULT 0
+AFTER sede;

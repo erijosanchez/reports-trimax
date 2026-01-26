@@ -1229,8 +1229,8 @@ class ComercialController extends Controller
     public function ventasSedes()
     {
         // Verificar que sea super admin o admin
-        if (!auth()->user()->isSuperAdmin() && !auth()->user()->isAdmin()) {
-            abort(403, 'No autorizado');
+        if (!auth()->user()->puedeVerVentasConsolidadas()) {
+            abort(403, 'No tienes permiso para ver las ventas consolidadas');
         }
 
         $mesActual = ucfirst(Carbon::now()->locale('es')->translatedFormat('F'));
