@@ -1303,10 +1303,12 @@ class ComercialController extends Controller
 
             $todasLasSedes = $this->obtenerDatosTodasLasSedes($service, $spreadsheetId, $mes, $anio);
             $datosConsolidados = $this->obtenerDatosConsolidados($service, $spreadsheetId, $anio);
+            $comparacionAnual = $this->obtenerComparacionAnualPorMes($service, $spreadsheetId, $mes);
 
             return response()->json([
                 'sedes' => $todasLasSedes,
                 'consolidado' => $datosConsolidados,
+                'comparacion' => $comparacionAnual,
                 'anio' => $anio,
                 'mes' => $mes
             ]);
@@ -1463,19 +1465,26 @@ class ComercialController extends Controller
         $response = $service->spreadsheets_values->get($spreadsheetId, $range);
         $values = $response->getValues();
 
+        // Obtener mes actual
+        $mesActual = ucfirst(Carbon::now()->locale('es')->translatedFormat('F'));
+
         $datosPorAnio = [];
 
         foreach ($values as $index => $row) {
             if ($index == 0) continue;
 
-            if (!empty($row[0]) && !empty($row[1]) && !empty($row[3])) {
+            if (!empty($row[0]) && !empty($row[1]) && !empty($row[2]) && !empty($row[3])) {
                 $anio = trim($row[1]);
+                $mesSheet = trim(ucfirst(strtolower($row[2])));
+                $venta = $this->limpiarNumero($row[3] ?? 0);
 
-                if (!isset($datosPorAnio[$anio])) {
-                    $datosPorAnio[$anio] = 0;
+                // 🔥 SOLO sumar ventas del MES ACTUAL
+                if ($mesSheet == $mesActual && is_numeric($anio)) {
+                    if (!isset($datosPorAnio[$anio])) {
+                        $datosPorAnio[$anio] = 0;
+                    }
+                    $datosPorAnio[$anio] += $venta;
                 }
-
-                $datosPorAnio[$anio] += $this->limpiarNumero($row[3] ?? 0);
             }
         }
 
@@ -1484,6 +1493,45 @@ class ComercialController extends Controller
         return [
             'anios' => array_keys($datosPorAnio),
             'ventas' => array_values($datosPorAnio),
+            'mes' => $mesActual
+        ];
+    }
+
+    /**
+     * Obtener comparación de un MES ESPECÍFICO en diferentes años (para AJAX)
+     */
+    private function obtenerComparacionAnualPorMes($service, $spreadsheetId, $mes)
+    {
+        $range = 'Historico!A:H';
+        $response = $service->spreadsheets_values->get($spreadsheetId, $range);
+        $values = $response->getValues();
+
+        $datosPorAnio = [];
+
+        foreach ($values as $index => $row) {
+            if ($index == 0) continue;
+
+            if (!empty($row[0]) && !empty($row[1]) && !empty($row[2]) && !empty($row[3])) {
+                $anio = trim($row[1]);
+                $mesSheet = trim(ucfirst(strtolower($row[2])));
+                $venta = $this->limpiarNumero($row[3] ?? 0);
+
+                // 🔥 Sumar ventas del MES RECIBIDO
+                if ($mesSheet == $mes && is_numeric($anio)) {
+                    if (!isset($datosPorAnio[$anio])) {
+                        $datosPorAnio[$anio] = 0;
+                    }
+                    $datosPorAnio[$anio] += $venta;
+                }
+            }
+        }
+
+        ksort($datosPorAnio);
+
+        return [
+            'anios' => array_keys($datosPorAnio),
+            'ventas' => array_values($datosPorAnio),
+            'mes' => $mes
         ];
     }
 

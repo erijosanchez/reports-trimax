@@ -76,7 +76,7 @@
                                 @php
                                     $totalVentas = collect($todasLasSedes)->sum('venta_general');
                                     $totalCuotas = collect($todasLasSedes)->sum('cuota');
-                                    $cumplimientoPromedio = ($totalCuotas > 0) ? ($totalVentas / $totalCuotas) * 100 : 0;
+                                    $cumplimientoPromedio = $totalCuotas > 0 ? ($totalVentas / $totalCuotas) * 100 : 0;
                                     $sedesCumplen = collect($todasLasSedes)
                                         ->filter(fn($s) => $s['cumplimiento_cuota'] >= 100)
                                         ->count();
@@ -193,7 +193,8 @@
                                         <div class="card-body">
                                             <h4 class="card-title mb-4">
                                                 <i class="mdi mdi-chart-areaspline text-info me-2"></i>
-                                                Comparación de Ventas Anuales - Todas las Sedes
+                                                Comparación de {{ $mesActual }} - Histórico
+                                                de Años (Todas las Sedes)
                                             </h4>
                                             <canvas id="comparacionAnualChart" height="60"></canvas>
                                         </div>
@@ -362,6 +363,10 @@
                 datosConsolidados = data.consolidado;
                 actualizarGraficoConsolidado();
 
+                // Actualizar comparación anual
+                comparacionAnual = data.comparacion;
+                actualizarGraficoComparacionAnual();
+
                 // Actualizar top sedes
                 actualizarGraficoTopSedes(data.sedes);
 
@@ -490,7 +495,7 @@
                 data: {
                     labels: comparacionAnual.anios,
                     datasets: [{
-                        label: 'Venta Total Anual',
+                        label: 'Venta Total del Mes',
                         data: comparacionAnual.ventas,
                         backgroundColor: 'rgba(153, 102, 255, 0.2)',
                         borderColor: 'rgba(153, 102, 255, 1)',
@@ -603,6 +608,12 @@
             });
 
             tbody.innerHTML = html;
+        }
+
+        function actualizarGraficoComparacionAnual() {
+            comparacionAnualChart.data.labels = comparacionAnual.anios;
+            comparacionAnualChart.data.datasets[0].data = comparacionAnual.ventas;
+            comparacionAnualChart.update();
         }
 
         // Filtrar tabla
