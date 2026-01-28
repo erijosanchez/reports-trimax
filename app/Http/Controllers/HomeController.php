@@ -289,21 +289,23 @@ class HomeController extends Controller
         $response = $service->spreadsheets_values->get($spreadsheetId, $range);
         $values = $response->getValues();
 
+        // Obtener mes actual
+        $mesActual = ucfirst(Carbon::now()->locale('es')->translatedFormat('F'));
+
         $datosAnuales = [];
 
         foreach ($values as $index => $row) {
             if ($index == 0) continue;
 
-            if (!empty($row[0]) && !empty($row[1]) && !empty($row[3])) {
+            if (!empty($row[0]) && !empty($row[1]) && !empty($row[2]) && !empty($row[3])) {
                 $sedeSheet = trim(strtoupper($row[0]));
                 $anio = trim($row[1]);
+                $mesSheet = trim(ucfirst(strtolower($row[2])));
                 $venta = $this->limpiarNumero($row[3] ?? 0);
 
-                if ($sedeSheet == $sede && is_numeric($anio)) {
-                    if (!isset($datosAnuales[$anio])) {
-                        $datosAnuales[$anio] = 0;
-                    }
-                    $datosAnuales[$anio] += $venta;
+                // 🔥 SOLO tomar datos del MES ACTUAL
+                if ($sedeSheet == $sede && $mesSheet == $mesActual && is_numeric($anio)) {
+                    $datosAnuales[$anio] = $venta;
                 }
             }
         }
@@ -313,7 +315,8 @@ class HomeController extends Controller
 
         return [
             'anios' => array_keys($datosAnuales),
-            'ventas' => array_values($datosAnuales)
+            'ventas' => array_values($datosAnuales),
+            'mes' => $mesActual // Para mostrar en el título
         ];
     }
 

@@ -185,14 +185,14 @@
                                 </div>
                             </div>
 
-                            <!-- ✅ NUEVO: Gráfico de Ventas Anuales -->
+                            <!-- Gráfico de Ventas Anuales -->
                             <div class="row mb-4">
                                 <div class="col-12">
                                     <div class="card">
                                         <div class="card-body">
                                             <h4 class="card-title mb-4">
                                                 <i class="mdi mdi-chart-areaspline text-info me-2"></i>
-                                                Comparación de Ventas Anuales - {{ $sedeUsuario }}
+                                                Comparación de {{ $datosAnuales['mes'] ?? 'Mes Actual' }} - Histórico de Años
                                             </h4>
                                             <canvas id="ventasAnualesChart" height="60"></canvas>
                                         </div>
@@ -488,7 +488,7 @@
                 data: {
                     labels: @json($datosAnuales['anios']),
                     datasets: [{
-                        label: 'Venta Total Anual',
+                        label: 'Ventas En {{ $datosAnuales['mes'] ?? 'Mes Actual' }}',
                         data: @json($datosAnuales['ventas']),
                         backgroundColor: 'rgba(153, 102, 255, 0.2)',
                         borderColor: 'rgba(153, 102, 255, 1)',
