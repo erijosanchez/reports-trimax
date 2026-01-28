@@ -76,7 +76,7 @@
                                 @php
                                     $totalVentas = collect($todasLasSedes)->sum('venta_general');
                                     $totalCuotas = collect($todasLasSedes)->sum('cuota');
-                                    $cumplimientoPromedio = collect($todasLasSedes)->avg('cumplimiento_cuota') ?? 0;
+                                    $cumplimientoPromedio = ($totalCuotas > 0) ? ($totalVentas / $totalCuotas) * 100 : 0;
                                     $sedesCumplen = collect($todasLasSedes)
                                         ->filter(fn($s) => $s['cumplimiento_cuota'] >= 100)
                                         ->count();
@@ -381,7 +381,7 @@
         function actualizarCardsGlobales(sedes) {
             const totalVentas = sedes.reduce((sum, s) => sum + s.venta_general, 0);
             const totalCuotas = sedes.reduce((sum, s) => sum + s.cuota, 0);
-            const cumplimientoPromedio = sedes.reduce((sum, s) => sum + s.cumplimiento_cuota, 0) / sedes.length || 0;
+            const cumplimientoPromedio = (totalCuotas > 0) ? (totalVentas / totalCuotas) * 100 : 0; //PROMEDIO
             const sedesCumplen = sedes.filter(s => s.cumplimiento_cuota >= 100).length;
 
             document.getElementById('totalVentas').textContent = 'S/ ' + formatNumber(totalVentas);
