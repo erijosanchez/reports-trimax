@@ -15,6 +15,7 @@ use App\Http\Controllers\MarketingController;
 use App\Http\Controllers\UserMarketingController;
 use App\Http\Controllers\SurveyController;
 use App\Http\Controllers\ImportController;
+use App\Http\Controllers\DescuentosEspecialesController;
 
 // ============================================================
 // RUTAS PARA LARAVEL 11
@@ -133,6 +134,21 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
         Route::put('/acuerdos/{id}/editar', [ComercialController::class, 'editarAcuerdo'])->name('acuerdos.editar');
         Route::post('/acuerdos/{id}/cambiar-validacion', [ComercialController::class, 'cambiarValidacion'])->name('acuerdos.cambiar-validacion');
         Route::post('/acuerdos/{id}/cambiar-aprobacion', [ComercialController::class, 'cambiarAprobacion'])->name('acuerdos.cambiar-aprobacion');
+
+        /* DESCUENTOS ESPECIALES */
+        Route::get('/descuentos-especiales', [DescuentosEspecialesController::class, 'index'])->name('descuentos.index');
+        Route::get('/descuentos-especiales/obtener', [DescuentosEspecialesController::class, 'obtenerDescuentos'])->name('descuentos.obtener');
+        Route::post('/descuentos-especiales/crear', [DescuentosEspecialesController::class, 'crearDescuento'])->name('descuentos.crear');
+        Route::put('/descuentos-especiales/{id}/editar', [DescuentosEspecialesController::class, 'editarDescuento'])->name('descuentos.editar');
+        Route::post('/descuentos-especiales/{id}/validar', [DescuentosEspecialesController::class, 'validarDescuento'])->name('descuentos.validar');
+        Route::post('/descuentos-especiales/{id}/aprobar', [DescuentosEspecialesController::class, 'aprobarDescuento'])->name('descuentos.aprobar');
+        Route::post('/descuentos-especiales/{id}/cambiar-validacion', [DescuentosEspecialesController::class, 'cambiarValidacion'])->name('descuentos.cambiar-validacion');
+        Route::post('/descuentos-especiales/{id}/cambiar-aprobacion', [DescuentosEspecialesController::class, 'cambiarAprobacion'])->name('descuentos.cambiar-aprobacion');
+        Route::post('/descuentos-especiales/{id}/deshabilitar', [DescuentosEspecialesController::class, 'deshabilitarDescuento'])->name('descuentos.deshabilitar');
+        Route::post('/descuentos-especiales/{id}/rehabilitar', [DescuentosEspecialesController::class, 'rehabilitarDescuento'])->name('descuentos.rehabilitar');
+        Route::get('/descuentos-especiales/{id}/archivo/{index}', [DescuentosEspecialesController::class, 'descargarArchivo'])->name('descuentos.archivo');
+        Route::get('/descuentos-especiales/usuarios', [DescuentosEspecialesController::class, 'obtenerUsuariosCreadores'])->name('descuentos.usuarios');
+
 
         /* CONSULTAR ORDENES -> SHEET */
         Route::get('consultar-orden', [ComercialController::class, 'consultarOrden'])

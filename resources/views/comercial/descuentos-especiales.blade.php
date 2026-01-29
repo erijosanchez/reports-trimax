@@ -10,7 +10,7 @@
                     <div class="d-sm-flex align-items-center justify-content-between border-bottom">
                         <div class="btn-wrapper">
                             <h3 class="mb-3">
-                                <i class="mdi mdi-tag-multiple"></i> Descuentos Especiales
+                                <i class="mdi mdi-sale"></i> Descuentos Especiales
                             </h3>
                         </div>
                         <div>
@@ -36,7 +36,7 @@
                                                     </h2>
                                                 </div>
                                                 <div class="icon-stat bg-primary">
-                                                    <i class="mdi mdi-file-document-multiple"></i>
+                                                    <i class="mdi mdi-sale"></i>
                                                 </div>
                                             </div>
                                         </div>

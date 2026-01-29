@@ -44,8 +44,8 @@
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link {{ request()->routeIs('comercial.acuerdos') ? 'active' : '' }}"
-                    href="{{ route('comercial.acuerdos') }}">
+                <a class="nav-link {{ request()->routeIs('comercial.descuentos.index') ? 'active' : '' }}"
+                    href="{{ route('comercial.descuentos.index') }}">
                     <i class="mdi mdi-sale menu-icon"></i>
                     <span class="menu-title">Descuentos Especiales</span>
                 </a>
