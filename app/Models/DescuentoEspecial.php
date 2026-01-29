@@ -15,6 +15,8 @@ class DescuentoEspecial extends Model
     protected $fillable = [
         'numero_descuento',
         'user_id',
+        'numero_factura', 
+        'numero_orden',    
         'sede',
         'ruc',
         'razon_social',

@@ -212,11 +212,13 @@
                                                 <div class="table-responsive"
                                                     style="overflow-x: auto; margin: 0 -1.5rem; padding: 0 1.5rem;">
                                                     <table class="table table-hover align-middle" id="tablaDescuentos"
-                                                        style="min-width: 2200px;">
+                                                        style="min-width: 2400px;">
                                                         <thead class="table-dark">
                                                             <tr>
                                                                 <th width="50">#</th>
                                                                 <th style="min-width: 130px;">N° Descuento</th>
+                                                                <th style="min-width: 130px;">N° Factura</th>
+                                                                <th style="min-width: 130px;">N° Orden</th>
                                                                 <th style="min-width: 120px;">Sede</th>
                                                                 <th style="min-width: 130px;">RUC</th>
                                                                 <th style="min-width: 250px;">Razón Social</th>
@@ -275,6 +277,19 @@
                             <div class="col-md-6">
                                 <h6 class="text-primary mb-3"><i class="mdi mdi-account-circle"></i> Datos del Cliente
                                 </h6>
+
+                                {{-- 🔥 NUEVOS CAMPOS --}}
+                                <div class="mb-3">
+                                    <label class="form-label">N° Factura</label>
+                                    <input type="text" class="form-control" name="numero_factura"
+                                        placeholder="Ej: F001-00012345">
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">N° Orden</label>
+                                    <input type="text" class="form-control" name="numero_orden"
+                                        placeholder="Ej: ORD-2025-00123">
+                                </div>
 
                                 <div class="mb-3">
                                     <label class="form-label">Sede <span class="text-danger">*</span></label>
@@ -629,7 +644,7 @@
         const userEmail = "{{ Auth::user()->email }}";
         const canValidate = userEmail === 'planeamiento.comercial@trimaxperu.com';
         const canApprove = userEmail === 'smonopoli@trimaxperu.com' || userEmail ===
-        'planeamiento.comercial@trimaxperu.com';
+            'planeamiento.comercial@trimaxperu.com';
         const canManageDescuentos = userEmail === 'smonopoli@trimaxperu.com' || userEmail ===
             'planeamiento.comercial@trimaxperu.com';
 
@@ -844,13 +859,13 @@
 
             if (descuentosData.length === 0) {
                 html = `
-                <tr>
-                    <td colspan="18" class="text-center py-5">
-                        <i class="mdi mdi-file-document-outline mdi-48px text-muted"></i>
-                        <p class="mt-3 text-muted">No se encontraron descuentos especiales</p>
-                    </td>
-                </tr>
-            `;
+                    <tr>
+                        <td colspan="20" class="text-center py-5">
+                            <i class="mdi mdi-file-document-outline mdi-48px text-muted"></i>
+                            <p class="mt-3 text-muted">No se encontraron descuentos especiales</p>
+                        </td>
+                    </tr>
+                `;
             } else {
                 descuentosData.forEach((descuento, index) => {
                     const badgeValidado = obtenerBadgeAprobacion(descuento.validado);
@@ -861,82 +876,84 @@
                     const puedeEditar = esCreador || canManageDescuentos;
 
                     html += `
-                    <tr ${esDeshabilitado ? 'class="table-secondary"' : ''}>
-                        <td class="text-center">${index + 1}</td>
-                        <td><strong class="text-primary">${descuento.numero_descuento}</strong></td>
-                        <td>${descuento.sede}</td>
-                        <td>${descuento.ruc}</td>
-                        <td title="${descuento.razon_social}"><strong>${descuento.razon_social}</strong></td>
-                        <td>${descuento.consultor}</td>
-                        <td>${descuento.ciudad}</td>
-                        <td title="${descuento.descuento_especial}">${truncar(descuento.descuento_especial, 70)}</td>
-                        <td><span class="badge bg-secondary">${descuento.tipo}</span></td>
-                        <td>${descuento.marca}</td>
-                        <td>${descuento.ar || '-'}</td>
-                        <td>${descuento.disenos || '-'}</td>
-                        <td>${descuento.material || '-'}</td>
-                        <td><small>${formatearFecha(descuento.created_at)}</small></td>
-                        <td>
-                            ${badgeValidado}
-                            ${canValidate && descuento.validado === 'Pendiente' && !esDeshabilitado ? `
-                                    <div class="btn-group mt-1" role="group">
-                                        <button class="btn btn-sm btn-success" onclick="validarDescuento(${descuento.id}, 'Aprobado')">
-                                            <i class="mdi mdi-check"></i>
-                                        </button>
-                                        <button class="btn btn-sm btn-danger" onclick="validarDescuento(${descuento.id}, 'Rechazado')">
-                                            <i class="mdi mdi-close"></i>
-                                        </button>
-                                    </div>
-                                ` : ''}
-                            ${canValidate && (descuento.validado === 'Aprobado' || descuento.validado === 'Rechazado') && !esDeshabilitado ? `
-                                    <button class="btn btn-sm btn-outline-info mt-1" onclick="cambiarValidacion(${descuento.id})" title="Cambiar validación">
-                                        <i class="mdi mdi-swap-horizontal"></i>
-                                    </button>
-                                ` : ''}
-                        </td>
-                        <td>
-                            ${badgeAprobado}
-                            ${canApprove && descuento.aprobado === 'Pendiente' && !esDeshabilitado ? `
-                                    <div class="btn-group mt-1" role="group">
-                                        <button class="btn btn-sm btn-success" onclick="aprobarDescuento(${descuento.id}, 'Aprobado')">
-                                            <i class="mdi mdi-check"></i>
-                                        </button>
-                                        <button class="btn btn-sm btn-danger" onclick="aprobarDescuento(${descuento.id}, 'Rechazado')">
-                                            <i class="mdi mdi-close"></i>
-                                        </button>
-                                    </div>
-                                ` : ''}
-                            ${canApprove && (descuento.aprobado === 'Aprobado' || descuento.aprobado === 'Rechazado') && !esDeshabilitado ? `
-                                    <button class="btn btn-sm btn-outline-info mt-1" onclick="cambiarAprobacion(${descuento.id})" title="Cambiar aprobación">
-                                        <i class="mdi mdi-swap-horizontal"></i>
-                                    </button>
-                                ` : ''}
-                        </td>
-                        <td>${descuento.creador ? descuento.creador.name : '-'}</td>
-                        <td class="text-center">
-                            <div class="btn-group" role="group">
-                                <button class="btn btn-sm btn-info" onclick="verDetalles(${descuento.id})" title="Ver detalles">
-                                    <i class="mdi mdi-eye"></i>
+            <tr ${esDeshabilitado ? 'class="table-secondary"' : ''}>
+                <td class="text-center">${index + 1}</td>
+                <td><strong class="text-primary">${descuento.numero_descuento}</strong></td>
+                <td>${descuento.numero_factura || '-'}</td>
+                <td>${descuento.numero_orden || '-'}</td>
+                <td>${descuento.sede}</td>
+                <td>${descuento.ruc}</td>
+                <td title="${descuento.razon_social}"><strong>${descuento.razon_social}</strong></td>
+                <td>${descuento.consultor}</td>
+                <td>${descuento.ciudad}</td>
+                <td title="${descuento.descuento_especial}">${truncar(descuento.descuento_especial, 70)}</td>
+                <td><span class="badge bg-secondary">${descuento.tipo}</span></td>
+                <td>${descuento.marca}</td>
+                <td>${descuento.ar || '-'}</td>
+                <td>${descuento.disenos || '-'}</td>
+                <td>${descuento.material || '-'}</td>
+                <td><small>${formatearFecha(descuento.created_at)}</small></td>
+                <td>
+                    ${badgeValidado}
+                    ${canValidate && descuento.validado === 'Pendiente' && !esDeshabilitado ? `
+                            <div class="btn-group mt-1" role="group">
+                                <button class="btn btn-sm btn-success" onclick="validarDescuento(${descuento.id}, 'Aprobado')">
+                                    <i class="mdi mdi-check"></i>
                                 </button>
-                                ${puedeEditar && !esDeshabilitado ? `
-                                        <button class="btn btn-sm btn-warning" onclick="editarDescuento(${descuento.id})" title="Editar">
-                                            <i class="mdi mdi-pencil"></i>
-                                        </button>
-                                    ` : ''}
-                                ${canManageDescuentos && !esDeshabilitado ? `
-                                        <button class="btn btn-sm btn-danger" onclick="abrirModalDeshabilitar(${descuento.id})" title="Deshabilitar">
-                                            <i class="mdi mdi-cancel"></i>
-                                        </button>
-                                    ` : ''}
-                                ${canManageDescuentos && esDeshabilitado ? `
-                                        <button class="btn btn-sm btn-success" onclick="abrirModalRehabilitar(${descuento.id})" title="Rehabilitar">
-                                            <i class="mdi mdi-check-circle"></i>
-                                        </button>
-                                    ` : ''}
+                                <button class="btn btn-sm btn-danger" onclick="validarDescuento(${descuento.id}, 'Rechazado')">
+                                    <i class="mdi mdi-close"></i>
+                                </button>
                             </div>
-                        </td>
-                    </tr>
-                `;
+                        ` : ''}
+                    ${canValidate && (descuento.validado === 'Aprobado' || descuento.validado === 'Rechazado') && !esDeshabilitado ? `
+                            <button class="btn btn-sm btn-outline-info mt-1" onclick="cambiarValidacion(${descuento.id})" title="Cambiar validación">
+                                <i class="mdi mdi-swap-horizontal"></i>
+                            </button>
+                        ` : ''}
+                </td>
+                <td>
+                    ${badgeAprobado}
+                    ${canApprove && descuento.aprobado === 'Pendiente' && !esDeshabilitado ? `
+                            <div class="btn-group mt-1" role="group">
+                                <button class="btn btn-sm btn-success" onclick="aprobarDescuento(${descuento.id}, 'Aprobado')">
+                                    <i class="mdi mdi-check"></i>
+                                </button>
+                                <button class="btn btn-sm btn-danger" onclick="aprobarDescuento(${descuento.id}, 'Rechazado')">
+                                    <i class="mdi mdi-close"></i>
+                                </button>
+                            </div>
+                        ` : ''}
+                    ${canApprove && (descuento.aprobado === 'Aprobado' || descuento.aprobado === 'Rechazado') && !esDeshabilitado ? `
+                            <button class="btn btn-sm btn-outline-info mt-1" onclick="cambiarAprobacion(${descuento.id})" title="Cambiar aprobación">
+                                <i class="mdi mdi-swap-horizontal"></i>
+                            </button>
+                        ` : ''}
+                </td>
+                <td>${descuento.creador ? descuento.creador.name : '-'}</td>
+                <td class="text-center">
+                    <div class="btn-group" role="group">
+                        <button class="btn btn-sm btn-info" onclick="verDetalles(${descuento.id})" title="Ver detalles">
+                            <i class="mdi mdi-eye"></i>
+                        </button>
+                        ${puedeEditar && !esDeshabilitado ? `
+                                <button class="btn btn-sm btn-warning" onclick="editarDescuento(${descuento.id})" title="Editar">
+                                    <i class="mdi mdi-pencil"></i>
+                                </button>
+                            ` : ''}
+                        ${canManageDescuentos && !esDeshabilitado ? `
+                                <button class="btn btn-sm btn-danger" onclick="abrirModalDeshabilitar(${descuento.id})" title="Deshabilitar">
+                                    <i class="mdi mdi-cancel"></i>
+                                </button>
+                            ` : ''}
+                        ${canManageDescuentos && esDeshabilitado ? `
+                                <button class="btn btn-sm btn-success" onclick="abrirModalRehabilitar(${descuento.id})" title="Rehabilitar">
+                                    <i class="mdi mdi-check-circle"></i>
+                                </button>
+                            ` : ''}
+                    </div>
+                </td>
+            </tr>
+        `;
                 });
             }
 
@@ -1335,13 +1352,13 @@
                 </div>
             </div>
             ${historialHTML ? `
-                    <div class="row mt-3">
-                        <div class="col-md-12">
-                            <h6 class="text-primary"><i class="mdi mdi-history"></i> Historial</h6>
-                            ${historialHTML}
-                        </div>
-                    </div>
-                ` : ''}
+                                <div class="row mt-3">
+                                    <div class="col-md-12">
+                                        <h6 class="text-primary"><i class="mdi mdi-history"></i> Historial</h6>
+                                        ${historialHTML}
+                                    </div>
+                                </div>
+                            ` : ''}
             <div class="row mt-3">
                 <div class="col-md-12">
                     <h6 class="text-primary"><i class="mdi mdi-comment-text"></i> Comentarios</h6>

@@ -80,6 +80,8 @@ class DescuentosEspecialesController extends Controller
     {
         try {
             $validated = $request->validate([
+                'numero_factura' => 'nullable|string', 
+                'numero_orden' => 'nullable|string',
                 'sede' => 'required|string',
                 'ruc' => 'required|string',
                 'razon_social' => 'required|string',
@@ -115,6 +117,8 @@ class DescuentosEspecialesController extends Controller
             $descuento = DescuentoEspecial::create([
                 'numero_descuento' => $numeroDescuento,
                 'user_id' => Auth::id(),
+                'numero_factura' => $validated['numero_factura'] ?? null, 
+                'numero_orden' => $validated['numero_orden'] ?? null,
                 'sede' => $validated['sede'],
                 'ruc' => $validated['ruc'],
                 'razon_social' => $validated['razon_social'],
@@ -132,7 +136,7 @@ class DescuentosEspecialesController extends Controller
                 'aprobado' => 'Pendiente'
             ]);
 
-            // 📧 Enviar notificaciones
+            // Enviar notificaciones
             $this->enviarNotificacionCreacion($descuento);
 
             return response()->json([
@@ -355,6 +359,8 @@ class DescuentosEspecialesController extends Controller
             }
 
             $validated = $request->validate([
+                'numero_factura' => 'nullable|string',  
+                'numero_orden' => 'nullable|string',
                 'sede' => 'required|string',
                 'ruc' => 'required|string',
                 'razon_social' => 'required|string',
@@ -383,6 +389,8 @@ class DescuentosEspecialesController extends Controller
             }
 
             $descuento->update([
+                'numero_factura' => $validated['numero_factura'] ?? null,
+                'numero_orden' => $validated['numero_orden'] ?? null,
                 'sede' => $validated['sede'],
                 'ruc' => $validated['ruc'],
                 'razon_social' => $validated['razon_social'],
