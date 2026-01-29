@@ -104,8 +104,8 @@
                                             {{-- Sección de Filtros --}}
                                             <div class="row mb-3">
                                                 <div class="col-md-3">
-                                                    <label class="form-label"><i class="mdi mdi-account"></i>
-                                                        Consultor </label>
+                                                    <label class="form-label"><i class="mdi mdi-account"></i> Consultor
+                                                    </label>
                                                     <select class="form-select" id="filtroUsuario">
                                                         <option value="">Todos los usuarios</option>
                                                     </select>
@@ -124,8 +124,6 @@
                                                         <option value="JUNIN">JUNIN</option>
                                                         <option value="ICA">ICA</option>
                                                         <option value="HUANCAYO">HUANCAYO</option>
-                                                        <option value="CALLAO">CALLAO</option>
-                                                        <option value="VENTANILLA">VENTANILLA</option>
                                                         <option value="CAILLOMA">CAILLOMA</option>
                                                         <option value="SJM">SJM</option>
                                                         <option value="COMAS">COMAS</option>
@@ -148,8 +146,8 @@
                                                 </div>
                                                 <div class="col-md-2">
                                                     <label class="form-label"><i class="mdi mdi-flag"></i>
-                                                        Validado</label>
-                                                    <select class="form-select" id="filtroValidado">
+                                                        Aplicado</label>
+                                                    <select class="form-select" id="filtroAplicado">
                                                         <option value="">Todos</option>
                                                         <option value="Pendiente">Pendiente</option>
                                                         <option value="Aprobado">Aprobado</option>
@@ -212,7 +210,7 @@
                                                 <div class="table-responsive"
                                                     style="overflow-x: auto; margin: 0 -1.5rem; padding: 0 1.5rem;">
                                                     <table class="table table-hover align-middle" id="tablaDescuentos"
-                                                        style="min-width: 2400px;">
+                                                        style="min-width: 2500px;">
                                                         <thead class="table-dark">
                                                             <tr>
                                                                 <th width="50">#</th>
@@ -222,9 +220,9 @@
                                                                 <th style="min-width: 120px;">Sede</th>
                                                                 <th style="min-width: 130px;">RUC</th>
                                                                 <th style="min-width: 250px;">Razón Social</th>
-                                                                <th style="min-width: 130px;">Consultor</th>
+                                                                <th style="min-width: 150px;">Consultor</th>
                                                                 <th style="min-width: 130px;">Ciudad</th>
-                                                                <th style="min-width: 400px;">Descuento Especial</th>
+                                                                <th style="min-width: 220px;">Descuento Especial</th>
                                                                 <th style="min-width: 180px;">Tipo</th>
                                                                 <th style="min-width: 130px;">Marca</th>
                                                                 <th style="min-width: 130px;">AR</th>
@@ -232,9 +230,11 @@
                                                                 <th style="min-width: 130px;">Material</th>
                                                                 <th style="min-width: 110px;">Fecha Registro</th>
                                                                 <th style="min-width: 130px;"
-                                                                    class="bg-warning text-dark">Validado</th>
+                                                                    class="bg-warning text-dark">
+                                                                    Aplicado</th>
                                                                 <th style="min-width: 130px;" class="bg-info text-white">
-                                                                    Aprobado</th>
+                                                                    Aprobado
+                                                                </th>
                                                                 <th style="min-width: 150px;">Creado Por</th>
                                                                 <th style="min-width: 200px;" class="text-center">Acciones
                                                                 </th>
@@ -246,7 +246,6 @@
                                                     </table>
                                                 </div>
                                             </div>
-
                                         </div>
                                     </div>
                                 </div>
@@ -642,7 +641,7 @@
     <script>
         let descuentosData = [];
         const userEmail = "{{ Auth::user()->email }}";
-        const canValidate = userEmail === 'planeamiento.comercial@trimaxperu.com';
+        const canAplicar = userEmail === 'auditor.junior@trimaxperu.com';
         const canApprove = userEmail === 'smonopoli@trimaxperu.com' || userEmail ===
             'planeamiento.comercial@trimaxperu.com';
         const canManageDescuentos = userEmail === 'smonopoli@trimaxperu.com' || userEmail ===
@@ -653,7 +652,7 @@
             cargarUsuarios();
 
             // Eventos de filtros
-            $('#filtroUsuario, #filtroSede, #filtroValidado, #filtroAprobado').on('change', function() {
+            $('#filtroUsuario, #filtroSede, #filtroAplicado, #filtroAprobado').on('change', function() {
                 aplicarFiltros();
             });
 
@@ -670,7 +669,7 @@
             $('#btnLimpiarFiltros').on('click', function() {
                 $('#filtroUsuario').val('');
                 $('#filtroSede').val('');
-                $('#filtroValidado').val('');
+                $('#filtroAplicado').val('');
                 $('#filtroAprobado').val('');
                 $('#buscarGeneral').val('');
                 cargarDescuentos();
@@ -770,41 +769,37 @@
 
             const filtroUsuario = $('#filtroUsuario').val();
             const filtroSede = $('#filtroSede').val();
-            const filtroValidado = $('#filtroValidado').val();
+            const filtroAplicado = $('#filtroAplicado').val(); // 🔥 CAMBIO
             const filtroAprobado = $('#filtroAprobado').val();
             const busqueda = $('#buscarGeneral').val().toLowerCase().trim();
 
             let descuentosFiltrados = descuentosData;
 
-            // Filtro por usuario
             if (filtroUsuario) {
                 descuentosFiltrados = descuentosFiltrados.filter(d =>
                     d.creador && d.creador.id == filtroUsuario
                 );
             }
 
-            // Filtro por sede
             if (filtroSede) {
                 descuentosFiltrados = descuentosFiltrados.filter(d =>
                     d.sede === filtroSede
                 );
             }
 
-            // Filtro por validado
-            if (filtroValidado) {
+            // 🔥 CAMBIO: Filtro por aplicado
+            if (filtroAplicado) {
                 descuentosFiltrados = descuentosFiltrados.filter(d =>
-                    d.validado === filtroValidado
+                    d.aplicado === filtroAplicado
                 );
             }
 
-            // Filtro por aprobado
             if (filtroAprobado) {
                 descuentosFiltrados = descuentosFiltrados.filter(d =>
                     d.aprobado === filtroAprobado
                 );
             }
 
-            // Búsqueda general
             if (busqueda) {
                 descuentosFiltrados = descuentosFiltrados.filter(d => {
                     const numero = (d.numero_descuento || '').toLowerCase();
@@ -813,17 +808,20 @@
                     const consultor = (d.consultor || '').toLowerCase();
                     const descuento = (d.descuento_especial || '').toLowerCase();
                     const ciudad = (d.ciudad || '').toLowerCase();
+                    const numFactura = (d.numero_factura || '').toLowerCase();
+                    const numOrden = (d.numero_orden || '').toLowerCase();
 
                     return numero.includes(busqueda) ||
                         ruc.includes(busqueda) ||
                         razon.includes(busqueda) ||
                         consultor.includes(busqueda) ||
                         descuento.includes(busqueda) ||
-                        ciudad.includes(busqueda);
+                        ciudad.includes(busqueda) ||
+                        numFactura.includes(busqueda) ||
+                        numOrden.includes(busqueda);
                 });
             }
 
-            // Actualizar con los datos filtrados
             const descuentosOriginal = descuentosData;
             descuentosData = descuentosFiltrados;
 
@@ -841,9 +839,9 @@
          */
         function actualizarEstadisticas() {
             const total = descuentosData.length;
-            const aprobados = descuentosData.filter(d => d.validado === 'Aprobado' && d.aprobado === 'Aprobado').length;
-            const pendientes = descuentosData.filter(d => d.validado === 'Pendiente' || d.aprobado === 'Pendiente').length;
-            const rechazados = descuentosData.filter(d => d.validado === 'Rechazado' || d.aprobado === 'Rechazado').length;
+            const aprobados = descuentosData.filter(d => d.aplicado === 'Aprobado' && d.aprobado === 'Aprobado').length;
+            const pendientes = descuentosData.filter(d => d.aplicado === 'Pendiente' || d.aprobado === 'Pendiente').length;
+            const rechazados = descuentosData.filter(d => d.aplicado === 'Rechazado' || d.aprobado === 'Rechazado').length;
 
             $('#totalDescuentos').text(total);
             $('#descuentosAprobados').text(aprobados);
@@ -868,7 +866,7 @@
                 `;
             } else {
                 descuentosData.forEach((descuento, index) => {
-                    const badgeValidado = obtenerBadgeAprobacion(descuento.validado);
+                    const badgeAplicado = obtenerBadgeAprobacion(descuento.aplicado); // 🔥 CAMBIO
                     const badgeAprobado = obtenerBadgeAprobacion(descuento.aprobado);
 
                     const esDeshabilitado = !descuento.habilitado;
@@ -876,84 +874,84 @@
                     const puedeEditar = esCreador || canManageDescuentos;
 
                     html += `
-            <tr ${esDeshabilitado ? 'class="table-secondary"' : ''}>
-                <td class="text-center">${index + 1}</td>
-                <td><strong class="text-primary">${descuento.numero_descuento}</strong></td>
-                <td>${descuento.numero_factura || '-'}</td>
-                <td>${descuento.numero_orden || '-'}</td>
-                <td>${descuento.sede}</td>
-                <td>${descuento.ruc}</td>
-                <td title="${descuento.razon_social}"><strong>${descuento.razon_social}</strong></td>
-                <td>${descuento.consultor}</td>
-                <td>${descuento.ciudad}</td>
-                <td title="${descuento.descuento_especial}">${truncar(descuento.descuento_especial, 70)}</td>
-                <td><span class="badge bg-secondary">${descuento.tipo}</span></td>
-                <td>${descuento.marca}</td>
-                <td>${descuento.ar || '-'}</td>
-                <td>${descuento.disenos || '-'}</td>
-                <td>${descuento.material || '-'}</td>
-                <td><small>${formatearFecha(descuento.created_at)}</small></td>
-                <td>
-                    ${badgeValidado}
-                    ${canValidate && descuento.validado === 'Pendiente' && !esDeshabilitado ? `
-                            <div class="btn-group mt-1" role="group">
-                                <button class="btn btn-sm btn-success" onclick="validarDescuento(${descuento.id}, 'Aprobado')">
-                                    <i class="mdi mdi-check"></i>
-                                </button>
-                                <button class="btn btn-sm btn-danger" onclick="validarDescuento(${descuento.id}, 'Rechazado')">
-                                    <i class="mdi mdi-close"></i>
-                                </button>
-                            </div>
-                        ` : ''}
-                    ${canValidate && (descuento.validado === 'Aprobado' || descuento.validado === 'Rechazado') && !esDeshabilitado ? `
-                            <button class="btn btn-sm btn-outline-info mt-1" onclick="cambiarValidacion(${descuento.id})" title="Cambiar validación">
-                                <i class="mdi mdi-swap-horizontal"></i>
+                <tr ${esDeshabilitado ? 'class="table-secondary"' : ''}>
+                    <td class="text-center">${index + 1}</td>
+                    <td><strong class="text-primary">${descuento.numero_descuento}</strong></td>
+                    <td>${descuento.numero_factura || '-'}</td>
+                    <td>${descuento.numero_orden || '-'}</td>
+                    <td>${descuento.sede}</td>
+                    <td>${descuento.ruc}</td>
+                    <td title="${descuento.razon_social}"><strong>${descuento.razon_social}</strong></td>
+                    <td>${descuento.consultor}</td>
+                    <td>${descuento.ciudad}</td>
+                    <td title="${descuento.descuento_especial}">${truncar(descuento.descuento_especial, 70)}</td>
+                    <td><span class="badge bg-secondary">${descuento.tipo}</span></td>
+                    <td>${descuento.marca}</td>
+                    <td>${descuento.ar || '-'}</td>
+                    <td>${descuento.disenos || '-'}</td>
+                    <td>${descuento.material || '-'}</td>
+                    <td><small>${formatearFecha(descuento.created_at)}</small></td>
+                    <td>
+                        ${badgeAplicado}
+                        ${canAplicar && descuento.aplicado === 'Pendiente' && !esDeshabilitado ? `
+                                        <div class="btn-group mt-1" role="group">
+                                            <button class="btn btn-sm btn-success" onclick="aplicarDescuento(${descuento.id}, 'Aprobado')">
+                                                <i class="mdi mdi-check"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-danger" onclick="aplicarDescuento(${descuento.id}, 'Rechazado')">
+                                                <i class="mdi mdi-close"></i>
+                                            </button>
+                                        </div>
+                                    ` : ''}
+                        ${canAplicar && (descuento.aplicado === 'Aprobado' || descuento.aplicado === 'Rechazado') && !esDeshabilitado ? `
+                                        <button class="btn btn-sm btn-outline-info mt-1" onclick="cambiarAplicacion(${descuento.id})" title="Cambiar aplicación">
+                                            <i class="mdi mdi-swap-horizontal"></i>
+                                        </button>
+                                    ` : ''}
+                    </td>
+                    <td>
+                        ${badgeAprobado}
+                        ${canApprove && descuento.aprobado === 'Pendiente' && !esDeshabilitado ? `
+                                        <div class="btn-group mt-1" role="group">
+                                            <button class="btn btn-sm btn-success" onclick="aprobarDescuento(${descuento.id}, 'Aprobado')">
+                                                <i class="mdi mdi-check"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-danger" onclick="aprobarDescuento(${descuento.id}, 'Rechazado')">
+                                                <i class="mdi mdi-close"></i>
+                                            </button>
+                                        </div>
+                                    ` : ''}
+                        ${canApprove && (descuento.aprobado === 'Aprobado' || descuento.aprobado === 'Rechazado') && !esDeshabilitado ? `
+                                        <button class="btn btn-sm btn-outline-info mt-1" onclick="cambiarAprobacion(${descuento.id})" title="Cambiar aprobación">
+                                            <i class="mdi mdi-swap-horizontal"></i>
+                                        </button>
+                                    ` : ''}
+                    </td>
+                    <td>${descuento.creador ? descuento.creador.name : '-'}</td>
+                    <td class="text-center">
+                        <div class="btn-group" role="group">
+                            <button class="btn btn-sm btn-info" onclick="verDetalles(${descuento.id})" title="Ver detalles">
+                                <i class="mdi mdi-eye"></i>
                             </button>
-                        ` : ''}
-                </td>
-                <td>
-                    ${badgeAprobado}
-                    ${canApprove && descuento.aprobado === 'Pendiente' && !esDeshabilitado ? `
-                            <div class="btn-group mt-1" role="group">
-                                <button class="btn btn-sm btn-success" onclick="aprobarDescuento(${descuento.id}, 'Aprobado')">
-                                    <i class="mdi mdi-check"></i>
-                                </button>
-                                <button class="btn btn-sm btn-danger" onclick="aprobarDescuento(${descuento.id}, 'Rechazado')">
-                                    <i class="mdi mdi-close"></i>
-                                </button>
-                            </div>
-                        ` : ''}
-                    ${canApprove && (descuento.aprobado === 'Aprobado' || descuento.aprobado === 'Rechazado') && !esDeshabilitado ? `
-                            <button class="btn btn-sm btn-outline-info mt-1" onclick="cambiarAprobacion(${descuento.id})" title="Cambiar aprobación">
-                                <i class="mdi mdi-swap-horizontal"></i>
-                            </button>
-                        ` : ''}
-                </td>
-                <td>${descuento.creador ? descuento.creador.name : '-'}</td>
-                <td class="text-center">
-                    <div class="btn-group" role="group">
-                        <button class="btn btn-sm btn-info" onclick="verDetalles(${descuento.id})" title="Ver detalles">
-                            <i class="mdi mdi-eye"></i>
-                        </button>
-                        ${puedeEditar && !esDeshabilitado ? `
-                                <button class="btn btn-sm btn-warning" onclick="editarDescuento(${descuento.id})" title="Editar">
-                                    <i class="mdi mdi-pencil"></i>
-                                </button>
-                            ` : ''}
-                        ${canManageDescuentos && !esDeshabilitado ? `
-                                <button class="btn btn-sm btn-danger" onclick="abrirModalDeshabilitar(${descuento.id})" title="Deshabilitar">
-                                    <i class="mdi mdi-cancel"></i>
-                                </button>
-                            ` : ''}
-                        ${canManageDescuentos && esDeshabilitado ? `
-                                <button class="btn btn-sm btn-success" onclick="abrirModalRehabilitar(${descuento.id})" title="Rehabilitar">
-                                    <i class="mdi mdi-check-circle"></i>
-                                </button>
-                            ` : ''}
-                    </div>
-                </td>
-            </tr>
-        `;
+                            ${puedeEditar && !esDeshabilitado ? `
+                                            <button class="btn btn-sm btn-warning" onclick="editarDescuento(${descuento.id})" title="Editar">
+                                                <i class="mdi mdi-pencil"></i>
+                                            </button>
+                                        ` : ''}
+                            ${canManageDescuentos && !esDeshabilitado ? `
+                                            <button class="btn btn-sm btn-danger" onclick="abrirModalDeshabilitar(${descuento.id})" title="Deshabilitar">
+                                                <i class="mdi mdi-cancel"></i>
+                                            </button>
+                                        ` : ''}
+                            ${canManageDescuentos && esDeshabilitado ? `
+                                            <button class="btn btn-sm btn-success" onclick="abrirModalRehabilitar(${descuento.id})" title="Rehabilitar">
+                                                <i class="mdi mdi-check-circle"></i>
+                                            </button>
+                                        ` : ''}
+                        </div>
+                    </td>
+                </tr>
+            `;
                 });
             }
 
@@ -1024,12 +1022,12 @@
         }
 
         /**
-         * Validar descuento
+         * Aplicar descuento (Auditor Junior)
          */
-        function validarDescuento(id, accion) {
+        function aplicarDescuento(id, accion) {
             Swal.fire({
                 title: '¿Estás seguro?',
-                text: `¿Deseas ${accion === 'Aprobado' ? 'APROBAR' : 'RECHAZAR'} este descuento?`,
+                text: `¿Deseas ${accion === 'Aprobado' ? 'APLICAR' : 'RECHAZAR'} este descuento?`,
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: accion === 'Aprobado' ? '#10B981' : '#EF4444',
@@ -1039,7 +1037,7 @@
             }).then((result) => {
                 if (result.isConfirmed) {
                     $.ajax({
-                        url: `/comercial/descuentos-especiales/${id}/validar`,
+                        url: `/comercial/descuentos-especiales/${id}/aplicar`,
                         method: 'POST',
                         data: {
                             _token: '{{ csrf_token() }}',
@@ -1049,7 +1047,7 @@
                             if (response.success) {
                                 Swal.fire({
                                     icon: 'success',
-                                    title: '¡Validado!',
+                                    title: '¡Aplicado!',
                                     text: response.message,
                                     confirmButtonColor: '#3B82F6'
                                 });
@@ -1060,7 +1058,7 @@
                             Swal.fire({
                                 icon: 'error',
                                 title: 'Error',
-                                text: xhr.responseJSON?.message || 'Error al validar descuento',
+                                text: xhr.responseJSON?.message || 'Error al aplicar descuento',
                                 confirmButtonColor: '#EF4444'
                             });
                         }
@@ -1273,13 +1271,13 @@
                 archivosHTML = '<ul class="list-group">';
                 descuento.archivos_adjuntos.forEach((archivo, index) => {
                     archivosHTML += `
-                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                        <span><i class="mdi mdi-file-document"></i> ${archivo.nombre}</span>
-                        <a href="/comercial/descuentos-especiales/${descuento.id}/archivo/${index}" class="btn btn-sm btn-primary" download>
-                            <i class="mdi mdi-download"></i> Descargar
-                        </a>
-                    </li>
-                `;
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <span><i class="mdi mdi-file-document"></i> ${archivo.nombre}</span>
+                    <a href="/comercial/descuentos-especiales/${descuento.id}/archivo/${index}" class="btn btn-sm btn-primary" download>
+                        <i class="mdi mdi-download"></i> Descargar
+                    </a>
+                </li>
+            `;
                 });
                 archivosHTML += '</ul>';
             } else {
@@ -1289,89 +1287,91 @@
             let historialHTML = '';
             if (descuento.motivo_deshabilitacion) {
                 historialHTML += `
-                    <div class="alert alert-danger">
-                        <h6><i class="mdi mdi-cancel"></i> Deshabilitado</h6>
-                        <p><strong>Motivo:</strong> ${descuento.motivo_deshabilitacion}</p>
-                        <p><strong>Por:</strong> ${descuento.deshabilitador?.name || '-'}</p>
-                        <p><strong>Fecha:</strong> ${formatearFecha(descuento.deshabilitado_at)}</p>
-                    </div>
-                `;
+                <div class="alert alert-danger">
+                    <h6><i class="mdi mdi-cancel"></i> Deshabilitado</h6>
+                    <p><strong>Motivo:</strong> ${descuento.motivo_deshabilitacion}</p>
+                    <p><strong>Por:</strong> ${descuento.deshabilitador?.name || '-'}</p>
+                    <p><strong>Fecha:</strong> ${formatearFecha(descuento.deshabilitado_at)}</p>
+                </div>
+            `;
             }
             if (descuento.motivo_rehabilitacion) {
                 historialHTML += `
-                    <div class="alert alert-success">
-                        <h6><i class="mdi mdi-check-circle"></i> Rehabilitado</h6>
-                        <p><strong>Motivo:</strong> ${descuento.motivo_rehabilitacion}</p>
-                        <p><strong>Por:</strong> ${descuento.rehabilitador?.name || '-'}</p>
-                        <p><strong>Fecha:</strong> ${formatearFecha(descuento.rehabilitado_at)}</p>
-                    </div>
-                `;
+                <div class="alert alert-success">
+                    <h6><i class="mdi mdi-check-circle"></i> Rehabilitado</h6>
+                    <p><strong>Motivo:</strong> ${descuento.motivo_rehabilitacion}</p>
+                    <p><strong>Por:</strong> ${descuento.rehabilitador?.name || '-'}</p>
+                    <p><strong>Fecha:</strong> ${formatearFecha(descuento.rehabilitado_at)}</p>
+                </div>
+            `;
             }
 
             const html = `
-            <div class="row">
-                <div class="col-md-6">
-                    <h6 class="text-primary"><i class="mdi mdi-information"></i> Información General</h6>
-                    <table class="table table-borderless table-sm">
-                        <tr><th>N° Descuento:</th><td><strong>${descuento.numero_descuento}</strong></td></tr>
-                        <tr><th>Razón Social:</th><td>${descuento.razon_social}</td></tr>
-                        <tr><th>RUC:</th><td>${descuento.ruc}</td></tr>
-                        <tr><th>Sede:</th><td>${descuento.sede}</td></tr>
-                        <tr><th>Ciudad:</th><td>${descuento.ciudad}</td></tr>
-                        <tr><th>Consultor:</th><td>${descuento.consultor}</td></tr>
-                        <tr><th>Fecha Registro:</th><td>${formatearFecha(descuento.created_at)}</td></tr>
-                    </table>
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-primary"><i class="mdi mdi-information"></i> Información General</h6>
+                        <table class="table table-borderless table-sm">
+                            <tr><th>N° Descuento:</th><td><strong>${descuento.numero_descuento}</strong></td></tr>
+                            <tr><th>N° Factura:</th><td>${descuento.numero_factura || '-'}</td></tr>
+                            <tr><th>N° Orden:</th><td>${descuento.numero_orden || '-'}</td></tr>
+                            <tr><th>Razón Social:</th><td>${descuento.razon_social}</td></tr>
+                            <tr><th>RUC:</th><td>${descuento.ruc}</td></tr>
+                            <tr><th>Sede:</th><td>${descuento.sede}</td></tr>
+                            <tr><th>Ciudad:</th><td>${descuento.ciudad}</td></tr>
+                            <tr><th>Consultor:</th><td>${descuento.consultor}</td></tr>
+                            <tr><th>Fecha Registro:</th><td>${formatearFecha(descuento.created_at)}</td></tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-primary"><i class="mdi mdi-package"></i> Detalles del Descuento</h6>
+                        <table class="table table-borderless table-sm">
+                            <tr><th>Descuento:</th><td style="max-width: 250px; max-height: 80px; overflow-y: auto; overflow-x: hidden; word-wrap: break-word; white-space: normal;">${descuento.descuento_especial}</td></tr>
+                            <tr><th>Tipo:</th><td><span class="badge bg-secondary">${descuento.tipo}</span></td></tr>
+                            <tr><th>Marca:</th><td>${descuento.marca}</td></tr>
+                            <tr><th>AR:</th><td>${descuento.ar || '-'}</td></tr>
+                            <tr><th>Diseños:</th><td>${descuento.disenos || '-'}</td></tr>
+                            <tr><th>Material:</th><td>${descuento.material || '-'}</td></tr>
+                        </table>
+                    </div>
                 </div>
-                <div class="col-md-6">
-                    <h6 class="text-primary"><i class="mdi mdi-package"></i> Detalles del Descuento</h6>
-                    <table class="table table-borderless table-sm">
-                        <tr><th>Descuento:</th><td style="max-width: 250px; max-height: 80px; overflow-y: auto; overflow-x: hidden; word-wrap: break-word; white-space: normal;">${descuento.descuento_especial}</td></tr>
-                        <tr><th>Tipo:</th><td><span class="badge bg-secondary">${descuento.tipo}</span></td></tr>
-                        <tr><th>Marca:</th><td>${descuento.marca}</td></tr>
-                        <tr><th>AR:</th><td>${descuento.ar || '-'}</td></tr>
-                        <tr><th>Diseños:</th><td>${descuento.disenos || '-'}</td></tr>
-                        <tr><th>Material:</th><td>${descuento.material || '-'}</td></tr>
-                    </table>
+                <div class="row mt-3">
+                    <div class="col-md-12">
+                        <h6 class="text-primary"><i class="mdi mdi-check-circle"></i> Aprobaciones</h6>
+                        <table class="table table-sm">
+                            <tr>
+                                <th>Aplicado:</th>
+                                <td>${obtenerBadgeAprobacion(descuento.aplicado)}</td>
+                                <td>${descuento.aplicador ? 'Por: ' + descuento.aplicador.name : ''}</td>
+                            </tr>
+                            <tr>
+                                <th>Aprobado:</th>
+                                <td>${obtenerBadgeAprobacion(descuento.aprobado)}</td>
+                                <td>${descuento.aprobador ? 'Por: ' + descuento.aprobador.name : ''}</td>
+                            </tr>
+                        </table>
+                    </div>
                 </div>
-            </div>
-            <div class="row mt-3">
-                <div class="col-md-12">
-                    <h6 class="text-primary"><i class="mdi mdi-check-circle"></i> Aprobaciones</h6>
-                    <table class="table table-sm">
-                        <tr>
-                            <th>Validado:</th>
-                            <td>${obtenerBadgeAprobacion(descuento.validado)}</td>
-                            <td>${descuento.validador ? 'Por: ' + descuento.validador.name : ''}</td>
-                        </tr>
-                        <tr>
-                            <th>Aprobado:</th>
-                            <td>${obtenerBadgeAprobacion(descuento.aprobado)}</td>
-                            <td>${descuento.aprobador ? 'Por: ' + descuento.aprobador.name : ''}</td>
-                        </tr>
-                    </table>
-                </div>
-            </div>
-            ${historialHTML ? `
-                                <div class="row mt-3">
-                                    <div class="col-md-12">
-                                        <h6 class="text-primary"><i class="mdi mdi-history"></i> Historial</h6>
-                                        ${historialHTML}
+                ${historialHTML ? `
+                                    <div class="row mt-3">
+                                        <div class="col-md-12">
+                                            <h6 class="text-primary"><i class="mdi mdi-history"></i> Historial</h6>
+                                            ${historialHTML}
+                                        </div>
                                     </div>
-                                </div>
-                            ` : ''}
-            <div class="row mt-3">
-                <div class="col-md-12">
-                    <h6 class="text-primary"><i class="mdi mdi-comment-text"></i> Comentarios</h6>
-                    <p>${descuento.comentarios || 'Sin comentarios'}</p>
+                                ` : ''}
+                <div class="row mt-3">
+                    <div class="col-md-12">
+                        <h6 class="text-primary"><i class="mdi mdi-comment-text"></i> Comentarios</h6>
+                        <p>${descuento.comentarios || 'Sin comentarios'}</p>
+                    </div>
                 </div>
-            </div>
-            <div class="row mt-3">
-                <div class="col-md-12">
-                    <h6 class="text-primary"><i class="mdi mdi-paperclip"></i> Archivos Adjuntos</h6>
-                    ${archivosHTML}
+                <div class="row mt-3">
+                    <div class="col-md-12">
+                        <h6 class="text-primary"><i class="mdi mdi-paperclip"></i> Archivos Adjuntos</h6>
+                        ${archivosHTML}
+                    </div>
                 </div>
-            </div>
-        `;
+            `;
 
             $('#detallesDescuentoContent').html(html);
             $('#modalDetalles').modal('show');
@@ -1384,6 +1384,8 @@
             const descuento = descuentosData.find(d => d.id === id);
             if (!descuento) return;
 
+            $('input[name="numero_factura"]', '#formDescuento').val(descuento.numero_factura || '');
+            $('input[name="numero_orden"]', '#formDescuento').val(descuento.numero_orden || '');
             $('select[name="sede"]', '#formDescuento').val(descuento.sede);
             $('input[name="ruc"]', '#formDescuento').val(descuento.ruc);
             $('input[name="razon_social"]', '#formDescuento').val(descuento.razon_social);
@@ -1404,15 +1406,15 @@
         }
 
         /**
-         * Cambiar validación
+         * Cambiar aplicación
          */
-        function cambiarValidacion(id) {
+        function cambiarAplicacion(id) {
             const descuento = descuentosData.find(d => d.id === id);
             if (!descuento) return;
 
             Swal.fire({
-                title: 'Cambiar Validación',
-                text: `Estado actual: ${descuento.validado}`,
+                title: 'Cambiar Aplicación',
+                text: `Estado actual: ${descuento.aplicado}`,
                 input: 'select',
                 inputOptions: {
                     'Aprobado': 'Aprobado',
@@ -1432,7 +1434,7 @@
             }).then((result) => {
                 if (result.isConfirmed) {
                     $.ajax({
-                        url: `/comercial/descuentos-especiales/${id}/cambiar-validacion`,
+                        url: `/comercial/descuentos-especiales/${id}/cambiar-aplicacion`,
                         method: 'POST',
                         data: {
                             _token: '{{ csrf_token() }}',
@@ -1454,7 +1456,7 @@
                                 icon: 'error',
                                 title: 'Error',
                                 text: xhr.responseJSON?.message ||
-                                    'Error al cambiar validación',
+                                    'Error al cambiar aplicación',
                                 confirmButtonColor: '#EF4444'
                             });
                         }

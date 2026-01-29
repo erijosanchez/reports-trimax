@@ -28,7 +28,7 @@ class DescuentosEspecialesController extends Controller
     public function obtenerDescuentos(Request $request)
     {
         try {
-            $query = DescuentoEspecial::with(['creador', 'validador', 'aprobador']);
+            $query = DescuentoEspecial::with(['creador', 'aplicador', 'aprobador']);
 
             // Filtros
             if ($request->filled('usuario')) {
@@ -39,8 +39,8 @@ class DescuentosEspecialesController extends Controller
                 $query->where('sede', $request->sede);
             }
 
-            if ($request->filled('validado')) {
-                $query->where('validado', $request->validado);
+            if ($request->filled('aplicado')) {
+                $query->where('aplicado', $request->aplicado);
             }
 
             if ($request->filled('aprobado')) {
@@ -53,7 +53,9 @@ class DescuentosEspecialesController extends Controller
                 $query->where(function ($q) use ($buscar) {
                     $q->where('numero_descuento', 'like', "%{$buscar}%")
                         ->orWhere('razon_social', 'like', "%{$buscar}%")
-                        ->orWhere('ruc', 'like', "%{$buscar}%");
+                        ->orWhere('ruc', 'like', "%{$buscar}%")
+                        ->orWhere('numero_factura', 'like', "%{$buscar}%")
+                        ->orWhere('numero_orden', 'like', "%{$buscar}%");
                 });
             }
 
@@ -80,7 +82,7 @@ class DescuentosEspecialesController extends Controller
     {
         try {
             $validated = $request->validate([
-                'numero_factura' => 'nullable|string', 
+                'numero_factura' => 'nullable|string',
                 'numero_orden' => 'nullable|string',
                 'sede' => 'required|string',
                 'ruc' => 'required|string',
@@ -117,7 +119,7 @@ class DescuentosEspecialesController extends Controller
             $descuento = DescuentoEspecial::create([
                 'numero_descuento' => $numeroDescuento,
                 'user_id' => Auth::id(),
-                'numero_factura' => $validated['numero_factura'] ?? null, 
+                'numero_factura' => $validated['numero_factura'] ?? null,
                 'numero_orden' => $validated['numero_orden'] ?? null,
                 'sede' => $validated['sede'],
                 'ruc' => $validated['ruc'],
@@ -132,7 +134,7 @@ class DescuentosEspecialesController extends Controller
                 'material' => $validated['material'] ?? null,
                 'comentarios' => $validated['comentarios'] ?? null,
                 'archivos_adjuntos' => $archivosAdjuntos,
-                'validado' => 'Pendiente',
+                'aplicado' => 'Pendiente',
                 'aprobado' => 'Pendiente'
             ]);
 
@@ -142,7 +144,7 @@ class DescuentosEspecialesController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Descuento especial creado exitosamente',
-                'descuento' => $descuento->load(['creador', 'validador', 'aprobador'])
+                'descuento' => $descuento->load(['creador', 'aplicador', 'aprobador'])
             ]);
         } catch (\Exception $e) {
             \Log::error('Error al crear descuento: ' . $e->getMessage());
@@ -155,18 +157,18 @@ class DescuentosEspecialesController extends Controller
     }
 
     /**
-     * Validar descuento
+     * 🔥 NUEVO: Aplicar descuento (solo auditor.junior@trimaxperu.com)
      */
-    public function validarDescuento(Request $request, $id)
+    public function aplicarDescuento(Request $request, $id)
     {
         try {
             $descuento = DescuentoEspecial::findOrFail($id);
 
-            // Verificar permisos (aquí aplicarás los cambios que me explicarás)
-            if (Auth::user()->email !== 'planeamiento.comercial@trimaxperu.com') {
+            // 🔥 CAMBIO: Solo auditor junior puede aplicar
+            if (Auth::user()->email !== 'auditor.junior@trimaxperu.com') {
                 return response()->json([
                     'success' => false,
-                    'message' => 'No tienes permisos para validar descuentos'
+                    'message' => 'No tienes permisos para aplicar descuentos'
                 ], 403);
             }
 
@@ -175,23 +177,23 @@ class DescuentosEspecialesController extends Controller
             ]);
 
             $descuento->update([
-                'validado' => $validated['accion'],
-                'validado_por' => Auth::id(),
-                'validado_at' => now()
+                'aplicado' => $validated['accion'],
+                'aplicado_por' => Auth::id(),
+                'aplicado_at' => now()
             ]);
 
-            // Si está completamente aprobado, enviar notificaciones
-            if ($descuento->validado === 'Aprobado' && $descuento->aprobado === 'Aprobado') {
+            // Si está completamente aprobado (aplicado Y aprobado), enviar notificaciones
+            if ($descuento->aplicado === 'Aprobado' && $descuento->aprobado === 'Aprobado') {
                 $this->enviarNotificacionAprobacion($descuento);
             }
 
             return response()->json([
                 'success' => true,
-                'message' => 'Descuento validado correctamente',
-                'descuento' => $descuento->load(['creador', 'validador', 'aprobador'])
+                'message' => 'Descuento aplicado correctamente',
+                'descuento' => $descuento->load(['creador', 'aplicador', 'aprobador'])
             ]);
         } catch (\Exception $e) {
-            \Log::error('Error al validar descuento: ' . $e->getMessage());
+            \Log::error('Error al aplicar descuento: ' . $e->getMessage());
 
             return response()->json([
                 'success' => false,
@@ -201,14 +203,14 @@ class DescuentosEspecialesController extends Controller
     }
 
     /**
-     * Aprobar descuento (CAMBIO 6: Sergio y planeamiento)
+     * 🔥 CAMBIO: Aprobar descuento (solo Sergio y planeamiento)
      */
     public function aprobarDescuento(Request $request, $id)
     {
         try {
             $descuento = DescuentoEspecial::findOrFail($id);
 
-            // CAMBIO 6: Verificar permisos (Sergio y planeamiento)
+            // 🔥 CAMBIO: Solo Sergio y planeamiento pueden aprobar
             $emailsAutorizados = ['smonopoli@trimaxperu.com', 'planeamiento.comercial@trimaxperu.com'];
             if (!in_array(Auth::user()->email, $emailsAutorizados)) {
                 return response()->json([
@@ -227,15 +229,15 @@ class DescuentosEspecialesController extends Controller
                 'aprobado_at' => now()
             ]);
 
-            // CAMBIO 6: Si está completamente aprobado, enviar correos
-            if ($descuento->validado === 'Aprobado' && $descuento->aprobado === 'Aprobado') {
+            // Si está completamente aprobado (aplicado Y aprobado), enviar notificaciones
+            if ($descuento->aplicado === 'Aprobado' && $descuento->aprobado === 'Aprobado') {
                 $this->enviarNotificacionAprobacion($descuento);
             }
 
             return response()->json([
                 'success' => true,
                 'message' => 'Descuento aprobado correctamente',
-                'descuento' => $descuento->load(['creador', 'validador', 'aprobador'])
+                'descuento' => $descuento->load(['creador', 'aplicador', 'aprobador'])
             ]);
         } catch (\Exception $e) {
             \Log::error('Error al aprobar descuento: ' . $e->getMessage());
@@ -279,7 +281,7 @@ class DescuentosEspecialesController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Descuento deshabilitado correctamente',
-                'descuento' => $descuento->load(['creador', 'validador', 'aprobador', 'deshabilitador'])
+                'descuento' => $descuento->load(['creador', 'aplicador', 'aprobador', 'deshabilitador'])
             ]);
         } catch (\Exception $e) {
             \Log::error('Error al deshabilitar descuento: ' . $e->getMessage());
@@ -330,7 +332,7 @@ class DescuentosEspecialesController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Descuento rehabilitado correctamente',
-                'descuento' => $descuento->load(['creador', 'validador', 'aprobador', 'rehabilitador'])
+                'descuento' => $descuento->load(['creador', 'aplicador', 'aprobador', 'rehabilitador'])
             ]);
         } catch (\Exception $e) {
             \Log::error('Error al rehabilitar descuento: ' . $e->getMessage());
@@ -359,7 +361,7 @@ class DescuentosEspecialesController extends Controller
             }
 
             $validated = $request->validate([
-                'numero_factura' => 'nullable|string',  
+                'numero_factura' => 'nullable|string',
                 'numero_orden' => 'nullable|string',
                 'sede' => 'required|string',
                 'ruc' => 'required|string',
@@ -404,18 +406,18 @@ class DescuentosEspecialesController extends Controller
                 'material' => $validated['material'] ?? null,
                 'comentarios' => $validated['comentarios'] ?? null,
                 'archivos_adjuntos' => $archivosActuales,
-                'validado' => 'Pendiente',
+                'aplicado' => 'Pendiente',
                 'aprobado' => 'Pendiente',
-                'validado_por' => null,
+                'aplicado_por' => null,
                 'aprobado_por' => null,
-                'validado_at' => null,
+                'aplicado_at' => null,
                 'aprobado_at' => null
             ]);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Descuento actualizado exitosamente. Las validaciones se han reseteado.',
-                'descuento' => $descuento->load(['creador', 'validador', 'aprobador'])
+                'descuento' => $descuento->load(['creador', 'aplicador', 'aprobador'])
             ]);
         } catch (\Exception $e) {
             \Log::error('Error al editar descuento: ' . $e->getMessage());
@@ -428,17 +430,17 @@ class DescuentosEspecialesController extends Controller
     }
 
     /**
-     * Cambiar validación
+     * 🔥 NUEVO: Cambiar aplicación (solo auditor junior)
      */
-    public function cambiarValidacion(Request $request, $id)
+    public function cambiarAplicacion(Request $request, $id)
     {
         try {
             $descuento = DescuentoEspecial::findOrFail($id);
 
-            if (Auth::user()->email !== 'planeamiento.comercial@trimaxperu.com') {
+            if (Auth::user()->email !== 'auditor.junior@trimaxperu.com') {
                 return response()->json([
                     'success' => false,
-                    'message' => 'No tienes permisos para cambiar la validación'
+                    'message' => 'No tienes permisos para cambiar la aplicación'
                 ], 403);
             }
 
@@ -447,18 +449,18 @@ class DescuentosEspecialesController extends Controller
             ]);
 
             $descuento->update([
-                'validado' => $validated['nuevo_estado'],
-                'validado_por' => Auth::id(),
-                'validado_at' => now()
+                'aplicado' => $validated['nuevo_estado'],
+                'aplicado_por' => Auth::id(),
+                'aplicado_at' => now()
             ]);
 
             return response()->json([
                 'success' => true,
-                'message' => 'Validación actualizada correctamente',
-                'descuento' => $descuento->load(['creador', 'validador', 'aprobador'])
+                'message' => 'Aplicación actualizada correctamente',
+                'descuento' => $descuento->load(['creador', 'aplicador', 'aprobador'])
             ]);
         } catch (\Exception $e) {
-            \Log::error('Error al cambiar validación: ' . $e->getMessage());
+            \Log::error('Error al cambiar aplicación: ' . $e->getMessage());
 
             return response()->json([
                 'success' => false,
@@ -468,7 +470,7 @@ class DescuentosEspecialesController extends Controller
     }
 
     /**
-     * Cambiar aprobación
+     * 🔥 CAMBIO: Cambiar aprobación (solo Sergio y planeamiento)
      */
     public function cambiarAprobacion(Request $request, $id)
     {
@@ -496,7 +498,7 @@ class DescuentosEspecialesController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Aprobación actualizada correctamente',
-                'descuento' => $descuento->load(['creador', 'validador', 'aprobador'])
+                'descuento' => $descuento->load(['creador', 'aplicador', 'aprobador'])
             ]);
         } catch (\Exception $e) {
             \Log::error('Error al cambiar aprobación: ' . $e->getMessage());
@@ -567,31 +569,36 @@ class DescuentosEspecialesController extends Controller
     }
 
     /**
-     * 📧 Enviar notificación de creación
+     * Enviar notificación de creación
+     * Notificar a: Auditor Junior, Sergio, Planeamiento y Creador
      */
     private function enviarNotificacionCreacion($descuento)
     {
         try {
-            $validador = User::where('email', 'planeamiento.comercial@trimaxperu.com')->first();
-            $aprobador = User::where('email', 'smonopoli@trimaxperu.com')->first();
+            // 🔥 CAMBIO: Notificar a auditor junior en lugar de planeamiento
+            $auditorJunior = User::where('email', 'auditor.junior@trimaxperu.com')->first();
+            $sergio = User::where('email', 'smonopoli@trimaxperu.com')->first();
+            $planeamiento = User::where('email', 'planeamiento.comercial@trimaxperu.com')->first();
 
-            $usuarios = collect([$validador, $aprobador, $descuento->creador])->filter();
+            $usuarios = collect([$auditorJunior, $sergio, $planeamiento, $descuento->creador])->filter();
 
             Notification::send($usuarios, new DescuentoEspecialCreado($descuento));
+
+            \Log::info('✅ Notificaciones de creación enviadas a: ' . $usuarios->pluck('email')->implode(', '));
         } catch (\Exception $e) {
             \Log::error('Error al enviar notificaciones de creación: ' . $e->getMessage());
         }
     }
 
     /**
-     * Enviar notificación de aprobación (CAMBIO 6)
-     * Enviar a: Juan Loayza, usuario solicitante, Sergio y planeamiento
+     * 📧 Enviar notificación de aprobación completa
+     * Enviar a: Auditor Junior, usuario solicitante, Sergio y planeamiento
      */
     private function enviarNotificacionAprobacion($descuento)
     {
         try {
-            // Juan Loayza (auditor)
-            $juanLoayza = User::where('email', 'auditor.junior@trimaxperu.com')->first();
+            // 🔥 Auditor Junior (el que aplica)
+            $auditorJunior = User::where('email', 'auditor.junior@trimaxperu.com')->first();
 
             // Sergio
             $sergio = User::where('email', 'smonopoli@trimaxperu.com')->first();
@@ -602,7 +609,7 @@ class DescuentosEspecialesController extends Controller
             // Usuario solicitante (creador)
             $creador = $descuento->creador;
 
-            $destinatarios = collect([$juanLoayza, $sergio, $planeamiento, $creador])->filter()->unique('id');
+            $destinatarios = collect([$auditorJunior, $sergio, $planeamiento, $creador])->filter()->unique('id');
 
             Notification::send($destinatarios, new DescuentoEspecialAprobado($descuento));
 
@@ -613,14 +620,15 @@ class DescuentosEspecialesController extends Controller
     }
 
     /**
-     *  Enviar notificación de deshabilitación
+     * 📧 Enviar notificación de deshabilitación
      */
     private function enviarNotificacionDeshabilitacion($descuento, $motivo)
     {
         try {
             $destinatarios = User::whereIn('email', [
                 'smonopoli@trimaxperu.com',
-                'planeamiento.comercial@trimaxperu.com'
+                'planeamiento.comercial@trimaxperu.com',
+                'auditor.junior@trimaxperu.com'  
             ])->get();
 
             if ($descuento->creador) {
@@ -636,14 +644,15 @@ class DescuentosEspecialesController extends Controller
     }
 
     /**
-     * Enviar notificación de rehabilitación
+     * 📧 Enviar notificación de rehabilitación
      */
     private function enviarNotificacionRehabilitacion($descuento, $motivo)
     {
         try {
             $destinatarios = User::whereIn('email', [
                 'smonopoli@trimaxperu.com',
-                'planeamiento.comercial@trimaxperu.com'
+                'planeamiento.comercial@trimaxperu.com',
+                'auditor.junior@trimaxperu.com'  
             ])->get();
 
             if ($descuento->creador) {

@@ -140,9 +140,9 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
         Route::get('/descuentos-especiales/obtener', [DescuentosEspecialesController::class, 'obtenerDescuentos'])->name('descuentos.obtener');
         Route::post('/descuentos-especiales/crear', [DescuentosEspecialesController::class, 'crearDescuento'])->name('descuentos.crear');
         Route::put('/descuentos-especiales/{id}/editar', [DescuentosEspecialesController::class, 'editarDescuento'])->name('descuentos.editar');
-        Route::post('/descuentos-especiales/{id}/validar', [DescuentosEspecialesController::class, 'validarDescuento'])->name('descuentos.validar');
+        Route::post('/descuentos-especiales/{id}/aplicar', [DescuentosEspecialesController::class, 'aplicarDescuento'])->name('descuentos.aplicar');
         Route::post('/descuentos-especiales/{id}/aprobar', [DescuentosEspecialesController::class, 'aprobarDescuento'])->name('descuentos.aprobar');
-        Route::post('/descuentos-especiales/{id}/cambiar-validacion', [DescuentosEspecialesController::class, 'cambiarValidacion'])->name('descuentos.cambiar-validacion');
+        Route::post('/descuentos-especiales/{id}/cambiar-aplicacion', [DescuentosEspecialesController::class, 'cambiarAplicacion'])->name('descuentos.cambiar-aplicacion');
         Route::post('/descuentos-especiales/{id}/cambiar-aprobacion', [DescuentosEspecialesController::class, 'cambiarAprobacion'])->name('descuentos.cambiar-aprobacion');
         Route::post('/descuentos-especiales/{id}/deshabilitar', [DescuentosEspecialesController::class, 'deshabilitarDescuento'])->name('descuentos.deshabilitar');
         Route::post('/descuentos-especiales/{id}/rehabilitar', [DescuentosEspecialesController::class, 'rehabilitarDescuento'])->name('descuentos.rehabilitar');

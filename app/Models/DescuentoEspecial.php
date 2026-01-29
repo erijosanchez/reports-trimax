@@ -15,8 +15,8 @@ class DescuentoEspecial extends Model
     protected $fillable = [
         'numero_descuento',
         'user_id',
-        'numero_factura', 
-        'numero_orden',    
+        'numero_factura',
+        'numero_orden',
         'sede',
         'ruc',
         'razon_social',
@@ -29,10 +29,10 @@ class DescuentoEspecial extends Model
         'disenos',
         'material',
         'comentarios',
-        'validado',
+        'aplicado',        
         'aprobado',
-        'validado_por',
-        'validado_at',
+        'aplicado_por',    
+        'aplicado_at',     
         'aprobado_por',
         'aprobado_at',
         'archivos_adjuntos',
@@ -46,7 +46,7 @@ class DescuentoEspecial extends Model
     ];
 
     protected $casts = [
-        'validado_at' => 'datetime',
+        'aplicado_at' => 'datetime',    
         'aprobado_at' => 'datetime',
         'deshabilitado_at' => 'datetime',
         'rehabilitado_at' => 'datetime',
@@ -60,9 +60,9 @@ class DescuentoEspecial extends Model
         return $this->belongsTo(User::class, 'user_id');
     }
 
-    public function validador()
+    public function aplicador()
     {
-        return $this->belongsTo(User::class, 'validado_por');
+        return $this->belongsTo(User::class, 'aplicado_por');
     }
 
     public function aprobador()

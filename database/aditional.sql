@@ -244,12 +244,12 @@ CREATE TABLE descuentos_especiales (
     comentarios TEXT NULL,
 
     -- Validación
-    validado ENUM('Pendiente', 'Aprobado', 'Rechazado')
+    aplicado ENUM('Pendiente', 'Aprobado', 'Rechazado')
         DEFAULT 'Pendiente',
 
-    validado_por BIGINT UNSIGNED NULL,
-    validado_at TIMESTAMP NULL,
-
+    aplicado_por BIGINT UNSIGNED NULL,
+    aplicado_at TIMESTAMP NULL,
+    
     -- Aprobación
     aprobado ENUM('Pendiente', 'Aprobado', 'Rechazado')
         DEFAULT 'Pendiente',
@@ -282,7 +282,7 @@ CREATE TABLE descuentos_especiales (
     INDEX idx_numero_orden (numero_orden),
     INDEX idx_user_id (user_id),
     INDEX idx_sede (sede),
-    INDEX idx_validado (validado),
+    INDEX idx_aplicado (aplicado),
     INDEX idx_aprobado (aprobado),
     INDEX idx_created_at (created_at),
 
@@ -292,8 +292,8 @@ CREATE TABLE descuentos_especiales (
         REFERENCES users(id)
         ON DELETE CASCADE,
 
-    CONSTRAINT fk_desc_validado
-        FOREIGN KEY (validado_por)
+    CONSTRAINT fk_desc_aplicado
+        FOREIGN KEY (aplicado_por)
         REFERENCES users(id)
         ON DELETE SET NULL,
 
