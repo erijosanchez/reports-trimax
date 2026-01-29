@@ -43,6 +43,15 @@
                     <span class="menu-title">Acuerdos Comerciales</span>
                 </a>
             </li>
+            <li class="nav-item">
+                <a class="nav-link {{ request()->routeIs('comercial.acuerdos') ? 'active' : '' }}"
+                    href="{{ route('comercial.acuerdos') }}">
+                    <i class="mdi mdi-sale menu-icon"></i>
+                    <span class="menu-title">Descuentos Especiales</span>
+                </a>
+            </li>
+
+            {{-- Submódulo Ventas (Solo usuarios con permiso de ver ventas consolidadas) --}}
             @if (auth()->user()->puedeVerVentasConsolidadas())
                 <li class="nav-item">
                     <a class="nav-link {{ request()->routeIs('comercial.ventas.sedes') ? 'active' : '' }}"
@@ -52,6 +61,7 @@
                     </a>
                 </li>
             @endif
+            
         @endif
 
         {{-- MÓDULO MARKETING (Solo marketing y superadmin) --}}

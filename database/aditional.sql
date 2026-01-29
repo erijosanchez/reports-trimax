@@ -201,3 +201,108 @@ CREATE TABLE ventas (
 ALTER TABLE users
 ADD COLUMN puede_ver_ventas_consolidadas TINYINT(1) NOT NULL DEFAULT 0
 AFTER sede;
+
+
+/*Descuentos especiales*/
+CREATE TABLE descuentos_especiales (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+
+    -- Número único del descuento
+    numero_descuento VARCHAR(255) NOT NULL UNIQUE,
+
+    -- Usuario creador
+    user_id BIGINT UNSIGNED NOT NULL,
+
+    -- Datos del cliente
+    sede VARCHAR(255) NOT NULL,
+    ruc VARCHAR(255) NOT NULL,
+    razon_social VARCHAR(255) NOT NULL,
+    consultor VARCHAR(255) NOT NULL,
+    ciudad VARCHAR(255) NOT NULL,
+
+    -- Detalles del descuento
+    descuento_especial TEXT NOT NULL,
+
+    -- Tipo de descuento
+    tipo ENUM(
+        'ANULACION',
+        'CORTESIA',
+        'DESCUENTO ADICIONAL',
+        'DESCUENTO TOTAL',
+        'OTROS'
+    ) NOT NULL,
+
+    -- Detalles del producto
+    marca VARCHAR(255) NOT NULL,
+    ar VARCHAR(255) NULL,
+    disenos VARCHAR(255) NULL,
+    material VARCHAR(255) NULL,
+    comentarios TEXT NULL,
+
+    -- Validación
+    validado ENUM('Pendiente', 'Aprobado', 'Rechazado') 
+        DEFAULT 'Pendiente',
+
+    validado_por BIGINT UNSIGNED NULL,
+    validado_at TIMESTAMP NULL,
+
+    -- Aprobación
+    aprobado ENUM('Pendiente', 'Aprobado', 'Rechazado') 
+        DEFAULT 'Pendiente',
+
+    aprobado_por BIGINT UNSIGNED NULL,
+    aprobado_at TIMESTAMP NULL,
+
+    -- Archivos adjuntos
+    archivos_adjuntos JSON NULL,
+
+    -- Control habilitación
+    habilitado BOOLEAN DEFAULT TRUE,
+    motivo_deshabilitacion TEXT NULL,
+    deshabilitado_at TIMESTAMP NULL,
+    deshabilitado_por BIGINT UNSIGNED NULL,
+
+    -- Rehabilitación
+    motivo_rehabilitacion TEXT NULL,
+    rehabilitado_at TIMESTAMP NULL,
+    rehabilitado_por BIGINT UNSIGNED NULL,
+
+    -- Timestamps
+    created_at TIMESTAMP NULL,
+    updated_at TIMESTAMP NULL,
+    deleted_at TIMESTAMP NULL,
+
+    -- Índices
+    INDEX idx_numero_descuento (numero_descuento),
+    INDEX idx_user_id (user_id),
+    INDEX idx_sede (sede),
+    INDEX idx_validado (validado),
+    INDEX idx_aprobado (aprobado),
+    INDEX idx_created_at (created_at),
+
+    -- Foreign Keys
+    CONSTRAINT fk_desc_user
+        FOREIGN KEY (user_id) 
+        REFERENCES users(id) 
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_desc_validado
+        FOREIGN KEY (validado_por) 
+        REFERENCES users(id) 
+        ON DELETE SET NULL,
+
+    CONSTRAINT fk_desc_aprobado
+        FOREIGN KEY (aprobado_por) 
+        REFERENCES users(id) 
+        ON DELETE SET NULL,
+
+    CONSTRAINT fk_desc_deshabilitado
+        FOREIGN KEY (deshabilitado_por) 
+        REFERENCES users(id) 
+        ON DELETE SET NULL,
+
+    CONSTRAINT fk_desc_rehabilitado
+        FOREIGN KEY (rehabilitado_por) 
+        REFERENCES users(id) 
+        ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
