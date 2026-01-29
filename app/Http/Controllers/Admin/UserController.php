@@ -72,6 +72,7 @@ class UserController extends Controller
             'password' => Hash::make($request->password),
             'sede' => $request->role === 'sede' ? strtoupper($request->sede) : null,
             'puede_ver_ventas_consolidadas' => $request->boolean('puede_ver_ventas_consolidadas'),
+            'puede_ver_descuentos_especiales' => $request->boolean('puede_ver_descuentos_especiales'),
             'is_active' => true,
         ]);
 
@@ -116,6 +117,7 @@ class UserController extends Controller
             'email' => $request->email,
             'sede' => $request->role === 'sede' ? strtoupper($request->sede) : null,
             'puede_ver_ventas_consolidadas' => $request->boolean('puede_ver_ventas_consolidadas'),
+            'puede_ver_descuentos_especiales' => $request->boolean('puede_ver_descuentos_especiales'),
             'is_active' => $request->boolean('is_active'),
         ]);
 

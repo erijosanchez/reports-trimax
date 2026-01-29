@@ -43,6 +43,10 @@
                     <span class="menu-title">Acuerdos Comerciales</span>
                 </a>
             </li>
+        @endif
+
+        {{-- Submódulo Descuentos Especiales (Solo usuarios con permiso de ver descuentos especiales) --}}
+        @if (auth()->user()->puedeVerDescuentosEspeciales())
             <li class="nav-item">
                 <a class="nav-link {{ request()->routeIs('comercial.descuentos.index') ? 'active' : '' }}"
                     href="{{ route('comercial.descuentos.index') }}">
@@ -50,18 +54,17 @@
                     <span class="menu-title">Descuentos Especiales</span>
                 </a>
             </li>
+        @endif
 
-            {{-- Submódulo Ventas (Solo usuarios con permiso de ver ventas consolidadas) --}}
-            @if (auth()->user()->puedeVerVentasConsolidadas())
-                <li class="nav-item">
-                    <a class="nav-link {{ request()->routeIs('comercial.ventas.sedes') ? 'active' : '' }}"
-                        href="{{ route('comercial.ventas.sedes') }}">
-                        <i class="mdi mdi-cart-outline menu-icon"></i>
-                        <span class="menu-title">Ventas</span>
-                    </a>
-                </li>
-            @endif
-            
+        {{-- Submódulo Ventas (Solo usuarios con permiso de ver ventas consolidadas) --}}
+        @if (auth()->user()->puedeVerVentasConsolidadas())
+            <li class="nav-item">
+                <a class="nav-link {{ request()->routeIs('comercial.ventas.sedes') ? 'active' : '' }}"
+                    href="{{ route('comercial.ventas.sedes') }}">
+                    <i class="mdi mdi-cart-outline menu-icon"></i>
+                    <span class="menu-title">Ventas</span>
+                </a>
+            </li>
         @endif
 
         {{-- MÓDULO MARKETING (Solo marketing y superadmin) --}}

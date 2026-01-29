@@ -216,6 +216,20 @@
                                                                 Permite al usuario acceder al dashboard de ventas
                                                                 consolidadas de todas las sedes
                                                             </small>
+
+                                                            <div class="form-check form-check-success">
+                                                                <label class="form-check-label">
+                                                                    <input type="checkbox"
+                                                                        name="puede_ver_descuentos_especiales"
+                                                                        value="1" class="form-check-input"
+                                                                        {{ old('puede_ver_descuentos_especiales') ? 'checked' : '' }}>
+                                                                    Puede ver Descuentos Especiales
+                                                                    <i class="input-helper"></i>
+                                                                </label>
+                                                            </div>
+                                                            <small class="text-muted ms-4">
+                                                                Permite al usuario acceder al módulo de Descuentos Especiales
+                                                            </small>
                                                         </div>
                                                     </div>
                                                 @endif

@@ -19,6 +19,10 @@ class DescuentosEspecialesController extends Controller
      */
     public function index()
     {
+        if (!auth()->user()->puedeVerDescuentosEspeciales()) {
+            abort(403, 'No tienes permiso para ver Descuentos Especiales');
+        }
+        
         return view('comercial.descuentos-especiales');
     }
 
@@ -628,7 +632,7 @@ class DescuentosEspecialesController extends Controller
             $destinatarios = User::whereIn('email', [
                 'smonopoli@trimaxperu.com',
                 'planeamiento.comercial@trimaxperu.com',
-                'auditor.junior@trimaxperu.com'  
+                'auditor.junior@trimaxperu.com'
             ])->get();
 
             if ($descuento->creador) {
@@ -652,7 +656,7 @@ class DescuentosEspecialesController extends Controller
             $destinatarios = User::whereIn('email', [
                 'smonopoli@trimaxperu.com',
                 'planeamiento.comercial@trimaxperu.com',
-                'auditor.junior@trimaxperu.com'  
+                'auditor.junior@trimaxperu.com'
             ])->get();
 
             if ($descuento->creador) {

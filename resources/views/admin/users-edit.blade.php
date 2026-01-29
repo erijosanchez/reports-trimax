@@ -188,6 +188,21 @@
                                                                 Permite al usuario acceder al dashboard de ventas
                                                                 consolidadas de todas las sedes
                                                             </small>
+
+                                                            <div class="form-check form-check-success">
+                                                                <label class="form-check-label">
+                                                                    <input type="checkbox"
+                                                                        name="puede_ver_descuentos_especiales" value="1"
+                                                                        class="form-check-input"
+                                                                        {{ old('puede_ver_descuentos_especiales', $user->puede_ver_descuentos_especiales) ? 'checked' : '' }}>
+                                                                    Puede ver descuentos especiales
+                                                                    <i class="input-helper"></i>
+                                                                </label>
+                                                            </div>
+                                                            <small class="text-muted ms-4">
+                                                                Permite al usuario acceder al dashboard de descuentos especiales
+                                                                de todas las sedes
+                                                            </small>
                                                         </div>
                                                     </div>
                                                 @endif
@@ -293,7 +308,7 @@
                                                 </div>
                                             @endif
 
-                                            {{-- ✅ NUEVO: Mostrar si tiene permiso de ventas --}}
+                                            {{-- Mostrar si tiene permiso de ventas --}}
                                             @if ($user->puede_ver_ventas_consolidadas)
                                                 <div class="mb-3 pb-3 border-bottom">
                                                     <div class="d-flex justify-content-between align-items-center mb-2">
@@ -301,6 +316,19 @@
                                                         <span class="badge badge-success">
                                                             <i class="mdi mdi-chart-line me-1"></i>
                                                             Ventas Consolidadas
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            @endif
+
+                                            {{-- Mostrar si tiene permiso de descuentos especiales --}}
+                                            @if ($user->puede_ver_descuentos_especiales)
+                                                <div class="mb-3 pb-3 border-bottom">
+                                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                                        <span class="text-muted">Permisos Especiales</span>
+                                                        <span class="badge badge-warning">
+                                                            <i class="mdi mdi-tag-multiple me-1"></i>
+                                                            Descuentos Especiales
                                                         </span>
                                                     </div>
                                                 </div>

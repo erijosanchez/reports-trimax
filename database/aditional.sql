@@ -316,3 +316,10 @@ CREATE TABLE descuentos_especiales (
   DEFAULT CHARSET=utf8mb4
   COLLATE=utf8mb4_unicode_ci;
 /*End Descuentos especiales*/
+
+/* agrega columna para asinar la ventana de desceuntos*/
+ALTER TABLE users
+ADD COLUMN puede_ver_descuentos_especiales BOOLEAN
+DEFAULT FALSE
+AFTER puede_ver_ventas_consolidadas;
+/* end agrega columna para asinar la ventana de desceuntos*/

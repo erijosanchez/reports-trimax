@@ -18,6 +18,7 @@ class User extends Authenticatable
         'password',
         'sede',
         'puede_ver_ventas_consolidadas',
+        'puede_ver_descuentos_especiales',
         'is_active',
         'last_login_at',
         'two_factor_secret',
@@ -37,6 +38,7 @@ class User extends Authenticatable
         'password' => 'hashed',
         'is_active' => 'boolean',
         'puede_ver_ventas_consolidadas' => 'boolean',
+        'puede_ver_descuentos_especiales' => 'boolean',
         'last_login_at' => 'datetime',
         'two_factor_confirmed_at' => 'datetime',
     ];
@@ -161,6 +163,11 @@ class User extends Authenticatable
     public function puedeVerVentasConsolidadas(): bool
     {
         return $this->isSuperAdmin() || $this->puede_ver_ventas_consolidadas;
+    }
+
+    public function puedeVerDescuentosEspeciales()
+    {
+        return $this->isSuperAdmin() || $this->puede_ver_descuentos_especiales;
     }
 
     public function getRoleName()

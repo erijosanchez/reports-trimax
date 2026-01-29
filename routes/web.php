@@ -135,6 +135,7 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
         Route::post('/acuerdos/{id}/cambiar-validacion', [ComercialController::class, 'cambiarValidacion'])->name('acuerdos.cambiar-validacion');
         Route::post('/acuerdos/{id}/cambiar-aprobacion', [ComercialController::class, 'cambiarAprobacion'])->name('acuerdos.cambiar-aprobacion');
 
+        
         /* DESCUENTOS ESPECIALES */
         Route::get('/descuentos-especiales', [DescuentosEspecialesController::class, 'index'])->name('descuentos.index');
         Route::get('/descuentos-especiales/obtener', [DescuentosEspecialesController::class, 'obtenerDescuentos'])->name('descuentos.obtener');
