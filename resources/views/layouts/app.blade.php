@@ -49,7 +49,9 @@
     </div>
     
     <!-- Asistente IA Trimax -->
-    @include('components.trimax-assistant')
+    @auth
+        @include('components.ai-assistant')
+    @endauth
 
     <!-- plugins:js -->
     <script src="{{ asset('assets/vendors/js/vendor.bundle.base.js') }}"></script>

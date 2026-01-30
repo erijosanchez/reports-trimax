@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AssistantController;
 use App\Http\Controllers\AssistantAIController;
+use App\Http\Controllers\AIAssistantController;
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
@@ -32,3 +33,6 @@ Route::post('/assistant/chat', [AssistantAIController::class, 'chat']);
 
 // Consultas de datos (cuando integres la BD)
 Route::post('/assistant', [AssistantController::class, 'query']);
+
+Route::post('/ai/ask', [AIAssistantController::class, 'ask']);
+Route::post('/ai/feedback', [AIAssistantController::class, 'feedback']);

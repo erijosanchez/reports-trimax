@@ -323,3 +323,65 @@ ADD COLUMN puede_ver_descuentos_especiales BOOLEAN
 DEFAULT FALSE
 AFTER puede_ver_ventas_consolidadas;
 /* end agrega columna para asinar la ventana de desceuntos*/
+
+/* Groq */
+
+CREATE TABLE ai_interactions (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+
+    user_id BIGINT UNSIGNED NULL,
+    session_id VARCHAR(255) NOT NULL,
+    user_role VARCHAR(50) NULL,
+    module VARCHAR(100) NOT NULL DEFAULT 'general',
+
+    question TEXT NOT NULL,
+    context JSON NULL,
+    ai_response TEXT NOT NULL,
+
+    response_type ENUM('direct_answer','action','clarification','error')
+        NOT NULL DEFAULT 'direct_answer',
+
+    was_helpful TINYINT(1) NULL,
+    feedback_comment TEXT NULL,
+    action_taken VARCHAR(255) NULL,
+
+    created_at TIMESTAMP NULL DEFAULT NULL,
+    updated_at TIMESTAMP NULL DEFAULT NULL,
+
+    INDEX idx_module (module),
+    INDEX idx_user_role (user_role),
+    INDEX idx_was_helpful (was_helpful),
+
+    CONSTRAINT fk_ai_user
+        FOREIGN KEY (user_id)
+        REFERENCES users(id)
+        ON DELETE SET NULL
+);
+
+
+CREATE TABLE ai_knowledge_base (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+
+    category VARCHAR(100) NOT NULL,
+    question_pattern TEXT NOT NULL,
+    answer_template TEXT NOT NULL,
+
+    confidence_score DECIMAL(3,2) NOT NULL DEFAULT 0.75,
+    usage_count INT NOT NULL DEFAULT 0,
+    success_rate DECIMAL(3,2) NOT NULL DEFAULT 1.00,
+
+    last_used_at TIMESTAMP NULL,
+
+    created_from_interactions INT NOT NULL DEFAULT 1,
+
+    is_active TINYINT(1) NOT NULL DEFAULT 1,
+
+    created_at TIMESTAMP NULL DEFAULT NULL,
+    updated_at TIMESTAMP NULL DEFAULT NULL,
+
+    INDEX idx_category (category),
+    INDEX idx_is_active (is_active)
+)
+ENGINE=InnoDB
+DEFAULT CHARSET=utf8mb4
+COLLATE=utf8mb4_unicode_ci;
