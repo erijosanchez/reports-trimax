@@ -141,11 +141,11 @@
             status.className = 'text-yellow-600';
 
             try {
-                const response = await fetch('/api/ai/ask', {
+                const response = await fetch('/ai/ask', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
                     },
                     body: JSON.stringify({
                         question: question,
@@ -263,7 +263,7 @@
 
     async function giveFeedback(interactionId, wasHelpful, button) {
         try {
-            const response = await fetch('/api/ai/feedback', {
+            const response = await fetch('/ai/feedback', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

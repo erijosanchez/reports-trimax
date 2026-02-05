@@ -3,316 +3,740 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\Http;
-use App\Models\AiInteraction;
-use App\Models\AiKnowledgeBase;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
+use App\Models\AiInteraction;
+use App\Models\AiKnowledgeBase;
+use App\Models\AcuerdoComercial;
+use App\Models\User;
+use App\Services\GoogleSheetsService;
+use Google\Client;
+use Google\Service\Sheets;
+use Carbon\Carbon;
 
 class TriMaxAIAssistant
 {
     protected $apiKey;
     protected $apiUrl;
     protected $model;
+    protected $googleSheets;
 
-    public function __construct()
+    public function __construct(GoogleSheetsService $googleSheets)
     {
         $this->apiKey = config('services.groq.api_key');
         $this->apiUrl = config('services.groq.api_url');
         $this->model = config('services.groq.model');
+        $this->googleSheets = $googleSheets;
     }
+
+    // ================================================================
+    // MÉTODO PRINCIPAL - AHORA CON FUNCTION CALLING
+    // ================================================================
 
     public function ask($question, $context = [])
     {
-        // 1. Buscar en conocimiento existente
-        $existingKnowledge = $this->searchKnowledgeBase($question);
-
-        // 2. Obtener contexto del sistema
+        $user = Auth::user();
         $systemContext = $this->getSystemContext($context);
 
-        // 3. Decidir si usar conocimiento o IA
-        $useAI = true; // Por defecto usar IA para ser más dinámico
-        $knowledgeContext = null;
+        // Construir mensajes
+        $messages = [
+            ['role' => 'system', 'content' => $this->getSystemPrompt($user, $systemContext)],
+            ['role' => 'user', 'content' => $question],
+        ];
 
-        if ($existingKnowledge) {
-            // Solo usar conocimiento directo si es MUY similar (95%+)
-            $similarity = $this->calculateSimilarity($question, $existingKnowledge->question_pattern);
+        // Primera llamada con tools
+        $response = $this->callGroqWithTools($messages);
 
-            if ($similarity > 0.95) {
-                $answer = $existingKnowledge->answer_template;
-                $source = 'learned_knowledge';
-                $useAI = false;
+        if (!$response) {
+            return $this->errorResponse($question, $context);
+        }
 
-                // Actualizar stats
-                $existingKnowledge->increment('usage_count');
-                $existingKnowledge->update(['last_used_at' => now()]);
+        // Loop de function calling (máx 5 iteraciones)
+        $maxIterations = 5;
+        $iteration = 0;
+
+        while ($iteration < $maxIterations) {
+            $choice = $response['choices'][0] ?? null;
+            if (!$choice) break;
+
+            $message = $choice['message'] ?? [];
+            $finishReason = $choice['finish_reason'] ?? '';
+            $toolCalls = $message['tool_calls'] ?? [];
+
+            // Si el modelo quiere llamar funciones
+            if (!empty($toolCalls)) {
+                // Agregar el mensaje del asistente (con tool_calls)
+                $messages[] = $message;
+
+                foreach ($toolCalls as $toolCall) {
+                    $functionName = $toolCall['function']['name'] ?? '';
+                    $arguments = json_decode($toolCall['function']['arguments'] ?? '{}', true) ?? [];
+
+                    Log::info("🔧 Function call: {$functionName}", $arguments);
+
+                    // Ejecutar la función real
+                    $result = $this->executeFunction($functionName, $arguments, $user);
+
+                    Log::info("📊 Resultado de {$functionName}:", $result);
+
+                    // Agregar resultado como mensaje tool
+                    $messages[] = [
+                        'role' => 'tool',
+                        'tool_call_id' => $toolCall['id'],
+                        'content' => json_encode($result, JSON_UNESCAPED_UNICODE),
+                    ];
+                }
+
+                // Volver a llamar al modelo con los resultados
+                $response = $this->callGroqWithTools($messages);
+                if (!$response) break;
+
+                $iteration++;
             } else {
-                // Usar como contexto para la IA
-                $knowledgeContext = $existingKnowledge->answer_template;
+                // El modelo ya tiene la respuesta final
+                break;
             }
         }
 
-        if ($useAI) {
-            // Construir prompt con contexto
-            $prompt = $this->buildPrompt($question, $knowledgeContext, $systemContext);
+        // Extraer respuesta final
+        $answer = $response['choices'][0]['message']['content'] ?? 'No pude generar una respuesta.';
 
-            // Llamar a Groq
-            $answer = $this->callGroq($prompt);
-            $source = $knowledgeContext ? 'ai_enhanced' : 'ai_generated';
-        }
-
-        // Guardar la interacción
+        // Guardar interacción
         $interaction = $this->saveInteraction($question, $answer, $context);
 
         return [
             'answer' => $answer,
-            'confidence' => $existingKnowledge ? 'high' : 'medium',
-            'sources' => $source,
-            'interaction_id' => $interaction->id
+            'confidence' => 'high',
+            'sources' => 'ai_with_real_data',
+            'interaction_id' => $interaction->id,
         ];
     }
 
-    protected function calculateSimilarity($question1, $question2)
+    // ================================================================
+    // SYSTEM PROMPT - AHORA CON CONTEXTO DEL USUARIO REAL
+    // ================================================================
+
+    protected function getSystemPrompt($user, $systemContext)
     {
-        // Normalizar textos
-        $q1 = strtolower(trim($question1));
-        $q2 = strtolower(trim($question2));
+        $userName = $user->name ?? 'Usuario';
+        $userRole = $systemContext['user_role'] ?? 'guest';
+        $userEmail = $user->email ?? '';
+        $module = $systemContext['current_module'] ?? 'general';
+        $actions = implode(', ', $systemContext['available_actions'] ?? []);
+        $fechaHoy = Carbon::now()->format('d/m/Y');
+        $mesActual = ucfirst(Carbon::now()->locale('es')->translatedFormat('F'));
+        $anioActual = Carbon::now()->year;
 
-        // Si son exactamente iguales
-        if ($q1 === $q2) {
-            return 1.0;
-        }
+        return "Eres el Asistente Trimax, el asistente inteligente del CRM de Trimax Perú (Laboratorio Óptico).
+Trimax tiene más de 30 sedes a nivel nacional incluyendo Lima (Lince, SJM, SJL, Ate, Los Olivos, Puente Piedra, Comas, Cailloma, Napo, Surquillo, Villa El Salvador, Call Center), Arequipa, Trujillo, Chiclayo, Piura, Cusco, Huancayo, Ica, Iquitos, Cajamarca, Chimbote, Huánuco, Huaraz, Pucallpa, Tacna, Ayacucho, Juliaca, Tarapoto y más.
 
-        // Calcular similitud por palabras clave
-        $words1 = $this->extractKeywords($q1);
-        $words2 = $this->extractKeywords($q2);
+═══════════════════════════════════
+USUARIO ACTUAL (ESTÁ LOGUEADO):
+═══════════════════════════════════
+- Nombre: {$userName}
+- Email: {$userEmail}
+- Rol: {$userRole}
+- Módulo actual: {$module}
+- Acciones disponibles: {$actions}
 
-        if (empty($words1) || empty($words2)) {
-            return 0.0;
-        }
+═══════════════════════════════════
+FECHA ACTUAL: {$fechaHoy}
+MES ACTUAL: {$mesActual} {$anioActual}
+═══════════════════════════════════
 
-        $intersection = count(array_intersect($words1, $words2));
-        $union = count(array_unique(array_merge($words1, $words2)));
+REGLAS CRÍTICAS:
+1. NUNCA inventes datos, cifras, montos o números. SIEMPRE usa las funciones disponibles para consultar datos reales.
+2. Si el usuario pregunta por ventas, órdenes, acuerdos o cualquier dato → LLAMA a la función correspondiente. NO asumas que una sede no existe.
+3. Si te preguntan por ventas de CUALQUIER sede, SIEMPRE llama a obtener_ventas_sede. La función tiene datos de todas las sedes reales.
+4. Si NO tienes una función para responder algo específico, dilo honestamente: 'No tengo acceso a esa información en este momento.'
+5. Responde SIEMPRE en español de forma natural, clara y concisa.
+6. Dirígete al usuario por su nombre ({$userName}).
+7. Adapta la información según su rol ({$userRole}).
+8. Mantén respuestas cortas (3-4 párrafos máximo).
+9. NO repitas la misma respuesta.
+10. NUNCA digas que una sede no existe sin antes consultar la función.
 
-        return $union > 0 ? $intersection / $union : 0.0;
+MÓDULOS DEL SISTEMA:
+- Descuentos Especiales: Flujo de aprobación por planeamiento comercial
+- Convenios Comerciales: Acuerdos con clientes corporativos (validación + aprobación)
+- Consulta de Órdenes: Integración con Google Sheets (historial de órdenes)
+- Dashboard de Ventas: Métricas por sede desde Google Sheets
+
+FUNCIONES DISPONIBLES:
+- obtener_ventas_sede: Ventas mensuales de CUALQUIER sede (todas las 30+ sedes). Pasar sede='todas' para ver todas.
+- obtener_estadisticas_ordenes: Estadísticas de órdenes (tránsito, en sede, facturados)
+- obtener_acuerdos_comerciales: Lista de acuerdos con filtros
+- buscar_orden: Buscar una orden específica
+- obtener_info_usuario: Información del usuario actual
+- obtener_resumen_general: Resumen general del sistema";
     }
 
-    protected function callGroq($prompt)
+    // ================================================================
+    // DEFINICIÓN DE TOOLS (FUNCIONES)
+    // ================================================================
+
+    protected function getTools(): array
+    {
+        return [
+            [
+                'type' => 'function',
+                'function' => [
+                    'name' => 'obtener_ventas_sede',
+                    'description' => 'Obtiene las ventas mensuales de cualquiera de las 30+ sedes de Trimax a nivel nacional (Lima, Arequipa, Trujillo, Iquitos, Cusco, Chiclayo, Piura, etc). SIEMPRE usar esta función cuando pregunten por ventas de cualquier sede.',
+                    'parameters' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'sede' => [
+                                'type' => 'string',
+                                'description' => 'Nombre de la sede exacto como aparece en el sistema (ejemplo: IQUITOS, LINCE, AREQUIPA, CUSCO, etc.) o "todas" para ver todas las sedes',
+                            ],
+                            'mes' => [
+                                'type' => 'string',
+                                'description' => 'Nombre del mes en español (Enero, Febrero, etc.). Si no se indica, usa el mes actual.',
+                            ],
+                            'anio' => [
+                                'type' => 'integer',
+                                'description' => 'Año a consultar. Si no se indica, usa el año actual.',
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+            [
+                'type' => 'function',
+                'function' => [
+                    'name' => 'obtener_estadisticas_ordenes',
+                    'description' => 'Obtiene estadísticas de las órdenes de trabajo: total, en tránsito, en sede, facturados, importes pendientes.',
+                    'parameters' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'sede' => [
+                                'type' => 'string',
+                                'description' => 'Filtrar por sede específica (opcional)',
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+            [
+                'type' => 'function',
+                'function' => [
+                    'name' => 'obtener_acuerdos_comerciales',
+                    'description' => 'Obtiene la lista de acuerdos/convenios comerciales con sus estados (Solicitado, Vigente, Vencido, etc.)',
+                    'parameters' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'estado' => [
+                                'type' => 'string',
+                                'description' => 'Filtrar por estado: Solicitado, Vigente, Vencido, Rechazado',
+                            ],
+                            'sede' => [
+                                'type' => 'string',
+                                'description' => 'Filtrar por sede',
+                            ],
+                            'buscar' => [
+                                'type' => 'string',
+                                'description' => 'Buscar por razón social, RUC o número de acuerdo',
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+            [
+                'type' => 'function',
+                'function' => [
+                    'name' => 'buscar_orden',
+                    'description' => 'Busca una orden específica por número de orden, nombre de cliente o cualquier texto.',
+                    'parameters' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'termino_busqueda' => [
+                                'type' => 'string',
+                                'description' => 'Texto a buscar: número de orden, nombre, etc.',
+                            ],
+                        ],
+                        'required' => ['termino_busqueda'],
+                    ],
+                ],
+            ],
+            [
+                'type' => 'function',
+                'function' => [
+                    'name' => 'obtener_info_usuario',
+                    'description' => 'Obtiene información detallada del usuario actual logueado.',
+                    'parameters' => [
+                        'type' => 'object',
+                        'properties' => new \stdClass(),
+                    ],
+                ],
+            ],
+            [
+                'type' => 'function',
+                'function' => [
+                    'name' => 'obtener_resumen_general',
+                    'description' => 'Obtiene un resumen general del sistema: ventas del mes, órdenes pendientes, acuerdos activos.',
+                    'parameters' => [
+                        'type' => 'object',
+                        'properties' => new \stdClass(),
+                    ],
+                ],
+            ],
+        ];
+    }
+
+    // ================================================================
+    // EJECUTOR DE FUNCIONES
+    // ================================================================
+
+    protected function executeFunction(string $functionName, array $args, $user): array
     {
         try {
-            Log::info('Llamando a Groq API...');
+            return match ($functionName) {
+                'obtener_ventas_sede' => $this->fnObtenerVentasSede($args, $user),
+                'obtener_estadisticas_ordenes' => $this->fnObtenerEstadisticasOrdenes($args, $user),
+                'obtener_acuerdos_comerciales' => $this->fnObtenerAcuerdos($args, $user),
+                'buscar_orden' => $this->fnBuscarOrden($args, $user),
+                'obtener_info_usuario' => $this->fnObtenerInfoUsuario($user),
+                'obtener_resumen_general' => $this->fnObtenerResumenGeneral($user),
+                default => ['error' => "Función '{$functionName}' no disponible"],
+            };
+        } catch (\Exception $e) {
+            Log::error("Error ejecutando función {$functionName}: " . $e->getMessage());
+            return ['error' => 'Error al consultar datos: ' . $e->getMessage()];
+        }
+    }
+
+    // ================================================================
+    // FUNCIONES REALES QUE CONSULTAN DATOS
+    // ================================================================
+
+    /**
+     * 📊 Obtener ventas por sede desde Google Sheets (spreadsheet de ventas)
+     */
+    protected function fnObtenerVentasSede(array $args, $user): array
+    {
+        $mesActual = ucfirst(Carbon::now()->locale('es')->translatedFormat('F'));
+        $anioActual = Carbon::now()->year;
+
+        $mes = $args['mes'] ?? $mesActual;
+        $anio = $args['anio'] ?? $anioActual;
+        $sedeFilter = isset($args['sede']) ? strtoupper(trim($args['sede'])) : null;
+
+        // Normalizar mes (primera letra mayúscula)
+        $mes = ucfirst(strtolower(trim($mes)));
+
+        // Normalizar "Setiembre" / "Septiembre"
+        $mesNormalizados = [
+            'Septiembre' => ['Septiembre', 'Setiembre'],
+            'Setiembre' => ['Septiembre', 'Setiembre'],
+        ];
+        $mesesBuscar = $mesNormalizados[$mes] ?? [$mes];
+
+        $spreadsheetId = '1zQ8h0cX8YdQ4Jko69vGpDNMXMRrXD0ICCH6G4O6ubiY';
+
+        try {
+            $cacheKey = "ai_ventas_{$anio}_{$mes}_v2";
+
+            $sedes = Cache::store('file')->remember($cacheKey, 300, function () use ($spreadsheetId, $mesesBuscar, $anio) {
+                $client = new Client();
+                $client->setApplicationName('TRIMAX Ventas');
+                $client->setScopes([Sheets::SPREADSHEETS_READONLY]);
+                $client->setAuthConfig(storage_path('app/google/service-account.json'));
+                $client->setAccessType('offline');
+
+                $service = new Sheets($client);
+
+                // Columnas: A=Sedes, B=Año, C=Mes, D=Venta General, E=Venta Proyectada, F=Cuota, G=Cum Cuota
+                $range = 'Historico!A:G';
+                $response = $service->spreadsheets_values->get($spreadsheetId, $range);
+                $values = $response->getValues();
+
+                $sedes = [];
+
+                if (empty($values)) return $sedes;
+
+                foreach ($values as $index => $row) {
+                    // Saltar header
+                    if ($index == 0) continue;
+
+                    // Verificar que la fila tenga al menos sede, año y mes
+                    if (empty($row[0]) || !isset($row[1]) || !isset($row[2])) continue;
+
+                    $sedeSheet = trim(strtoupper($row[0]));
+                    $anioSheet = trim($row[1]);
+                    $mesSheet = trim(ucfirst(strtolower($row[2])));
+
+                    // Comparar año y mes (soportar variantes de mes)
+                    if ($anioSheet == $anio && in_array($mesSheet, $mesesBuscar)) {
+                        $ventaGeneral = $this->limpiarNumero($row[3] ?? 0);
+                        $ventaProyectada = $this->limpiarNumero($row[4] ?? 0);
+                        $cuota = $this->limpiarNumero($row[5] ?? 0);
+                        $cumplimiento = $this->limpiarPorcentaje($row[6] ?? '0%');
+
+                        $sedes[] = [
+                            'sede' => $sedeSheet,
+                            'venta_general' => $ventaGeneral,
+                            'venta_proyectada' => $ventaProyectada,
+                            'cuota' => $cuota,
+                            'cumplimiento_cuota' => $cumplimiento . '%',
+                            'diferencia' => round($ventaGeneral - $cuota, 2),
+                        ];
+                    }
+                }
+
+                // Ordenar por cumplimiento descendente
+                usort($sedes, function ($a, $b) {
+                    return floatval(str_replace('%', '', $b['cumplimiento_cuota']))
+                        <=> floatval(str_replace('%', '', $a['cumplimiento_cuota']));
+                });
+
+                return $sedes;
+            });
+
+            // Filtrar por sede si se especificó
+            if ($sedeFilter && $sedeFilter !== 'TODAS' && $sedeFilter !== 'ALL') {
+                $sedes = array_values(array_filter($sedes, function ($s) use ($sedeFilter) {
+                    return stripos($s['sede'], $sedeFilter) !== false;
+                }));
+            }
+
+            // Calcular totales
+            $totalVentas = array_sum(array_column($sedes, 'venta_general'));
+            $totalCuota = array_sum(array_column($sedes, 'cuota'));
+
+            return [
+                'periodo' => "{$mes} {$anio}",
+                'cantidad_sedes' => count($sedes),
+                'sedes' => $sedes,
+                'resumen' => [
+                    'total_ventas_todas_sedes' => round($totalVentas, 2),
+                    'total_cuota_todas_sedes' => round($totalCuota, 2),
+                    'cumplimiento_general' => $totalCuota > 0
+                        ? round(($totalVentas / $totalCuota) * 100, 1) . '%'
+                        : 'N/A',
+                ],
+                'moneda' => 'PEN (Soles)',
+            ];
+        } catch (\Exception $e) {
+            Log::error('Error obteniendo ventas: ' . $e->getMessage());
+            return ['error' => 'No se pudieron obtener las ventas: ' . $e->getMessage()];
+        }
+    }
+
+    /**
+     * 📦 Obtener estadísticas de órdenes desde Google Sheets
+     */
+    protected function fnObtenerEstadisticasOrdenes(array $args, $user): array
+    {
+        try {
+            $cacheKey = 'ai_stats_ordenes';
+
+            $stats = Cache::store('file')->remember($cacheKey, 300, function () {
+                $rawData = $this->googleSheets->getSheetData('Historico');
+                $ordenes = $this->googleSheets->parseSheetData($rawData);
+                return $this->calcularEstadisticasOrdenes($ordenes);
+            });
+
+            // Si filtran por sede, recalcular
+            if (!empty($args['sede'])) {
+                $rawData = $this->googleSheets->getSheetData('Historico');
+                $ordenes = $this->googleSheets->parseSheetData($rawData);
+
+                $ordenes = array_filter($ordenes, function ($orden) use ($args) {
+                    return stripos($orden['descripcion_sede'] ?? '', $args['sede']) !== false;
+                });
+
+                $stats = $this->calcularEstadisticasOrdenes(array_values($ordenes));
+                $stats['sede_filtrada'] = $args['sede'];
+            }
+
+            return $stats;
+        } catch (\Exception $e) {
+            Log::error('Error obteniendo estadísticas de órdenes: ' . $e->getMessage());
+            return ['error' => 'No se pudieron obtener las estadísticas: ' . $e->getMessage()];
+        }
+    }
+
+    /**
+     * 📋 Obtener acuerdos comerciales desde MySQL
+     */
+    protected function fnObtenerAcuerdos(array $args, $user): array
+    {
+        $query = AcuerdoComercial::with(['creador:id,name,email']);
+
+        if (!empty($args['estado'])) {
+            $query->where('estado', $args['estado']);
+        }
+
+        if (!empty($args['sede'])) {
+            $query->where('sede', 'LIKE', '%' . $args['sede'] . '%');
+        }
+
+        if (!empty($args['buscar'])) {
+            $buscar = $args['buscar'];
+            $query->where(function ($q) use ($buscar) {
+                $q->where('numero_acuerdo', 'like', "%{$buscar}%")
+                    ->orWhere('razon_social', 'like', "%{$buscar}%")
+                    ->orWhere('ruc', 'like', "%{$buscar}%");
+            });
+        }
+
+        $acuerdos = $query->orderBy('created_at', 'desc')->limit(20)->get();
+
+        // Resumen por estado
+        $resumenEstados = AcuerdoComercial::selectRaw('estado, COUNT(*) as cantidad')
+            ->groupBy('estado')
+            ->pluck('cantidad', 'estado')
+            ->toArray();
+
+        return [
+            'acuerdos' => $acuerdos->map(function ($a) {
+                return [
+                    'numero' => $a->numero_acuerdo,
+                    'razon_social' => $a->razon_social,
+                    'ruc' => $a->ruc,
+                    'sede' => $a->sede,
+                    'estado' => $a->estado,
+                    'validado' => $a->validado,
+                    'aprobado' => $a->aprobado,
+                    'fecha_inicio' => $a->fecha_inicio?->format('d/m/Y'),
+                    'fecha_fin' => $a->fecha_fin?->format('d/m/Y'),
+                    'creado_por' => $a->creador->name ?? 'N/A',
+                    'tipo_promocion' => $a->tipo_promocion,
+                    'marca' => $a->marca,
+                ];
+            })->toArray(),
+            'total_encontrados' => $acuerdos->count(),
+            'resumen_por_estado' => $resumenEstados,
+            'filtros_aplicados' => array_filter($args),
+        ];
+    }
+
+    /**
+     * 🔍 Buscar orden específica en Google Sheets
+     */
+    protected function fnBuscarOrden(array $args, $user): array
+    {
+        $termino = $args['termino_busqueda'] ?? '';
+
+        if (empty($termino)) {
+            return ['error' => 'Debes proporcionar un término de búsqueda'];
+        }
+
+        try {
+            $rawData = $this->googleSheets->getSheetData('Historico');
+            $ordenes = $this->googleSheets->parseSheetData($rawData);
+            $resultados = $this->googleSheets->searchInData($ordenes, $termino);
+
+            // Limitar resultados para no sobrecargar
+            $resultados = array_slice(array_values($resultados), 0, 10);
+
+            return [
+                'termino_buscado' => $termino,
+                'resultados_encontrados' => count($resultados),
+                'ordenes' => $resultados,
+                'nota' => count($resultados) >= 10 ? 'Se muestran los primeros 10 resultados' : null,
+            ];
+        } catch (\Exception $e) {
+            return ['error' => 'Error al buscar orden: ' . $e->getMessage()];
+        }
+    }
+
+    /**
+     * 👤 Obtener información del usuario actual
+     */
+    protected function fnObtenerInfoUsuario($user): array
+    {
+        return [
+            'nombre' => $user->name,
+            'email' => $user->email,
+            'rol' => $user->getRoleName(),
+            'roles_spatie' => $user->getRoleNames()->toArray(),
+            'sede' => $user->getSedeName(),
+            'permisos_especiales' => [
+                'ver_ventas_consolidadas' => $user->puedeVerVentasConsolidadas(),
+                'ver_descuentos_especiales' => $user->puedeVerDescuentosEspeciales(),
+            ],
+            'estado' => 'Autenticado y activo',
+            'ultimo_acceso' => $user->last_login_at?->format('d/m/Y H:i') ?? 'N/A',
+        ];
+    }
+
+    /**
+     * 📊 Obtener resumen general del sistema
+     */
+    protected function fnObtenerResumenGeneral($user): array
+    {
+        $mesActual = ucfirst(Carbon::now()->locale('es')->translatedFormat('F'));
+        $anioActual = Carbon::now()->year;
+
+        // Ventas del mes
+        $ventasData = $this->fnObtenerVentasSede([
+            'mes' => $mesActual,
+            'anio' => $anioActual,
+        ], $user);
+
+        // Acuerdos activos
+        $acuerdosVigentes = AcuerdoComercial::where('estado', 'Vigente')->count();
+        $acuerdosPendientes = AcuerdoComercial::where('estado', 'Solicitado')->count();
+        $totalAcuerdos = AcuerdoComercial::count();
+
+        return [
+            'fecha' => Carbon::now()->format('d/m/Y H:i'),
+            'ventas_mes_actual' => [
+                'periodo' => "{$mesActual} {$anioActual}",
+                'total' => $ventasData['resumen']['total_ventas_todas_sedes'] ?? 0,
+                'cuota' => $ventasData['resumen']['total_cuota_todas_sedes'] ?? 0,
+                'cumplimiento' => $ventasData['resumen']['cumplimiento_general'] ?? 'N/A',
+                'por_sede' => $ventasData['sedes'] ?? [],
+            ],
+            'acuerdos_comerciales' => [
+                'vigentes' => $acuerdosVigentes,
+                'pendientes_aprobacion' => $acuerdosPendientes,
+                'total' => $totalAcuerdos,
+            ],
+            'usuario_consultando' => $user->name,
+        ];
+    }
+
+    // ================================================================
+    // LLAMADA A GROQ CON TOOLS
+    // ================================================================
+
+    protected function callGroqWithTools(array $messages): ?array
+    {
+        try {
+            Log::info('🤖 Llamando a Groq API con function calling...');
+
+            $payload = [
+                'model' => $this->model,
+                'messages' => $messages,
+                'tools' => $this->getTools(),
+                'tool_choice' => 'auto',
+                'temperature' => 0.1, // Bajo para respuestas más precisas con datos
+                'max_tokens' => 1500,
+            ];
 
             $response = Http::timeout(30)
                 ->withHeaders([
                     'Authorization' => 'Bearer ' . $this->apiKey,
                     'Content-Type' => 'application/json',
                 ])
-                ->post($this->apiUrl, [
-                    'model' => $this->model,
-                    'messages' => [
-                        [
-                            'role' => 'system',
-                            'content' => $this->getSystemPrompt()
-                        ],
-                        [
-                            'role' => 'user',
-                            'content' => $prompt
-                        ]
-                    ],
-                    'temperature' => 0.7,
-                    'max_tokens' => 1000,
-                ]);
+                ->post($this->apiUrl, $payload);
 
             if ($response->successful()) {
-                $data = $response->json();
-                $answer = $data['choices'][0]['message']['content'] ?? 'No pude generar una respuesta.';
-
-                Log::info('Respuesta de Groq recibida exitosamente');
-                return $answer;
+                Log::info('✅ Respuesta de Groq recibida');
+                return $response->json();
             }
 
-            Log::error('Groq API Error: ' . $response->status() . ' - ' . $response->body());
-            return "Lo siento, no pude procesar tu pregunta en este momento. Por favor intenta de nuevo.";
+            Log::error('❌ Groq API Error: ' . $response->status() . ' - ' . $response->body());
+            return null;
         } catch (\Exception $e) {
-            Log::error('Groq Exception: ' . $e->getMessage());
-            return "Ocurrió un error al procesar tu consulta. Por favor intenta de nuevo.";
-        }
-    }
-
-    protected function getSystemPrompt()
-    {
-        return "Eres un asistente experto del sistema Trimax Peru, un laboratorio óptico con sedes en Lima, Arequipa y Trujillo.
-
-MÓDULOS DEL SISTEMA:
-1. **Descuentos Especiales**: Sistema de solicitudes de descuentos con flujo de aprobación por planeamiento comercial
-2. **Convenios Comerciales**: Gestión de acuerdos comerciales con clientes corporativos
-3. **Consulta de Órdenes**: Integración con Google Sheets para consultar órdenes de trabajo
-4. **Dashboard**: Visualización de métricas de ventas con Power BI embebido
-
-ROLES DE USUARIOS:
-- **Vendedor**: Crea solicitudes, consulta órdenes, ve sus métricas
-- **Planeamiento Comercial**: Aprueba/rechaza descuentos, gestiona convenios, ve reportes
-- **Auditoría**: Audita operaciones, ve históricos completos
-
-INSTRUCCIONES IMPORTANTES:
-- Responde SIEMPRE en español de forma natural y conversacional
-- Sé claro, conciso y útil
-- Si te preguntan sobre cómo hacer algo, da pasos específicos y numerados
-- Si no tienes información suficiente, pide aclaración
-- Si te saludan o preguntan qué puedes hacer, preséntate brevemente
-- Adapta tu respuesta al contexto: si es pregunta técnica sé preciso, si es conversacional sé amigable
-- NO repitas la misma respuesta una y otra vez
-- Mantén respuestas cortas (3-4 párrafos máximo)
-- Menciona solo acciones relevantes según el rol del usuario";
-    }
-
-    protected function buildPrompt($question, $knowledgeContext, $systemContext)
-    {
-        $role = $systemContext['user_role'];
-        $module = $systemContext['current_module'];
-        $actions = implode(', ', $systemContext['available_actions']);
-
-        $prompt = "CONTEXTO DEL USUARIO:
-- Rol: {$role}
-- Módulo actual: {$module}
-- Acciones disponibles: {$actions}";
-
-        if ($knowledgeContext) {
-            $prompt .= "\n\nINFORMACIÓN DE CONTEXTO (úsala solo si es relevante):\n{$knowledgeContext}";
-        }
-
-        $prompt .= "\n\nPREGUNTA DEL USUARIO:\n{$question}";
-
-        // Detectar tipo de pregunta
-        $lowerQuestion = strtolower($question);
-
-        if (str_contains($lowerQuestion, 'hola') || str_contains($lowerQuestion, 'que puedes') || str_contains($lowerQuestion, 'ayudar')) {
-            $prompt .= "\n\nNOTA: Esta es una pregunta de introducción/saludo. Responde de forma breve y amigable.";
-        } elseif (str_contains($lowerQuestion, 'como') || str_contains($lowerQuestion, 'cómo')) {
-            $prompt .= "\n\nNOTA: Esta pregunta pide instrucciones. Da pasos específicos y claros.";
-        } elseif (str_contains($lowerQuestion, 'que es') || str_contains($lowerQuestion, 'qué es')) {
-            $prompt .= "\n\nNOTA: Esta pregunta pide definición. Explica el concepto de forma clara.";
-        }
-
-        return $prompt;
-    }
-
-    protected function searchKnowledgeBase($question)
-    {
-        $keywords = $this->extractKeywords($question);
-
-        if (empty($keywords)) {
+            Log::error('❌ Groq Exception: ' . $e->getMessage());
             return null;
         }
+    }
 
-        // Buscar solo si hay al menos 2 palabras clave que coincidan
-        $query = AiKnowledgeBase::where('is_active', true);
+    // ================================================================
+    // HELPERS
+    // ================================================================
 
-        $matchCount = 0;
-        foreach ($keywords as $keyword) {
-            $hasKeyword = clone $query;
-            if ($hasKeyword->where('question_pattern', 'LIKE', "%{$keyword}%")->exists()) {
-                $matchCount++;
+    protected function calcularEstadisticasOrdenes(array $ordenes): array
+    {
+        $total = count($ordenes);
+        $enTransito = 0;
+        $enSede = 0;
+        $facturados = 0;
+        $importeTransito = 0;
+        $importeSede = 0;
+
+        foreach ($ordenes as $orden) {
+            $ubicacion = mb_strtoupper($orden['ubicacion_orden'] ?? '');
+            $estado = mb_strtoupper($orden['estado_orden'] ?? '');
+            $importe = $this->limpiarImporte($orden['importe'] ?? null);
+
+            if (stripos($ubicacion, 'FACTURADO') !== false || stripos($ubicacion, 'ENTREGADO') !== false) {
+                $facturados++;
+            } elseif (stripos($ubicacion, 'SEDE') !== false) {
+                $enSede++;
+                if ($estado === 'SOLICITADO') {
+                    $importeSede += $importe;
+                }
+            } elseif (stripos($ubicacion, 'TRANSITO') !== false) {
+                $enTransito++;
+                if ($estado === 'SOLICITADO') {
+                    $importeTransito += $importe;
+                }
             }
         }
 
-        // Si no hay suficientes coincidencias, no buscar
-        if ($matchCount < 2) {
-            return null;
-        }
-
-        foreach ($keywords as $keyword) {
-            $query->orWhere('question_pattern', 'LIKE', "%{$keyword}%");
-        }
-
-        return $query->orderBy('success_rate', 'desc')
-            ->orderBy('confidence_score', 'desc')
-            ->orderBy('usage_count', 'desc')
-            ->first();
+        return [
+            'total_ordenes' => $total,
+            'en_transito' => $enTransito,
+            'en_sede' => $enSede,
+            'facturados' => $facturados,
+            'disponibles_facturar' => $enSede + $enTransito,
+            'importe_transito' => 'S/ ' . number_format($importeTransito, 2),
+            'importe_sede' => 'S/ ' . number_format($importeSede, 2),
+            'importe_total_pendiente' => 'S/ ' . number_format($importeTransito + $importeSede, 2),
+        ];
     }
 
-    protected function extractKeywords($text)
+    protected function limpiarNumero($valor)
     {
-        // Palabras comunes en español que no aportan valor
-        $stopWords = [
-            'como',
-            'que',
-            'para',
-            'por',
-            'con',
-            'el',
-            'la',
-            'los',
-            'las',
-            'un',
-            'una',
-            'de',
-            'en',
-            'del',
-            'al',
-            'y',
-            'o',
-            'pero',
-            'si',
-            'no',
-            'me',
-            'te',
-            'se',
-            'es',
-            'son',
-            'esta',
-            'este',
-            'esto',
-            'puedo',
-            'puede',
-            'hacer',
-            'hago',
-            'haces',
-            'cual',
-            'cuales',
-            'cuando',
-            'donde',
-            'quien',
-            'quienes',
-            'hola',
-            'sabes'
-        ];
+        if (empty($valor)) return 0;
+        $valor = (string)$valor;
+        $valor = trim($valor);
 
-        $text = strtolower($text);
-        $text = preg_replace('/[¿?¡!,.\-:;]/', ' ', $text); // Remover puntuación
-        $words = preg_split('/\s+/', $text);
+        if (strpos($valor, '.') !== false && strpos($valor, ',') !== false) {
+            $valor = str_replace('.', '', $valor);
+            $valor = str_replace(',', '.', $valor);
+        } elseif (strpos($valor, ',') !== false) {
+            $valor = str_replace(',', '.', $valor);
+        }
 
-        $words = array_filter($words, function ($word) use ($stopWords) {
-            return strlen($word) > 2 && !in_array($word, $stopWords);
-        });
+        return floatval($valor);
+    }
 
-        return array_values(array_unique($words));
+    protected function limpiarPorcentaje($valor)
+    {
+        if (empty($valor)) return 0;
+        $valor = str_replace('%', '', $valor);
+        $valor = trim($valor);
+        $valor = str_replace(',', '.', $valor);
+        return floatval($valor);
+    }
+
+    protected function limpiarImporte($importeStr)
+    {
+        if (!$importeStr || $importeStr === '-' || $importeStr === '') return 0;
+
+        $limpio = trim((string)$importeStr);
+        if ($limpio === '') return 0;
+        if (substr_count($limpio, '/') >= 2) return 0;
+        if (preg_match('/\/\d{4}/', $limpio)) return 0;
+
+        $limpio = preg_replace('/[^0-9.,\-]/', '', $limpio);
+        $limpio = str_replace(',', '.', $limpio);
+        $numero = floatval($limpio);
+
+        if ($numero > 100000) return 0;
+
+        return $numero;
     }
 
     protected function getSystemContext($context)
     {
         $user = Auth::user();
-        $role = $user->role ?? 'guest';
+        $role = $user ? $user->getRoleName() : 'guest';
         $module = $context['module'] ?? 'general';
 
         return [
             'user_role' => $role,
             'current_module' => $module,
-            'module_description' => $this->getModuleDescription($module),
-            'available_actions' => $this->getAvailableActions($role, $module)
+            'available_actions' => $this->getAvailableActions($role, $module),
         ];
-    }
-
-    protected function getModuleDescription($module)
-    {
-        $descriptions = [
-            'descuentos' => 'Sistema de descuentos especiales con flujo de aprobación',
-            'convenios' => 'Gestión de convenios comerciales con clientes',
-            'ordenes' => 'Consulta de órdenes mediante Google Sheets',
-            'dashboard' => 'Visualización de métricas de ventas',
-            'general' => 'Sistema general de Trimax Peru'
-        ];
-
-        return $descriptions[$module] ?? $descriptions['general'];
     }
 
     protected function getAvailableActions($role, $module)
@@ -347,12 +771,28 @@ INSTRUCCIONES IMPORTANTES:
         return AiInteraction::create([
             'user_id' => Auth::id(),
             'session_id' => session()->getId(),
-            'user_role' => Auth::user()->role ?? 'guest',
+            'user_role' => Auth::user() ? Auth::user()->getRoleName() : 'guest',
             'module' => $context['module'] ?? 'general',
             'question' => $question,
             'context' => $context,
             'ai_response' => $answer,
             'response_type' => 'direct_answer',
         ]);
+    }
+
+    protected function errorResponse($question, $context)
+    {
+        $interaction = $this->saveInteraction(
+            $question,
+            'Lo siento, no pude procesar tu consulta en este momento.',
+            $context
+        );
+
+        return [
+            'answer' => 'Lo siento, no pude procesar tu consulta en este momento. Por favor intenta de nuevo.',
+            'confidence' => 'low',
+            'sources' => 'error',
+            'interaction_id' => $interaction->id,
+        ];
     }
 }

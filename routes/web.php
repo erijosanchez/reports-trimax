@@ -16,6 +16,7 @@ use App\Http\Controllers\UserMarketingController;
 use App\Http\Controllers\SurveyController;
 use App\Http\Controllers\ImportController;
 use App\Http\Controllers\DescuentosEspecialesController;
+use App\Http\Controllers\AIAssistantController;
 
 // ============================================================
 // RUTAS PARA LARAVEL 11
@@ -48,6 +49,12 @@ Route::middleware(['auth'])->prefix('2fa')->name('2fa.')->group(function () {
     Route::get('/verify', [TwoFactorController::class, 'show'])->name('verify');
     Route::post('/verify', [TwoFactorController::class, 'verify']);
     Route::post('/disable', [TwoFactorController::class, 'disable'])->name('disable');
+});
+
+// AI Assistant Routes (Authenticated)
+Route::middleware('auth:web')->group(function () {
+    Route::post('/ai/ask', [AIAssistantController::class, 'ask']);
+    Route::post('/ai/feedback', [AIAssistantController::class, 'feedback']);
 });
 
 // Protected Routes (Auth + Track + Prevent Back)
