@@ -4,7 +4,7 @@
 <div id="ai-assistant" class="fixed bottom-4 right-4 z-50">
     <!-- Botón flotante -->
     <button id="ai-toggle"
-        class="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-full p-4 shadow-2xl transition-all duration-300 hover:scale-110">
+        class="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-full p-3 shadow-2xl transition-all duration-300 hover:scale-110">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z">
@@ -15,7 +15,7 @@
     <!-- Panel del chat -->
     <div id="ai-chat-panel" class="hidden bg-white rounded-2xl shadow-2xl w-96 h-[600px] flex flex-col overflow-hidden">
         <!-- Header -->
-        <div class="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-4 flex justify-between items-center">
+        <div class="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-3 flex justify-between items-center">
             <div class="flex items-center gap-3">
                 <div class="relative">
                     <div class="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
@@ -23,7 +23,6 @@
                 </div>
                 <div>
                     <h3 class="font-semibold">Asistente Trimax</h3>
-                    <p class="text-xs text-blue-100">Powered by Groq AI</p>
                 </div>
             </div>
             <button id="ai-close" class="hover:bg-blue-800 rounded-lg p-1 transition-colors">

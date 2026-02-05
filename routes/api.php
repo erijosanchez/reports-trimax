@@ -31,8 +31,3 @@ Route::prefix('ordenes')->group(function () {
 
 // Consultas de datos (cuando integres la BD)
 Route::post('/assistant', [AssistantController::class, 'query']);
-
-Route::middleware('auth:web')->group(function () {
-    Route::post('/ai/ask', [AIAssistantController::class, 'ask']);
-    Route::post('/ai/feedback', [AIAssistantController::class, 'feedback']);
-});
