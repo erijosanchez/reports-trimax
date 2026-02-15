@@ -52,9 +52,11 @@ Route::middleware(['auth'])->prefix('2fa')->name('2fa.')->group(function () {
 });
 
 // AI Assistant Routes (Authenticated)
-Route::middleware('auth:web')->group(function () {
-    Route::post('/ai/ask', [AIAssistantController::class, 'ask']);
-    Route::post('/ai/feedback', [AIAssistantController::class, 'feedback']);
+Route::middleware('auth:web')->prefix('ai')->group(function () {
+    Route::post('/ask', [AIAssistantController::class, 'ask']);
+    Route::post('/feedback', [AIAssistantController::class, 'feedback']);
+    Route::get('/history', [AIAssistantController::class, 'history']);
+    Route::post('/clear-history', [AIAssistantController::class, 'clearHistory']);
 });
 
 // Protected Routes (Auth + Track + Prevent Back)
