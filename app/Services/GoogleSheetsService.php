@@ -66,84 +66,84 @@ class GoogleSheetsService
      * 🔥 SÚPER OPTIMIZADO PARA 80K FILAS
      */
     public function parseSheetData($data)
-{
-    if (empty($data)) {
-        return [];
-    }
-
-    $startTime = microtime(true);
-    $startMemory = memory_get_usage();
-
-    // 🔥 VERIFICAR si la primera fila es una fila de "actualizado" y saltarla
-    if (!empty($data[0]) && is_array($data[0])) {
-        $firstCell = strtolower(trim($data[0][0] ?? ''));
-        
-        if (strpos($firstCell, 'actualizado') !== false) {
-            array_shift($data);
-        }
-    }
-
-    // Primera fila son los headers
-    $headers = array_shift($data);
-    
-    // 🔥 NORMALIZAR HEADERS - AHORA CON SOPORTE PARA Ñ
-    $normalizedHeaders = [];
-    foreach ($headers as $header) {
-        $normalized = trim($header);
-        $normalized = mb_strtolower($normalized, 'UTF-8'); // Usar mb_strtolower para soportar ñ
-        $normalized = str_replace(' ', '_', $normalized);
-        // 🔥 PERMITIR ñ en los nombres de columnas
-        $normalized = preg_replace('/[^a-z0-9_ñ]/', '', $normalized);
-        $normalizedHeaders[] = $normalized;
-    }
-
-    $headerCount = count($normalizedHeaders);
-    $result = [];
-    $processedCount = 0;
-    $skippedCount = 0;
-
-    // 🔥 PROCESAR FILA POR FILA OPTIMIZADO
-    foreach ($data as $index => $row) {
-        if (empty($row)) {
-            $skippedCount++;
-            continue;
+    {
+        if (empty($data)) {
+            return [];
         }
 
-        $rowData = [];
-        $hasData = false;
-        
-        for ($i = 0; $i < $headerCount; $i++) {
-            if (isset($row[$i]) && $row[$i] !== '') {
-                $rowData[$normalizedHeaders[$i]] = trim($row[$i]);
-                $hasData = true;
-            } else {
-                $rowData[$normalizedHeaders[$i]] = '';
+        $startTime = microtime(true);
+        $startMemory = memory_get_usage();
+
+        // 🔥 VERIFICAR si la primera fila es una fila de "actualizado" y saltarla
+        if (!empty($data[0]) && is_array($data[0])) {
+            $firstCell = strtolower(trim($data[0][0] ?? ''));
+
+            if (strpos($firstCell, 'actualizado') !== false) {
+                array_shift($data);
             }
         }
-        
-        if ($hasData) {
-            $result[] = $rowData;
-            $processedCount++;
-        } else {
-            $skippedCount++;
+
+        // Primera fila son los headers
+        $headers = array_shift($data);
+
+        // 🔥 NORMALIZAR HEADERS - AHORA CON SOPORTE PARA Ñ
+        $normalizedHeaders = [];
+        foreach ($headers as $header) {
+            $normalized = trim($header);
+            $normalized = mb_strtolower($normalized, 'UTF-8'); // Usar mb_strtolower para soportar ñ
+            $normalized = str_replace(' ', '_', $normalized);
+            // 🔥 PERMITIR ñ en los nombres de columnas
+            $normalized = preg_replace('/[^a-z0-9_ñ]/', '', $normalized);
+            $normalizedHeaders[] = $normalized;
         }
-        
-        if ($processedCount % 5000 === 0 && $processedCount > 0) {
-            gc_collect_cycles();
-            $currentMemory = round((memory_get_usage() - $startMemory) / 1024 / 1024, 2);
+
+        $headerCount = count($normalizedHeaders);
+        $result = [];
+        $processedCount = 0;
+        $skippedCount = 0;
+
+        // 🔥 PROCESAR FILA POR FILA OPTIMIZADO
+        foreach ($data as $index => $row) {
+            if (empty($row)) {
+                $skippedCount++;
+                continue;
+            }
+
+            $rowData = [];
+            $hasData = false;
+
+            for ($i = 0; $i < $headerCount; $i++) {
+                if (isset($row[$i]) && $row[$i] !== '') {
+                    $rowData[$normalizedHeaders[$i]] = trim($row[$i]);
+                    $hasData = true;
+                } else {
+                    $rowData[$normalizedHeaders[$i]] = '';
+                }
+            }
+
+            if ($hasData) {
+                $result[] = $rowData;
+                $processedCount++;
+            } else {
+                $skippedCount++;
+            }
+
+            if ($processedCount % 5000 === 0 && $processedCount > 0) {
+                gc_collect_cycles();
+                $currentMemory = round((memory_get_usage() - $startMemory) / 1024 / 1024, 2);
+            }
         }
+
+        unset($data);
+        gc_collect_cycles();
+
+        $endTime = microtime(true);
+        $endMemory = memory_get_usage();
+        $executionTime = round($endTime - $startTime, 2);
+        $memoryUsed = round(($endMemory - $startMemory) / 1024 / 1024, 2);
+
+        return $result;
     }
-
-    unset($data);
-    gc_collect_cycles();
-
-    $endTime = microtime(true);
-    $endMemory = memory_get_usage();
-    $executionTime = round($endTime - $startTime, 2);
-    $memoryUsed = round(($endMemory - $startMemory) / 1024 / 1024, 2);
-
-    return $result;
-}
 
     /**
      * Buscar en los datos (optimizado)
@@ -213,6 +213,40 @@ class GoogleSheetsService
                 }
             }
             return true;
+        });
+    }
+
+    // Metodos para manejo de lead time en nuevo modulo
+
+    /**
+     * Obtener datos de un spreadsheet específico
+     */
+    public function getSheetDataFromSpreadsheet($spreadsheetId, $sheetName, $range = null)
+    {
+        try {
+            $fullRange = $range ? "{$sheetName}!{$range}" : $sheetName;
+
+            $response = $this->service->spreadsheets_values->get(
+                $spreadsheetId,
+                $fullRange
+            );
+
+            return $response->getValues();
+        } catch (\Exception $e) {
+            \Log::error("Error al obtener datos del spreadsheet {$spreadsheetId}: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Obtener datos con caché de un spreadsheet específico
+     */
+    public function getSheetDataFromSpreadsheetCached($spreadsheetId, $sheetName, $range = null, $ttl = 300)
+    {
+        $cacheKey = "google_sheets_{$spreadsheetId}_{$sheetName}_" . md5($range);
+
+        return Cache::remember($cacheKey, $ttl, function () use ($spreadsheetId, $sheetName, $range) {
+            return $this->getSheetDataFromSpreadsheet($spreadsheetId, $sheetName, $range);
         });
     }
 }

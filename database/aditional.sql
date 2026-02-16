@@ -385,3 +385,8 @@ CREATE TABLE ai_knowledge_base (
 ENGINE=InnoDB
 DEFAULT CHARSET=utf8mb4
 COLLATE=utf8mb4_unicode_ci;
+
+
+/*modifcamos la consulta*/
+
+ALTER TABLE ai_interactions MODIFY COLUMN response_type VARCHAR(50) NOT NULL DEFAULT 'direct_answer';

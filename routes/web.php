@@ -17,6 +17,7 @@ use App\Http\Controllers\SurveyController;
 use App\Http\Controllers\ImportController;
 use App\Http\Controllers\DescuentosEspecialesController;
 use App\Http\Controllers\AIAssistantController;
+use App\Http\Controllers\LeadTimeController;
 
 // ============================================================
 // RUTAS PARA LARAVEL 11
@@ -144,7 +145,7 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
         Route::post('/acuerdos/{id}/cambiar-validacion', [ComercialController::class, 'cambiarValidacion'])->name('acuerdos.cambiar-validacion');
         Route::post('/acuerdos/{id}/cambiar-aprobacion', [ComercialController::class, 'cambiarAprobacion'])->name('acuerdos.cambiar-aprobacion');
 
-        
+
         /* DESCUENTOS ESPECIALES */
         Route::get('/descuentos-especiales', [DescuentosEspecialesController::class, 'index'])->name('descuentos.index');
         Route::get('/descuentos-especiales/obtener', [DescuentosEspecialesController::class, 'obtenerDescuentos'])->name('descuentos.obtener');
@@ -179,6 +180,12 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
         //Ver ventas de las sedes 
         Route::get('/ventas-sedes', [ComercialController::class, 'ventasSedes'])->name('ventas.sedes');
         Route::get('/api/ventas-sedes-data', [ComercialController::class, 'getVentasSedesData'])->name('ventas.sedes.data');
+
+        // Ver lead time
+        Route::get('/lead-time', [LeadTimeController::class, 'index'])->name('lead-time.index');
+        Route::get('api/lead-time/data', [LeadTimeController::class, 'getData'])->name('lead-time.data');
+        Route::get('api/lead-time/years', [LeadTimeController::class, 'getAvailableYears'])->name('lead-time.years');
+        Route::post('api/lead-time/clear-cache', [LeadTimeController::class, 'clearCache'])->name('lead-time.clear-cache');
     });
 
     // Admin Routes (Admin + Super Admin only)

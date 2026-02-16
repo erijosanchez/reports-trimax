@@ -61,8 +61,18 @@
             <li class="nav-item">
                 <a class="nav-link {{ request()->routeIs('comercial.ventas.sedes') ? 'active' : '' }}"
                     href="{{ route('comercial.ventas.sedes') }}">
-                    <i class="mdi mdi-cart-outline menu-icon"></i>
+                    <i class="mdi-cart-outline mdi menu-icon"></i>
                     <span class="menu-title">Ventas</span>
+                </a>
+            </li>
+        @endif
+
+        @if (auth()->user()->puedeVerVentasConsolidadas())
+            <li class="nav-item">
+                <a class="nav-link {{ request()->routeIs('comercial.lead-time.index') ? 'active' : '' }}"
+                    href="{{ route('comercial.lead-time.index') }}">
+                    <i class="mdi-clock-outline mdi menu-icon"></i>
+                    <span class="menu-title">Lead Time</span>
                 </a>
             </li>
         @endif
