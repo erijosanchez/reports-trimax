@@ -171,12 +171,39 @@ class LeadTimeController extends Controller
 
         $porcentajeGeneral = $totalGeneral > 0 ? round(($totalEnTiempo / $totalGeneral) * 100, 2) : 0;
 
+        $ordenesAtrasadas = [];
+
+        foreach ($filtered as $record) {
+            $conclusion = strtoupper(trim($record['CONCLUSION'] ?? ''));
+            if ($conclusion === 'FUERA DE TIEMPO') {
+                $ordenesAtrasadas[] = [
+                    'numero_orden'    => $record['NUMERO_ORDEN'] ?? '',
+                    'sede'            => $record['SEDE'] ?? '',
+                    'tipo'            => $record['TIPO'] ?? '',
+                    'producto'        => $record['PRODUCTO'] ?? '',
+                    'tipo_de_trabajo' => $record['TIPO_DE_TRABAJO'] ?? '',
+                    'meta'            => intval($record['META'] ?? 0),
+                    'solicitado'      => $record['SOLICITADO'] ?? '',
+                    'lead_time'       => $record['LEAD_TIME'] ?? '',
+                    'time'            => $record['TIME'] ?? '',
+                    'atraso'          => intval($record['ATRASO'] ?? 0),
+                    'conclusion'      => $record['CONCLUSION'] ?? '',
+                ];
+            }
+        }
+
+        // Ordenar: mayor atraso primero (atraso negativo, menor valor = más atraso)
+        usort($ordenesAtrasadas, function ($a, $b) {
+            return $a['atraso'] - $b['atraso'];
+        });
+
         return [
             'general' => [
                 'total' => $totalGeneral,
                 'porcentaje' => $porcentajeGeneral,
             ],
             'categorias' => $resultados,
+            'ordenes_atrasadas' => $ordenesAtrasadas,
         ];
     }
 
@@ -290,6 +317,7 @@ class LeadTimeController extends Controller
                 'porcentaje' => 0,
             ],
             'categorias' => [],
+            'ordenes_atrasadas' => [],
         ];
     }
 
