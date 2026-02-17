@@ -23,7 +23,7 @@ class DescuentoEspecialRehabilitado extends Notification
 
     public function via($notifiable)
     {
-        return ['mail', 'database'];
+        return ['mail'];
     }
 
     public function toMail($notifiable)

@@ -21,7 +21,7 @@ class DescuentoEspecialCreado extends Notification
 
     public function via($notifiable)
     {
-        return ['mail', 'database'];
+        return ['mail'];
     }
 
     public function toMail($notifiable)
