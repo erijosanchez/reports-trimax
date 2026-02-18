@@ -76,7 +76,11 @@ class HomeController extends Controller
                 'venta_proyectada' => 0,
                 'cuota' => 0,
                 'cumplimiento_cuota' => 0,
-                'venta_total' => 0
+                'venta_total' => 0,
+                'venta_digital'     => 0,
+                'venta_proy_digital'=> 0,
+                'cuota_digital'     => 0,
+                'cum_cuota_digital' => 0,
             ];
 
             $historico = [
@@ -139,7 +143,7 @@ class HomeController extends Controller
      */
     private function obtenerDatosVentas($service, $spreadsheetId, $sede, $mes, $anio)
     {
-        $range = 'Historico!A:H';
+        $range = 'Historico!A:K';
         $response = $service->spreadsheets_values->get($spreadsheetId, $range);
         $values = $response->getValues();
 
@@ -148,7 +152,11 @@ class HomeController extends Controller
             'venta_proyectada' => 0,
             'cuota' => 0,
             'cumplimiento_cuota' => 0,
-            'venta_total' => 0
+            'venta_total' => 0,
+            'venta_digital'     => 0,
+            'venta_proy_digital'=> 0,
+            'cuota_digital'     => 0,
+            'cum_cuota_digital' => 0,
         ];
 
         if (empty($values)) {
@@ -169,6 +177,10 @@ class HomeController extends Controller
                     $datos['cuota'] = $this->limpiarNumero($row[5] ?? 0);
                     $datos['cumplimiento_cuota'] = $this->limpiarPorcentaje($row[6] ?? '0%');
                     $datos['venta_total'] = $this->limpiarNumero($row[7] ?? 0);
+                    $datos['venta_digital']      = $this->limpiarNumero($row[7] ?? 0);
+                    $datos['venta_proy_digital'] = $this->limpiarNumero($row[8] ?? 0);
+                    $datos['cuota_digital']      = $this->limpiarNumero($row[9] ?? 0);
+                    $datos['cum_cuota_digital']  = $this->limpiarPorcentaje($row[10] ?? '0%');
                     break;
                 }
             }

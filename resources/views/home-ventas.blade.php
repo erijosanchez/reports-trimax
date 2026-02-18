@@ -23,7 +23,6 @@
                                     </p>
                                 </div>
 
-                                <!-- ✅ NUEVO: Selectores de Año y Mes -->
                                 <div class="col-lg-4">
                                     <div class="row g-2">
                                         <div class="col-6">
@@ -40,20 +39,20 @@
                                         <div class="col-6">
                                             <label class="form-label small text-muted mb-1">Mes</label>
                                             <select id="mesSelect" class="form-select">
-                                                <option value="Enero" {{ $mesActual == 'Enero' ? 'selected' : '' }}>Enero
-                                                </option>
+                                                <option value="Enero" {{ $mesActual == 'Enero' ? 'selected' : '' }}>
+                                                    Enero</option>
                                                 <option value="Febrero" {{ $mesActual == 'Febrero' ? 'selected' : '' }}>
                                                     Febrero</option>
-                                                <option value="Marzo" {{ $mesActual == 'Marzo' ? 'selected' : '' }}>Marzo
-                                                </option>
-                                                <option value="Abril" {{ $mesActual == 'Abril' ? 'selected' : '' }}>Abril
-                                                </option>
-                                                <option value="Mayo" {{ $mesActual == 'Mayo' ? 'selected' : '' }}>Mayo
-                                                </option>
-                                                <option value="Junio" {{ $mesActual == 'Junio' ? 'selected' : '' }}>Junio
-                                                </option>
-                                                <option value="Julio" {{ $mesActual == 'Julio' ? 'selected' : '' }}>Julio
-                                                </option>
+                                                <option value="Marzo" {{ $mesActual == 'Marzo' ? 'selected' : '' }}>
+                                                    Marzo</option>
+                                                <option value="Abril" {{ $mesActual == 'Abril' ? 'selected' : '' }}>
+                                                    Abril</option>
+                                                <option value="Mayo" {{ $mesActual == 'Mayo' ? 'selected' : '' }}>
+                                                    Mayo</option>
+                                                <option value="Junio" {{ $mesActual == 'Junio' ? 'selected' : '' }}>
+                                                    Junio</option>
+                                                <option value="Julio" {{ $mesActual == 'Julio' ? 'selected' : '' }}>
+                                                    Julio</option>
                                                 <option value="Agosto" {{ $mesActual == 'Agosto' ? 'selected' : '' }}>
                                                     Agosto</option>
                                                 <option value="Septiembre"
@@ -73,7 +72,12 @@
 
                             <!-- Cards Principales -->
                             <div class="row mb-4" id="cardsContainer">
-                                <!-- Card 1: Venta General -->
+                                <div class="col-lg-12 mb-2">
+                                    <h6 class="text-muted">
+                                        <i class="mdi mdi-store me-1"></i> Ventas Generales
+                                    </h6>
+                                </div>
+
                                 <div class="col-lg-3 col-md-6 mb-3">
                                     <div class="card card-tale h-100">
                                         <div class="card-body">
@@ -92,7 +96,6 @@
                                     </div>
                                 </div>
 
-                                <!-- Card 2: Venta Proyectada -->
                                 <div class="col-lg-3 col-md-6 mb-3">
                                     <div class="card card-light-blue h-100">
                                         <div class="card-body">
@@ -111,7 +114,6 @@
                                     </div>
                                 </div>
 
-                                <!-- Card 2: Cuota -->
                                 <div class="col-lg-3 col-md-6 mb-3">
                                     <div class="card card-dark-blue h-100">
                                         <div class="card-body">
@@ -130,7 +132,6 @@
                                     </div>
                                 </div>
 
-                                <!-- Card 3: Cumplimiento -->
                                 <div class="col-lg-3 col-md-6 mb-3">
                                     <div class="card card-light-blue h-100" id="cardCumplimiento">
                                         <div class="card-body">
@@ -156,9 +157,94 @@
                                 </div>
                             </div>
 
+                            <!-- 🔥 Cards Ventas Digitales -->
+                            <div class="row mb-4" id="cardsDigitales">
+                                <div class="col-lg-12 mb-2">
+                                    <h6 class="text-muted">
+                                        <i class="mdi mdi-monitor me-1"></i> Ventas Digitales
+                                    </h6>
+                                </div>
+
+                                <div class="col-lg-3 col-md-6 mb-3">
+                                    <div class="card card-tale h-100">
+                                        <div class="card-body">
+                                            <div class="d-flex align-items-center">
+                                                <div class="icon-wrapper bg-white rounded me-3">
+                                                    <i class="mdi mdi-monitor-dashboard text-primary mdi-36px"></i>
+                                                </div>
+                                                <div>
+                                                    <p class="mb-1 text-white">Venta Digital</p>
+                                                    <h4 class="mb-0 text-white fw-bold" id="ventaDigital">
+                                                        S/ {{ number_format($datos['venta_digital'], 0, '.', ',') }}
+                                                    </h4>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-3 col-md-6 mb-3">
+                                    <div class="card card-light-blue h-100">
+                                        <div class="card-body">
+                                            <div class="d-flex align-items-center">
+                                                <div class="icon-wrapper bg-white rounded me-3">
+                                                    <i class="mdi mdi-chart-line text-info mdi-36px"></i>
+                                                </div>
+                                                <div>
+                                                    <p class="mb-1 text-white">Venta Proy. Digital</p>
+                                                    <h4 class="mb-0 text-white fw-bold" id="ventaProyDigital">
+                                                        S/ {{ number_format($datos['venta_proy_digital'], 0, '.', ',') }}
+                                                    </h4>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-3 col-md-6 mb-3">
+                                    <div class="card card-dark-blue h-100">
+                                        <div class="card-body">
+                                            <div class="d-flex align-items-center">
+                                                <div class="icon-wrapper bg-white rounded me-3">
+                                                    <i class="mdi mdi-target text-warning mdi-36px"></i>
+                                                </div>
+                                                <div>
+                                                    <p class="mb-1 text-white">Cuota Digital</p>
+                                                    <h4 class="mb-0 text-white fw-bold" id="cuotaDigital">
+                                                        S/ {{ number_format($datos['cuota_digital'], 0, '.', ',') }}
+                                                    </h4>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-3 col-md-6 mb-3">
+                                    <div class="card card-light-blue h-100" id="cardCumDigital">
+                                        <div class="card-body">
+                                            <div class="d-flex align-items-center mb-2">
+                                                <div class="icon-wrapper bg-white rounded me-3">
+                                                    <i class="mdi mdi-percent text-success mdi-36px"></i>
+                                                </div>
+                                                <div>
+                                                    <p class="mb-1 text-white">Cum. Cuota Digital</p>
+                                                    <h4 class="mb-0 text-white fw-bold" id="cumCuotaDigital">
+                                                        {{ number_format($datos['cum_cuota_digital'], 2) }}%
+                                                    </h4>
+                                                </div>
+                                            </div>
+                                            <div class="progress" style="height: 8px;">
+                                                <div class="progress-bar bg-success" id="progressCumDigital"
+                                                    style="width: {{ min($datos['cum_cuota_digital'], 100) }}%">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                             <!-- Gráficos -->
                             <div class="row mb-4">
-                                <!-- Gráfico Ventas vs Cuota -->
                                 <div class="col-lg-8 mb-3">
                                     <div class="card">
                                         <div class="card-body">
@@ -171,7 +257,6 @@
                                     </div>
                                 </div>
 
-                                <!-- Gráfico Cumplimiento -->
                                 <div class="col-lg-4 mb-3">
                                     <div class="card">
                                         <div class="card-body">
@@ -185,14 +270,15 @@
                                 </div>
                             </div>
 
-                            <!-- Gráfico de Ventas Anuales -->
+                            <!-- Gráfico Comparación Anual -->
                             <div class="row mb-4">
                                 <div class="col-12">
                                     <div class="card">
                                         <div class="card-body">
                                             <h4 class="card-title mb-4">
                                                 <i class="mdi mdi-chart-areaspline text-info me-2"></i>
-                                                Comparación de {{ $datosAnuales['mes'] ?? 'Mes Actual' }} - Histórico de Años
+                                                Comparación de {{ $datosAnuales['mes'] ?? 'Mes Actual' }} - Histórico de
+                                                Años
                                             </h4>
                                             <canvas id="ventasAnualesChart" height="60"></canvas>
                                         </div>
@@ -231,26 +317,23 @@
                                                                     {{ number_format($historico['cuotas'][$index], 0, '.', ',') }}
                                                                 </td>
                                                                 <td
-                                                                    class="fw-bold 
-                                                            @if ($historico['cumplimientos'][$index] >= 100) text-success
-                                                            @elseif($historico['cumplimientos'][$index] >= 70) text-warning
-                                                            @else text-danger @endif">
+                                                                    class="fw-bold
+                                                                    @if ($historico['cumplimientos'][$index] >= 100) text-success
+                                                                    @elseif($historico['cumplimientos'][$index] >= 70) text-warning
+                                                                    @else text-danger @endif">
                                                                     {{ number_format($historico['cumplimientos'][$index], 2) }}%
                                                                 </td>
                                                                 <td class="text-center">
                                                                     @if ($historico['cumplimientos'][$index] >= 100)
-                                                                        <span class="badge badge-success">
-                                                                            <i
-                                                                                class="mdi mdi-check-circle me-1"></i>Cumplido
-                                                                        </span>
+                                                                        <span class="badge badge-success"><i
+                                                                                class="mdi mdi-check-circle me-1"></i>Cumplido</span>
                                                                     @elseif($historico['cumplimientos'][$index] >= 70)
-                                                                        <span class="badge badge-warning">
-                                                                            <i class="mdi mdi-alert me-1"></i>En Progreso
-                                                                        </span>
+                                                                        <span class="badge badge-warning"><i
+                                                                                class="mdi mdi-alert me-1"></i>En
+                                                                            Progreso</span>
                                                                     @else
-                                                                        <span class="badge badge-danger">
-                                                                            <i class="mdi mdi-close-circle me-1"></i>Bajo
-                                                                        </span>
+                                                                        <span class="badge badge-danger"><i
+                                                                                class="mdi mdi-close-circle me-1"></i>Bajo</span>
                                                                     @endif
                                                                 </td>
                                                             </tr>
@@ -306,7 +389,6 @@
     <script>
         let ventasCuotaChart, cumplimientoChart, ventasAnualesChart;
 
-        // Datos iniciales
         let historico = {
             meses: @json($historico['meses']),
             ventas: @json($historico['ventas']),
@@ -314,16 +396,12 @@
             cumplimientos: @json($historico['cumplimientos'])
         };
 
-        // ✅ Inicializar gráficos
         document.addEventListener('DOMContentLoaded', function() {
             inicializarGraficos();
-
-            // ✅ Event listeners para los selectores
             document.getElementById('anioSelect').addEventListener('change', actualizarDatos);
             document.getElementById('mesSelect').addEventListener('change', actualizarDatos);
         });
 
-        // ✅ Función para actualizar datos vía AJAX
         async function actualizarDatos() {
             const anio = document.getElementById('anioSelect').value;
             const mes = document.getElementById('mesSelect').value;
@@ -332,43 +410,44 @@
                 const response = await fetch(`{{ route('api.ventas.data') }}?anio=${anio}&mes=${mes}`);
                 const data = await response.json();
 
-                // Actualizar cards
+                // Cards normales
                 document.getElementById('ventaGeneral').textContent = 'S/ ' + formatNumber(data.datos.venta_general);
                 document.getElementById('cuota').textContent = 'S/ ' + formatNumber(data.datos.cuota);
                 document.getElementById('cumplimiento').textContent = data.datos.cumplimiento_cuota.toFixed(2) + '%';
-                document.getElementById('ventaTotal').textContent = 'S/ ' + formatNumber(data.datos.venta_total);
-
-                // Actualizar color del card de cumplimiento
+                document.getElementById('ventaTotal').textContent = 'S/ ' + formatNumber(data.datos.venta_proyectada);
                 actualizarColorCumplimiento(data.datos.cumplimiento_cuota);
 
-                // Actualizar gráficos
+                // 🔥 Cards digitales
+                document.getElementById('ventaDigital').textContent = 'S/ ' + formatNumber(data.datos.venta_digital);
+                document.getElementById('ventaProyDigital').textContent = 'S/ ' + formatNumber(data.datos
+                    .venta_proy_digital);
+                document.getElementById('cuotaDigital').textContent = 'S/ ' + formatNumber(data.datos.cuota_digital);
+                document.getElementById('cumCuotaDigital').textContent = (data.datos.cum_cuota_digital ?? 0).toFixed(
+                    2) + '%';
+                actualizarColorCumDigital(data.datos.cum_cuota_digital ?? 0);
+
+                // Gráficos y tabla
                 historico = data.historico;
                 actualizarGraficos();
+                actualizarTabla(data.historico);
 
-                // Actualizar títulos
                 document.getElementById('anioGrafico').textContent = anio;
                 document.getElementById('anioTabla').textContent = anio;
-
-                // Actualizar tabla
-                actualizarTabla(data.historico);
 
             } catch (error) {
                 console.error('Error al actualizar datos:', error);
             }
         }
 
-        // ✅ Actualizar color del card de cumplimiento
         function actualizarColorCumplimiento(cumplimiento) {
             const card = document.getElementById('cardCumplimiento');
             const icon = document.getElementById('iconCumplimiento');
             const progress = document.getElementById('progressCumplimiento');
 
-            // Remover clases anteriores
             card.classList.remove('card-light-blue', 'card-light-danger');
             icon.classList.remove('text-success', 'text-warning', 'text-danger');
             progress.classList.remove('bg-success', 'bg-warning', 'bg-danger');
 
-            // Agregar nuevas clases
             if (cumplimiento >= 100) {
                 card.classList.add('card-light-blue');
                 icon.classList.add('text-success');
@@ -386,14 +465,33 @@
             progress.style.width = Math.min(cumplimiento, 100) + '%';
         }
 
-        // ✅ Formatear números
+        // 🔥 Color dinámico para card cum digital
+        function actualizarColorCumDigital(cum) {
+            const card = document.getElementById('cardCumDigital');
+            const progress = document.getElementById('progressCumDigital');
+
+            card.classList.remove('card-light-blue', 'card-light-danger');
+            progress.classList.remove('bg-success', 'bg-warning', 'bg-danger');
+
+            if (cum >= 100) {
+                card.classList.add('card-light-blue');
+                progress.classList.add('bg-success');
+            } else if (cum >= 70) {
+                card.classList.add('card-light-danger');
+                progress.classList.add('bg-warning');
+            } else {
+                card.classList.add('card-light-danger');
+                progress.classList.add('bg-danger');
+            }
+
+            progress.style.width = Math.min(cum, 100) + '%';
+        }
+
         function formatNumber(num) {
             return Math.round(num).toLocaleString('es-PE');
         }
 
-        // ✅ Inicializar todos los gráficos
         function inicializarGraficos() {
-            // Gráfico Ventas vs Cuota
             const ctxVentas = document.getElementById('ventasCuotaChart').getContext('2d');
             ventasCuotaChart = new Chart(ctxVentas, {
                 type: 'bar',
@@ -423,9 +521,7 @@
                         },
                         tooltip: {
                             callbacks: {
-                                label: function(context) {
-                                    return context.dataset.label + ': S/ ' + context.parsed.y.toLocaleString();
-                                }
+                                label: ctx => ctx.dataset.label + ': S/ ' + ctx.parsed.y.toLocaleString()
                             }
                         }
                     },
@@ -433,16 +529,13 @@
                         y: {
                             beginAtZero: true,
                             ticks: {
-                                callback: function(value) {
-                                    return 'S/ ' + value.toLocaleString();
-                                }
+                                callback: val => 'S/ ' + val.toLocaleString()
                             }
                         }
                     }
                 }
             });
 
-            // Gráfico Cumplimiento
             const ctxCumplimiento = document.getElementById('cumplimientoChart').getContext('2d');
             cumplimientoChart = new Chart(ctxCumplimiento, {
                 type: 'line',
@@ -472,23 +565,20 @@
                             beginAtZero: true,
                             max: 120,
                             ticks: {
-                                callback: function(value) {
-                                    return value.toFixed(2) + '%';
-                                }
+                                callback: val => val.toFixed(2) + '%'
                             }
                         }
                     }
                 }
             });
 
-            // ✅ NUEVO: Gráfico de Ventas Anuales
             const ctxAnuales = document.getElementById('ventasAnualesChart').getContext('2d');
             ventasAnualesChart = new Chart(ctxAnuales, {
                 type: 'line',
                 data: {
                     labels: @json($datosAnuales['anios']),
                     datasets: [{
-                        label: 'Ventas En {{ $datosAnuales['mes'] ?? 'Mes Actual' }}',
+                        label: 'Ventas en {{ $datosAnuales['mes'] ?? 'Mes Actual' }}',
                         data: @json($datosAnuales['ventas']),
                         backgroundColor: 'rgba(153, 102, 255, 0.2)',
                         borderColor: 'rgba(153, 102, 255, 1)',
@@ -510,9 +600,7 @@
                         },
                         tooltip: {
                             callbacks: {
-                                label: function(context) {
-                                    return 'Total: S/ ' + context.parsed.y.toLocaleString();
-                                }
+                                label: ctx => 'Total: S/ ' + ctx.parsed.y.toLocaleString()
                             }
                         }
                     },
@@ -520,9 +608,7 @@
                         y: {
                             beginAtZero: true,
                             ticks: {
-                                callback: function(value) {
-                                    return 'S/ ' + (value / 1000000).toFixed(1) + 'M';
-                                }
+                                callback: val => 'S/ ' + (val / 1000000).toFixed(1) + 'M'
                             }
                         }
                     }
@@ -530,50 +616,45 @@
             });
         }
 
-        // ✅ Actualizar gráficos con nuevos datos
         function actualizarGraficos() {
-            // Actualizar Ventas vs Cuota
             ventasCuotaChart.data.labels = historico.meses;
             ventasCuotaChart.data.datasets[0].data = historico.ventas;
             ventasCuotaChart.data.datasets[1].data = historico.cuotas;
             ventasCuotaChart.update();
 
-            // Actualizar Cumplimiento
             cumplimientoChart.data.labels = historico.meses;
             cumplimientoChart.data.datasets[0].data = historico.cumplimientos;
             cumplimientoChart.update();
         }
 
-        // ✅ Actualizar tabla
         function actualizarTabla(historico) {
             const tbody = document.getElementById('tablaBody');
 
             if (historico.meses.length === 0) {
                 tbody.innerHTML = `
-            <tr>
-                <td colspan="5" class="text-center py-4 text-muted">
-                    <i class="mdi mdi-inbox mdi-48px d-block mb-3"></i>
-                    No hay datos disponibles
-                </td>
-            </tr>
-        `;
+                    <tr>
+                        <td colspan="5" class="text-center py-4 text-muted">
+                            <i class="mdi mdi-inbox mdi-48px d-block mb-3"></i>
+                            No hay datos disponibles
+                        </td>
+                    </tr>`;
                 return;
             }
 
             let html = '';
             historico.meses.forEach((mes, index) => {
-                const cumplimiento = historico.cumplimientos[index];
-                let badgeClass = 'badge-danger';
-                let badgeIcon = 'mdi-close-circle';
-                let badgeText = 'Bajo';
-                let textClass = 'text-danger';
+                const cum = historico.cumplimientos[index];
+                let badgeClass = 'badge-danger',
+                    badgeIcon = 'mdi-close-circle',
+                    badgeText = 'Bajo',
+                    textClass = 'text-danger';
 
-                if (cumplimiento >= 100) {
+                if (cum >= 100) {
                     badgeClass = 'badge-success';
                     badgeIcon = 'mdi-check-circle';
                     badgeText = 'Cumplido';
                     textClass = 'text-success';
-                } else if (cumplimiento >= 70) {
+                } else if (cum >= 70) {
                     badgeClass = 'badge-warning';
                     badgeIcon = 'mdi-alert';
                     badgeText = 'En Progreso';
@@ -581,18 +662,17 @@
                 }
 
                 html += `
-            <tr>
-                <td class="fw-semibold">${mes}</td>
-                <td>S/ ${formatNumber(historico.ventas[index])}</td>
-                <td>S/ ${formatNumber(historico.cuotas[index])}</td>
-                <td class="fw-bold ${textClass}">${cumplimiento.toFixed(2)}%</td>
-                <td class="text-center">
-                    <span class="badge ${badgeClass}">
-                        <i class="mdi ${badgeIcon} me-1"></i>${badgeText}
-                    </span>
-                </td>
-            </tr>
-        `;
+                    <tr>
+                        <td class="fw-semibold">${mes}</td>
+                        <td>S/ ${formatNumber(historico.ventas[index])}</td>
+                        <td>S/ ${formatNumber(historico.cuotas[index])}</td>
+                        <td class="fw-bold ${textClass}">${cum.toFixed(2)}%</td>
+                        <td class="text-center">
+                            <span class="badge ${badgeClass}">
+                                <i class="mdi ${badgeIcon} me-1"></i>${badgeText}
+                            </span>
+                        </td>
+                    </tr>`;
             });
 
             tbody.innerHTML = html;
