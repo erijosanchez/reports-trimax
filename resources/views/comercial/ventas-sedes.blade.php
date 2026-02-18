@@ -73,6 +73,12 @@
 
                             <!-- Cards Resumen Global -->
                             <div class="row mb-4" id="cardsGlobales">
+                                <div class="col-lg-12 mb-2">
+                                    <h6 class="text-muted">
+                                        <i class="mdi mdi-store me-1"></i> Ventas Generales —
+                                        <span id="periodoDigital">{{ $mesActual }} {{ $anioActual }}</span>
+                                    </h6>
+                                </div>
                                 @php
                                     $totalVentas = collect($todasLasSedes)->sum('venta_general');
                                     $totalCuotas = collect($todasLasSedes)->sum('cuota');
