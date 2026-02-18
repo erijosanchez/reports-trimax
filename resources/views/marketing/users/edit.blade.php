@@ -101,6 +101,10 @@
                                                                     {{ old('role', $user->role) == 'sede' ? 'selected' : '' }}>
                                                                     Sede
                                                                 </option>
+                                                                <option value="trimax"
+                                                                    {{ old('role', $user->role) == 'trimax' ? 'selected' : '' }}>
+                                                                    Trimax
+                                                                </option>
                                                             </select>
                                                         </div>
                                                     </div>

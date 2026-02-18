@@ -71,6 +71,11 @@ class UsersMarketing extends Model
         return $this->role === 'consultor';
     }
 
+    public function isTrimax()
+    {
+        return $this->role === 'trimax';
+    }
+
     public function isSede()
     {
         return $this->role === 'sede';

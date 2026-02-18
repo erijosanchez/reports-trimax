@@ -39,8 +39,8 @@ class MarketingController extends Controller
             'average_service' => round($surveys->avg('service_quality_rating'), 2),
         ];
 
-        // 🆕 Estadísticas por usuario con sedes consolidadas
-        $userStats = UsersMarketing::whereIn('role', ['consultor', 'sede'])
+        // Estadísticas por usuario (consultor, sede y trimax)
+        $userStats = UsersMarketing::whereIn('role', ['consultor', 'sede', 'trimax'])
             ->where('is_active', true)
             ->with([
                 'surveys' => function ($query) use ($startDate, $endDate) {
@@ -52,53 +52,52 @@ class MarketingController extends Controller
             ])
             ->get()
             ->map(function ($user) use ($startDate, $endDate) {
-                // Para consultores: incluir encuestas de sus sedes
+
                 if ($user->isConsultor()) {
-                    // Obtener IDs de sedes asignadas
+                    // Consultores: incluir encuestas propias + de sus sedes asignadas
                     $sedeIds = $user->sedes->pluck('id')->toArray();
                     $allIds = array_merge([$user->id], $sedeIds);
 
-                    // Obtener todas las encuestas (propias + de sedes)
                     $allSurveys = Survey::whereIn('user_id', $allIds)
                         ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
                         ->get();
 
                     return [
-                        'id' => $user->id,
-                        'name' => $user->name,
-                        'role' => $user->role,
-                        'location' => $user->location,
-                        'sedes_count' => $sedeIds ? count($sedeIds) : 0,
-                        'total_surveys' => $allSurveys->count(),
-                        'avg_experience' => round($allSurveys->avg('experience_rating') ?? 0, 2),
-                        'avg_service' => round($allSurveys->avg('service_quality_rating') ?? 0, 2),
-                        'muy_feliz' => $allSurveys->where('experience_rating', 4)->count(),
-                        'feliz' => $allSurveys->where('experience_rating', 3)->count(),
-                        'insatisfecho' => $allSurveys->where('experience_rating', 2)->count(),
+                        'id'              => $user->id,
+                        'name'            => $user->name,
+                        'role'            => $user->role,
+                        'location'        => $user->location,
+                        'sedes_count'     => count($sedeIds),
+                        'total_surveys'   => $allSurveys->count(),
+                        'avg_experience'  => round($allSurveys->avg('experience_rating') ?? 0, 2),
+                        'avg_service'     => round($allSurveys->avg('service_quality_rating') ?? 0, 2),
+                        'muy_feliz'       => $allSurveys->where('experience_rating', 4)->count(),
+                        'feliz'           => $allSurveys->where('experience_rating', 3)->count(),
+                        'insatisfecho'    => $allSurveys->where('experience_rating', 2)->count(),
                         'muy_insatisfecho' => $allSurveys->where('experience_rating', 1)->count(),
                     ];
                 } else {
-                    // Para sedes: solo sus encuestas
+                    // Sedes y trimax: solo sus propias encuestas
                     return [
-                        'id' => $user->id,
-                        'name' => $user->name,
-                        'role' => $user->role,
-                        'location' => $user->location,
-                        'sedes_count' => 0,
-                        'total_surveys' => $user->surveys->count(),
-                        'avg_experience' => round($user->surveys->avg('experience_rating') ?? 0, 2),
-                        'avg_service' => round($user->surveys->avg('service_quality_rating') ?? 0, 2),
-                        'muy_feliz' => $user->surveys->where('experience_rating', 4)->count(),
-                        'feliz' => $user->surveys->where('experience_rating', 3)->count(),
-                        'insatisfecho' => $user->surveys->where('experience_rating', 2)->count(),
+                        'id'              => $user->id,
+                        'name'            => $user->name,
+                        'role'            => $user->role,
+                        'location'        => $user->location,
+                        'sedes_count'     => 0,
+                        'total_surveys'   => $user->surveys->count(),
+                        'avg_experience'  => round($user->surveys->avg('experience_rating') ?? 0, 2),
+                        'avg_service'     => round($user->surveys->avg('service_quality_rating') ?? 0, 2),
+                        'muy_feliz'       => $user->surveys->where('experience_rating', 4)->count(),
+                        'feliz'           => $user->surveys->where('experience_rating', 3)->count(),
+                        'insatisfecho'    => $user->surveys->where('experience_rating', 2)->count(),
                         'muy_insatisfecho' => $user->surveys->where('experience_rating', 1)->count(),
                     ];
                 }
             })
-            ->sortByDesc('avg_experience'); // Ordenar por mejor promedio
+            ->sortByDesc('avg_experience');
 
         // Lista de usuarios para filtro
-        $users = UsersMarketing::whereIn('role', ['consultor', 'sede'])
+        $users = UsersMarketing::whereIn('role', ['consultor', 'sede', 'trimax'])
             ->where('is_active', true)
             ->orderBy('name')
             ->get(['id', 'name', 'role', 'location']);
@@ -113,7 +112,15 @@ class MarketingController extends Controller
             ->limit(50)
             ->get();
 
-        return view('marketing.dashboard.index', compact('stats', 'userStats', 'users', 'recentSurveys', 'startDate', 'endDate', 'userId'));
+        return view('marketing.dashboard.index', compact(
+            'stats',
+            'userStats',
+            'users',
+            'recentSurveys',
+            'startDate',
+            'endDate',
+            'userId'
+        ));
     }
 
     /**
@@ -134,18 +141,18 @@ class MarketingController extends Controller
         $surveys = $query->get();
 
         $stats = [
-            'total' => $surveys->count(),
-            'muy_feliz' => $surveys->where('experience_rating', 4)->count(),
-            'feliz' => $surveys->where('experience_rating', 3)->count(),
-            'insatisfecho' => $surveys->where('experience_rating', 2)->count(),
-            'muy_insatisfecho' => $surveys->where('experience_rating', 1)->count(),
+            'total'              => $surveys->count(),
+            'muy_feliz'          => $surveys->where('experience_rating', 4)->count(),
+            'feliz'              => $surveys->where('experience_rating', 3)->count(),
+            'insatisfecho'       => $surveys->where('experience_rating', 2)->count(),
+            'muy_insatisfecho'   => $surveys->where('experience_rating', 1)->count(),
             'average_experience' => round($surveys->avg('experience_rating'), 2),
-            'average_service' => round($surveys->avg('service_quality_rating'), 2),
+            'average_service'    => round($surveys->avg('service_quality_rating'), 2),
         ];
 
         return response()->json([
             'success' => true,
-            'data' => $stats
+            'data'    => $stats
         ]);
     }
 }

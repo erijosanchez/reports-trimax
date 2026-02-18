@@ -27,19 +27,27 @@
                             <div class="row pb-3">
                                 <div class="col-sm-12">
                                     <div class="card"
-                                        style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                                        style="background: linear-gradient(135deg,
+                                            {{ $user->role === 'trimax' ? '#1a1a2e 0%, #16213e 100%' : '#667eea 0%, #764ba2 100%' }});">
                                         <div class="card-body">
                                             <div class="d-flex justify-content-between align-items-start">
                                                 <div class="text-white">
                                                     <div class="d-flex align-items-center mb-3">
                                                         <img class="img-lg rounded-circle me-3"
-                                                            src="https://ui-avatars.com/api/?name={{ urlencode($user->name) }}&background=fff&color=667eea&size=128"
+                                                            src="https://ui-avatars.com/api/?name={{ urlencode($user->name) }}&background=fff&color={{ $user->role === 'trimax' ? '1a1a2e' : '667eea' }}&size=128"
                                                             alt="profile">
                                                         <div>
                                                             <h2 class="text-white mb-2">{{ $user->name }}</h2>
-                                                            <p class="mb-0 opacity-75">
-                                                                <i class="mdi mdi-email me-1"></i>{{ $user->email }}
-                                                            </p>
+                                                            @if ($user->role === 'trimax')
+                                                                <p class="mb-0 opacity-75">
+                                                                    <i class="mdi mdi-domain me-1"></i>Empresa General -
+                                                                    TRIMAX
+                                                                </p>
+                                                            @else
+                                                                <p class="mb-0 opacity-75">
+                                                                    <i class="mdi mdi-email me-1"></i>{{ $user->email }}
+                                                                </p>
+                                                            @endif
                                                         </div>
                                                     </div>
                                                     <div class="d-flex gap-2 flex-wrap">
@@ -47,10 +55,15 @@
                                                             <span class="badge badge-light badge-pill px-3 py-2">
                                                                 <i class="mdi mdi-account-tie"></i> Consultor
                                                             </span>
-                                                        @else
+                                                        @elseif ($user->role === 'sede')
                                                             <span class="badge badge-info badge-pill px-3 py-2">
                                                                 <i class="mdi mdi-office-building"></i> Sede -
                                                                 {{ $user->location }}
+                                                            </span>
+                                                        @elseif ($user->role === 'trimax')
+                                                            <span class="badge badge-dark badge-pill px-3 py-2"
+                                                                style="background-color: rgba(255, 255, 255, 0.863) !important;">
+                                                                <i class="mdi mdi-domain"></i> TRIMAX - General
                                                             </span>
                                                         @endif
 
@@ -200,9 +213,9 @@
                                                                                 <img class="img-xs rounded-circle me-2"
                                                                                     src="https://ui-avatars.com/api/?name={{ urlencode($sede->name) }}&background=0dcaf0&color=fff"
                                                                                     alt="sede">
-
-                                                                                href="{{ route('marketing.users.show', $sede->id) }}">
-                                                                                <strong>{{ $sede->name }}</strong>
+                                                                                <a
+                                                                                    href="{{ route('marketing.users.show', $sede->id) }}">
+                                                                                    <strong>{{ $sede->name }}</strong>
                                                                                 </a>
                                                                             </div>
                                                                         </td>
@@ -266,6 +279,28 @@
                                                             class="alert-link">Asignar ahora</a>
                                                     </div>
                                                 @endif
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endif
+
+                            <!-- Banner informativo para Trimax -->
+                            @if ($user->role === 'trimax')
+                                <div class="row">
+                                    <div class="col-lg-12 grid-margin">
+                                        <div class="alert border-0 mb-0"
+                                            style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: white;">
+                                            <div class="d-flex align-items-center">
+                                                <i class="mdi mdi-domain me-3" style="font-size: 2rem;"></i>
+                                                <div>
+                                                    <h5 class="mb-1 text-white">Usuario General - TRIMAX</h5>
+                                                    <p class="mb-0 opacity-75">
+                                                        Este usuario representa a la empresa en general. Las encuestas
+                                                        recibidas reflejan la satisfacción global con TRIMAX sin estar
+                                                        asociadas a un consultor o sede específica.
+                                                    </p>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>

@@ -98,6 +98,10 @@
                                                             {{ old('role') == 'sede' ? 'selected' : '' }}>
                                                             Sede
                                                         </option>
+                                                        <option value="trimax"
+                                                            {{ old('role') == 'trimax' ? 'selected' : '' }}>
+                                                            Trimax
+                                                        </option>
                                                     </select>
                                                 </div>
 

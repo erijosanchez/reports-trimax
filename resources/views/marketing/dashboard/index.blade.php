@@ -52,14 +52,20 @@
                                                         value="{{ $endDate }}">
                                                 </div>
                                                 <div class="col-md-4">
-                                                    <label class="form-label">Consultor/Sede</label>
+                                                    <label class="form-label">Consultor / Sede / Trimax</label>
                                                     <select name="user_id" class="form-select">
                                                         <option value="">Todos</option>
                                                         @foreach ($users as $userMkt)
                                                             <option value="{{ $userMkt->id }}"
                                                                 {{ $userId == $userMkt->id ? 'selected' : '' }}>
                                                                 {{ $userMkt->name }} -
-                                                                {{ $userMkt->role === 'consultor' ? 'Consultor' : 'Sede ' . $userMkt->location }}
+                                                                @if ($userMkt->role === 'consultor')
+                                                                    Consultor
+                                                                @elseif ($userMkt->role === 'trimax')
+                                                                    TRIMAX General
+                                                                @else
+                                                                    Sede {{ $userMkt->location }}
+                                                                @endif
                                                             </option>
                                                         @endforeach
                                                     </select>
@@ -199,6 +205,7 @@
 
                             <!-- Contenido de los tabs -->
                             <div class="tab-content" id="dashboardTabsContent">
+
                                 <!-- TAB 1: Dashboard General -->
                                 <div class="tab-pane fade show active" id="dashboard" role="tabpanel">
                                     <!-- Gráficos -->
@@ -228,14 +235,14 @@
                                         </div>
                                     </div>
 
-                                    <!-- Tabla por Consultor/Sede -->
+                                    <!-- Tabla por Consultor/Sede/Trimax -->
                                     <div class="row">
                                         <div class="col-lg-12 grid-margin stretch-card">
                                             <div class="card">
                                                 <div class="card-body">
                                                     <h4 class="card-title mb-4">
                                                         <i class="mdi mdi-account-group text-primary me-2"></i>
-                                                        Estadísticas por Consultor/Sede
+                                                        Estadísticas por Consultor / Sede / Trimax
                                                     </h4>
                                                     <div class="table-responsive">
                                                         <table class="table table-hover">
@@ -254,11 +261,12 @@
                                                             </thead>
                                                             <tbody>
                                                                 @foreach ($userStats as $stat)
-                                                                    <tr>
+                                                                    <tr
+                                                                        @if ($stat['role'] === 'trimax') style="background-color: rgba(26,26,46,0.04);" @endif>
                                                                         <td>
                                                                             <div class="d-flex align-items-center">
                                                                                 <img class="img-xs rounded-circle me-2"
-                                                                                    src="https://ui-avatars.com/api/?name={{ urlencode($stat['name']) }}&background=6366f1&color=fff"
+                                                                                    src="https://ui-avatars.com/api/?name={{ urlencode($stat['name']) }}&background={{ $stat['role'] === 'trimax' ? '1a1a2e' : '6366f1' }}&color=fff"
                                                                                     alt="profile">
                                                                                 <div>
                                                                                     <strong>{{ $stat['name'] }}</strong>
@@ -282,9 +290,16 @@
                                                                                     <span
                                                                                         class="badge badge-info">+Sedes</span>
                                                                                 @endif
+                                                                            @elseif ($stat['role'] === 'trimax')
+                                                                                <span class="badge"
+                                                                                    style="background-color: #1a1a2e; color: #fff;">
+                                                                                    <i
+                                                                                        class="mdi mdi-domain me-1"></i>TRIMAX
+                                                                                </span>
                                                                             @else
-                                                                                <span class="badge badge-info">Sede
-                                                                                    {{ $stat['location'] }}</span>
+                                                                                <span class="badge badge-info">
+                                                                                    Sede {{ $stat['location'] }}
+                                                                                </span>
                                                                             @endif
                                                                         </td>
                                                                         <td>
@@ -425,7 +440,14 @@
                                                                         <td>
                                                                             <strong>{{ $survey->userMarketing->name }}</strong><br>
                                                                             <small class="text-muted">
-                                                                                {{ $survey->userMarketing->role === 'consultor' ? 'Consultor' : 'Sede ' . $survey->userMarketing->location }}
+                                                                                @if ($survey->userMarketing->role === 'consultor')
+                                                                                    Consultor
+                                                                                @elseif ($survey->userMarketing->role === 'trimax')
+                                                                                    TRIMAX General
+                                                                                @else
+                                                                                    Sede
+                                                                                    {{ $survey->userMarketing->location }}
+                                                                                @endif
                                                                             </small>
                                                                         </td>
                                                                         <td>
@@ -520,8 +542,10 @@
                                                                 <i class="mdi mdi-map-marker text-primary me-1"></i>
                                                                 {{ $location }}
                                                             </h4>
-                                                            <span class="badge badge-primary">{{ $sedes->count() }}
-                                                                {{ $sedes->count() == 1 ? 'Sede' : 'Sedes' }}</span>
+                                                            <span class="badge badge-primary">
+                                                                {{ $sedes->count() }}
+                                                                {{ $sedes->count() == 1 ? 'Sede' : 'Sedes' }}
+                                                            </span>
                                                         </div>
 
                                                         <div class="row text-center mb-3">
@@ -622,8 +646,10 @@
                                     </div>
 
                                     @php
-                                        $topRated = $userStats->sortByDesc('avg_experience')->take(3);
-                                        $mostSurveys = $userStats->sortByDesc('total_surveys')->take(3);
+                                        // Excluir trimax de reconocimientos individuales (es empresa, no persona)
+                                        $userStatsPersonal = $userStats->whereNotIn('role', ['trimax']);
+                                        $topRated = $userStatsPersonal->sortByDesc('avg_experience')->take(3);
+                                        $mostSurveys = $userStatsPersonal->sortByDesc('total_surveys')->take(3);
                                     @endphp
 
                                     <div class="row">
@@ -796,6 +822,7 @@
                                                                     <thead>
                                                                         <tr>
                                                                             <th>Usuario</th>
+                                                                            <th>Tipo</th>
                                                                             <th>Promedio</th>
                                                                             <th>Calificaciones Negativas</th>
                                                                         </tr>
@@ -806,8 +833,21 @@
                                                                                 <td><strong>{{ $user['name'] }}</strong>
                                                                                 </td>
                                                                                 <td>
-                                                                                    <span
-                                                                                        class="badge badge-danger">{{ number_format($user['avg_experience'], 2) }}</span>
+                                                                                    @if ($user['role'] === 'consultor')
+                                                                                        <span
+                                                                                            class="badge badge-primary">Consultor</span>
+                                                                                    @elseif($user['role'] === 'trimax')
+                                                                                        <span class="badge"
+                                                                                            style="background-color: #1a1a2e; color: #fff;">TRIMAX</span>
+                                                                                    @else
+                                                                                        <span
+                                                                                            class="badge badge-info">Sede</span>
+                                                                                    @endif
+                                                                                </td>
+                                                                                <td>
+                                                                                    <span class="badge badge-danger">
+                                                                                        {{ number_format($user['avg_experience'], 2) }}
+                                                                                    </span>
                                                                                 </td>
                                                                                 <td>{{ $user['muy_insatisfecho'] + $user['insatisfecho'] }}
                                                                                 </td>
@@ -824,8 +864,7 @@
                                                                 Todo en Orden
                                                             </h5>
                                                             <p class="mb-0">No hay usuarios con calificaciones críticas
-                                                                en
-                                                                este periodo.</p>
+                                                                en este periodo.</p>
                                                         </div>
                                                     @endif
                                                 </div>
@@ -861,7 +900,19 @@
                                                                             </td>
                                                                             <td>{{ $survey->client_name ?? 'Anónimo' }}
                                                                             </td>
-                                                                            <td>{{ $survey->userMarketing->name }}</td>
+                                                                            <td>
+                                                                                {{ $survey->userMarketing->name }}
+                                                                                <br>
+                                                                                <small class="text-muted">
+                                                                                    @if ($survey->userMarketing->role === 'trimax')
+                                                                                        TRIMAX General
+                                                                                    @elseif($survey->userMarketing->role === 'consultor')
+                                                                                        Consultor
+                                                                                    @else
+                                                                                        Sede
+                                                                                    @endif
+                                                                                </small>
+                                                                            </td>
                                                                             <td>
                                                                                 @if ($survey->experience_rating == 2)
                                                                                     <span class="badge badge-warning">
@@ -891,8 +942,8 @@
                                         </div>
                                     @endif
                                 </div>
-                            </div>
 
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -901,7 +952,6 @@
     </div>
 
     <style>
-        /* Stats Cards Customization */
         .card-statistics .icon-wrapper {
             width: 56px;
             height: 56px;
@@ -918,7 +968,6 @@
             background-color: rgba(13, 202, 240, 0.1) !important;
         }
 
-        /* Tabs Styling */
         .nav-tabs-line .nav-link {
             border: none;
             border-bottom: 3px solid transparent;
@@ -937,7 +986,6 @@
             color: #6366f1;
         }
 
-        /* Progress bars */
         .progress {
             border-radius: 4px;
             overflow: hidden;
@@ -952,7 +1000,6 @@
             font-size: 0.75rem;
         }
 
-        /* Table improvements */
         .table th {
             font-weight: 600;
             text-transform: uppercase;
@@ -965,7 +1012,6 @@
             background-color: rgba(99, 102, 241, 0.05);
         }
 
-        /* Tooltips */
         [data-bs-toggle="tooltip"] {
             cursor: help;
         }
@@ -974,7 +1020,6 @@
 
 @push('scripts')
     <script>
-        // Initialize tooltips
         document.addEventListener('DOMContentLoaded', function() {
             var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
             var tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
@@ -1029,6 +1074,12 @@
         // Gráfico de calidad de servicio
         const serviceCtx = document.getElementById('serviceChart');
         if (serviceCtx) {
+            @php
+                $serviceColors = [];
+                foreach ($userStats as $sItem) {
+                    $serviceColors[] = $sItem['role'] === 'trimax' ? '#1a1a2e' : '#0dcaf0';
+                }
+            @endphp
             new Chart(serviceCtx, {
                 type: 'bar',
                 data: {
@@ -1036,7 +1087,7 @@
                     datasets: [{
                         label: 'Promedio de Atención',
                         data: @json($userStats->pluck('avg_service')),
-                        backgroundColor: '#0dcaf0',
+                        backgroundColor: @json($serviceColors),
                         borderRadius: 4
                     }]
                 },

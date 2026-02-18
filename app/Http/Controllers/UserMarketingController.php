@@ -22,7 +22,7 @@ class UserMarketingController extends Controller
         $status = $request->get('status');
 
         $query = UsersMarketing::query()
-            ->whereIn('role', ['consultor', 'sede'])
+            ->whereIn('role', ['consultor', 'sede', 'trimax']) 
             ->withCount('surveys')
             ->with('surveys');
 
@@ -44,12 +44,13 @@ class UserMarketingController extends Controller
             $query->where('is_active', $status);
         }
 
-        // ⭐ OBTENER CONTADORES TOTALES ANTES DE PAGINAR
+        //  OBTENER CONTADORES TOTALES ANTES DE PAGINAR
         $totalSedes = UsersMarketing::where('role', 'sede')->count();
         $totalConsultores = UsersMarketing::where('role', 'consultor')->count();
+        $totalTrimax = UsersMarketing::where('role', 'trimax')->count();
 
         // Para total de encuestas
-        $totalSurveys = UsersMarketing::whereIn('role', ['consultor', 'sede'])
+        $totalSurveys = UsersMarketing::whereIn('role', ['consultor', 'sede', 'trimax'])
             ->withCount('surveys')
             ->get()
             ->sum('surveys_count');
@@ -80,6 +81,7 @@ class UserMarketingController extends Controller
             'status',
             'totalSedes',
             'totalConsultores',
+            'totalTrimax',
             'totalSurveys'
         ));
     }
@@ -101,6 +103,7 @@ class UserMarketingController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'role' => 'required|in:consultor,sede',
+            'role' => 'required|in:consultor,sede,trimax',
             'location' => 'required_if:role,sede|nullable|string|max:255',
         ]);
 
