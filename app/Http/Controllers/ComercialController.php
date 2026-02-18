@@ -1323,7 +1323,7 @@ class ComercialController extends Controller
      */
     private function obtenerDatosTodasLasSedes($service, $spreadsheetId, $mes, $anio)
     {
-        $range = 'Historico!A:H';
+        $range = 'Historico!A:L'; // 🔥 Antes era A:H
         $response = $service->spreadsheets_values->get($spreadsheetId, $range);
         $values = $response->getValues();
 
@@ -1337,29 +1337,37 @@ class ComercialController extends Controller
             if ($index == 0) continue;
 
             if (!empty($row[0]) && !empty($row[1]) && !empty($row[2])) {
-                $sede = trim(strtoupper($row[0]));
-                $anioSheet = trim($row[1]);
-                $mesSheet = trim(ucfirst(strtolower($row[2])));
+                $sede         = trim(strtoupper($row[0]));
+                $anioSheet    = trim($row[1]);
+                $mesSheet     = trim(ucfirst(strtolower($row[2])));
 
                 if ($anioSheet == $anio && $mesSheet == $mes) {
                     $ventaGeneral = $this->limpiarNumero($row[3] ?? 0);
-                    $cuota = $this->limpiarNumero($row[5] ?? 0);
+                    $cuota        = $this->limpiarNumero($row[5] ?? 0);
                     $cumplimiento = $this->limpiarPorcentaje($row[6] ?? '0%');
 
+                    // Columnas digitales
+                    $ventaDigital     = $this->limpiarNumero($row[7] ?? 0);  // Col H
+                    $ventaProyDigital = $this->limpiarNumero($row[8] ?? 0);  // Col I
+                    $cuotaDigital     = $this->limpiarNumero($row[9] ?? 0);  // Col J
+                    $cumCuotaDigital  = $this->limpiarPorcentaje($row[10] ?? '0%'); // Col K
+
                     $sedes[] = [
-                        'sede' => $sede,
-                        'venta_general' => $ventaGeneral,
-                        'venta_proyectada' => $this->limpiarNumero($row[4] ?? 0),
-                        'cuota' => $cuota,
+                        'sede'              => $sede,
+                        'venta_general'     => $ventaGeneral,
+                        'venta_proyectada'  => $this->limpiarNumero($row[4] ?? 0),
+                        'cuota'             => $cuota,
                         'cumplimiento_cuota' => $cumplimiento,
-                        'venta_total' => $this->limpiarNumero($row[7] ?? 0),
-                        'diferencia' => $ventaGeneral - $cuota,
+                        'diferencia'        => $ventaGeneral - $cuota,
+                        'venta_digital'     => $ventaDigital,
+                        'venta_proy_digital' => $ventaProyDigital,
+                        'cuota_digital'     => $cuotaDigital,
+                        'cum_cuota_digital' => $cumCuotaDigital,
                     ];
                 }
             }
         }
 
-        // Ordenar por cumplimiento descendente
         usort($sedes, function ($a, $b) {
             return $b['cumplimiento_cuota'] <=> $a['cumplimiento_cuota'];
         });

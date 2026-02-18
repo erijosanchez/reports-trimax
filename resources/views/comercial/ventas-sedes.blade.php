@@ -156,6 +156,103 @@
                                 </div>
                             </div>
 
+                            <!-- Cards Ventas Digitales -->
+                            <div class="row mb-4" id="cardsDigitales">
+                                <div class="col-lg-12 mb-2">
+                                    <h6 class="text-muted">
+                                        <i class="mdi mdi-monitor me-1"></i> Ventas Digitales —
+                                        <span id="periodoDigital">{{ $mesActual }} {{ $anioActual }}</span>
+                                    </h6>
+                                </div>
+
+                                <div class="col-lg-3 col-md-6 mb-3">
+                                    <div class="card card-tale h-100">
+                                        <div class="card-body">
+                                            <div class="d-flex align-items-center">
+                                                <div class="icon-wrapper bg-white rounded me-3">
+                                                    <i class="mdi mdi-monitor-dashboard text-primary mdi-36px"></i>
+                                                </div>
+                                                <div>
+                                                    <p class="mb-1 text-white small">Venta Digital</p>
+                                                    <h4 class="mb-0 text-white fw-bold" id="totalVentaDigital">
+                                                        S/
+                                                        {{ number_format(collect($todasLasSedes)->sum('venta_digital'), 0, '.', ',') }}
+                                                    </h4>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-3 col-md-6 mb-3">
+                                    <div class="card card-dark-blue h-100">
+                                        <div class="card-body">
+                                            <div class="d-flex align-items-center">
+                                                <div class="icon-wrapper bg-white rounded me-3">
+                                                    <i class="mdi mdi-chart-line text-warning mdi-36px"></i>
+                                                </div>
+                                                <div>
+                                                    <p class="mb-1 text-white small">Venta Proy. Digital</p>
+                                                    <h4 class="mb-0 text-white fw-bold" id="totalVentaProyDigital">
+                                                        S/
+                                                        {{ number_format(collect($todasLasSedes)->sum('venta_proy_digital'), 0, '.', ',') }}
+                                                    </h4>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-3 col-md-6 mb-3">
+                                    <div class="card card-light-blue h-100">
+                                        <div class="card-body">
+                                            <div class="d-flex align-items-center">
+                                                <div class="icon-wrapper bg-white rounded me-3">
+                                                    <i class="mdi mdi-target text-success mdi-36px"></i>
+                                                </div>
+                                                <div>
+                                                    <p class="mb-1 text-white small">Cuota Digital</p>
+                                                    <h4 class="mb-0 text-white fw-bold" id="totalCuotaDigital">
+                                                        S/
+                                                        {{ number_format(collect($todasLasSedes)->sum('cuota_digital'), 0, '.', ',') }}
+                                                    </h4>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-3 col-md-6 mb-3">
+                                    <div class="card card-light-danger h-100">
+                                        <div class="card-body">
+                                            <div class="d-flex align-items-center">
+                                                <div class="icon-wrapper bg-white rounded me-3">
+                                                    <i class="mdi mdi-percent text-info mdi-36px"></i>
+                                                </div>
+                                                <div>
+                                                    <p class="mb-1 text-white small">Cum. Cuota Digital</p>
+                                                    @php
+                                                        $totalVentaDigital = collect($todasLasSedes)->sum(
+                                                            'venta_digital',
+                                                        );
+                                                        $totalCuotaDigital = collect($todasLasSedes)->sum(
+                                                            'cuota_digital',
+                                                        );
+                                                        $cumDigitalPromedio =
+                                                            $totalCuotaDigital > 0
+                                                                ? ($totalVentaDigital / $totalCuotaDigital) * 100
+                                                                : 0;
+                                                    @endphp
+                                                    <h4 class="mb-0 text-white fw-bold" id="totalCumCuotaDigital">
+                                                        {{ number_format($cumDigitalPromedio, 2) }}%
+                                                    </h4>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                             <!-- Gráficos -->
                             <div class="row mb-4">
                                 <!-- Gráfico Consolidado Mensual -->
@@ -384,9 +481,10 @@
 
         // Actualizar cards globales
         function actualizarCardsGlobales(sedes) {
+            // Cards normales
             const totalVentas = sedes.reduce((sum, s) => sum + s.venta_general, 0);
             const totalCuotas = sedes.reduce((sum, s) => sum + s.cuota, 0);
-            const cumplimientoPromedio = (totalCuotas > 0) ? (totalVentas / totalCuotas) * 100 : 0; //PROMEDIO
+            const cumplimientoPromedio = (totalCuotas > 0) ? (totalVentas / totalCuotas) * 100 : 0;
             const sedesCumplen = sedes.filter(s => s.cumplimiento_cuota >= 100).length;
 
             document.getElementById('totalVentas').textContent = 'S/ ' + formatNumber(totalVentas);
@@ -394,6 +492,26 @@
             document.getElementById('cumplimientoPromedio').textContent = cumplimientoPromedio.toFixed(2) + '%';
             document.getElementById('sedesCumplen').innerHTML =
                 `<span>${sedesCumplen}</span> / <span id="totalSedes">${sedes.length}</span>`;
+
+            // Cards digitales
+            const totalVentaDigital = sedes.reduce((sum, s) => sum + (s.venta_digital || 0), 0);
+            const totalVentaProyDigital = sedes.reduce((sum, s) => sum + (s.venta_proy_digital || 0), 0);
+            const totalCuotaDigital = sedes.reduce((sum, s) => sum + (s.cuota_digital || 0), 0);
+            const cumDigital = totalCuotaDigital > 0 ? (totalVentaDigital / totalCuotaDigital) * 100 : 0;
+
+            document.getElementById('totalVentaDigital').textContent = 'S/ ' + formatNumber(totalVentaDigital);
+            document.getElementById('totalVentaProyDigital').textContent = 'S/ ' + formatNumber(totalVentaProyDigital);
+            document.getElementById('totalCuotaDigital').textContent = 'S/ ' + formatNumber(totalCuotaDigital);
+
+            const cumEl = document.getElementById('totalCumCuotaDigital');
+            cumEl.textContent = cumDigital.toFixed(2) + '%';
+            cumEl.className = 'mb-0 fw-bold ' + (cumDigital >= 100 ? 'text-success' : cumDigital >= 80 ? 'text-warning' :
+                'text-danger');
+
+            // Actualizar periodo digital
+            const anio = document.getElementById('anioSelect').value;
+            const mes = document.getElementById('mesSelect').value;
+            document.getElementById('periodoDigital').textContent = mes + ' ' + anio;
         }
 
         // Formatear números
