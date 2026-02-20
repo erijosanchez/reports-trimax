@@ -390,3 +390,9 @@ COLLATE=utf8mb4_unicode_ci;
 /*modifcamos la consulta*/
 
 ALTER TABLE ai_interactions MODIFY COLUMN response_type VARCHAR(50) NOT NULL DEFAULT 'direct_answer';
+
+
+ALTER TABLE `users`
+ADD COLUMN `puede_ver_consultar_orden` TINYINT(1) NOT NULL DEFAULT 0 AFTER `puede_ver_descuentos_especiales`,
+ADD COLUMN `puede_ver_acuerdos_comerciales` TINYINT(1) NOT NULL DEFAULT 0 AFTER `puede_ver_consultar_orden`,
+ADD COLUMN `puede_ver_lead_time` TINYINT(1) NOT NULL DEFAULT 0 AFTER `puede_ver_acuerdos_comerciales`;
