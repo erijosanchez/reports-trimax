@@ -26,55 +26,68 @@
             </li>
         @endif
 
-        {{-- MÓDULO COMERCIAL (Solo consultores y superadmin) --}}
-        @if (auth()->user()->isConsultor() || auth()->user()->isSuperAdmin() || auth()->user()->isAdmin())
+        @php
+            $user = auth()->user();
+            $tieneAccesoComercial =
+                $user->puedeVerConsultarOrden() ||
+                $user->puedeVerAcuerdosComerciales() ||
+                $user->puedeVerDescuentosEspeciales() ||
+                $user->puedeVerVentasConsolidadas() ||
+                $user->puedeVerLeadTime();
+        @endphp
+
+        @if ($tieneAccesoComercial)
             <li class="nav-item nav-category">COMERCIAL</li>
-            <li class="nav-item">
-                <a class="nav-link {{ request()->routeIs('comercial.orden') ? 'active' : '' }}"
-                    href="{{ route('comercial.orden') }}">
-                    <i class="mdi mdi-file-document-box menu-icon"></i>
-                    <span class="menu-title">Consultar Orden</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link {{ request()->routeIs('comercial.acuerdos') ? 'active' : '' }}"
-                    href="{{ route('comercial.acuerdos') }}">
-                    <i class="mdi mdi-book-open-page-variant menu-icon"></i>
-                    <span class="menu-title">Acuerdos Comerciales</span>
-                </a>
-            </li>
-        @endif
 
-        {{-- Submódulo Descuentos Especiales (Solo usuarios con permiso de ver descuentos especiales) --}}
-        @if (auth()->user()->puedeVerDescuentosEspeciales())
-            <li class="nav-item">
-                <a class="nav-link {{ request()->routeIs('comercial.descuentos.index') ? 'active' : '' }}"
-                    href="{{ route('comercial.descuentos.index') }}">
-                    <i class="mdi mdi-sale menu-icon"></i>
-                    <span class="menu-title">Descuentos Especiales</span>
-                </a>
-            </li>
-        @endif
+            @if ($user->puedeVerConsultarOrden())
+                <li class="nav-item">
+                    <a class="nav-link {{ request()->routeIs('comercial.orden') ? 'active' : '' }}"
+                        href="{{ route('comercial.orden') }}">
+                        <i class="mdi mdi-file-document-box menu-icon"></i>
+                        <span class="menu-title">Consultar Orden</span>
+                    </a>
+                </li>
+            @endif
 
-        {{-- Submódulo Ventas (Solo usuarios con permiso de ver ventas consolidadas) --}}
-        @if (auth()->user()->puedeVerVentasConsolidadas())
-            <li class="nav-item">
-                <a class="nav-link {{ request()->routeIs('comercial.ventas.sedes') ? 'active' : '' }}"
-                    href="{{ route('comercial.ventas.sedes') }}">
-                    <i class="mdi-cart-outline mdi menu-icon"></i>
-                    <span class="menu-title">Ventas</span>
-                </a>
-            </li>
-        @endif
+            @if ($user->puedeVerAcuerdosComerciales())
+                <li class="nav-item">
+                    <a class="nav-link {{ request()->routeIs('comercial.acuerdos') ? 'active' : '' }}"
+                        href="{{ route('comercial.acuerdos') }}">
+                        <i class="mdi mdi-book-open-page-variant menu-icon"></i>
+                        <span class="menu-title">Acuerdos Comerciales</span>
+                    </a>
+                </li>
+            @endif
 
-        @if (auth()->user()->puedeVerVentasConsolidadas())
-            <li class="nav-item">
-                <a class="nav-link {{ request()->routeIs('comercial.lead-time.index') ? 'active' : '' }}"
-                    href="{{ route('comercial.lead-time.index') }}">
-                    <i class="mdi-clock-outline mdi menu-icon"></i>
-                    <span class="menu-title">Lead Time</span>
-                </a>
-            </li>
+            @if ($user->puedeVerDescuentosEspeciales())
+                <li class="nav-item">
+                    <a class="nav-link {{ request()->routeIs('comercial.descuentos.index') ? 'active' : '' }}"
+                        href="{{ route('comercial.descuentos.index') }}">
+                        <i class="mdi mdi-sale menu-icon"></i>
+                        <span class="menu-title">Descuentos Especiales</span>
+                    </a>
+                </li>
+            @endif
+
+            @if ($user->puedeVerVentasConsolidadas())
+                <li class="nav-item">
+                    <a class="nav-link {{ request()->routeIs('comercial.ventas.sedes') ? 'active' : '' }}"
+                        href="{{ route('comercial.ventas.sedes') }}">
+                        <i class="mdi-cart-outline mdi menu-icon"></i>
+                        <span class="menu-title">Ventas</span>
+                    </a>
+                </li>
+            @endif
+
+            @if ($user->puedeVerLeadTime())
+                <li class="nav-item">
+                    <a class="nav-link {{ request()->routeIs('comercial.lead-time.index') ? 'active' : '' }}"
+                        href="{{ route('comercial.lead-time.index') }}">
+                        <i class="mdi-clock-outline mdi menu-icon"></i>
+                        <span class="menu-title">Lead Time</span>
+                    </a>
+                </li>
+            @endif
         @endif
 
         {{-- MÓDULO MARKETING (Solo marketing y superadmin) --}}

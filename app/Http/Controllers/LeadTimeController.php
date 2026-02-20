@@ -21,6 +21,10 @@ class LeadTimeController extends Controller
      */
     public function index()
     {
+        if (!auth()->user()->puedeVerLeadTime()) {
+            abort(403, 'No tienes permiso para ver el Lead Time');
+        }
+
         return view('comercial.lead-time');
     }
 

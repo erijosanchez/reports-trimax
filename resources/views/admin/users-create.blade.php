@@ -193,43 +193,93 @@
                                                     </small>
                                                 </div>
 
-                                                {{-- ✅ NUEVO: Permiso de Ventas Consolidadas --}}
                                                 @if (auth()->user()->isSuperAdmin())
                                                     <div class="mb-4">
                                                         <div class="border-top pt-4">
-                                                            <h5 class="mb-3">
+                                                            <h5 class="mb-1">
                                                                 <i class="mdi mdi-shield-check text-success me-2"></i>
                                                                 Permisos Especiales
                                                             </h5>
+                                                            <p class="text-muted small mb-3">Solo el Super Admin puede
+                                                                otorgar estos permisos</p>
 
-                                                            <div class="form-check form-check-success">
-                                                                <label class="form-check-label">
-                                                                    <input type="checkbox"
-                                                                        name="puede_ver_ventas_consolidadas"
-                                                                        value="1" class="form-check-input"
-                                                                        {{ old('puede_ver_ventas_consolidadas') ? 'checked' : '' }}>
-                                                                    Puede ver ventas consolidadas
-                                                                    <i class="input-helper"></i>
-                                                                </label>
+                                                            {{-- SECCIÓN COMERCIAL --}}
+                                                            <div class="mb-3">
+                                                                <p class="fw-bold text-uppercase text-muted small mb-2"
+                                                                    style="letter-spacing: 0.5px;">
+                                                                    <i class="mdi mdi-briefcase-outline me-1"></i> Módulo
+                                                                    Comercial
+                                                                </p>
+                                                                <div class="row g-2 ms-1">
+                                                                    <div class="col-md-6">
+                                                                        <div class="form-check form-check-success">
+                                                                            <label class="form-check-label">
+                                                                                <input type="checkbox"
+                                                                                    name="puede_ver_consultar_orden"
+                                                                                    value="1"
+                                                                                    class="form-check-input"
+                                                                                    {{ old('puede_ver_consultar_orden') ? 'checked' : '' }}>
+                                                                                Consultar Orden
+                                                                                <i class="input-helper"></i>
+                                                                            </label>
+                                                                            <div><small class="text-muted">Automático para
+                                                                                    rol Sede</small></div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-md-6">
+                                                                        <div class="form-check form-check-success">
+                                                                            <label class="form-check-label">
+                                                                                <input type="checkbox"
+                                                                                    name="puede_ver_acuerdos_comerciales"
+                                                                                    value="1"
+                                                                                    class="form-check-input"
+                                                                                    {{ old('puede_ver_acuerdos_comerciales') ? 'checked' : '' }}>
+                                                                                Acuerdos Comerciales
+                                                                                <i class="input-helper"></i>
+                                                                            </label>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-md-6">
+                                                                        <div class="form-check form-check-success">
+                                                                            <label class="form-check-label">
+                                                                                <input type="checkbox"
+                                                                                    name="puede_ver_ventas_consolidadas"
+                                                                                    value="1"
+                                                                                    class="form-check-input"
+                                                                                    {{ old('puede_ver_ventas_consolidadas') ? 'checked' : '' }}>
+                                                                                Ventas Consolidadas
+                                                                                <i class="input-helper"></i>
+                                                                            </label>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-md-6">
+                                                                        <div class="form-check form-check-success">
+                                                                            <label class="form-check-label">
+                                                                                <input type="checkbox"
+                                                                                    name="puede_ver_descuentos_especiales"
+                                                                                    value="1"
+                                                                                    class="form-check-input"
+                                                                                    {{ old('puede_ver_descuentos_especiales') ? 'checked' : '' }}>
+                                                                                Descuentos Especiales
+                                                                                <i class="input-helper"></i>
+                                                                            </label>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-md-6">
+                                                                        <div class="form-check form-check-success">
+                                                                            <label class="form-check-label">
+                                                                                <input type="checkbox"
+                                                                                    name="puede_ver_lead_time"
+                                                                                    value="1"
+                                                                                    class="form-check-input"
+                                                                                    {{ old('puede_ver_lead_time') ? 'checked' : '' }}>
+                                                                                Lead Time
+                                                                                <i class="input-helper"></i>
+                                                                            </label>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
                                                             </div>
-                                                            <small class="text-muted ms-4">
-                                                                Permite al usuario acceder al dashboard de ventas
-                                                                consolidadas de todas las sedes
-                                                            </small>
-
-                                                            <div class="form-check form-check-success">
-                                                                <label class="form-check-label">
-                                                                    <input type="checkbox"
-                                                                        name="puede_ver_descuentos_especiales"
-                                                                        value="1" class="form-check-input"
-                                                                        {{ old('puede_ver_descuentos_especiales') ? 'checked' : '' }}>
-                                                                    Puede ver Descuentos Especiales
-                                                                    <i class="input-helper"></i>
-                                                                </label>
-                                                            </div>
-                                                            <small class="text-muted ms-4">
-                                                                Permite al usuario acceder al módulo de Descuentos Especiales
-                                                            </small>
                                                         </div>
                                                     </div>
                                                 @endif

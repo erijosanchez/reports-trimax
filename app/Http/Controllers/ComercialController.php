@@ -58,6 +58,10 @@ class ComercialController extends Controller
 
     public function acuerdos()
     {
+        if (!auth()->user()->puedeVerAcuerdosComerciales()) {
+            abort(403, 'No tienes permiso para ver los acuerdos comerciales');
+        }
+
         $acuerdos = AcuerdoComercial::with(['creador', 'validador', 'aprobador'])
             ->orderBy('created_at', 'desc')
             ->get();

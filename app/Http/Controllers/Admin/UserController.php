@@ -40,6 +40,7 @@ class UserController extends Controller
             'TACNA' => 'Tacna',
             'TARAPOTO' => 'Tarapoto',
             'TRUJILLO' => 'Trujillo',
+            'CALL CENTER' => 'Call Center',
         ];
     }
 
@@ -73,6 +74,9 @@ class UserController extends Controller
             'sede' => $request->role === 'sede' ? strtoupper($request->sede) : null,
             'puede_ver_ventas_consolidadas' => $request->boolean('puede_ver_ventas_consolidadas'),
             'puede_ver_descuentos_especiales' => $request->boolean('puede_ver_descuentos_especiales'),
+            'puede_ver_consultar_orden' => $request->boolean('puede_ver_consultar_orden'),
+            'puede_ver_acuerdos_comerciales' => $request->boolean('puede_ver_acuerdos_comerciales'),
+            'puede_ver_lead_time' => $request->boolean('puede_ver_lead_time'),
             'is_active' => true,
         ]);
 
@@ -118,6 +122,9 @@ class UserController extends Controller
             'sede' => $request->role === 'sede' ? strtoupper($request->sede) : null,
             'puede_ver_ventas_consolidadas' => $request->boolean('puede_ver_ventas_consolidadas'),
             'puede_ver_descuentos_especiales' => $request->boolean('puede_ver_descuentos_especiales'),
+            'puede_ver_consultar_orden' => $request->boolean('puede_ver_consultar_orden'),
+            'puede_ver_acuerdos_comerciales' => $request->boolean('puede_ver_acuerdos_comerciales'),
+            'puede_ver_lead_time' => $request->boolean('puede_ver_lead_time'),
             'is_active' => $request->boolean('is_active'),
         ]);
 

@@ -19,6 +19,9 @@ class User extends Authenticatable
         'sede',
         'puede_ver_ventas_consolidadas',
         'puede_ver_descuentos_especiales',
+        'puede_ver_consultar_orden',
+        'puede_ver_acuerdos_comerciales',
+        'puede_ver_lead_time',
         'is_active',
         'last_login_at',
         'two_factor_secret',
@@ -39,6 +42,9 @@ class User extends Authenticatable
         'is_active' => 'boolean',
         'puede_ver_ventas_consolidadas' => 'boolean',
         'puede_ver_descuentos_especiales' => 'boolean',
+        'puede_ver_consultar_orden' => 'boolean',
+        'puede_ver_acuerdos_comerciales' => 'boolean',
+        'puede_ver_lead_time' => 'boolean',
         'last_login_at' => 'datetime',
         'two_factor_confirmed_at' => 'datetime',
     ];
@@ -168,6 +174,26 @@ class User extends Authenticatable
     public function puedeVerDescuentosEspeciales()
     {
         return $this->isSuperAdmin() || $this->puede_ver_descuentos_especiales;
+    }
+
+    public function puedeVerConsultarOrden(): bool
+    {
+        // Sede siempre puede por defecto
+        if ($this->isSede()) return true;
+        return $this->isSuperAdmin() || $this->isAdmin() || $this->isConsultor()
+            || $this->puede_ver_consultar_orden;
+    }
+
+    public function puedeVerAcuerdosComerciales(): bool
+    {
+        return $this->isSuperAdmin() || $this->isAdmin() || $this->isConsultor()
+            || $this->puede_ver_acuerdos_comerciales;
+    }
+
+    public function puedeVerLeadTime(): bool
+    {
+        return $this->isSuperAdmin() || $this->isAdmin() || $this->isConsultor()
+            || $this->puede_ver_lead_time;
     }
 
     public function getRoleName()
