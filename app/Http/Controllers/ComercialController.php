@@ -62,25 +62,26 @@ class ComercialController extends Controller
             abort(403, 'No tienes permiso para ver los acuerdos comerciales');
         }
 
-        $acuerdos = AcuerdoComercial::with(['creador', 'validador', 'aprobador'])
-            ->orderBy('created_at', 'desc')
-            ->get();
-
-        return view('comercial.acuerdos', compact('acuerdos'));
+        return view('comercial.acuerdos');
     }
 
     /** Acuerdos Comerciales Funciones */
     public function obtenerAcuerdos(Request $request)
     {
         try {
+            $user = Auth::user();
             $query = AcuerdoComercial::with(['creador', 'validador', 'aprobador']);
 
-            // Filtros
-            if ($request->filled('usuario')) {
+            if ($user->isSede()) {
+                $query->where('sede', $user->sede);
+            }
+
+            // Filtros (solo aplican si no es Sede, o son compatibles con su sede)
+            if ($request->filled('usuario') && !$user->isSede()) {
                 $query->where('user_id', $request->usuario);
             }
 
-            if ($request->filled('sede')) {
+            if ($request->filled('sede') && !$user->isSede()) {
                 $query->where('sede', $request->sede);
             }
 
@@ -88,7 +89,6 @@ class ComercialController extends Controller
                 $query->where('estado', $request->estado);
             }
 
-            // Búsqueda general
             if ($request->filled('buscar')) {
                 $buscar = $request->buscar;
                 $query->where(function ($q) use ($buscar) {
@@ -100,18 +100,18 @@ class ComercialController extends Controller
 
             $acuerdos = $query->orderBy('created_at', 'desc')->get();
 
-            // Actualizar estados automáticamente
             foreach ($acuerdos as $acuerdo) {
                 $acuerdo->actualizarEstado();
             }
 
             return response()->json([
                 'success' => true,
-                'data' => $acuerdos
+                'data' => $acuerdos,
+                'is_sede' => $user->isSede(),      
+                'sede_name' => $user->sede ?? null    
             ]);
         } catch (\Exception $e) {
             \Log::error('Error en obtenerAcuerdos: ' . $e->getMessage());
-
             return response()->json([
                 'success' => false,
                 'message' => 'Error al obtener acuerdos: ' . $e->getMessage()
