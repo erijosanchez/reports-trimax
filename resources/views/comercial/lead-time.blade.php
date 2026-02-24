@@ -1489,8 +1489,8 @@
                                 </div>
                                 <div class="lt-table-search">
                                     <input type="text" class="lt-table-input" id="searchAtrasadas"
-                                           placeholder="Buscar orden, sede, producto..."
-                                           oninput="filterAtrasadas()">
+                                            placeholder="Buscar orden, sede, producto..."
+                                            oninput="filterAtrasadas()">
                                 </div>
                             </div>
                             <div class="lt-table-wrap" style="max-height: 520px;">
