@@ -104,13 +104,15 @@ class LeadTimeController extends Controller
         }
 
         // Categorías de TIPO_DE_TRABAJO
-        $categorias = ['NOX', 'TD', 'DEVABLUE', 'BLANCO'];
+        $categorias = ['NOX', 'TD', 'DEVABLUE', 'BLANCO', 'COLOREADO'];
 
         $nombresDisplay = [
             'NOX' => 'NOX',
             'TD' => 'TRIDUREX',
             'DEVABLUE' => 'DEVABLUE',
             'BLANCO' => 'BLANCOS',
+            'COLOREADO' => 'COLOREADO',
+
         ];
 
         $resultados = [];
@@ -180,7 +182,7 @@ class LeadTimeController extends Controller
         foreach ($filtered as $record) {
             $conclusion = strtoupper(trim($record['CONCLUSION'] ?? ''));
             $tipo = strtoupper(trim($record['TIPO_DE_TRABAJO'] ?? ''));
-            $categoriasValidas = ['NOX', 'TD', 'DEVABLUE', 'BLANCO', 'BLANCOS'];
+            $categoriasValidas = ['NOX', 'TD', 'DEVABLUE', 'BLANCO', 'COLOREADO'];
 
             if ($conclusion === 'FUERA DE TIEMPO' && in_array($tipo, $categoriasValidas)) {
                 $ordenesAtrasadas[] = [

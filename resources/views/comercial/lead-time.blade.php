@@ -613,6 +613,10 @@
             border-color: var(--lt-blue-100);
         }
 
+        .lt-card-full {
+            grid-column: 1 / -1;
+        }
+
         /* Card top accent line */
         .lt-card-accent {
             height: 3px;
@@ -1303,7 +1307,7 @@
         const MESES = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre',
             'Octubre', 'Noviembre', 'Diciembre'
         ];
-        const ORDEN_CATEGORIAS = ['NOX', 'TD', 'DEVABLUE', 'BLANCO'];
+        const ORDEN_CATEGORIAS = ['NOX', 'TD', 'DEVABLUE', 'BLANCO', 'COLOREADO'];
 
         // Tabla atrasadas
         let atrasadasData = [];
@@ -1462,8 +1466,9 @@
             ORDEN_CATEGORIAS.forEach(cat => {
                 const info = categorias[cat];
                 if (!info || info.total === 0) return;
+                const isNox = cat === 'NOX';
                 html +=
-                    `<div class="lt-fade-up" style="animation-delay:${0.12 + idx * 0.08}s">${renderCard(info)}</div>`;
+                    `<div class="lt-fade-up ${isNox ? ' lt-card-full' : ''}" style="animation-delay:${0.12 + idx * 0.08}s">${renderCard(info)}</div>`;
                 idx++;
             });
             html += `</div>`;
