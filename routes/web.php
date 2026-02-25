@@ -186,6 +186,10 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
         Route::get('api/lead-time/data', [LeadTimeController::class, 'getData'])->name('lead-time.data');
         Route::get('api/lead-time/years', [LeadTimeController::class, 'getAvailableYears'])->name('lead-time.years');
         Route::post('api/lead-time/clear-cache', [LeadTimeController::class, 'clearCache'])->name('lead-time.clear-cache');
+
+        // Ver lead time semanal y mensual
+        Route::get('/lead-time/semanal', [LeadTimeController::class, 'semanal'])->name('lead-time.semanal');
+        Route::get('api/lead-time/semanal-data', [LeadTimeController::class, 'getSemanalData'])->name('lead-time.semanal-data');
     });
 
     // Admin Routes (Admin + Super Admin only)

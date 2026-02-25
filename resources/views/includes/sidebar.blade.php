@@ -1,3 +1,4 @@
+<!-- <<<<<<<<<<<<<<<<<<<<<<< resources/views/includes/sidebar.blade.php >>>>>>>>>>>>>>>>>>>> -->
 <nav class="sidebar sidebar-offcanvas" id="sidebar">
     <ul class="nav">
         <li class="nav-item">
@@ -81,11 +82,35 @@
 
             @if ($user->puedeVerLeadTime())
                 <li class="nav-item">
-                    <a class="nav-link {{ request()->routeIs('comercial.lead-time.index') ? 'active' : '' }}"
-                        href="{{ route('comercial.lead-time.index') }}">
+                    <a class="nav-link {{ request()->routeIs('comercial.lead-time.*') ? '' : 'collapsed' }}"
+                        data-bs-toggle="collapse" href="#lead-time-menu"
+                        aria-expanded="{{ request()->routeIs('comercial.lead-time.*') ? 'true' : 'false' }}"
+                        aria-controls="lead-time-menu">
+
                         <i class="mdi-clock-outline mdi menu-icon"></i>
                         <span class="menu-title">Lead Time</span>
+                        <i class="menu-arrow"></i>
                     </a>
+
+                    <div class="collapse {{ request()->routeIs('comercial.lead-time.*') ? 'show' : '' }}"
+                        id="lead-time-menu">
+
+                        <ul class="flex-column nav sub-menu">
+                            <li class="nav-item">
+                                <a class="nav-link {{ request()->routeIs('comercial.lead-time.index') ? 'active' : '' }}"
+                                    href="{{ route('comercial.lead-time.index') }}">
+                                    Lead Time Dashboard
+                                </a>
+                            </li>
+
+                            <li class="nav-item">
+                                <a class="nav-link {{ request()->routeIs('comercial.lead-time.semanal') ? 'active' : '' }}"
+                                    href="{{ route('comercial.lead-time.semanal') }}">
+                                    Lead Time x Tiempo
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
                 </li>
             @endif
         @endif
@@ -114,19 +139,21 @@
             <li class="nav-item nav-category">Administrador</li>
             <li class="nav-item">
                 <a class="nav-link {{ request()->routeIs('admin.dashboard*') ? '' : 'collapsed' }}"
-                    data-bs-toggle="collapse" href="#form-elements"
+                    data-bs-toggle="collapse" href="#collapse-admin-dashboard"
                     aria-expanded="{{ request()->routeIs('admin.dashboard*') ? 'true' : 'false' }}"
-                    aria-controls="form-elements">
+                    aria-controls="collapse-admin-dashboard">
                     <i class="mdi-grid menu-icon mdi"></i>
                     <span class="menu-title">Admin Dashboard</span>
                     <i class="menu-arrow"></i>
                 </a>
-                <div class="collapse {{ request()->routeIs('admin.dashboard') ? 'show' : '' }}" id="form-elements">
+                <div class="collapse {{ request()->routeIs('admin.dashboard') ? 'show' : '' }}"
+                    id="collapse-admin-dashboard">
                     <ul class="flex-column nav sub-menu">
                         <li class="nav-item">
                             <a class="nav-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}"
                                 href="{{ route('admin.dashboard') }}">Dashboard</a>
                         </li>
+
                     </ul>
                 </div>
             </li>
