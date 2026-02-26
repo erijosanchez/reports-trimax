@@ -11,14 +11,14 @@
                         <div class="tab-pane fade show active" id="overview" role="tabpanel">
 
                             <!-- Header con Selectores -->
-                            <div class="row mb-4">
+                            <div class="mb-4 row">
                                 <div class="col-lg-8">
                                     <h2 class="mb-1 fw-bold">
-                                        <i class="mdi mdi-chart-line text-primary me-2"></i>
+                                        <i class="me-2 text-primary mdi mdi-chart-line"></i>
                                         Dashboard de Ventas
                                     </h2>
-                                    <p class="text-muted mb-0">
-                                        <i class="mdi mdi-office-building me-2"></i>
+                                    <p class="mb-0 text-muted">
+                                        <i class="me-2 mdi mdi-office-building"></i>
                                         <strong>{{ $sedeUsuario }}</strong>
                                     </p>
                                 </div>
@@ -26,7 +26,7 @@
                                 <div class="col-lg-4">
                                     <div class="row g-2">
                                         <div class="col-6">
-                                            <label class="form-label small text-muted mb-1">Año</label>
+                                            <label class="mb-1 text-muted form-label small">Año</label>
                                             <select id="anioSelect" class="form-select">
                                                 @foreach ($aniosDisponibles as $anio)
                                                     <option value="{{ $anio }}"
@@ -37,7 +37,7 @@
                                             </select>
                                         </div>
                                         <div class="col-6">
-                                            <label class="form-label small text-muted mb-1">Mes</label>
+                                            <label class="mb-1 text-muted form-label small">Mes</label>
                                             <select id="mesSelect" class="form-select">
                                                 <option value="Enero" {{ $mesActual == 'Enero' ? 'selected' : '' }}>
                                                     Enero</option>
@@ -71,19 +71,19 @@
                             </div>
 
                             <!-- Cards Principales -->
-                            <div class="row mb-4" id="cardsContainer">
-                                <div class="col-lg-12 mb-2">
+                            <div class="mb-4 row" id="cardsContainer">
+                                <div class="mb-2 col-lg-12">
                                     <h6 class="text-muted">
-                                        <i class="mdi mdi-store me-1"></i> Ventas Generales
+                                        <i class="me-1 mdi mdi-store"></i> Ventas Generales
                                     </h6>
                                 </div>
 
-                                <div class="col-lg-3 col-md-6 mb-3">
-                                    <div class="card card-tale h-100">
+                                <div class="mb-3 col-lg-3 col-md-6">
+                                    <div class="h-100 card card-tale">
                                         <div class="card-body">
                                             <div class="d-flex align-items-center">
-                                                <div class="icon-wrapper bg-white rounded me-3">
-                                                    <i class="mdi mdi-cart text-primary mdi-36px"></i>
+                                                <div class="bg-white me-3 rounded icon-wrapper">
+                                                    <i class="text-primary mdi mdi-cart mdi-36px"></i>
                                                 </div>
                                                 <div>
                                                     <p class="mb-1 text-white">Venta General</p>
@@ -96,12 +96,12 @@
                                     </div>
                                 </div>
 
-                                <div class="col-lg-3 col-md-6 mb-3">
-                                    <div class="card card-light-blue h-100">
+                                <div class="mb-3 col-lg-3 col-md-6">
+                                    <div class="h-100 card card-light-blue">
                                         <div class="card-body">
                                             <div class="d-flex align-items-center">
-                                                <div class="icon-wrapper bg-white rounded me-3">
-                                                    <i class="mdi mdi-currency-usd text-info mdi-36px"></i>
+                                                <div class="bg-white me-3 rounded icon-wrapper">
+                                                    <i class="text-info mdi mdi-currency-usd mdi-36px"></i>
                                                 </div>
                                                 <div>
                                                     <p class="mb-1 text-white">Venta Proyectada</p>
@@ -114,12 +114,12 @@
                                     </div>
                                 </div>
 
-                                <div class="col-lg-3 col-md-6 mb-3">
-                                    <div class="card card-dark-blue h-100">
+                                <div class="mb-3 col-lg-3 col-md-6">
+                                    <div class="h-100 card card-dark-blue">
                                         <div class="card-body">
                                             <div class="d-flex align-items-center">
-                                                <div class="icon-wrapper bg-white rounded me-3">
-                                                    <i class="mdi mdi-target text-warning mdi-36px"></i>
+                                                <div class="bg-white me-3 rounded icon-wrapper">
+                                                    <i class="text-warning mdi mdi-target mdi-36px"></i>
                                                 </div>
                                                 <div>
                                                     <p class="mb-1 text-white">Cuota del Mes</p>
@@ -132,12 +132,12 @@
                                     </div>
                                 </div>
 
-                                <div class="col-lg-3 col-md-6 mb-3">
-                                    <div class="card card-light-blue h-100" id="cardCumplimiento">
+                                <div class="mb-3 col-lg-3 col-md-6">
+                                    <div class="h-100 card card-light-blue" id="cardCumplimiento">
                                         <div class="card-body">
                                             <div class="d-flex align-items-center mb-2">
-                                                <div class="icon-wrapper bg-white rounded me-3">
-                                                    <i class="mdi mdi-chart-line text-success mdi-36px"
+                                                <div class="bg-white me-3 rounded icon-wrapper">
+                                                    <i class="text-success mdi mdi-chart-line mdi-36px"
                                                         id="iconCumplimiento"></i>
                                                 </div>
                                                 <div>
@@ -148,7 +148,7 @@
                                                 </div>
                                             </div>
                                             <div class="progress" style="height: 8px;">
-                                                <div class="progress-bar bg-success" id="progressCumplimiento"
+                                                <div class="bg-success progress-bar" id="progressCumplimiento"
                                                     style="width: {{ min($datos['cumplimiento_cuota'], 100) }}%">
                                                 </div>
                                             </div>
@@ -157,99 +157,102 @@
                                 </div>
                             </div>
 
-                            <!-- 🔥 Cards Ventas Digitales -->
-                            <div class="row mb-4" id="cardsDigitales">
-                                <div class="col-lg-12 mb-2">
-                                    <h6 class="text-muted">
-                                        <i class="mdi mdi-monitor me-1"></i> Ventas Digitales
-                                    </h6>
-                                </div>
+                            <!--  Cards Ventas Digitales -->
+                            @if ($sedeUsuario !== 'MONTURAS') <!-- Solo mostrar para sedes que no son MONTURAS -->
+                                <div class="mb-4 row" id="cardsDigitales">
+                                    <div class="mb-2 col-lg-12">
+                                        <h6 class="text-muted">
+                                            <i class="me-1 mdi mdi-monitor"></i> Ventas Digitales
+                                        </h6>
+                                    </div>
 
-                                <div class="col-lg-3 col-md-6 mb-3">
-                                    <div class="card card-tale h-100">
-                                        <div class="card-body">
-                                            <div class="d-flex align-items-center">
-                                                <div class="icon-wrapper bg-white rounded me-3">
-                                                    <i class="mdi mdi-monitor-dashboard text-primary mdi-36px"></i>
+                                    <div class="mb-3 col-lg-3 col-md-6">
+                                        <div class="h-100 card card-tale">
+                                            <div class="card-body">
+                                                <div class="d-flex align-items-center">
+                                                    <div class="bg-white me-3 rounded icon-wrapper">
+                                                        <i class="text-primary mdi mdi-monitor-dashboard mdi-36px"></i>
+                                                    </div>
+                                                    <div>
+                                                        <p class="mb-1 text-white">Venta Digital</p>
+                                                        <h4 class="mb-0 text-white fw-bold" id="ventaDigital">
+                                                            S/ {{ number_format($datos['venta_digital'], 0, '.', ',') }}
+                                                        </h4>
+                                                    </div>
                                                 </div>
-                                                <div>
-                                                    <p class="mb-1 text-white">Venta Digital</p>
-                                                    <h4 class="mb-0 text-white fw-bold" id="ventaDigital">
-                                                        S/ {{ number_format($datos['venta_digital'], 0, '.', ',') }}
-                                                    </h4>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3 col-lg-3 col-md-6">
+                                        <div class="h-100 card card-light-blue">
+                                            <div class="card-body">
+                                                <div class="d-flex align-items-center">
+                                                    <div class="bg-white me-3 rounded icon-wrapper">
+                                                        <i class="text-info mdi mdi-chart-line mdi-36px"></i>
+                                                    </div>
+                                                    <div>
+                                                        <p class="mb-1 text-white">Venta Proy. Digital</p>
+                                                        <h4 class="mb-0 text-white fw-bold" id="ventaProyDigital">
+                                                            S/
+                                                            {{ number_format($datos['venta_proy_digital'], 0, '.', ',') }}
+                                                        </h4>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3 col-lg-3 col-md-6">
+                                        <div class="h-100 card card-dark-blue">
+                                            <div class="card-body">
+                                                <div class="d-flex align-items-center">
+                                                    <div class="bg-white me-3 rounded icon-wrapper">
+                                                        <i class="text-warning mdi mdi-target mdi-36px"></i>
+                                                    </div>
+                                                    <div>
+                                                        <p class="mb-1 text-white">Cuota Digital</p>
+                                                        <h4 class="mb-0 text-white fw-bold" id="cuotaDigital">
+                                                            S/ {{ number_format($datos['cuota_digital'], 0, '.', ',') }}
+                                                        </h4>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3 col-lg-3 col-md-6">
+                                        <div class="h-100 card card-light-blue" id="cardCumDigital">
+                                            <div class="card-body">
+                                                <div class="d-flex align-items-center mb-2">
+                                                    <div class="bg-white me-3 rounded icon-wrapper">
+                                                        <i class="text-success mdi mdi-percent mdi-36px"></i>
+                                                    </div>
+                                                    <div>
+                                                        <p class="mb-1 text-white">Cum. Cuota Digital</p>
+                                                        <h4 class="mb-0 text-white fw-bold" id="cumCuotaDigital">
+                                                            {{ number_format($datos['cum_cuota_digital'], 2) }}%
+                                                        </h4>
+                                                    </div>
+                                                </div>
+                                                <div class="progress" style="height: 8px;">
+                                                    <div class="bg-success progress-bar" id="progressCumDigital"
+                                                        style="width: {{ min($datos['cum_cuota_digital'], 100) }}%">
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-
-                                <div class="col-lg-3 col-md-6 mb-3">
-                                    <div class="card card-light-blue h-100">
-                                        <div class="card-body">
-                                            <div class="d-flex align-items-center">
-                                                <div class="icon-wrapper bg-white rounded me-3">
-                                                    <i class="mdi mdi-chart-line text-info mdi-36px"></i>
-                                                </div>
-                                                <div>
-                                                    <p class="mb-1 text-white">Venta Proy. Digital</p>
-                                                    <h4 class="mb-0 text-white fw-bold" id="ventaProyDigital">
-                                                        S/ {{ number_format($datos['venta_proy_digital'], 0, '.', ',') }}
-                                                    </h4>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="col-lg-3 col-md-6 mb-3">
-                                    <div class="card card-dark-blue h-100">
-                                        <div class="card-body">
-                                            <div class="d-flex align-items-center">
-                                                <div class="icon-wrapper bg-white rounded me-3">
-                                                    <i class="mdi mdi-target text-warning mdi-36px"></i>
-                                                </div>
-                                                <div>
-                                                    <p class="mb-1 text-white">Cuota Digital</p>
-                                                    <h4 class="mb-0 text-white fw-bold" id="cuotaDigital">
-                                                        S/ {{ number_format($datos['cuota_digital'], 0, '.', ',') }}
-                                                    </h4>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="col-lg-3 col-md-6 mb-3">
-                                    <div class="card card-light-blue h-100" id="cardCumDigital">
-                                        <div class="card-body">
-                                            <div class="d-flex align-items-center mb-2">
-                                                <div class="icon-wrapper bg-white rounded me-3">
-                                                    <i class="mdi mdi-percent text-success mdi-36px"></i>
-                                                </div>
-                                                <div>
-                                                    <p class="mb-1 text-white">Cum. Cuota Digital</p>
-                                                    <h4 class="mb-0 text-white fw-bold" id="cumCuotaDigital">
-                                                        {{ number_format($datos['cum_cuota_digital'], 2) }}%
-                                                    </h4>
-                                                </div>
-                                            </div>
-                                            <div class="progress" style="height: 8px;">
-                                                <div class="progress-bar bg-success" id="progressCumDigital"
-                                                    style="width: {{ min($datos['cum_cuota_digital'], 100) }}%">
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                            @endif
 
                             <!-- Gráficos -->
-                            <div class="row mb-4">
-                                <div class="col-lg-8 mb-3">
+                            <div class="mb-4 row">
+                                <div class="mb-3 col-lg-8">
                                     <div class="card">
                                         <div class="card-body">
-                                            <h4 class="card-title mb-4">
-                                                <i class="mdi mdi-chart-bar text-primary me-2"></i>
+                                            <h4 class="mb-4 card-title">
+                                                <i class="me-2 text-primary mdi mdi-chart-bar"></i>
                                                 Ventas vs Cuota - <span id="anioGrafico">{{ $anioActual }}</span>
                                             </h4>
                                             <canvas id="ventasCuotaChart" height="80"></canvas>
@@ -257,11 +260,11 @@
                                     </div>
                                 </div>
 
-                                <div class="col-lg-4 mb-3">
+                                <div class="mb-3 col-lg-4">
                                     <div class="card">
                                         <div class="card-body">
-                                            <h4 class="card-title mb-4">
-                                                <i class="mdi mdi-percent text-success me-2"></i>
+                                            <h4 class="mb-4 card-title">
+                                                <i class="me-2 text-success mdi mdi-percent"></i>
                                                 % Cumplimiento
                                             </h4>
                                             <canvas id="cumplimientoChart" height="160"></canvas>
@@ -271,12 +274,12 @@
                             </div>
 
                             <!-- Gráfico Comparación Anual -->
-                            <div class="row mb-4">
+                            <div class="mb-4 row">
                                 <div class="col-12">
                                     <div class="card">
                                         <div class="card-body">
-                                            <h4 class="card-title mb-4">
-                                                <i class="mdi mdi-chart-areaspline text-info me-2"></i>
+                                            <h4 class="mb-4 card-title">
+                                                <i class="me-2 text-info mdi mdi-chart-areaspline"></i>
                                                 Comparación de {{ $datosAnuales['mes'] ?? 'Mes Actual' }} - Histórico de
                                                 Años
                                             </h4>
@@ -291,8 +294,8 @@
                                 <div class="col-12">
                                     <div class="card">
                                         <div class="card-body">
-                                            <h4 class="card-title mb-4">
-                                                <i class="mdi mdi-table text-info me-2"></i>
+                                            <h4 class="mb-4 card-title">
+                                                <i class="mdi-table me-2 text-info mdi"></i>
                                                 Resumen Mensual - <span id="anioTabla">{{ $anioActual }}</span>
                                             </h4>
                                             <div class="table-responsive">
@@ -326,21 +329,21 @@
                                                                 <td class="text-center">
                                                                     @if ($historico['cumplimientos'][$index] >= 100)
                                                                         <span class="badge badge-success"><i
-                                                                                class="mdi mdi-check-circle me-1"></i>Cumplido</span>
+                                                                                class="me-1 mdi mdi-check-circle"></i>Cumplido</span>
                                                                     @elseif($historico['cumplimientos'][$index] >= 70)
                                                                         <span class="badge badge-warning"><i
-                                                                                class="mdi mdi-alert me-1"></i>En
+                                                                                class="me-1 mdi mdi-alert"></i>En
                                                                             Progreso</span>
                                                                     @else
                                                                         <span class="badge badge-danger"><i
-                                                                                class="mdi mdi-close-circle me-1"></i>Bajo</span>
+                                                                                class="me-1 mdi mdi-close-circle"></i>Bajo</span>
                                                                     @endif
                                                                 </td>
                                                             </tr>
                                                         @empty
                                                             <tr>
-                                                                <td colspan="5" class="text-center py-4 text-muted">
-                                                                    <i class="mdi mdi-inbox mdi-48px d-block mb-3"></i>
+                                                                <td colspan="5" class="py-4 text-muted text-center">
+                                                                    <i class="d-block mb-3 mdi mdi-inbox mdi-48px"></i>
                                                                     No hay datos disponibles
                                                                 </td>
                                                             </tr>
@@ -633,8 +636,8 @@
             if (historico.meses.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="5" class="text-center py-4 text-muted">
-                            <i class="mdi mdi-inbox mdi-48px d-block mb-3"></i>
+                        <td colspan="5" class="py-4 text-muted text-center">
+                            <i class="d-block mb-3 mdi mdi-inbox mdi-48px"></i>
                             No hay datos disponibles
                         </td>
                     </tr>`;
