@@ -41,6 +41,7 @@ class UserController extends Controller
             'TARAPOTO' => 'Tarapoto',
             'TRUJILLO' => 'Trujillo',
             'CALL CENTER' => 'Call Center',
+            'MONTURAS' => 'Monturas',
         ];
     }
 

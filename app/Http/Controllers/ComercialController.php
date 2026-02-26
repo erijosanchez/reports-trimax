@@ -107,8 +107,8 @@ class ComercialController extends Controller
             return response()->json([
                 'success' => true,
                 'data' => $acuerdos,
-                'is_sede' => $user->isSede(),      
-                'sede_name' => $user->sede ?? null    
+                'is_sede' => $user->isSede(),
+                'sede_name' => $user->sede ?? null
             ]);
         } catch (\Exception $e) {
             \Log::error('Error en obtenerAcuerdos: ' . $e->getMessage());
@@ -1371,6 +1371,52 @@ class ComercialController extends Controller
                 }
             }
         }
+
+        // ─── FUSIONAR SEDES DE MONTURAS ───────────────────────────────────────
+        $sedesMonturas = ['CONSULTOR DE MONTURAS 1', 'CONSULTOR DE MONTURAS 2', 'MONTURAS GENERAL'];
+
+        $fusionada = [
+            'sede'               => 'MONTURAS',
+            'venta_general'      => 0,
+            'venta_proyectada'   => 0,
+            'cuota'              => 0,
+            'cumplimiento_cuota' => 0,
+            'diferencia'         => 0,
+            'venta_digital'      => 0,
+            'venta_proy_digital' => 0,
+            'cuota_digital'      => 0,
+            'cum_cuota_digital'  => 0,
+        ];
+
+        $hayMoturas = false;
+
+        $sedes = array_filter($sedes, function ($s) use ($sedesMonturas, &$fusionada, &$hayMonturas) {
+            if (in_array($s['sede'], $sedesMonturas)) {
+                $fusionada['venta_general']      += $s['venta_general'];
+                $fusionada['venta_proyectada']   += $s['venta_proyectada'];
+                $fusionada['cuota']              += $s['cuota'];
+                $fusionada['diferencia']         += $s['diferencia'];
+                $fusionada['venta_digital']      += $s['venta_digital'];
+                $fusionada['venta_proy_digital'] += $s['venta_proy_digital'];
+                $fusionada['cuota_digital']      += $s['cuota_digital'];
+                $hayMonturas = true;
+                return false;
+            }
+            return true;
+        });
+
+        if ($hayMonturas) {
+            $fusionada['cumplimiento_cuota'] = $fusionada['cuota'] > 0
+                ? ($fusionada['venta_general'] / $fusionada['cuota']) * 100
+                : 0;
+            $fusionada['cum_cuota_digital'] = $fusionada['cuota_digital'] > 0
+                ? ($fusionada['venta_digital'] / $fusionada['cuota_digital']) * 100
+                : 0;
+
+            $sedes[] = $fusionada;
+        }
+
+        $sedes = array_values($sedes);
 
         usort($sedes, function ($a, $b) {
             return $b['cumplimiento_cuota'] <=> $a['cumplimiento_cuota'];

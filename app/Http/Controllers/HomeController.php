@@ -78,7 +78,7 @@ class HomeController extends Controller
                 'cumplimiento_cuota' => 0,
                 'venta_total' => 0,
                 'venta_digital'     => 0,
-                'venta_proy_digital'=> 0,
+                'venta_proy_digital' => 0,
                 'cuota_digital'     => 0,
                 'cum_cuota_digital' => 0,
             ];
@@ -154,7 +154,7 @@ class HomeController extends Controller
             'cumplimiento_cuota' => 0,
             'venta_total' => 0,
             'venta_digital'     => 0,
-            'venta_proy_digital'=> 0,
+            'venta_proy_digital' => 0,
             'cuota_digital'     => 0,
             'cum_cuota_digital' => 0,
         ];
@@ -162,6 +162,10 @@ class HomeController extends Controller
         if (empty($values)) {
             return $datos;
         }
+
+        // Si la sede es MONTURAS, buscar estas 3 sedes y sumarlas
+        $sedesMonturas = ['CONSULTOR DE MONTURAS 1', 'CONSULTOR DE MONTURAS 2', 'MONTURAS GENERAL'];
+        $esMonturas = ($sede === 'MONTURAS');
 
         foreach ($values as $index => $row) {
             if ($index == 0) continue;
@@ -171,20 +175,37 @@ class HomeController extends Controller
                 $anioSheet = trim($row[1]);
                 $mesSheet = trim(ucfirst(strtolower($row[2])));
 
-                if ($sedeSheet == $sede && $anioSheet == $anio && $mesSheet == $mes) {
-                    $datos['venta_general'] = $this->limpiarNumero($row[3] ?? 0);
-                    $datos['venta_proyectada'] = $this->limpiarNumero($row[4] ?? 0);
-                    $datos['cuota'] = $this->limpiarNumero($row[5] ?? 0);
-                    $datos['cumplimiento_cuota'] = $this->limpiarPorcentaje($row[6] ?? '0%');
-                    $datos['venta_total'] = $this->limpiarNumero($row[7] ?? 0);
-                    $datos['venta_digital']      = $this->limpiarNumero($row[7] ?? 0);
-                    $datos['venta_proy_digital'] = $this->limpiarNumero($row[8] ?? 0);
-                    $datos['cuota_digital']      = $this->limpiarNumero($row[9] ?? 0);
-                    $datos['cum_cuota_digital']  = $this->limpiarPorcentaje($row[10] ?? '0%');
-                    break;
+                // Verificar si esta fila aplica
+                $coincide = false;
+                if ($esMonturas && in_array($sedeSheet, $sedesMonturas) && $anioSheet == $anio && $mesSheet == $mes) {
+                    $coincide = true;
+                } elseif (!$esMonturas && $sedeSheet == $sede && $anioSheet == $anio && $mesSheet == $mes) {
+                    $coincide = true;
+                }
+
+                if ($coincide) {
+                    $datos['venta_general']      += $this->limpiarNumero($row[3] ?? 0);
+                    $datos['venta_proyectada']   += $this->limpiarNumero($row[4] ?? 0);
+                    $datos['cuota']              += $this->limpiarNumero($row[5] ?? 0);
+                    $datos['venta_total']        += $this->limpiarNumero($row[7] ?? 0);
+                    $datos['venta_digital']      += $this->limpiarNumero($row[7] ?? 0);
+                    $datos['venta_proy_digital'] += $this->limpiarNumero($row[8] ?? 0);
+                    $datos['cuota_digital']      += $this->limpiarNumero($row[9] ?? 0);
+
+                    // Si NO es monturas, salir al primer match (comportamiento original)
+                    if (!$esMonturas) break;
                 }
             }
         }
+
+        // Recalcular cumplimientos después de sumar todo
+        $datos['cumplimiento_cuota'] = $datos['cuota'] > 0
+            ? ($datos['venta_general'] / $datos['cuota']) * 100
+            : 0;
+
+        $datos['cum_cuota_digital'] = $datos['cuota_digital'] > 0
+            ? ($datos['venta_digital'] / $datos['cuota_digital']) * 100
+            : 0;
 
         return $datos;
     }
@@ -199,9 +220,9 @@ class HomeController extends Controller
         $values = $response->getValues();
 
         $historico = [
-            'meses' => [],
-            'ventas' => [],
-            'cuotas' => [],
+            'meses'         => [],
+            'ventas'        => [],
+            'cuotas'        => [],
             'cumplimientos' => []
         ];
 
@@ -210,22 +231,25 @@ class HomeController extends Controller
         }
 
         $ordenMeses = [
-            'enero' => 1,
-            'febrero' => 2,
-            'marzo' => 3,
-            'abril' => 4,
-            'mayo' => 5,
-            'junio' => 6,
-            'julio' => 7,
-            'agosto' => 8,
+            'enero'      => 1,
+            'febrero'    => 2,
+            'marzo'      => 3,
+            'abril'      => 4,
+            'mayo'       => 5,
+            'junio'      => 6,
+            'julio'      => 7,
+            'agosto'     => 8,
             'septiembre' => 9,
-            'setiembre' => 9,
-            'octubre' => 10,
-            'noviembre' => 11,
-            'diciembre' => 12
+            'setiembre'  => 9,
+            'octubre'    => 10,
+            'noviembre'  => 11,
+            'diciembre'  => 12
         ];
 
-        $datosTemp = [];
+        $sedesMonturas = ['CONSULTOR DE MONTURAS 1', 'CONSULTOR DE MONTURAS 2', 'MONTURAS GENERAL'];
+        $esMonturas    = ($sede === 'MONTURAS');
+
+        $datosTemp = []; // ['mes_key' => ['mes', 'orden', 'venta', 'cuota']]
 
         foreach ($values as $index => $row) {
             if ($index == 0) continue;
@@ -234,29 +258,44 @@ class HomeController extends Controller
                 $sedeSheet = trim(strtoupper($row[0]));
                 $anioSheet = trim($row[1]);
 
-                if ($sedeSheet == $sede && $anioSheet == $anio) {
-                    $mes = trim(ucfirst(strtolower($row[2])));
+                $coincide = false;
+                if ($esMonturas && in_array($sedeSheet, $sedesMonturas) && $anioSheet == $anio) {
+                    $coincide = true;
+                } elseif (!$esMonturas && $sedeSheet == $sede && $anioSheet == $anio) {
+                    $coincide = true;
+                }
 
-                    $datosTemp[] = [
-                        'mes' => $mes,
-                        'orden' => $ordenMeses[strtolower($mes)] ?? 99,
-                        'venta' => $this->limpiarNumero($row[3] ?? 0),
-                        'cuota' => $this->limpiarNumero($row[5] ?? 0),
-                        'cumplimiento' => $this->limpiarPorcentaje($row[6] ?? '0%')
-                    ];
+                if ($coincide) {
+                    $mes    = trim(ucfirst(strtolower($row[2])));
+                    $mesKey = strtolower($mes);
+
+                    if (!isset($datosTemp[$mesKey])) {
+                        $datosTemp[$mesKey] = [
+                            'mes'    => $mes,
+                            'orden'  => $ordenMeses[$mesKey] ?? 99,
+                            'venta'  => 0,
+                            'cuota'  => 0,
+                        ];
+                    }
+
+                    $datosTemp[$mesKey]['venta'] += $this->limpiarNumero($row[3] ?? 0);
+                    $datosTemp[$mesKey]['cuota'] += $this->limpiarNumero($row[5] ?? 0);
                 }
             }
         }
 
-        usort($datosTemp, function ($a, $b) {
-            return $a['orden'] <=> $b['orden'];
-        });
+        // Ordenar por mes
+        usort($datosTemp, fn($a, $b) => $a['orden'] <=> $b['orden']);
 
         foreach ($datosTemp as $dato) {
-            $historico['meses'][] = $dato['mes'];
-            $historico['ventas'][] = $dato['venta'];
-            $historico['cuotas'][] = $dato['cuota'];
-            $historico['cumplimientos'][] = $dato['cumplimiento'];
+            $cumplimiento = $dato['cuota'] > 0
+                ? ($dato['venta'] / $dato['cuota']) * 100
+                : 0;
+
+            $historico['meses'][]         = $dato['mes'];
+            $historico['ventas'][]        = $dato['venta'];
+            $historico['cuotas'][]        = $dato['cuota'];
+            $historico['cumplimientos'][] = $cumplimiento;
         }
 
         return $historico;
