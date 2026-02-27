@@ -91,7 +91,7 @@ class HomeController extends Controller
             ];
 
             $aniosDisponibles = [$anioActual];
-            $datosAnuales = ['anios' => [], 'ventas' => []];
+            $datosAnuales = ['anios' => [], 'ventas' => [], 'mes' => $mesActual];
         }
 
         return view('home-ventas', compact('datos', 'historico', 'sedeUsuario', 'mesActual', 'anioActual', 'aniosDisponibles', 'datosAnuales'));
@@ -138,6 +138,20 @@ class HomeController extends Controller
         }
     }
 
+    // ─── Helper MONTURAS ──────────────────────────────────────────────────────
+    private function sedesMonturas(): array
+    {
+        return ['CONSULTOR DE MONTURAS 1', 'CONSULTOR DE MONTURAS 2', 'MONTURAS GENERAL'];
+    }
+
+    private function coincideSede(string $sedeSheet, string $sede): bool
+    {
+        if ($sede === 'MONTURAS') {
+            return in_array($sedeSheet, $this->sedesMonturas());
+        }
+        return $sedeSheet === $sede;
+    }
+
     /**
      * Obtener datos de ventas del mes específico
      */
@@ -164,7 +178,6 @@ class HomeController extends Controller
         }
 
         // Si la sede es MONTURAS, buscar estas 3 sedes y sumarlas
-        $sedesMonturas = ['CONSULTOR DE MONTURAS 1', 'CONSULTOR DE MONTURAS 2', 'MONTURAS GENERAL'];
         $esMonturas = ($sede === 'MONTURAS');
 
         foreach ($values as $index => $row) {
@@ -173,17 +186,9 @@ class HomeController extends Controller
             if (!empty($row[0]) && !empty($row[1]) && !empty($row[2])) {
                 $sedeSheet = trim(strtoupper($row[0]));
                 $anioSheet = trim($row[1]);
-                $mesSheet = trim(ucfirst(strtolower($row[2])));
+                $mesSheet  = trim(ucfirst(strtolower($row[2])));
 
-                // Verificar si esta fila aplica
-                $coincide = false;
-                if ($esMonturas && in_array($sedeSheet, $sedesMonturas) && $anioSheet == $anio && $mesSheet == $mes) {
-                    $coincide = true;
-                } elseif (!$esMonturas && $sedeSheet == $sede && $anioSheet == $anio && $mesSheet == $mes) {
-                    $coincide = true;
-                }
-
-                if ($coincide) {
+                if ($this->coincideSede($sedeSheet, $sede) && $anioSheet == $anio && $mesSheet == $mes) {
                     $datos['venta_general']      += $this->limpiarNumero($row[3] ?? 0);
                     $datos['venta_proyectada']   += $this->limpiarNumero($row[4] ?? 0);
                     $datos['cuota']              += $this->limpiarNumero($row[5] ?? 0);
@@ -192,13 +197,11 @@ class HomeController extends Controller
                     $datos['venta_proy_digital'] += $this->limpiarNumero($row[8] ?? 0);
                     $datos['cuota_digital']      += $this->limpiarNumero($row[9] ?? 0);
 
-                    // Si NO es monturas, salir al primer match (comportamiento original)
                     if (!$esMonturas) break;
                 }
             }
         }
 
-        // Recalcular cumplimientos después de sumar todo
         $datos['cumplimiento_cuota'] = $datos['cuota'] > 0
             ? ($datos['venta_general'] / $datos['cuota']) * 100
             : 0;
@@ -215,41 +218,31 @@ class HomeController extends Controller
      */
     private function obtenerDatosHistoricos($service, $spreadsheetId, $sede, $anio)
     {
-        $range = 'Historico!A:H';
+        $range    = 'Historico!A:H';
         $response = $service->spreadsheets_values->get($spreadsheetId, $range);
-        $values = $response->getValues();
+        $values   = $response->getValues();
 
-        $historico = [
-            'meses'         => [],
-            'ventas'        => [],
-            'cuotas'        => [],
-            'cumplimientos' => []
-        ];
+        $historico = ['meses' => [], 'ventas' => [], 'cuotas' => [], 'cumplimientos' => []];
 
-        if (empty($values)) {
-            return $historico;
-        }
+        if (empty($values)) return $historico;
 
         $ordenMeses = [
-            'enero'      => 1,
-            'febrero'    => 2,
-            'marzo'      => 3,
-            'abril'      => 4,
-            'mayo'       => 5,
-            'junio'      => 6,
-            'julio'      => 7,
-            'agosto'     => 8,
+            'enero' => 1,
+            'febrero' => 2,
+            'marzo' => 3,
+            'abril' => 4,
+            'mayo'  => 5,
+            'junio'   => 6,
+            'julio' => 7,
+            'agosto' => 8,
             'septiembre' => 9,
-            'setiembre'  => 9,
-            'octubre'    => 10,
-            'noviembre'  => 11,
-            'diciembre'  => 12
+            'setiembre' => 9,
+            'octubre' => 10,
+            'noviembre' => 11,
+            'diciembre' => 12
         ];
 
-        $sedesMonturas = ['CONSULTOR DE MONTURAS 1', 'CONSULTOR DE MONTURAS 2', 'MONTURAS GENERAL'];
-        $esMonturas    = ($sede === 'MONTURAS');
-
-        $datosTemp = []; // ['mes_key' => ['mes', 'orden', 'venta', 'cuota']]
+        $datosTemp = [];
 
         foreach ($values as $index => $row) {
             if ($index == 0) continue;
@@ -258,23 +251,16 @@ class HomeController extends Controller
                 $sedeSheet = trim(strtoupper($row[0]));
                 $anioSheet = trim($row[1]);
 
-                $coincide = false;
-                if ($esMonturas && in_array($sedeSheet, $sedesMonturas) && $anioSheet == $anio) {
-                    $coincide = true;
-                } elseif (!$esMonturas && $sedeSheet == $sede && $anioSheet == $anio) {
-                    $coincide = true;
-                }
-
-                if ($coincide) {
+                if ($this->coincideSede($sedeSheet, $sede) && $anioSheet == $anio) {
                     $mes    = trim(ucfirst(strtolower($row[2])));
                     $mesKey = strtolower($mes);
 
                     if (!isset($datosTemp[$mesKey])) {
                         $datosTemp[$mesKey] = [
-                            'mes'    => $mes,
-                            'orden'  => $ordenMeses[$mesKey] ?? 99,
-                            'venta'  => 0,
-                            'cuota'  => 0,
+                            'mes'   => $mes,
+                            'orden' => $ordenMeses[$mesKey] ?? 99,
+                            'venta' => 0,
+                            'cuota' => 0,
                         ];
                     }
 
@@ -284,7 +270,6 @@ class HomeController extends Controller
             }
         }
 
-        // Ordenar por mes
         usort($datosTemp, fn($a, $b) => $a['orden'] <=> $b['orden']);
 
         foreach ($datosTemp as $dato) {
@@ -306,9 +291,9 @@ class HomeController extends Controller
      */
     private function obtenerAniosDisponibles($service, $spreadsheetId, $sede)
     {
-        $range = 'Historico!A:B';
+        $range    = 'Historico!A:B';
         $response = $service->spreadsheets_values->get($spreadsheetId, $range);
-        $values = $response->getValues();
+        $values   = $response->getValues();
 
         $anios = [];
 
@@ -317,16 +302,17 @@ class HomeController extends Controller
 
             if (!empty($row[0]) && !empty($row[1])) {
                 $sedeSheet = trim(strtoupper($row[0]));
-                $anio = trim($row[1]);
+                $anio      = trim($row[1]);
 
-                if ($sedeSheet == $sede && is_numeric($anio)) {
+                // ✅ FIX: ahora soporta MONTURAS
+                if ($this->coincideSede($sedeSheet, $sede) && is_numeric($anio)) {
                     $anios[] = (int)$anio;
                 }
             }
         }
 
         $anios = array_unique($anios);
-        rsort($anios); // Ordenar descendente (más reciente primero)
+        rsort($anios);
 
         return $anios;
     }
@@ -336,13 +322,11 @@ class HomeController extends Controller
      */
     private function obtenerDatosAnuales($service, $spreadsheetId, $sede)
     {
-        $range = 'Historico!A:H';
+        $range    = 'Historico!A:H';
         $response = $service->spreadsheets_values->get($spreadsheetId, $range);
-        $values = $response->getValues();
+        $values   = $response->getValues();
 
-        // Obtener mes actual
-        $mesActual = ucfirst(Carbon::now()->locale('es')->translatedFormat('F'));
-
+        $mesActual    = ucfirst(Carbon::now()->locale('es')->translatedFormat('F'));
         $datosAnuales = [];
 
         foreach ($values as $index => $row) {
@@ -350,24 +334,26 @@ class HomeController extends Controller
 
             if (!empty($row[0]) && !empty($row[1]) && !empty($row[2]) && !empty($row[3])) {
                 $sedeSheet = trim(strtoupper($row[0]));
-                $anio = trim($row[1]);
-                $mesSheet = trim(ucfirst(strtolower($row[2])));
-                $venta = $this->limpiarNumero($row[3] ?? 0);
+                $anio      = trim($row[1]);
+                $mesSheet  = trim(ucfirst(strtolower($row[2])));
+                $venta     = $this->limpiarNumero($row[3] ?? 0);
 
-                // 🔥 SOLO tomar datos del MES ACTUAL
-                if ($sedeSheet == $sede && $mesSheet == $mesActual && is_numeric($anio)) {
-                    $datosAnuales[$anio] = $venta;
+                // ✅ FIX: ahora soporta MONTURAS y acumula las 3 sedes
+                if ($this->coincideSede($sedeSheet, $sede) && $mesSheet == $mesActual && is_numeric($anio)) {
+                    if (!isset($datosAnuales[$anio])) {
+                        $datosAnuales[$anio] = 0;
+                    }
+                    $datosAnuales[$anio] += $venta;
                 }
             }
         }
 
-        // Ordenar por año
         ksort($datosAnuales);
 
         return [
-            'anios' => array_keys($datosAnuales),
+            'anios'  => array_keys($datosAnuales),
             'ventas' => array_values($datosAnuales),
-            'mes' => $mesActual // Para mostrar en el título
+            'mes'    => $mesActual
         ];
     }
 
@@ -376,12 +362,9 @@ class HomeController extends Controller
      */
     private function limpiarNumero($valor)
     {
-        if (empty($valor)) {
-            return 0;
-        }
+        if (empty($valor)) return 0;
 
-        $valor = (string) $valor;
-        $valor = trim($valor);
+        $valor = trim((string)$valor);
 
         if (strpos($valor, '.') !== false && strpos($valor, ',') !== false) {
             $valor = str_replace('.', '', $valor);
@@ -398,9 +381,7 @@ class HomeController extends Controller
      */
     private function limpiarPorcentaje($valor)
     {
-        if (empty($valor)) {
-            return 0;
-        }
+        if (empty($valor)) return 0;
 
         $valor = str_replace('%', '', $valor);
         $valor = trim($valor);

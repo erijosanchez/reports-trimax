@@ -158,7 +158,8 @@
                             </div>
 
                             <!--  Cards Ventas Digitales -->
-                            @if ($sedeUsuario !== 'MONTURAS') <!-- Solo mostrar para sedes que no son MONTURAS -->
+                            @if ($sedeUsuario !== 'MONTURAS')
+                                <!-- Solo mostrar para sedes que no son MONTURAS -->
                                 <div class="mb-4 row" id="cardsDigitales">
                                     <div class="mb-2 col-lg-12">
                                         <h6 class="text-muted">
@@ -420,14 +421,18 @@
                 document.getElementById('ventaTotal').textContent = 'S/ ' + formatNumber(data.datos.venta_proyectada);
                 actualizarColorCumplimiento(data.datos.cumplimiento_cuota);
 
-                // 🔥 Cards digitales
-                document.getElementById('ventaDigital').textContent = 'S/ ' + formatNumber(data.datos.venta_digital);
-                document.getElementById('ventaProyDigital').textContent = 'S/ ' + formatNumber(data.datos
-                    .venta_proy_digital);
-                document.getElementById('cuotaDigital').textContent = 'S/ ' + formatNumber(data.datos.cuota_digital);
-                document.getElementById('cumCuotaDigital').textContent = (data.datos.cum_cuota_digital ?? 0).toFixed(
-                    2) + '%';
-                actualizarColorCumDigital(data.datos.cum_cuota_digital ?? 0);
+                // Cards digitales - solo si existen en el DOM (no MONTURAS)
+                if (document.getElementById('ventaDigital')) {
+                    document.getElementById('ventaDigital').textContent = 'S/ ' + formatNumber(data.datos
+                    .venta_digital);
+                    document.getElementById('ventaProyDigital').textContent = 'S/ ' + formatNumber(data.datos
+                        .venta_proy_digital);
+                    document.getElementById('cuotaDigital').textContent = 'S/ ' + formatNumber(data.datos
+                    .cuota_digital);
+                    document.getElementById('cumCuotaDigital').textContent = (data.datos.cum_cuota_digital ?? 0)
+                        .toFixed(2) + '%';
+                    actualizarColorCumDigital(data.datos.cum_cuota_digital ?? 0);
+                }
 
                 // Gráficos y tabla
                 historico = data.historico;
