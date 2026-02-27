@@ -22,6 +22,7 @@ class User extends Authenticatable
         'puede_ver_consultar_orden',
         'puede_ver_acuerdos_comerciales',
         'puede_ver_lead_time',
+        'puede_crear_requerimiento',
         'is_active',
         'last_login_at',
         'two_factor_secret',
@@ -45,6 +46,7 @@ class User extends Authenticatable
         'puede_ver_consultar_orden' => 'boolean',
         'puede_ver_acuerdos_comerciales' => 'boolean',
         'puede_ver_lead_time' => 'boolean',
+        'puede_crear_requerimiento' => 'boolean',
         'last_login_at' => 'datetime',
         'two_factor_confirmed_at' => 'datetime',
     ];
@@ -81,6 +83,10 @@ class User extends Authenticatable
         return $this->hasMany(UploadedFile::class);
     }
 
+    /**
+     * Verificar si el usuario tiene acceso a un dashboard específico
+     */
+
     public function hasAccessToDashboard($dashboardId): bool
     {
         if ($this->hasRole(['super_admin', 'admin'])) {
@@ -107,6 +113,11 @@ class User extends Authenticatable
     public function isConsultor()
     {
         return $this->hasRole('consultor');
+    }
+
+    public function isRrhh(): bool
+    {
+        return $this->hasRole('rrhh');
     }
 
     public function isSede(): bool
@@ -196,10 +207,20 @@ class User extends Authenticatable
             || $this->puede_ver_lead_time;
     }
 
+    /**
+     * Puede crear requerimientos de personal.
+     * SuperAdmin siempre puede, el resto depende del flag.
+     */
+    public function puedeCrearRequerimiento(): bool
+    {
+        return $this->isSuperAdmin() || (bool) $this->puede_crear_requerimiento;
+    }
+
     public function getRoleName()
     {
         if ($this->isSuperAdmin()) return 'Super Admin';
         if ($this->isAdmin()) return 'Admin';
+        if ($this->isRrhh()) return 'RRHH';
         if ($this->isMarketing()) return 'Marketing';
         if ($this->isConsultor()) return 'Consultor';
         if ($this->isSede()) return 'Sede - ' . $this->getSedeName();

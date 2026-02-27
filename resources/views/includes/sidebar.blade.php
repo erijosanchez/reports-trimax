@@ -134,6 +134,17 @@
             </li>
         @endif
 
+        {{-- MODULO DE RECURSOS HUMANOS, REQUERIMIENTO DE PERSONAL-SEGUIMIENTO Y HISTORIAL DE REQUERIMIENTOS --}}
+        <li class="nav-item nav-category">RECURSOS HUMANOS</li>
+        
+        <li class="nav-item">
+            <a class="nav-link {{ request()->routeIs('comercial.orden') ? 'active' : '' }}"
+                href="{{ route('comercial.orden') }}">
+                <i class="mdi-account-search mdi menu-icon"></i>
+                <span class="menu-title">RRHH Requerimientos</span>
+            </a>
+        </li>
+
         {{-- MÓDULO ADMINISTRADOR (Solo admin y superadmin) --}}
         @if (auth()->user()->isAdmin() || auth()->user()->isSuperAdmin())
             <li class="nav-item nav-category">Administrador</li>

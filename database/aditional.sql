@@ -396,3 +396,82 @@ ALTER TABLE `users`
 ADD COLUMN `puede_ver_consultar_orden` TINYINT(1) NOT NULL DEFAULT 0 AFTER `puede_ver_descuentos_especiales`,
 ADD COLUMN `puede_ver_acuerdos_comerciales` TINYINT(1) NOT NULL DEFAULT 0 AFTER `puede_ver_consultar_orden`,
 ADD COLUMN `puede_ver_lead_time` TINYINT(1) NOT NULL DEFAULT 0 AFTER `puede_ver_acuerdos_comerciales`;
+ALTER TABLE users
+ADD COLUMN puede_crear_requerimiento TINYINT(1) NOT NULL DEFAULT 0
+AFTER is_active;
+
+/*TABLA DE REQUERIMIENTO DE PERSONAL*/
+CREATE TABLE requerimientos_personal (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+
+    codigo VARCHAR(20) NOT NULL UNIQUE,
+    gerencia VARCHAR(255) NOT NULL DEFAULT 'GERENCIA COMERCIAL',
+    puesto VARCHAR(255) NOT NULL,
+    sede VARCHAR(255) NOT NULL,
+    jefe_directo VARCHAR(255) NOT NULL,
+
+    tipo ENUM('Regular', 'Urgente') NOT NULL,
+
+    condiciones_oferta TEXT NULL,
+    comentarios TEXT NULL,
+
+    solicitante_id BIGINT UNSIGNED NOT NULL,
+    responsable_rrhh_id BIGINT UNSIGNED NULL,
+
+    estado ENUM('en_proceso', 'contratado', 'cancelado') NOT NULL DEFAULT 'en_proceso',
+
+    sla INT NOT NULL DEFAULT 45,
+    fecha_solicitud DATE NOT NULL,
+    fecha_cierre DATE NULL,
+    ultimo_correo_alerta DATE NULL,
+
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP NULL,
+
+    CONSTRAINT fk_req_personal_solicitante
+        FOREIGN KEY (solicitante_id) REFERENCES users(id)
+        ON DELETE RESTRICT,
+
+    CONSTRAINT fk_req_personal_rrhh
+        FOREIGN KEY (responsable_rrhh_id) REFERENCES users(id)
+        ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+/*TABLA DE HISTORIAL DE REQUERIMIENTOS DE PERSONAL*/
+
+CREATE TABLE requerimientos_historial (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+
+    requerimiento_id BIGINT UNSIGNED NOT NULL,
+
+    categoria ENUM(
+        'Publicación de vacante',
+        'Recepción de CVs',
+        'Entrevistas',
+        'Evaluaciones',
+        'Oferta enviada',
+        'Negociación',
+        'Contratado',
+        'Cancelado'
+    ) NOT NULL,
+
+    comentario TEXT NULL,
+
+    estado_registro ENUM('en_proceso', 'contratado', 'cancelado') NOT NULL,
+
+    registrado_por BIGINT UNSIGNED NOT NULL,
+
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_req_historial_requerimiento
+        FOREIGN KEY (requerimiento_id)
+        REFERENCES requerimientos_personal(id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_req_historial_usuario
+        FOREIGN KEY (registrado_por)
+        REFERENCES users(id)
+        ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
