@@ -18,6 +18,7 @@ use App\Http\Controllers\ImportController;
 use App\Http\Controllers\DescuentosEspecialesController;
 use App\Http\Controllers\AIAssistantController;
 use App\Http\Controllers\LeadTimeController;
+use App\Http\Controllers\RequerimientoPersonalController;
 
 // ============================================================
 // RUTAS PARA LARAVEL 11
@@ -190,6 +191,31 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
         // Ver lead time semanal y mensual
         Route::get('/lead-time/semanal', [LeadTimeController::class, 'semanal'])->name('lead-time.semanal');
         Route::get('api/lead-time/semanal-data', [LeadTimeController::class, 'getSemanalData'])->name('lead-time.semanal-data');
+    });
+
+    // Recursos Humanos Routes (RRHH)
+    Route::prefix('rrhh')->name('rrhh.')->group(function () {
+        // Requerimientos
+        Route::prefix('requerimientos')->name('requerimientos.')->group(function () {
+            // Dashboard — solo RRHH y superadmin
+            Route::get('/dashboard', [RequerimientoPersonalController::class, 'dashboard'])
+                ->name('dashboard');
+
+            // Export Excel — solo RRHH y superadmin
+            Route::get('/export/excel', [RequerimientoPersonalController::class, 'exportExcel'])
+                ->name('export');
+
+            // CRUD — acceso según puedeCrearRequerimientos() / puedeVerTodosLosRequerimientos()
+            Route::get('/',       [RequerimientoPersonalController::class, 'index'])->name('index');
+            Route::get('/crear',  [RequerimientoPersonalController::class, 'create'])->name('create');
+            Route::post('/',      [RequerimientoPersonalController::class, 'store'])->name('store');
+            Route::get('/{requerimiento}', [RequerimientoPersonalController::class, 'show'])->name('show');
+
+            // Acciones RRHH / Superadmin
+            Route::patch('/{requerimiento}/estado',      [RequerimientoPersonalController::class, 'actualizarEstado'])->name('estado');
+            Route::patch('/{requerimiento}/responsable', [RequerimientoPersonalController::class, 'asignarResponsable'])->name('responsable');
+            Route::post('/{requerimiento}/etapa',        [RequerimientoPersonalController::class, 'registrarEtapa'])->name('etapa');
+        });
     });
 
     // Admin Routes (Admin + Super Admin only)

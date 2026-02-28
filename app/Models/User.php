@@ -22,7 +22,7 @@ class User extends Authenticatable
         'puede_ver_consultar_orden',
         'puede_ver_acuerdos_comerciales',
         'puede_ver_lead_time',
-        'puede_crear_requerimiento',
+        'puede_crear_requerimientos',
         'is_active',
         'last_login_at',
         'two_factor_secret',
@@ -46,7 +46,7 @@ class User extends Authenticatable
         'puede_ver_consultar_orden' => 'boolean',
         'puede_ver_acuerdos_comerciales' => 'boolean',
         'puede_ver_lead_time' => 'boolean',
-        'puede_crear_requerimiento' => 'boolean',
+        'puede_crear_requerimientos' => 'boolean',
         'last_login_at' => 'datetime',
         'two_factor_confirmed_at' => 'datetime',
     ];
@@ -83,6 +83,12 @@ class User extends Authenticatable
         return $this->hasMany(UploadedFile::class);
     }
 
+    public function requerimientos()
+    {
+        return $this->hasMany(RequerimientoPersonal::class, 'solicitante_id');
+    }
+
+
     /**
      * Verificar si el usuario tiene acceso a un dashboard específico
      */
@@ -94,6 +100,8 @@ class User extends Authenticatable
         }
         return $this->dashboards()->where('dashboard_id', $dashboardId)->exists();
     }
+
+    // ROLES
 
     public function isAdmin(): bool
     {
@@ -124,6 +132,78 @@ class User extends Authenticatable
     {
         return $this->hasRole(['sede']);
     }
+
+    //PERMISOS ------------------------------
+    public function puedeVerVentasConsolidadas(): bool
+    {
+        return $this->isSuperAdmin() || $this->puede_ver_ventas_consolidadas;
+    }
+
+    public function puedeVerDescuentosEspeciales()
+    {
+        return $this->isSuperAdmin() || $this->puede_ver_descuentos_especiales;
+    }
+
+    public function puedeVerConsultarOrden(): bool
+    {
+        // Sede siempre puede por defecto
+        if ($this->isSede()) return true;
+        return $this->isSuperAdmin() || $this->isAdmin() || $this->isConsultor()
+            || $this->puede_ver_consultar_orden;
+    }
+
+    public function puedeVerAcuerdosComerciales(): bool
+    {
+        return $this->isSuperAdmin() || $this->isAdmin() || $this->isConsultor()
+            || $this->puede_ver_acuerdos_comerciales;
+    }
+
+    public function puedeVerLeadTime(): bool
+    {
+        return $this->isSuperAdmin() || $this->isAdmin() || $this->isConsultor()
+            || $this->puede_ver_lead_time;
+    }
+
+    /**
+     * Solo el superadmin puede otorgar este permiso desde el panel de usuarios.
+     * RRHH también puede crear requerimientos por defecto.
+     */
+    public function puedeCrearRequerimientos(): bool
+    {
+        return $this->isSuperAdmin() || $this->isRrhh() || $this->puede_crear_requerimientos;
+    }
+
+    /**
+     * Ver requerimientos:
+     * - RRHH y superadmin ven TODOS
+     * - Los demás solo ven los suyos (filtrado en el controller)
+     */
+    public function puedeVerTodosLosRequerimientos(): bool
+    {
+        return $this->isSuperAdmin() || $this->isRrhh();
+    }
+
+    /**
+     * Gestionar requerimientos (cambiar estado, asignar RH, agregar notas)
+     */
+    public function puedeGestionarRequerimientos(): bool
+    {
+        return $this->isSuperAdmin() || $this->isRrhh();
+    }
+
+    public function getRoleName()
+    {
+        if ($this->isSuperAdmin()) return 'Super Admin';
+        if ($this->isAdmin()) return 'Admin';
+        if ($this->isRrhh()) return 'RRHH';
+        if ($this->isMarketing()) return 'Marketing';
+        if ($this->isConsultor()) return 'Consultor';
+        if ($this->isSede()) return 'Sede - ' . $this->getSedeName();
+
+        return 'Usuario';
+    }
+
+    // ---------------- SCOPES -------------------
 
     /**
      * Obtener el nombre de la sede del usuario
@@ -175,56 +255,5 @@ class User extends Authenticatable
         return $query->whereHas('activeSessions', function ($q) {
             $q->where('last_activity', '>=', now()->subMinutes(5));
         });
-    }
-
-    public function puedeVerVentasConsolidadas(): bool
-    {
-        return $this->isSuperAdmin() || $this->puede_ver_ventas_consolidadas;
-    }
-
-    public function puedeVerDescuentosEspeciales()
-    {
-        return $this->isSuperAdmin() || $this->puede_ver_descuentos_especiales;
-    }
-
-    public function puedeVerConsultarOrden(): bool
-    {
-        // Sede siempre puede por defecto
-        if ($this->isSede()) return true;
-        return $this->isSuperAdmin() || $this->isAdmin() || $this->isConsultor()
-            || $this->puede_ver_consultar_orden;
-    }
-
-    public function puedeVerAcuerdosComerciales(): bool
-    {
-        return $this->isSuperAdmin() || $this->isAdmin() || $this->isConsultor()
-            || $this->puede_ver_acuerdos_comerciales;
-    }
-
-    public function puedeVerLeadTime(): bool
-    {
-        return $this->isSuperAdmin() || $this->isAdmin() || $this->isConsultor()
-            || $this->puede_ver_lead_time;
-    }
-
-    /**
-     * Puede crear requerimientos de personal.
-     * SuperAdmin siempre puede, el resto depende del flag.
-     */
-    public function puedeCrearRequerimiento(): bool
-    {
-        return $this->isSuperAdmin() || (bool) $this->puede_crear_requerimiento;
-    }
-
-    public function getRoleName()
-    {
-        if ($this->isSuperAdmin()) return 'Super Admin';
-        if ($this->isAdmin()) return 'Admin';
-        if ($this->isRrhh()) return 'RRHH';
-        if ($this->isMarketing()) return 'Marketing';
-        if ($this->isConsultor()) return 'Consultor';
-        if ($this->isSede()) return 'Sede - ' . $this->getSedeName();
-
-        return 'Usuario';
     }
 }
