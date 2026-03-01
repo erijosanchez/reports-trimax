@@ -202,26 +202,36 @@
                                 </h6>
 
                                 @forelse($requerimiento->historial as $evento)
-                                    <div class="d-flex gap-3 mb-4 timeline-item">
-                                        {{-- Ícono --}}
-                                        <div class="flex-shrink-0">
-                                            <div class="timeline-icon-wrap timeline-icon-{{ $evento->color_timeline }}">
-                                                <i class="mdi {{ $evento->icono_timeline }}"></i>
-                                            </div>
+                                    @php
+                                        $borderColor = match ($evento->color_timeline) {
+                                            'blue' => '#2563eb',
+                                            'green' => '#059669',
+                                            'purple' => '#7c3aed',
+                                            'red' => '#dc2626',
+                                            'cyan' => '#0891b2',
+                                            'indigo' => '#4338ca',
+                                            'teal' => '#0d9488',
+                                            'amber' => '#d97706',
+                                            'gray' => '#6b7280',
+                                            default => '#6b7280',
+                                        };
+                                    @endphp
+                                    <div class="mb-3 timeline-card" style="border-left: 4px solid {{ $borderColor }};">
+                                        <div class="d-flex align-items-start justify-content-between mb-1">
+                                            <p class="mb-0 fw-bold">{{ $evento->titulo }}</p>
+                                            <small class="ms-3 text-muted text-nowrap">
+                                                {{ $evento->created_at->format('d/m/Y H:i') }}
+                                            </small>
                                         </div>
-                                        {{-- Contenido --}}
-                                        <div class="flex-grow-1">
-                                            <div class="d-flex align-items-start justify-content-between mb-1">
-                                                <strong class="small">{{ $evento->usuario->name }}</strong>
-                                                <small
-                                                    class="text-muted">{{ $evento->created_at->format('d/m/Y H:i') }}</small>
-                                            </div>
-                                            <p class="mb-1 fw-semibold">{{ $evento->titulo }}</p>
-                                            @if ($evento->descripcion)
-                                                <p class="mb-1 text-muted small">{{ $evento->descripcion }}</p>
-                                            @endif
+                                        @if ($evento->descripcion)
+                                            <p class="mb-1 text-muted small">{{ $evento->descripcion }}</p>
+                                        @endif
+                                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mt-1">
+                                            <small class="text-muted">
+                                                <i class="mdi-account-outline mdi"></i> {{ $evento->usuario->name }}
+                                            </small>
                                             @if ($evento->estado_anterior && $evento->estado_nuevo)
-                                                <div class="d-flex align-items-center gap-2 mt-1">
+                                                <div class="d-flex align-items-center gap-2">
                                                     @php
                                                         $bc1 = match ($evento->estado_anterior) {
                                                             'Pendiente' => 'bg-info',
@@ -395,65 +405,16 @@
             box-shadow: 0 2px 10px rgba(0, 0, 0, .08);
         }
 
-        /* Timeline */
-        .timeline-item+.timeline-item {
-            border-top: 1px solid #f0f0f0;
-            padding-top: 1rem;
+        /* Timeline tarjeta con borde izquierdo */
+        .timeline-card {
+            background: #f8fafc;
+            border-radius: 0 8px 8px 0;
+            padding: .85rem 1rem;
+            transition: background .15s;
         }
 
-        .timeline-icon-wrap {
-            width: 38px;
-            height: 38px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1rem;
-        }
-
-        .timeline-icon-blue {
-            background: #dbeafe;
-            color: #2563eb;
-        }
-
-        .timeline-icon-green {
-            background: #d1fae5;
-            color: #059669;
-        }
-
-        .timeline-icon-purple {
-            background: #ede9fe;
-            color: #7c3aed;
-        }
-
-        .timeline-icon-red {
-            background: #fee2e2;
-            color: #dc2626;
-        }
-
-        .timeline-icon-cyan {
-            background: #cffafe;
-            color: #0891b2;
-        }
-
-        .timeline-icon-indigo {
-            background: #e0e7ff;
-            color: #4338ca;
-        }
-
-        .timeline-icon-teal {
-            background: #ccfbf1;
-            color: #0d9488;
-        }
-
-        .timeline-icon-amber {
-            background: #fef3c7;
-            color: #d97706;
-        }
-
-        .timeline-icon-gray {
-            background: #f1f5f9;
-            color: #64748b;
+        .timeline-card:hover {
+            background: #f0f4ff;
         }
     </style>
 @endpush

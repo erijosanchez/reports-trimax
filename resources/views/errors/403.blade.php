@@ -3,12 +3,12 @@
 @section('title', 'Acceso Denegado')
 
 @section('content')
-<div class="content-wrapper d-flex align-items-center justify-content-center" style="min-height: 80vh;">
+<div class="d-flex align-items-center justify-content-center content-wrapper" style="min-height: 80vh;">
     <div class="text-center">
         {{-- Logo o ícono --}}
         <div class="mb-4">
             <img src="{{ asset('assets/img/ltr.png') }}" alt="TRIMAX" style="height: 60px;" 
-                 onerror="this.style.display='none'">
+                onerror="this.style.display='none'">
         </div>
 
         {{-- Número de error --}}
@@ -18,22 +18,22 @@
 
         {{-- Ícono --}}
         <div class="mb-3">
-            <i class="mdi mdi-lock-outline" style="font-size: 4rem; color: #EF4444;"></i>
+            <i class="mdi-lock-outline mdi" style="font-size: 4rem; color: #EF4444;"></i>
         </div>
 
-        <h3 class="fw-bold mb-2">Acceso Denegado</h3>
-        <p class="text-muted mb-4">
+        <h3 class="mb-2 fw-bold">Acceso Denegado</h3>
+        <p class="mb-4 text-muted">
             No tienes permisos para acceder a esta sección.<br>
             Si crees que esto es un error, contacta al administrador del sistema.
         </p>
 
         {{-- Botones --}}
-        <div class="d-flex gap-2 justify-content-center">
+        <div class="d-flex justify-content-center gap-2">
             <a href="{{ route('home') }}" class="btn btn-primary">
-                <i class="mdi mdi-home me-1"></i> Ir al Inicio
+                <i class="me-1 mdi mdi-home"></i> Ir al Inicio
             </a>
-            <a href="javascript:history.back()" class="btn btn-outline-secondary">
-                <i class="mdi mdi-arrow-left me-1"></i> Volver
+            <a href="javascript:history.back()" class="btn-outline-secondary btn">
+                <i class="mdi-arrow-left me-1 mdi"></i> Volver
             </a>
         </div>
     </div>

@@ -20,19 +20,12 @@ class RequerimientoRhAsignado extends Notification
 
     public function toMail($notifiable): MailMessage
     {
-        $req = $this->requerimiento;
-        $url = route('rrhh.requerimientos.show', $req->id);
-
         return (new MailMessage)
-            ->subject("👤 Has sido asignado como responsable - {$req->codigo}")
-            ->greeting("Hola {$notifiable->name},")
-            ->line("Has sido asignado como responsable del siguiente requerimiento de personal:")
-            ->line("**Código:** {$req->codigo}")
-            ->line("**Puesto:** {$req->puesto}")
-            ->line("**Sede:** {$req->sede}")
-            ->line("**Tipo:** {$req->tipo}")
-            ->line("**Fecha de solicitud:** {$req->fecha_solicitud->format('d/m/Y')}")
-            ->action('Ver Requerimiento', $url)
-            ->line('CRM Trimax - Módulo RRHH');
+            ->subject("👤 Fuiste asignado como Responsable RH — {$this->requerimiento->codigo}")
+            ->view('emails.rrhh.requerimiento_rh_asignado', [
+                'requerimiento' => $this->requerimiento,
+                'notifiable'    => $notifiable,
+                'url'           => route('rrhh.requerimientos.show', $this->requerimiento->id),
+            ]);
     }
 }

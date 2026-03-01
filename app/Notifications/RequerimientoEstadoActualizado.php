@@ -26,28 +26,23 @@ class RequerimientoEstadoActualizado extends Notification
 
     public function toMail($notifiable): MailMessage
     {
-        $req = $this->requerimiento;
-        $url = route('rrhh.requerimientos.show', $req->id);
-
         $asunto = match ($this->tipo) {
-            'cambio_estado' => "🔄 Estado Actualizado - {$req->codigo}: {$this->estadoNuevo}",
-            'asignacion_rh' => "👤 Responsable RH Asignado - {$req->codigo}",
-            'nota'          => "💬 Nueva nota en Requerimiento - {$req->codigo}",
-            default         => "Actualización - {$req->codigo}",
+            'cambio_estado' => "🔄 Estado actualizado a {$this->estadoNuevo} — {$this->requerimiento->codigo}",
+            'asignacion_rh' => "👤 Responsable RH asignado — {$this->requerimiento->codigo}",
+            'etapa'         => "📌 Nuevo avance en proceso — {$this->requerimiento->codigo}",
+            default         => "Actualización — {$this->requerimiento->codigo}",
         };
 
-        $mail = (new MailMessage)
+        return (new MailMessage)
             ->subject($asunto)
-            ->greeting("Hola {$notifiable->name},")
-            ->line("**Código:** {$req->codigo} | **Puesto:** {$req->puesto} | **Sede:** {$req->sede}");
-
-        match ($this->tipo) {
-            'cambio_estado' => $mail->line("El estado cambió de **{$this->estadoAnterior}** a **{$this->estadoNuevo}**."),
-            'asignacion_rh' => $mail->line("Se asignó a **{$this->extra}** como responsable RH."),
-            'nota'          => $mail->line("RRHH agregó la siguiente nota:")->line("> {$this->extra}"),
-            default         => null,
-        };
-
-        return $mail->action('Ver Detalle', $url)->line('CRM Trimax - Módulo RRHH');
+            ->view('emails.rrhh.requerimiento_estado', [
+                'requerimiento'  => $this->requerimiento,
+                'notifiable'     => $notifiable,
+                'url'            => route('rrhh.requerimientos.show', $this->requerimiento->id),
+                'tipo'           => $this->tipo,
+                'estadoAnterior' => $this->estadoAnterior,
+                'estadoNuevo'    => $this->estadoNuevo,
+                'extra'          => $this->extra,
+            ]);
     }
 }
