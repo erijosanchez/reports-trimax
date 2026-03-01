@@ -142,8 +142,7 @@
             <li class="nav-item nav-category">RECURSOS HUMANOS</li>
 
             <li class="nav-item">
-                <a class="nav-link {{ request()->routeIs('rrhh.requerimientos.*') ? '' : 'collapsed' }}"
-                    data-bs-toggle="collapse" href="#rrhh-menu"
+                <a class="nav-link collapsed" data-bs-toggle="collapse" href="#rrhh-menu"
                     aria-expanded="{{ request()->routeIs('rrhh.requerimientos.*') ? 'true' : 'false' }}"
                     aria-controls="rrhh-menu">
                     <i class="mdi mdi-account-search menu-icon"></i>
@@ -161,8 +160,7 @@
                                 Requerimientos
                             </a>
                         </li>
-
-                        {{-- Solo RRHH y Superadmin ven el dashboard --}}
+                        
                         @if ($user->isRrhh() || $user->isSuperAdmin())
                             <li class="nav-item">
                                 <a class="nav-link {{ request()->routeIs('rrhh.requerimientos.dashboard') ? 'active' : '' }}"
@@ -260,4 +258,5 @@
             </a>
         </li>
     </ul>
+</nav>
 </nav>

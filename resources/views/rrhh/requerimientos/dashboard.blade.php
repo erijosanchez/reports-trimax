@@ -14,7 +14,6 @@
                         <div class="btn-wrapper">
                             <h3 class="mb-3">
                                 <i class="mdi mdi-chart-bar"></i> Dashboard RRHH
-                                <small class="text-muted fs-6 fw-normal">— Área Comercial · Trimax Perú</small>
                             </h3>
                         </div>
                         <div class="d-flex gap-2 mb-3">

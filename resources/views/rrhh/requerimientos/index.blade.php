@@ -14,7 +14,6 @@
                         <div class="btn-wrapper">
                             <h3 class="mb-3">
                                 <i class="mdi mdi-account-search"></i> Requerimientos de Personal
-                                <small class="text-muted fs-6 fw-normal">— Gerencia Comercial</small>
                             </h3>
                         </div>
                         <div class="d-flex gap-2 mb-3">
@@ -51,7 +50,7 @@
                                                     </h2>
                                                 </div>
                                                 <div class="bg-primary icon-stat">
-                                                    <i class="mdi mdi-clipboard-list"></i>
+                                                    <i class="mdi mdi-playlist-check"></i>
                                                 </div>
                                             </div>
                                         </div>
@@ -85,7 +84,7 @@
                                                     </h2>
                                                 </div>
                                                 <div class="bg-warning icon-stat">
-                                                    <i class="mdi mdi-hourglass-half"></i>
+                                                    <i class="mdi mdi-timer-sand"></i>
                                                 </div>
                                             </div>
                                         </div>
@@ -236,7 +235,7 @@
                                                                             <i class="mdi mdi-lightning-bolt"></i> Urgente
                                                                         </span>
                                                                     @else
-                                                                        <span class="bg-secondary badge">Regular</span>
+                                                                        <span class="bg-primary badge">Regular</span>
                                                                     @endif
                                                                 </td>
                                                                 <td><small>{{ $req->fecha_solicitud->format('d/m/Y') }}</small>

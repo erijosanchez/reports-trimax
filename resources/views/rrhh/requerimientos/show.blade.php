@@ -39,7 +39,7 @@
                                 <i class="mdi mdi-lightning-bolt"></i> Urgente
                             </span>
                         @else
-                            <span class="bg-secondary px-3 py-2 badge fs-6">Regular</span>
+                            <span class="bg-primary px-3 py-2 badge fs-6">Regular</span>
                         @endif
                     </div>
                 </div>

@@ -198,7 +198,7 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
         // Requerimientos
         Route::prefix('requerimientos')->name('requerimientos.')->group(function () {
             // Dashboard — solo RRHH y superadmin
-            Route::get('/dashboard', [RequerimientoPersonalController::class, 'dashboard'])
+            Route::get('/dashboard/general', [RequerimientoPersonalController::class, 'dashboard'])
                 ->name('dashboard');
 
             // Export Excel — solo RRHH y superadmin
@@ -206,7 +206,7 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
                 ->name('export');
 
             // CRUD — acceso según puedeCrearRequerimientos() / puedeVerTodosLosRequerimientos()
-            Route::get('/',       [RequerimientoPersonalController::class, 'index'])->name('index');
+            Route::get('/view',       [RequerimientoPersonalController::class, 'index'])->name('index');
             Route::get('/crear',  [RequerimientoPersonalController::class, 'create'])->name('create');
             Route::post('/',      [RequerimientoPersonalController::class, 'store'])->name('store');
             Route::get('/{requerimiento}', [RequerimientoPersonalController::class, 'show'])->name('show');
@@ -220,7 +220,7 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
 
     // Admin Routes (Admin + Super Admin only)
     Route::middleware('role:super_admin|admin')->prefix('admin')->name('admin.')->group(function () {
-        Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
+        Route::get('/dashboard/sistema', [AdminController::class, 'dashboard'])->name('dashboard');
         Route::get('/users', [AdminController::class, 'users'])->name('users');
         Route::get('/activity-logs', [AdminController::class, 'activityLogs'])->name('activity-logs');
         Route::get('/security', [AdminController::class, 'security'])->name('security');
