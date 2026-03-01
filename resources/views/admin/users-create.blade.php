@@ -14,15 +14,15 @@
                             <div class="row">
                                 <div class="col-sm-12">
                                     <div class="d-flex align-items-center mb-4">
-                                        <a href="{{ route('admin.users') }}" class="btn btn-light btn-sm me-3">
-                                            <i class="mdi mdi-arrow-left"></i>
+                                        <a href="{{ route('admin.users') }}" class="me-3 btn btn-light btn-sm">
+                                            <i class="mdi-arrow-left mdi"></i>
                                         </a>
                                         <div>
-                                            <h3 class="rate-percentage mb-0">
-                                                <i class="mdi mdi-account-plus text-primary me-2"></i>
+                                            <h3 class="mb-0 rate-percentage">
+                                                <i class="me-2 text-primary mdi mdi-account-plus"></i>
                                                 Crear Nuevo Usuario
                                             </h3>
-                                            <p class="text-muted mt-1">Registra un nuevo usuario en el sistema</p>
+                                            <p class="mt-1 text-muted">Registra un nuevo usuario en el sistema</p>
                                         </div>
                                     </div>
                                 </div>
@@ -30,11 +30,11 @@
 
                             <!-- Formulario -->
                             <div class="row">
-                                <div class="col-lg-8 mx-auto grid-margin stretch-card">
+                                <div class="grid-margin mx-auto col-lg-8 stretch-card">
                                     <div class="card">
                                         <div class="card-body">
-                                            <h4 class="card-title mb-4">
-                                                <i class="mdi mdi-account-circle text-primary me-2"></i>
+                                            <h4 class="mb-4 card-title">
+                                                <i class="me-2 text-primary mdi mdi-account-circle"></i>
                                                 Información del Usuario
                                             </h4>
 
@@ -56,7 +56,7 @@
                                                             placeholder="Ej: Juan Pérez">
                                                     </div>
                                                     @error('name')
-                                                        <div class="text-danger mt-1">
+                                                        <div class="mt-1 text-danger">
                                                             <small>{{ $message }}</small>
                                                         </div>
                                                     @enderror
@@ -77,7 +77,7 @@
                                                             placeholder="usuario@ejemplo.com">
                                                     </div>
                                                     @error('email')
-                                                        <div class="text-danger mt-1">
+                                                        <div class="mt-1 text-danger">
                                                             <small>{{ $message }}</small>
                                                         </div>
                                                     @enderror
@@ -98,13 +98,13 @@
                                                         <input type="password" id="password" name="password"
                                                             class="form-control @error('password') is-invalid @enderror"
                                                             required placeholder="Mínimo 8 caracteres">
-                                                        <button type="button" class="btn btn-outline-secondary"
+                                                        <button type="button" class="btn-outline-secondary btn"
                                                             id="togglePassword">
-                                                            <i class="mdi mdi-eye-outline"></i>
+                                                            <i class="mdi-eye-outline mdi"></i>
                                                         </button>
                                                     </div>
                                                     @error('password')
-                                                        <div class="text-danger mt-1">
+                                                        <div class="mt-1 text-danger">
                                                             <small>{{ $message }}</small>
                                                         </div>
                                                     @enderror
@@ -125,9 +125,9 @@
                                                         <input type="password" id="password_confirmation"
                                                             name="password_confirmation" class="form-control" required
                                                             placeholder="Repite la contraseña">
-                                                        <button type="button" class="btn btn-outline-secondary"
+                                                        <button type="button" class="btn-outline-secondary btn"
                                                             id="togglePasswordConfirm">
-                                                            <i class="mdi mdi-eye-outline"></i>
+                                                            <i class="mdi-eye-outline mdi"></i>
                                                         </button>
                                                     </div>
                                                 </div>
@@ -154,7 +154,7 @@
                                                         </select>
                                                     </div>
                                                     @error('role')
-                                                        <div class="text-danger mt-1">
+                                                        <div class="mt-1 text-danger">
                                                             <small>{{ $message }}</small>
                                                         </div>
                                                     @enderror
@@ -184,7 +184,7 @@
                                                         </select>
                                                     </div>
                                                     @error('sede')
-                                                        <div class="text-danger mt-1">
+                                                        <div class="mt-1 text-danger">
                                                             <small>{{ $message }}</small>
                                                         </div>
                                                     @enderror
@@ -195,22 +195,22 @@
 
                                                 @if (auth()->user()->isSuperAdmin())
                                                     <div class="mb-4">
-                                                        <div class="border-top pt-4">
+                                                        <div class="pt-4 border-top">
                                                             <h5 class="mb-1">
-                                                                <i class="mdi mdi-shield-check text-success me-2"></i>
+                                                                <i class="me-2 text-success mdi mdi-shield-check"></i>
                                                                 Permisos Especiales
                                                             </h5>
-                                                            <p class="text-muted small mb-3">Solo el Super Admin puede
+                                                            <p class="mb-3 text-muted small">Solo el Super Admin puede
                                                                 otorgar estos permisos</p>
 
                                                             {{-- SECCIÓN COMERCIAL --}}
-                                                            <div class="mb-3">
-                                                                <p class="fw-bold text-uppercase text-muted small mb-2"
+                                                            <div class="mb-4">
+                                                                <p class="mb-2 text-muted text-uppercase fw-bold small"
                                                                     style="letter-spacing: 0.5px;">
-                                                                    <i class="mdi mdi-briefcase-outline me-1"></i> Módulo
+                                                                    <i class="me-1 mdi-briefcase-outline mdi"></i> Módulo
                                                                     Comercial
                                                                 </p>
-                                                                <div class="row g-2 ms-1">
+                                                                <div class="ms-1 row g-2">
                                                                     <div class="col-md-6">
                                                                         <div class="form-check form-check-success">
                                                                             <label class="form-check-label">
@@ -280,17 +280,76 @@
                                                                     </div>
                                                                 </div>
                                                             </div>
+
+                                                            {{-- SECCIÓN RRHH --}}
+                                                            <div class="mb-3">
+                                                                <p class="mb-2 text-muted text-uppercase fw-bold small"
+                                                                    style="letter-spacing: 0.5px;">
+                                                                    <i class="me-1 mdi mdi-account-search"></i> Módulo RRHH — Requerimientos de Personal
+                                                                </p>
+                                                                <div class="ms-1 row g-2">
+                                                                    <div class="col-md-6">
+                                                                        <div class="form-check form-check-success">
+                                                                            <label class="form-check-label">
+                                                                                <input type="checkbox"
+                                                                                    name="puede_crear_requerimientos"
+                                                                                    value="1"
+                                                                                    class="form-check-input"
+                                                                                    {{ old('puede_crear_requerimientos') ? 'checked' : '' }}>
+                                                                                Crear Requerimientos
+                                                                                <i class="input-helper"></i>
+                                                                            </label>
+                                                                            <div><small class="text-muted">Puede solicitar nuevas contrataciones</small></div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-md-6">
+                                                                        <div class="form-check form-check-success">
+                                                                            <label class="form-check-label">
+                                                                                <input type="checkbox"
+                                                                                    name="puede_gestionar_requerimientos"
+                                                                                    value="1"
+                                                                                    class="form-check-input"
+                                                                                    {{ old('puede_gestionar_requerimientos') ? 'checked' : '' }}>
+                                                                                Gestionar Requerimientos
+                                                                                <i class="input-helper"></i>
+                                                                            </label>
+                                                                            <div><small class="text-muted">Asignar RH, cambiar estado, registrar avances</small></div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-md-6">
+                                                                        <div class="form-check form-check-success">
+                                                                            <label class="form-check-label">
+                                                                                <input type="checkbox"
+                                                                                    name="puede_ver_todos_requerimientos"
+                                                                                    value="1"
+                                                                                    class="form-check-input"
+                                                                                    {{ old('puede_ver_todos_requerimientos') ? 'checked' : '' }}>
+                                                                                Ver Todos los Requerimientos
+                                                                                <i class="input-helper"></i>
+                                                                            </label>
+                                                                            <div><small class="text-muted">Sin esto, solo ve los suyos</small></div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="mt-3 mb-0 px-3 py-2 border alert alert-light">
+                                                                    <small class="text-muted">
+                                                                        <i class="me-1 mdi-information-outline mdi"></i>
+                                                                        El rol <strong>RRHH</strong> tiene los 3 permisos automáticamente. Usa estos checkboxes para otros roles que necesiten acceso parcial.
+                                                                    </small>
+                                                                </div>
+                                                            </div>
+
                                                         </div>
                                                     </div>
                                                 @endif
 
                                                 <!-- Botones -->
-                                                <div class="d-flex gap-2 justify-content-end pt-3 border-top">
+                                                <div class="d-flex justify-content-end gap-2 pt-3 border-top">
                                                     <a href="{{ route('admin.users') }}" class="btn btn-light">
-                                                        <i class="mdi mdi-close me-1"></i>Cancelar
+                                                        <i class="me-1 mdi mdi-close"></i>Cancelar
                                                     </a>
                                                     <button type="submit" class="btn btn-success">
-                                                        <i class="mdi mdi-check-circle me-1"></i>Crear Usuario
+                                                        <i class="me-1 mdi mdi-check-circle"></i>Crear Usuario
                                                     </button>
                                                 </div>
                                             </form>
@@ -301,24 +360,25 @@
 
                             <!-- Información adicional -->
                             <div class="row">
-                                <div class="col-lg-8 mx-auto">
+                                <div class="mx-auto col-lg-8">
                                     <div class="card">
                                         <div class="card-body">
                                             <h5 class="mb-3">
-                                                <i class="mdi mdi-information-outline text-info me-2"></i>
+                                                <i class="me-2 mdi-information-outline text-info mdi"></i>
                                                 Información sobre roles
                                             </h5>
-                                            <ul class="text-muted mb-0">
+                                            <ul class="mb-0 text-muted">
                                                 <li class="mb-2">
-                                                    <strong>Super Admin:</strong> Acceso total al sistema, gestión de
-                                                    usuarios y configuración
+                                                    <strong>Super Admin:</strong> Acceso total al sistema, gestión de usuarios y configuración
                                                 </li>
                                                 <li class="mb-2">
                                                     <strong>Admin:</strong> Puede gestionar usuarios y dashboards
                                                 </li>
                                                 <li class="mb-2">
-                                                    <strong>Sede:</strong> Acceso al dashboard de ventas de su sede
-                                                    asignada
+                                                    <strong>RRHH:</strong> Acceso completo al módulo de requerimientos de personal
+                                                </li>
+                                                <li class="mb-2">
+                                                    <strong>Sede:</strong> Acceso al dashboard de ventas de su sede asignada
                                                 </li>
                                                 <li class="mb-2">
                                                     <strong>Consultor:</strong> Acceso a módulos comerciales
@@ -327,20 +387,6 @@
                                                     <strong>Usuario:</strong> Acceso limitado solo a dashboards asignados
                                                 </li>
                                             </ul>
-
-                                            @if (auth()->user()->isSuperAdmin())
-                                                <div class="mt-3 pt-3 border-top">
-                                                    <h6 class="text-success mb-2">
-                                                        <i class="mdi mdi-shield-check me-1"></i>
-                                                        Permisos Especiales
-                                                    </h6>
-                                                    <p class="text-muted small mb-0">
-                                                        <strong>Ventas Consolidadas:</strong> Permite ver el dashboard con
-                                                        las ventas de todas las sedes.
-                                                        Solo el Super Admin puede otorgar este permiso.
-                                                    </p>
-                                                </div>
-                                            @endif
                                         </div>
                                     </div>
                                 </div>
@@ -354,27 +400,10 @@
     </div>
 
     <style>
-        /* Fix para gap */
-        .d-flex.gap-2>*+* {
-            margin-left: 0.5rem;
-        }
-
-        /* Input groups */
-        .input-group-text {
-            background-color: #f8f9fa;
-            border-color: #e3e6f0;
-        }
-
-        /* Password toggle button */
-        .btn-outline-secondary {
-            border-color: #e3e6f0;
-        }
-
-        .btn-outline-secondary:hover {
-            background-color: #f8f9fa;
-            border-color: #e3e6f0;
-            color: #6366f1;
-        }
+        .d-flex.gap-2>*+* { margin-left: 0.5rem; }
+        .input-group-text { background-color: #f8f9fa; border-color: #e3e6f0; }
+        .btn-outline-secondary { border-color: #e3e6f0; }
+        .btn-outline-secondary:hover { background-color: #f8f9fa; border-color: #e3e6f0; color: #6366f1; }
     </style>
 
     <script>
@@ -383,7 +412,6 @@
             const sedeField = document.getElementById('sedeField');
             const sedeSelect = document.getElementById('sede');
 
-            // Función para mostrar/ocultar el campo sede
             function toggleSedeField() {
                 if (roleSelect.value === 'sede') {
                     sedeField.style.display = 'block';
@@ -394,46 +422,25 @@
                     sedeSelect.value = '';
                 }
             }
-
-            // Ejecutar al cargar la página (por si hay un old('role'))
             toggleSedeField();
-
-            // Ejecutar cuando cambie el rol
             roleSelect.addEventListener('change', toggleSedeField);
 
-            // Toggle password visibility
             const togglePassword = document.getElementById('togglePassword');
             const password = document.getElementById('password');
-
             togglePassword.addEventListener('click', function() {
                 const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
                 password.setAttribute('type', type);
-
-                const icon = this.querySelector('i');
-                if (type === 'password') {
-                    icon.className = 'mdi mdi-eye-outline';
-                } else {
-                    icon.className = 'mdi mdi-eye-off-outline';
-                }
+                this.querySelector('i').className = type === 'password' ? 'mdi mdi-eye-outline' : 'mdi mdi-eye-off-outline';
             });
 
-            // Toggle password confirmation visibility
             const togglePasswordConfirm = document.getElementById('togglePasswordConfirm');
             const passwordConfirmation = document.getElementById('password_confirmation');
-
             togglePasswordConfirm.addEventListener('click', function() {
                 const type = passwordConfirmation.getAttribute('type') === 'password' ? 'text' : 'password';
                 passwordConfirmation.setAttribute('type', type);
-
-                const icon = this.querySelector('i');
-                if (type === 'password') {
-                    icon.className = 'mdi mdi-eye-outline';
-                } else {
-                    icon.className = 'mdi mdi-eye-off-outline';
-                }
+                this.querySelector('i').className = type === 'password' ? 'mdi mdi-eye-outline' : 'mdi mdi-eye-off-outline';
             });
 
-            // Password match validation
             passwordConfirmation.addEventListener('input', function() {
                 if (this.value && password.value !== this.value) {
                     this.classList.add('is-invalid');
