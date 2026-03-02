@@ -157,6 +157,61 @@ class LeadTimeController extends Controller
         // sem_num = número de semana del año (1-53) con Carbon::weekOfYear
         $semanasMap = [];   // sem_num => ['inicio', 'fin', 'registros']
         $mesesMap   = [];   // mes_num  => ['registros']
+        // ── 4b. Construir datos diarios del mes seleccionado ────
+        $diasMap = [];
+        $daysInMonth = Carbon::createFromDate($year, $month, 1)->daysInMonth;
+
+        // Inicializar todos los días del mes (aunque no tengan datos)
+        for ($d = 1; $d <= $daysInMonth; $d++) {
+            $fecha = Carbon::createFromDate($year, $month, $d)->format('Y-m-d');
+            $diasMap[$fecha] = [
+                'label'   => $d,         // número del día
+                'fecha'   => $fecha,
+                'records' => [],
+            ];
+        }
+
+        // Agrupar registros del mes seleccionado por día
+        foreach ($filtered as $rec) {
+            $time = $rec['TIME'] ?? '';
+            if (empty($time)) continue;
+            try {
+                $d = Carbon::parse($time);
+            } catch (\Exception $e) {
+                continue;
+            }
+            if ((int)$d->month !== $month) continue;
+
+            $fechaDia = $d->format('Y-m-d');
+            if (isset($diasMap[$fechaDia])) {
+                $diasMap[$fechaDia]['records'][] = $rec;
+            }
+        }
+
+        // Calcular KPI diario
+        $dayKpi  = [];
+        $dayData = array_fill_keys($categorias, []);
+
+        foreach (array_values($diasMap) as $i => $diaInfo) {
+            $recs = $diaInfo['records'];
+            if (empty($recs)) {
+                $dayKpi[$i] = null;
+                foreach ($categorias as $cat) {
+                    $dayData[$cat][$i] = null;
+                }
+            } else {
+                [$kpi, $porCat] = $this->calcularKpiYCats($recs, $categorias);
+                $dayKpi[$i] = $kpi;
+                foreach ($categorias as $cat) {
+                    $dayData[$cat][$i] = $porCat[$cat];
+                }
+            }
+        }
+
+        $dias = array_map(fn($d) => [
+            'label' => $d['label'],
+            'fecha' => $d['fecha'],
+        ], array_values($diasMap));
 
         foreach ($filtered as $rec) {
             $time = $rec['TIME'] ?? '';
@@ -251,6 +306,9 @@ class LeadTimeController extends Controller
             'weekData'  => $weekData,
             'monthData' => $monthData,
             'cats'      => $categorias,
+            'dias'      => $dias,
+            'dayKpi'   => $dayKpi,
+            'dayData'  => $dayData,
         ];
     }
 
@@ -312,11 +370,15 @@ class LeadTimeController extends Controller
         return [
             'semanas'   => [],
             'meses'     => [],
+            'dias'      => [],
             'weekKpi'   => [],
             'monthKpi'  => [],
+            'dayKpi'   => [],
             'weekData'  => array_fill_keys($categorias, []),
             'monthData' => array_fill_keys($categorias, []),
+            'dayData'  => array_fill_keys($categorias, []),
             'cats'      => $categorias,
+
         ];
     }
 
@@ -470,7 +532,7 @@ class LeadTimeController extends Controller
             'general' => [
                 'total'      => $totalGeneral,
                 'porcentaje' => $porcentajeGeneral,
-                'total_en_tiempo' => $totalEnTiempo,                    
+                'total_en_tiempo' => $totalEnTiempo,
                 'total_fuera'     => $totalGeneral - $totalEnTiempo,
             ],
             'categorias'        => $resultados,

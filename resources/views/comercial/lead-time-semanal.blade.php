@@ -1092,8 +1092,8 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         /* ═══════════════════════════════════════════════════════
-       KPI SEMANAL — Estado global
-    ═══════════════════════════════════════════════════════ */
+           KPI SEMANAL — Estado global
+        ═══════════════════════════════════════════════════════ */
         const KW_MESES = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
             'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
         ];
@@ -1127,7 +1127,7 @@
                     const list = (success && years?.length) ? years : [now.getFullYear()];
                     list.forEach(y => $y.append(
                         `<option value="${y}" ${y == now.getFullYear() ? 'selected':''}>${y}</option>`
-                        ));
+                    ));
                     kwLoadData();
                 },
                 error() {
@@ -1149,7 +1149,7 @@
             $('#kwBtnText').text('Consultando...');
             $('#kwMainContent').html(
                 `<div class="kw-loading-state"><div class="kw-spinner"></div><p>Consultando datos KPI semanal...</p></div>`
-                );
+            );
 
             $.ajax({
                 url: "{{ route('comercial.lead-time.semanal-data') }}",
@@ -1392,14 +1392,14 @@
                     }).join('')}
                 </tr>
                 ${d.cats.map(cat => `
-                    <tr>
-                        <td>${cat}</td>
-                        ${vis.map((_, i) => {
-                            const vi = kwWeekOffset + i;
-                            const v  = d.weekData[cat]?.[vi] ?? null;
-                            return `<td><span class="kw-chip ${kwChipClass(v)}">${v !== null ? v+'%' : '—'}</span></td>`;
-                        }).join('')}
-                    </tr>`).join('')}
+                        <tr>
+                            <td>${cat}</td>
+                            ${vis.map((_, i) => {
+                                const vi = kwWeekOffset + i;
+                                const v  = d.weekData[cat]?.[vi] ?? null;
+                                return `<td><span class="kw-chip ${kwChipClass(v)}">${v !== null ? v+'%' : '—'}</span></td>`;
+                            }).join('')}
+                        </tr>`).join('')}
             </tbody>
         </table>
         </div>
@@ -1454,14 +1454,14 @@
                     }).join('')}
                 </tr>
                 ${d.cats.map(cat => `
-                    <tr>
-                        <td>${cat}</td>
-                        ${vis.map((_, i) => {
-                            const vi = kwMonthOffset + i;
-                            const v  = d.monthData[cat]?.[vi] ?? null;
-                            return `<td><span class="kw-chip ${kwChipClass(v)}">${v !== null ? v+'%' : '—'}</span></td>`;
-                        }).join('')}
-                    </tr>`).join('')}
+                        <tr>
+                            <td>${cat}</td>
+                            ${vis.map((_, i) => {
+                                const vi = kwMonthOffset + i;
+                                const v  = d.monthData[cat]?.[vi] ?? null;
+                                return `<td><span class="kw-chip ${kwChipClass(v)}">${v !== null ? v+'%' : '—'}</span></td>`;
+                            }).join('')}
+                        </tr>`).join('')}
             </tbody>
         </table>
         </div>
@@ -1525,26 +1525,26 @@
                                         const v = kpiGeneral(i);
                                         const cls = kwChipClass(v);
                                         return `<td class="kw-heat-td">
-                                                <div class="kw-heat-cell kpi ${cls}" title="${makeTooltip('KPI General', s, v)}">
-                                                    ${v !== null ? v+'%' : '—'}
-                                                </div>
-                                            </td>`;
+                                                    <div class="kw-heat-cell kpi ${cls}" title="${makeTooltip('KPI General', s, v)}">
+                                                        ${v !== null ? v+'%' : '—'}
+                                                    </div>
+                                                </td>`;
                                     }).join('')}
                                 </tr>
                                 <!-- Filas por categoría -->
                                 ${d.cats.map(cat => `
-                                    <tr>
-                                        <td class="kw-heat-td-label">${cat}</td>
-                                        ${allWeeks.map((s, i) => {
-                                            const v = d.weekData[cat]?.[i] ?? null;
-                                            const cls = kwChipClass(v);
-                                            return `<td class="kw-heat-td">
+                                        <tr>
+                                            <td class="kw-heat-td-label">${cat}</td>
+                                            ${allWeeks.map((s, i) => {
+                                                const v = d.weekData[cat]?.[i] ?? null;
+                                                const cls = kwChipClass(v);
+                                                return `<td class="kw-heat-td">
                                             <div class="kw-heat-cell ${cls}" title="${makeTooltip(cat, s, v)}">
                                                 ${v !== null ? v+'%' : '—'}
                                             </div>
                                         </td>`;
-                                        }).join('')}
-                                    </tr>`).join('')}
+                                            }).join('')}
+                                        </tr>`).join('')}
                             </tbody>
                         </table>
                     </div>
@@ -1564,10 +1564,17 @@
                 kwTrendChart = null;
             }
 
-            const labels = d.semanas.map(s => s.label);
-            const kpiVals = labels.map((_, i) => d.weekKpi[i] ?? null);
+            // ✅ Usar días en lugar de semanas
+            const dias = d.dias ?? [];
+            const labels = dias.map(dia => {
+                const dt = new Date(dia.fecha + 'T00:00:00');
+                const mon = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'][dt
+                    .getMonth()
+                ];
+                return `${dia.label} ${mon}`;
+            });
+            const kpiVals = labels.map((_, i) => d.dayKpi?.[i] ?? null);
 
-            // Datasets por categoría + KPI general
             const catColors = {
                 NOX: '#2d65d8',
                 TD: '#8b5cf6',
@@ -1582,25 +1589,13 @@
                     borderColor: '#ef4444',
                     backgroundColor: 'rgba(239,68,68,0.08)',
                     borderWidth: 2.5,
-                    pointRadius: 4,
+                    pointRadius: 3,
                     pointHoverRadius: 6,
                     fill: true,
                     tension: 0.35,
                     order: 0,
-                },
-                ...d.cats.map(cat => ({
-                    label: cat,
-                    data: d.weekData[cat] ?? [],
-                    borderColor: catColors[cat] ?? '#8892a8',
-                    backgroundColor: 'transparent',
-                    borderWidth: 1.5,
-                    pointRadius: 2.5,
-                    pointHoverRadius: 5,
-                    fill: false,
-                    tension: 0.35,
-                    borderDash: [4, 3],
-                    order: 1,
-                }))
+                    spanGaps: true,
+                }
             ];
 
             kwTrendChart = new Chart(canvas, {
@@ -1645,7 +1640,10 @@
                             padding: 12,
                             cornerRadius: 10,
                             callbacks: {
-                                label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y?.toFixed(2) ?? '—'}%`
+                                label: ctx => {
+                                    const v = ctx.parsed.y;
+                                    return ` ${ctx.dataset.label}: ${v !== null ? v.toFixed(2) + '%' : 'Sin datos'}`;
+                                }
                             }
                         }
                     },
@@ -1658,9 +1656,11 @@
                             ticks: {
                                 font: {
                                     family: 'DM Mono',
-                                    size: 10
+                                    size: 9
                                 },
-                                color: '#8892a8'
+                                color: '#8892a8',
+                                maxRotation: 45,
+                                minRotation: 45,
                             }
                         },
                         y: {
@@ -1683,8 +1683,7 @@
                 }
             });
 
-            // Reference lines: 95 verde, 89.9 rojo
-            // Plugin inline
+            // Líneas de referencia 95% y 89.9%
             const refPlugin = {
                 id: 'refLines',
                 afterDraw(chart) {
@@ -1722,7 +1721,6 @@
                     });
                 }
             };
-            kwTrendChart.options.plugins.refLines = {};
             Chart.register(refPlugin);
             kwTrendChart.update();
         }
