@@ -1305,453 +1305,431 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         const MESES = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre',
-            'Octubre', 'Noviembre', 'Diciembre'
-        ];
-        const ORDEN_CATEGORIAS = ['NOX', 'TD', 'DEVABLUE', 'BLANCO', 'COLOREADO'];
+    'Octubre', 'Noviembre', 'Diciembre'
+];
+const ORDEN_CATEGORIAS = ['NOX', 'TD', 'DEVABLUE', 'BLANCO', 'COLOREADO'];
 
-        // Tabla atrasadas
-        let atrasadasData = [];
-        let atrasadasFiltered = [];
-        let atrasadasPage = 1;
-        const atrasadasPerPage = 50;
+// Tabla atrasadas
+let atrasadasData = [];
+let atrasadasFiltered = [];
+let atrasadasPage = 1;
+const atrasadasPerPage = 50;
 
-        /* ── INIT ── */
-        $(document).ready(() => {
-            const now = new Date();
-            $('#filterMonth').val(now.getMonth() + 1);
+/* ── INIT ── */
+$(document).ready(() => {
+    const now = new Date();
+    $('#filterMonth').val(now.getMonth() + 1);
 
-            $.ajax({
-                url: "{{ route('comercial.lead-time.years') }}",
-                method: 'GET',
-                success({
-                    success,
-                    years
-                }) {
-                    const $y = $('#filterYear').empty();
-                    const list = (success && years?.length) ? years : [now.getFullYear()];
-                    list.forEach(y => $y.append(
-                        `<option value="${y}" ${y == now.getFullYear() ? 'selected' : ''}>${y}</option>`
-                    ));
-                    loadData();
-                },
-                error() {
-                    $('#filterYear').html(
-                        `<option value="${now.getFullYear()}" selected>${now.getFullYear()}</option>`);
-                    loadData();
-                }
-            });
-        });
-
-        /* ── LOAD DATA ── */
-        function loadData() {
-            const year = $('#filterYear').val();
-            const month = $('#filterMonth').val();
-            if (!year || !month) return;
-
-            const $btn = $('#btnConsultar');
-            $btn.addClass('lt-btn-loading').prop('disabled', true);
-            $('#btnText').text('Consultando...');
-            showLoading();
-
-            $.ajax({
-                url: "{{ route('comercial.lead-time.data') }}",
-                method: 'GET',
-                data: {
-                    year,
-                    month
-                },
-                timeout: 60000,
-                success({
-                    success,
-                    data,
-                    filters
-                }) {
-                    $btn.removeClass('lt-btn-loading').prop('disabled', false);
-                    $('#btnText').text('Consultar');
-                    success && data ? renderDashboard(data, filters) : renderEmpty('Sin datos para este período');
-                },
-                error() {
-                    $btn.removeClass('lt-btn-loading').prop('disabled', false);
-                    $('#btnText').text('Consultar');
-                    renderEmpty('Error de conexión al servidor');
-                }
-            });
+    $.ajax({
+        url: "{{ route('comercial.lead-time.years') }}",
+        method: 'GET',
+        success({ success, years }) {
+            const $y = $('#filterYear').empty();
+            const list = (success && years?.length) ? years : [now.getFullYear()];
+            list.forEach(y => $y.append(
+                `<option value="${y}" ${y == now.getFullYear() ? 'selected' : ''}>${y}</option>`
+            ));
+            loadData();
+        },
+        error() {
+            $('#filterYear').html(
+                `<option value="${now.getFullYear()}" selected>${now.getFullYear()}</option>`);
+            loadData();
         }
+    });
+});
 
-        function showLoading() {
-            $('#mainContent').html(`
-                <div class="lt-loading-state">
-                    <div class="lt-spinner"></div>
-                    <p>Consultando datos de Lead Time...</p>
-                </div>
-            `);
+/* ── LOAD DATA ── */
+function loadData() {
+    const year = $('#filterYear').val();
+    const month = $('#filterMonth').val();
+    if (!year || !month) return;
+
+    const $btn = $('#btnConsultar');
+    $btn.addClass('lt-btn-loading').prop('disabled', true);
+    $('#btnText').text('Consultando...');
+    showLoading();
+
+    $.ajax({
+        url: "{{ route('comercial.lead-time.data') }}",
+        method: 'GET',
+        data: { year, month },
+        timeout: 60000,
+        success({ success, data, filters }) {
+            $btn.removeClass('lt-btn-loading').prop('disabled', false);
+            $('#btnText').text('Consultar');
+            success && data ? renderDashboard(data, filters) : renderEmpty('Sin datos para este período');
+        },
+        error() {
+            $btn.removeClass('lt-btn-loading').prop('disabled', false);
+            $('#btnText').text('Consultar');
+            renderEmpty('Error de conexión al servidor');
         }
+    });
+}
 
-        /* ── RENDER DASHBOARD ── */
-        function renderDashboard(data, filters) {
-            const general = data.general || {
-                total: 0,
-                porcentaje: 0
-            };
-            const categorias = data.categorias || {};
-            const mesNombre = MESES[filters.month] || '';
-            const ordenesAtrasadas = data.ordenes_atrasadas || [];
+function showLoading() {
+    $('#mainContent').html(`
+        <div class="lt-loading-state">
+            <div class="lt-spinner"></div>
+            <p>Consultando datos de Lead Time...</p>
+        </div>
+    `);
+}
 
-            const circumference = 376.99;
-            const pct = general.porcentaje;
-            const offset = circumference - (pct / 100) * circumference;
+/* ── RENDER DASHBOARD ── */
+function renderDashboard(data, filters) {
+    const general = data.general || { total: 0, porcentaje: 0, total_en_tiempo: 0, total_fuera: 0 };
+    const categorias = data.categorias || {};
+    const mesNombre = MESES[filters.month] || '';
+    const ordenesAtrasadas = data.ordenes_atrasadas || [];
 
-            let ringColor = '#22c55e';
-            if (pct < 85) ringColor = '#ef4444';
-            else if (pct < 92) ringColor = '#f59e0b';
+    const circumference = 376.99;
+    const pct = general.porcentaje;
+    const offset = circumference - (pct / 100) * circumference;
 
-            let totalAtiempo = 0,
-                totalAtraso = 0;
-            Object.values(categorias).forEach(cat => {
-                cat.barras.forEach(b => {
-                    if (b.tipo === 'atraso') totalAtraso += b.cantidad;
-                    else totalAtiempo += b.cantidad;
-                });
-            });
+    let ringColor = '#22c55e';
+    if (pct < 85) ringColor = '#ef4444';
+    else if (pct < 92) ringColor = '#f59e0b';
 
-            const catCount = Object.values(categorias).filter(c => c.total > 0).length;
+    // ✅ Usar totales reales del backend
+    const totalAtiempo = general.total_en_tiempo ?? 0;
+    const totalAtraso  = general.total_fuera ?? 0;
 
-            /* HERO */
-            let html = `
-                <div class="lt-fade-up" style="margin-bottom:1.75rem;">
-                    <div class="lt-hero">
-                        <div class="lt-hero-circle-2"></div>
-                        <div class="lt-hero-inner">
-                            <div class="lt-ring-wrap">
-                                <svg class="lt-ring-svg" viewBox="0 0 140 140">
-                                    <circle class="lt-ring-bg"   cx="70" cy="70" r="60"/>
-                                    <circle class="lt-ring-fill" cx="70" cy="70" r="60"
-                                            id="progressRing"
-                                            style="stroke:${ringColor}; stroke-dashoffset:${circumference}; stroke-dasharray:${circumference};"/>
-                                </svg>
-                                <div class="lt-ring-center" id="ringCenter">
-                                    <div class="lt-ring-val" id="heroValue">0</div>
-                                    <div class="lt-ring-sym">%</div>
-                                    <div class="lt-ring-lbl">cumplimiento</div>
-                                </div>
-                            </div>
-                            <div class="lt-hero-divider"></div>
-                            <div>
-                                <div class="lt-hero-period">${mesNombre} ${filters.year}</div>
-                                <div class="lt-hero-title">Cumplimiento General</div>
-                                <div class="lt-hero-desc">${general.total.toLocaleString()} órdenes procesadas en el período</div>
-                                <div class="lt-hero-kpis">
-                                    <div class="lt-hero-kpi">
-                                        <span class="lt-hero-kpi-val clr-green">${totalAtiempo.toLocaleString()}</span>
-                                        <span class="lt-hero-kpi-lbl">A tiempo</span>
-                                    </div>
-                                    <div class="lt-hero-kpi">
-                                        <span class="lt-hero-kpi-val clr-amber">${totalAtraso.toLocaleString()}</span>
-                                        <span class="lt-hero-kpi-lbl">Con atraso</span>
-                                    </div>
-                                    <div class="lt-hero-kpi">
-                                        <span class="lt-hero-kpi-val clr-cyan">${catCount}</span>
-                                        <span class="lt-hero-kpi-lbl">Categorías</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
+    const catCount = Object.values(categorias).filter(c => c.total > 0).length;
 
-            /* CARDS */
-            html += `<div class="lt-cards-grid">`;
-            let idx = 0;
-            ORDEN_CATEGORIAS.forEach(cat => {
-                const info = categorias[cat];
-                if (!info || info.total === 0) return;
-                const isNox = cat === 'NOX';
-                html +=
-                    `<div class="lt-fade-up ${isNox ? ' lt-card-full' : ''}" style="animation-delay:${0.12 + idx * 0.08}s">${renderCard(info)}</div>`;
-                idx++;
-            });
-            html += `</div>`;
-
-            /* TABLA ATRASADAS */
-            if (ordenesAtrasadas.length > 0) {
-                atrasadasData = ordenesAtrasadas;
-                atrasadasFiltered = [...ordenesAtrasadas];
-                atrasadasPage = 1;
-
-                html += `
-                    <div class="lt-table-section lt-fade-up" style="animation-delay:${0.12 + idx * 0.08 + 0.1}s">
-                        <div class="lt-table-card">
-                            <div class="lt-table-head">
-                                <div class="lt-table-title">
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5">
-                                        <circle cx="12" cy="12" r="10"/>
-                                        <line x1="12" y1="8" x2="12" y2="12"/>
-                                        <line x1="12" y1="16" x2="12.01" y2="16"/>
-                                    </svg>
-                                    Órdenes Atrasadas
-                                    <span class="lt-table-count">${ordenesAtrasadas.length}</span>
-                                </div>
-                                <div class="lt-table-search">
-                                    <input type="text" class="lt-table-input" id="searchAtrasadas"
-                                            placeholder="Buscar orden, sede, producto..."
-                                            oninput="filterAtrasadas()">
-                                </div>
-                            </div>
-                            <div class="lt-table-wrap" style="max-height: 520px;">
-                                <table class="lt-tbl">
-                                    <thead>
-                                        <tr>
-                                            <th>N° Orden</th>
-                                            <th>Sede</th>
-                                            <th>Tipo</th>
-                                            <th>Producto</th>
-                                            <th>Tipo Trabajo</th>
-                                            <th>Meta</th>
-                                            <th>Solicitado</th>
-                                            <th>Lead Time</th>
-                                            <th>Entrega</th>
-                                            <th>Atraso</th>
-                                            <th>Estado</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="tblAtrasadasBody"></tbody>
-                                </table>
-                            </div>
-                            <div class="lt-table-foot">
-                                <div class="lt-table-info" id="atrasadasInfo"></div>
-                                <div class="lt-table-pages" id="atrasadasPages"></div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }
-
-            $('#mainContent').html(html);
-
-            setTimeout(() => {
-                const ring = document.getElementById('progressRing');
-                if (ring) ring.style.strokeDashoffset = offset;
-                document.getElementById('ringCenter')?.classList.add('is-visible');
-            }, 150);
-
-            animateCount('heroValue', pct, 1400);
-            setTimeout(animateBars, 350);
-
-            if (ordenesAtrasadas.length > 0) renderAtrasadasPage();
-        }
-
-        /* ── TABLA ATRASADAS ── */
-        function filterAtrasadas() {
-            const q = ($('#searchAtrasadas').val() || '').toLowerCase().trim();
-            atrasadasFiltered = !q ? [...atrasadasData] : atrasadasData.filter(o =>
-                (o.numero_orden + '').toLowerCase().includes(q) ||
-                (o.sede || '').toLowerCase().includes(q) ||
-                (o.producto || '').toLowerCase().includes(q) ||
-                (o.tipo_de_trabajo || '').toLowerCase().includes(q) ||
-                (o.tipo || '').toLowerCase().includes(q)
-            );
-            atrasadasPage = 1;
-            renderAtrasadasPage();
-        }
-
-        function renderAtrasadasPage() {
-            const start = (atrasadasPage - 1) * atrasadasPerPage;
-            const end = Math.min(start + atrasadasPerPage, atrasadasFiltered.length);
-            const pageData = atrasadasFiltered.slice(start, end);
-
-            let html = '';
-            if (pageData.length === 0) {
-                html = `<tr><td colspan="11" style="text-align:center;padding:2rem;color:var(--lt-gray-400);">
-                            No se encontraron órdenes atrasadas</td></tr>`;
-            } else {
-                pageData.forEach(o => {
-                    html += `
-                        <tr>
-                            <td class="td-orden">${o.numero_orden}</td>
-                            <td><span class="pill-sede">${o.sede}</span></td>
-                            <td>${truncar(o.tipo, 22)}</td>
-                            <td title="${o.producto}">${truncar(o.producto, 38)}</td>
-                            <td><span class="pill-tipo-trabajo">${o.tipo_de_trabajo}</span></td>
-                            <td style="text-align:center;font-family:'DM Mono',monospace;font-weight:600;">${o.meta}</td>
-                            <td style="font-family:'DM Mono',monospace;font-size:0.75rem;">${o.solicitado}</td>
-                            <td style="font-family:'DM Mono',monospace;font-size:0.75rem;">${o.lead_time}</td>
-                            <td style="font-family:'DM Mono',monospace;font-size:0.75rem;">${o.time}</td>
-                            <td class="td-atraso">${o.atraso}</td>
-                            <td style="text-align:center;"><span class="pill-fuera">Fuera de tiempo</span></td>
-                        </tr>
-                    `;
-                });
-            }
-
-            $('#tblAtrasadasBody').html(html);
-            $('#atrasadasInfo').text(
-                `Mostrando ${pageData.length > 0 ? start + 1 : 0} – ${end} de ${atrasadasFiltered.length} órdenes atrasadas`
-            );
-
-            const totalPages = Math.ceil(atrasadasFiltered.length / atrasadasPerPage);
-            let pHtml = '';
-            pHtml +=
-                `<button ${atrasadasPage <= 1 ? 'disabled' : ''} onclick="goAtrasadasPage(${atrasadasPage - 1})">‹</button>`;
-            for (let p = 1; p <= totalPages; p++) {
-                if (totalPages <= 7 || p === 1 || p === totalPages || Math.abs(p - atrasadasPage) <= 1) {
-                    pHtml +=
-                        `<button class="${p === atrasadasPage ? 'active' : ''}" onclick="goAtrasadasPage(${p})">${p}</button>`;
-                } else if (Math.abs(p - atrasadasPage) === 2) {
-                    pHtml += `<button disabled>…</button>`;
-                }
-            }
-            pHtml +=
-                `<button ${atrasadasPage >= totalPages ? 'disabled' : ''} onclick="goAtrasadasPage(${atrasadasPage + 1})">›</button>`;
-            $('#atrasadasPages').html(pHtml);
-        }
-
-        function goAtrasadasPage(page) {
-            const totalPages = Math.ceil(atrasadasFiltered.length / atrasadasPerPage);
-            if (page < 1 || page > totalPages) return;
-            atrasadasPage = page;
-            renderAtrasadasPage();
-            $('html, body').animate({
-                scrollTop: $('.lt-table-card').offset().top - 80
-            }, 300);
-        }
-
-        function truncar(t, max) {
-            if (!t) return '—';
-            return t.length > max ? t.substring(0, max) + '…' : t;
-        }
-
-        /* ── RENDER CARD ── */
-        function renderCard(info) {
-            const pct = info.porcentaje_cumplimiento;
-            const cls = pct >= 92 ? 'good' : pct >= 85 ? 'warn' : 'bad';
-            const label = pct >= 92 ? 'Cumple' : pct >= 85 ? 'Alerta' : 'Crítico';
-            const icon = pct >= 92 ? '✓' : pct >= 85 ? '!' : '✕';
-
-            let maxPct = 0;
-            info.barras.forEach(b => {
-                if (b.porcentaje > maxPct) maxPct = b.porcentaje;
-            });
-            maxPct = Math.max(Math.ceil(maxPct / 10) * 10, 10);
-
-            let barsHtml = '';
-            info.barras.forEach(bar => {
-                const widthPct = maxPct > 0 ? (bar.porcentaje / maxPct * 100) : 0;
-                const colorClass = bar.tipo === 'atraso' ? 'orange' : 'blue';
-                barsHtml += `
-                    <div class="lt-bar-row">
-                        <div class="lt-bar-label">${bar.label}</div>
-                        <div class="lt-bar-track">
-                            <div class="lt-bar-fill ${colorClass}" data-width="${widthPct}" style="width:0%"></div>
-                        </div>
-                        <div class="lt-bar-stat">
-                            <div class="lt-bar-qty ${colorClass}">${bar.cantidad.toLocaleString()}</div>
-                            <div class="lt-bar-pct-small">${bar.porcentaje}%</div>
-                        </div>
-                    </div>
-                `;
-            });
-
-            const ticks = [0, 1, 2, 3, 4].map(i => `<span>${((maxPct/4)*i).toFixed(0)}%</span>`).join('');
-
-            return `
-                <div class="h-100 lt-card">
-                    <div class="lt-card-accent ${cls}"></div>
-                    <div class="lt-card-head">
-                        <div class="lt-card-head-left">
-                            <div class="lt-card-icon ${cls}">${icon}</div>
-                            <div>
-                                <div class="lt-card-name">${info.nombre}</div>
-                                <div class="lt-card-cat">Tipo de trabajo</div>
-                            </div>
-                        </div>
-                        <div class="lt-card-pct-display">
-                            <div class="lt-card-pct-big ${cls}">${pct}<span style="font-size:1rem;opacity:.6;">%</span></div>
-                            <div class="lt-card-pct-label">cumplimiento</div>
-                        </div>
-                    </div>
-                    <div class="lt-card-divider"></div>
-                    <div class="lt-card-body">
-                        ${barsHtml}
-                        <div class="lt-xaxis">
-                            <div class="lt-xaxis-spacer"></div>
-                            <div class="lt-xaxis-ticks">${ticks}</div>
-                            <div class="lt-xaxis-end"></div>
-                        </div>
-                    </div>
-                    <div class="lt-card-foot">
-                        <div class="lt-card-total"><strong>${info.total.toLocaleString()}</strong> órdenes totales</div>
-                        <div class="lt-card-status-pill ${cls}">${label}</div>
-                    </div>
-                </div>
-            `;
-        }
-
-        /* ── ANIMATE BARS ── */
-        function animateBars() {
-            $('.lt-bar-fill').each(function(i) {
-                const $bar = $(this);
-                setTimeout(() => $bar.css('width', $bar.data('width') + '%'), i * 55);
-            });
-        }
-
-        /* ── ANIMATE COUNT ── */
-        function animateCount(id, target, duration) {
-            const el = document.getElementById(id);
-            if (!el) return;
-            const start = performance.now();
-            const tick = now => {
-                const p = Math.min((now - start) / duration, 1);
-                const e = 1 - Math.pow(1 - p, 3);
-                el.textContent = (target * e).toFixed(2);
-                if (p < 1) requestAnimationFrame(tick);
-                else el.textContent = target;
-            };
-            setTimeout(() => requestAnimationFrame(tick), 600);
-        }
-
-        /* ── EMPTY STATE ── */
-        function renderEmpty(msg) {
-            $('#mainContent').html(`
-                <div class="lt-empty">
-                    <div class="lt-empty-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#8892a8" stroke-width="1.5">
-                            <circle cx="11" cy="11" r="8"/>
-                            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+    /* HERO */
+    let html = `
+        <div class="lt-fade-up" style="margin-bottom:1.75rem;">
+            <div class="lt-hero">
+                <div class="lt-hero-circle-2"></div>
+                <div class="lt-hero-inner">
+                    <div class="lt-ring-wrap">
+                        <svg class="lt-ring-svg" viewBox="0 0 140 140">
+                            <circle class="lt-ring-bg"   cx="70" cy="70" r="60"/>
+                            <circle class="lt-ring-fill" cx="70" cy="70" r="60"
+                                    id="progressRing"
+                                    style="stroke:${ringColor}; stroke-dashoffset:${circumference}; stroke-dasharray:${circumference};"/>
                         </svg>
+                        <div class="lt-ring-center" id="ringCenter">
+                            <div class="lt-ring-val" id="heroValue">0</div>
+                            <div class="lt-ring-sym">%</div>
+                            <div class="lt-ring-lbl">cumplimiento</div>
+                        </div>
                     </div>
-                    <h5>${msg}</h5>
-                    <p>Selecciona otro mes o año</p>
+                    <div class="lt-hero-divider"></div>
+                    <div>
+                        <div class="lt-hero-period">${mesNombre} ${filters.year}</div>
+                        <div class="lt-hero-title">Cumplimiento General</div>
+                        <div class="lt-hero-desc">${general.total.toLocaleString()} órdenes procesadas en el período</div>
+                        <div class="lt-hero-kpis">
+                            <div class="lt-hero-kpi">
+                                <span class="lt-hero-kpi-val clr-green">${totalAtiempo.toLocaleString()}</span>
+                                <span class="lt-hero-kpi-lbl">A tiempo</span>
+                            </div>
+                            <div class="lt-hero-kpi">
+                                <span class="lt-hero-kpi-val clr-amber">${totalAtraso.toLocaleString()}</span>
+                                <span class="lt-hero-kpi-lbl">Con atraso</span>
+                            </div>
+                            <div class="lt-hero-kpi">
+                                <span class="lt-hero-kpi-val clr-cyan">${catCount}</span>
+                                <span class="lt-hero-kpi-lbl">Categorías</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            `);
-        }
+            </div>
+        </div>
+    `;
 
-        /* ── CLEAR CACHE ── */
-        function clearCache() {
-            $.ajax({
-                url: "{{ route('comercial.lead-time.clear-cache') }}",
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                },
-                success() {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Caché limpiado',
-                        text: 'Los datos se recargarán desde Google Sheets',
-                        timer: 2000,
-                        showConfirmButton: false
-                    });
-                    loadData();
-                },
-                error() {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        text: 'No se pudo limpiar el caché'
-                    });
-                }
+    /* CARDS */
+    html += `<div class="lt-cards-grid">`;
+    let idx = 0;
+    ORDEN_CATEGORIAS.forEach(cat => {
+        const info = categorias[cat];
+        if (!info || info.total === 0) return;
+        const isNox = cat === 'NOX';
+        html += `<div class="lt-fade-up${isNox ? ' lt-card-full' : ''}" style="animation-delay:${0.12 + idx * 0.08}s">${renderCard(info)}</div>`;
+        idx++;
+    });
+    html += `</div>`;
+
+    /* TABLA ATRASADAS */
+    if (ordenesAtrasadas.length > 0) {
+        atrasadasData = ordenesAtrasadas;
+        atrasadasFiltered = [...ordenesAtrasadas];
+        atrasadasPage = 1;
+
+        html += `
+            <div class="lt-table-section lt-fade-up" style="animation-delay:${0.12 + idx * 0.08 + 0.1}s">
+                <div class="lt-table-card">
+                    <div class="lt-table-head">
+                        <div class="lt-table-title">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5">
+                                <circle cx="12" cy="12" r="10"/>
+                                <line x1="12" y1="8" x2="12" y2="12"/>
+                                <line x1="12" y1="16" x2="12.01" y2="16"/>
+                            </svg>
+                            Órdenes Atrasadas
+                            <span class="lt-table-count">${ordenesAtrasadas.length}</span>
+                        </div>
+                        <div class="lt-table-search">
+                            <input type="text" class="lt-table-input" id="searchAtrasadas"
+                                    placeholder="Buscar orden, sede, producto..."
+                                    oninput="filterAtrasadas()">
+                        </div>
+                    </div>
+                    <div class="lt-table-wrap" style="max-height: 520px;">
+                        <table class="lt-tbl">
+                            <thead>
+                                <tr>
+                                    <th>N° Orden</th>
+                                    <th>Sede</th>
+                                    <th>Tipo</th>
+                                    <th>Producto</th>
+                                    <th>Tipo Trabajo</th>
+                                    <th>Meta</th>
+                                    <th>Solicitado</th>
+                                    <th>Lead Time</th>
+                                    <th>Entrega</th>
+                                    <th>Atraso</th>
+                                    <th>Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tblAtrasadasBody"></tbody>
+                        </table>
+                    </div>
+                    <div class="lt-table-foot">
+                        <div class="lt-table-info" id="atrasadasInfo"></div>
+                        <div class="lt-table-pages" id="atrasadasPages"></div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    $('#mainContent').html(html);
+
+    setTimeout(() => {
+        const ring = document.getElementById('progressRing');
+        if (ring) ring.style.strokeDashoffset = offset;
+        document.getElementById('ringCenter')?.classList.add('is-visible');
+    }, 150);
+
+    animateCount('heroValue', pct, 1400);
+    setTimeout(animateBars, 350);
+
+    if (ordenesAtrasadas.length > 0) renderAtrasadasPage();
+}
+
+/* ── TABLA ATRASADAS ── */
+function filterAtrasadas() {
+    const q = ($('#searchAtrasadas').val() || '').toLowerCase().trim();
+    atrasadasFiltered = !q ? [...atrasadasData] : atrasadasData.filter(o =>
+        (o.numero_orden + '').toLowerCase().includes(q) ||
+        (o.sede || '').toLowerCase().includes(q) ||
+        (o.producto || '').toLowerCase().includes(q) ||
+        (o.tipo_de_trabajo || '').toLowerCase().includes(q) ||
+        (o.tipo || '').toLowerCase().includes(q)
+    );
+    atrasadasPage = 1;
+    renderAtrasadasPage();
+}
+
+function renderAtrasadasPage() {
+    const start = (atrasadasPage - 1) * atrasadasPerPage;
+    const end = Math.min(start + atrasadasPerPage, atrasadasFiltered.length);
+    const pageData = atrasadasFiltered.slice(start, end);
+
+    let html = '';
+    if (pageData.length === 0) {
+        html = `<tr><td colspan="11" style="text-align:center;padding:2rem;color:var(--lt-gray-400);">
+                    No se encontraron órdenes atrasadas</td></tr>`;
+    } else {
+        pageData.forEach(o => {
+            html += `
+                <tr>
+                    <td class="td-orden">${o.numero_orden}</td>
+                    <td><span class="pill-sede">${o.sede}</span></td>
+                    <td>${truncar(o.tipo, 22)}</td>
+                    <td title="${o.producto}">${truncar(o.producto, 38)}</td>
+                    <td><span class="pill-tipo-trabajo">${o.tipo_de_trabajo}</span></td>
+                    <td style="text-align:center;font-family:'DM Mono',monospace;font-weight:600;">${o.meta}</td>
+                    <td style="font-family:'DM Mono',monospace;font-size:0.75rem;">${o.solicitado}</td>
+                    <td style="font-family:'DM Mono',monospace;font-size:0.75rem;">${o.lead_time}</td>
+                    <td style="font-family:'DM Mono',monospace;font-size:0.75rem;">${o.time}</td>
+                    <td class="td-atraso">${o.atraso}</td>
+                    <td style="text-align:center;"><span class="pill-fuera">Fuera de tiempo</span></td>
+                </tr>
+            `;
+        });
+    }
+
+    $('#tblAtrasadasBody').html(html);
+    $('#atrasadasInfo').text(
+        `Mostrando ${pageData.length > 0 ? start + 1 : 0} – ${end} de ${atrasadasFiltered.length} órdenes atrasadas`
+    );
+
+    const totalPages = Math.ceil(atrasadasFiltered.length / atrasadasPerPage);
+    let pHtml = '';
+    pHtml += `<button ${atrasadasPage <= 1 ? 'disabled' : ''} onclick="goAtrasadasPage(${atrasadasPage - 1})">‹</button>`;
+    for (let p = 1; p <= totalPages; p++) {
+        if (totalPages <= 7 || p === 1 || p === totalPages || Math.abs(p - atrasadasPage) <= 1) {
+            pHtml += `<button class="${p === atrasadasPage ? 'active' : ''}" onclick="goAtrasadasPage(${p})">${p}</button>`;
+        } else if (Math.abs(p - atrasadasPage) === 2) {
+            pHtml += `<button disabled>…</button>`;
+        }
+    }
+    pHtml += `<button ${atrasadasPage >= totalPages ? 'disabled' : ''} onclick="goAtrasadasPage(${atrasadasPage + 1})">›</button>`;
+    $('#atrasadasPages').html(pHtml);
+}
+
+function goAtrasadasPage(page) {
+    const totalPages = Math.ceil(atrasadasFiltered.length / atrasadasPerPage);
+    if (page < 1 || page > totalPages) return;
+    atrasadasPage = page;
+    renderAtrasadasPage();
+    $('html, body').animate({
+        scrollTop: $('.lt-table-card').offset().top - 80
+    }, 300);
+}
+
+function truncar(t, max) {
+    if (!t) return '—';
+    return t.length > max ? t.substring(0, max) + '…' : t;
+}
+
+/* ── RENDER CARD ── */
+function renderCard(info) {
+    const pct = info.porcentaje_cumplimiento;
+    const cls = pct >= 92 ? 'good' : pct >= 85 ? 'warn' : 'bad';
+    const label = pct >= 92 ? 'Cumple' : pct >= 85 ? 'Alerta' : 'Crítico';
+    const icon = pct >= 92 ? '✓' : pct >= 85 ? '!' : '✕';
+
+    let maxPct = 0;
+    info.barras.forEach(b => {
+        if (b.porcentaje > maxPct) maxPct = b.porcentaje;
+    });
+    maxPct = Math.max(Math.ceil(maxPct / 10) * 10, 10);
+
+    let barsHtml = '';
+    info.barras.forEach(bar => {
+        const widthPct = maxPct > 0 ? (bar.porcentaje / maxPct * 100) : 0;
+        const colorClass = bar.tipo === 'atraso' ? 'orange' : 'blue';
+        barsHtml += `
+            <div class="lt-bar-row">
+                <div class="lt-bar-label">${bar.label}</div>
+                <div class="lt-bar-track">
+                    <div class="lt-bar-fill ${colorClass}" data-width="${widthPct}" style="width:0%"></div>
+                </div>
+                <div class="lt-bar-stat">
+                    <div class="lt-bar-qty ${colorClass}">${bar.cantidad.toLocaleString()}</div>
+                    <div class="lt-bar-pct-small">${bar.porcentaje}%</div>
+                </div>
+            </div>
+        `;
+    });
+
+    const ticks = [0, 1, 2, 3, 4].map(i => `<span>${((maxPct / 4) * i).toFixed(0)}%</span>`).join('');
+
+    return `
+        <div class="h-100 lt-card">
+            <div class="lt-card-accent ${cls}"></div>
+            <div class="lt-card-head">
+                <div class="lt-card-head-left">
+                    <div class="lt-card-icon ${cls}">${icon}</div>
+                    <div>
+                        <div class="lt-card-name">${info.nombre}</div>
+                        <div class="lt-card-cat">Tipo de trabajo</div>
+                    </div>
+                </div>
+                <div class="lt-card-pct-display">
+                    <div class="lt-card-pct-big ${cls}">${pct}<span style="font-size:1rem;opacity:.6;">%</span></div>
+                    <div class="lt-card-pct-label">cumplimiento</div>
+                </div>
+            </div>
+            <div class="lt-card-divider"></div>
+            <div class="lt-card-body">
+                ${barsHtml}
+                <div class="lt-xaxis">
+                    <div class="lt-xaxis-spacer"></div>
+                    <div class="lt-xaxis-ticks">${ticks}</div>
+                    <div class="lt-xaxis-end"></div>
+                </div>
+            </div>
+            <div class="lt-card-foot">
+                <div class="lt-card-total"><strong>${info.total.toLocaleString()}</strong> órdenes totales</div>
+                <div class="lt-card-status-pill ${cls}">${label}</div>
+            </div>
+        </div>
+    `;
+}
+
+/* ── ANIMATE BARS ── */
+function animateBars() {
+    $('.lt-bar-fill').each(function(i) {
+        const $bar = $(this);
+        setTimeout(() => $bar.css('width', $bar.data('width') + '%'), i * 55);
+    });
+}
+
+/* ── ANIMATE COUNT ── */
+function animateCount(id, target, duration) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const start = performance.now();
+    const tick = now => {
+        const p = Math.min((now - start) / duration, 1);
+        const e = 1 - Math.pow(1 - p, 3);
+        el.textContent = (target * e).toFixed(2);
+        if (p < 1) requestAnimationFrame(tick);
+        else el.textContent = target;
+    };
+    setTimeout(() => requestAnimationFrame(tick), 600);
+}
+
+/* ── EMPTY STATE ── */
+function renderEmpty(msg) {
+    $('#mainContent').html(`
+        <div class="lt-empty">
+            <div class="lt-empty-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#8892a8" stroke-width="1.5">
+                    <circle cx="11" cy="11" r="8"/>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+            </div>
+            <h5>${msg}</h5>
+            <p>Selecciona otro mes o año</p>
+        </div>
+    `);
+}
+
+/* ── CLEAR CACHE ── */
+function clearCache() {
+    $.ajax({
+        url: "{{ route('comercial.lead-time.clear-cache') }}",
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        success() {
+            Swal.fire({
+                icon: 'success',
+                title: 'Caché limpiado',
+                text: 'Los datos se recargarán desde Google Sheets',
+                timer: 2000,
+                showConfirmButton: false
+            });
+            loadData();
+        },
+        error() {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'No se pudo limpiar el caché'
             });
         }
+    });
+}
     </script>
 @endsection

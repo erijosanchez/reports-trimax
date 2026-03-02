@@ -137,10 +137,10 @@ class LeadTimeController extends Controller
         // ── 2. Filtrar: solo registros hasta el mes indicado ────
         // Para semanas necesitamos todo el año hasta ese mes
         $filtered = array_values(array_filter($records, function ($rec) use ($year, $month) {
-            $sol = $rec['SOLICITADO'] ?? '';
-            if (empty($sol)) return false;
+            $time = $rec['TIME'] ?? '';
+            if (empty($time)) return false;
             try {
-                $d = Carbon::parse($sol);
+                $d = Carbon::parse($time);
                 return $d->year == $year && $d->month <= $month;
             } catch (\Exception $e) {
                 return false;
@@ -159,9 +159,10 @@ class LeadTimeController extends Controller
         $mesesMap   = [];   // mes_num  => ['registros']
 
         foreach ($filtered as $rec) {
-            $sol = $rec['SOLICITADO'] ?? '';
+            $time = $rec['TIME'] ?? '';
+            if (empty($time)) continue;
             try {
-                $d = Carbon::parse($sol);
+                $d = Carbon::parse($time);
             } catch (\Exception $e) {
                 continue;
             }
@@ -257,12 +258,25 @@ class LeadTimeController extends Controller
      * Dado un array de registros y las categorías,
      * devuelve [kpiGeneral, ['NOX'=>val, 'TD'=>val, ...]]
      */
+    /**
+     * Dado un array de registros y las categorías,
+     * devuelve [kpiGeneral, ['NOX'=>val, 'TD'=>val, ...]]
+     */
     private function calcularKpiYCats(array $records, array $categorias): array
     {
-        $total      = count($records);
-        $enTiempo   = 0;
-        $porCat     = [];
+        $total = count($records);
 
+        // ✅ KPI general directo — cuenta TODOS los en tiempo sin importar categoría
+        $enTiempoGeneral = 0;
+        foreach ($records as $r) {
+            $conclusion = strtoupper(trim($r['CONCLUSION'] ?? ''));
+            if ($conclusion === 'DENTRO DE TIEMPO' || $conclusion === 'EN TIEMPO') {
+                $enTiempoGeneral++;
+            }
+        }
+
+        // KPI por categoría
+        $porCat = [];
         foreach ($categorias as $cat) {
             $catRecs = array_filter($records, function ($r) use ($cat) {
                 $tipo = strtoupper(trim($r['TIPO_DE_TRABAJO'] ?? ''));
@@ -280,14 +294,12 @@ class LeadTimeController extends Controller
                 }
             }
 
-            $enTiempo += $catEnTiempo;
-
             $porCat[$cat] = $catTotal > 0
                 ? round(($catEnTiempo / $catTotal) * 100, 2)
-                : null;   // null = sin datos esa semana para esa cat
+                : null;
         }
 
-        $kpiGeneral = $total > 0 ? round(($enTiempo / $total) * 100, 2) : null;
+        $kpiGeneral = $total > 0 ? round(($enTiempoGeneral / $total) * 100, 2) : null;
 
         return [$kpiGeneral, $porCat];
     }
@@ -320,7 +332,6 @@ class LeadTimeController extends Controller
             return $this->emptyResponse();
         }
 
-        // Parsear datos con headers
         $headers = array_shift($rawData);
         $records = [];
 
@@ -332,13 +343,12 @@ class LeadTimeController extends Controller
             $records[] = $record;
         }
 
-        // Filtrar por año y mes usando SOLICITADO (formato: YYYY-MM-DD)
+        // ✅ Filtrar por TIME
         $filtered = array_filter($records, function ($record) use ($year, $month) {
-            $solicitado = $record['SOLICITADO'] ?? '';
-            if (empty($solicitado)) return false;
-
+            $time = $record['TIME'] ?? '';
+            if (empty($time)) return false;
             try {
-                $date = Carbon::parse($solicitado);
+                $date = Carbon::parse($time);
                 return $date->year == $year && $date->month == $month;
             } catch (\Exception $e) {
                 return false;
@@ -351,21 +361,27 @@ class LeadTimeController extends Controller
             return $this->emptyResponse();
         }
 
-        // Categorías de TIPO_DE_TRABAJO
         $categorias = ['NOX', 'TD', 'DEVABLUE', 'BLANCO', 'COLOREADO'];
 
         $nombresDisplay = [
-            'NOX' => 'NOX',
-            'TD' => 'TRIDUREX',
-            'DEVABLUE' => 'DEVABLUE',
-            'BLANCO' => 'BLANCOS',
+            'NOX'       => 'NOX',
+            'TD'        => 'TRIDUREX',
+            'DEVABLUE'  => 'DEVABLUE',
+            'BLANCO'    => 'BLANCOS',
             'COLOREADO' => 'COLOREADO',
-
         ];
 
-        $resultados = [];
+        $resultados  = [];
         $totalGeneral = count($filtered);
+
+        // ✅ totalEnTiempo directo sobre todos los filtrados
         $totalEnTiempo = 0;
+        foreach ($filtered as $record) {
+            $conclusion = strtoupper(trim($record['CONCLUSION'] ?? ''));
+            if ($conclusion === 'DENTRO DE TIEMPO' || $conclusion === 'EN TIEMPO') {
+                $totalEnTiempo++;
+            }
+        }
 
         foreach ($categorias as $cat) {
             $datosCategoria = array_filter($filtered, function ($r) use ($cat) {
@@ -380,18 +396,16 @@ class LeadTimeController extends Controller
 
             if ($totalCat === 0) {
                 $resultados[$cat] = [
-                    'nombre' => $nombresDisplay[$cat],
-                    'total' => 0,
+                    'nombre'                  => $nombresDisplay[$cat],
+                    'total'                   => 0,
                     'porcentaje_cumplimiento' => 0,
-                    'barras' => [],
+                    'barras'                  => [],
                 ];
                 continue;
             }
 
-            // Clasificar registros en categorías del gráfico
             $clasificacion = $this->clasificarRegistros($datosCategoria);
 
-            // Calcular cumplimiento (todo lo que NO es "Después de...")
             $enTiempo = 0;
             foreach ($clasificacion as $label => $count) {
                 if (!str_starts_with($label, 'Después')) {
@@ -399,37 +413,36 @@ class LeadTimeController extends Controller
                 }
             }
 
-            $totalEnTiempo += $enTiempo;
             $porcentajeCumplimiento = round(($enTiempo / $totalCat) * 100, 2);
 
-            // Construir barras
             $barras = [];
             foreach ($clasificacion as $label => $count) {
                 $porcentaje = round(($count / $totalCat) * 100, 2);
-                $esAtraso = str_starts_with($label, 'Después');
-                $barras[] = [
-                    'label' => $label,
+                $esAtraso   = str_starts_with($label, 'Después');
+                $barras[]   = [
+                    'label'    => $label,
                     'cantidad' => $count,
                     'porcentaje' => $porcentaje,
-                    'tipo' => $esAtraso ? 'atraso' : 'cumplimiento',
+                    'tipo'     => $esAtraso ? 'atraso' : 'cumplimiento',
                 ];
             }
 
             $resultados[$cat] = [
-                'nombre' => $nombresDisplay[$cat],
-                'total' => $totalCat,
+                'nombre'                  => $nombresDisplay[$cat],
+                'total'                   => $totalCat,
                 'porcentaje_cumplimiento' => $porcentajeCumplimiento,
-                'barras' => $barras,
+                'barras'                  => $barras,
             ];
         }
 
-        $porcentajeGeneral = $totalGeneral > 0 ? round(($totalEnTiempo / $totalGeneral) * 100, 2) : 0;
+        $porcentajeGeneral = $totalGeneral > 0
+            ? round(($totalEnTiempo / $totalGeneral) * 100, 2)
+            : 0;
 
         $ordenesAtrasadas = [];
-
         foreach ($filtered as $record) {
             $conclusion = strtoupper(trim($record['CONCLUSION'] ?? ''));
-            $tipo = strtoupper(trim($record['TIPO_DE_TRABAJO'] ?? ''));
+            $tipo       = strtoupper(trim($record['TIPO_DE_TRABAJO'] ?? ''));
             $categoriasValidas = ['NOX', 'TD', 'DEVABLUE', 'BLANCO', 'COLOREADO'];
 
             if ($conclusion === 'FUERA DE TIEMPO' && in_array($tipo, $categoriasValidas)) {
@@ -449,17 +462,18 @@ class LeadTimeController extends Controller
             }
         }
 
-        // Ordenar: mayor atraso primero (atraso negativo, menor valor = más atraso)
         usort($ordenesAtrasadas, function ($a, $b) {
             return $a['atraso'] - $b['atraso'];
         });
 
         return [
             'general' => [
-                'total' => $totalGeneral,
+                'total'      => $totalGeneral,
                 'porcentaje' => $porcentajeGeneral,
+                'total_en_tiempo' => $totalEnTiempo,                    
+                'total_fuera'     => $totalGeneral - $totalEnTiempo,
             ],
-            'categorias' => $resultados,
+            'categorias'        => $resultados,
             'ordenes_atrasadas' => $ordenesAtrasadas,
         ];
     }
