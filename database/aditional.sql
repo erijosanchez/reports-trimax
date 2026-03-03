@@ -397,6 +397,8 @@ ADD COLUMN `puede_ver_consultar_orden` TINYINT(1) NOT NULL DEFAULT 0 AFTER `pued
 ADD COLUMN `puede_ver_acuerdos_comerciales` TINYINT(1) NOT NULL DEFAULT 0 AFTER `puede_ver_consultar_orden`,
 ADD COLUMN `puede_ver_lead_time` TINYINT(1) NOT NULL DEFAULT 0 AFTER `puede_ver_acuerdos_comerciales`;
 
+
+
 /*Agrega columnas para permisos de requerimientos*/
 ALTER TABLE users
 ADD COLUMN puede_crear_requerimientos TINYINT(1) NOT NULL DEFAULT 0
@@ -491,3 +493,6 @@ CREATE TABLE requerimiento_historial (
         FOREIGN KEY (user_id)
         REFERENCES users(id)
 );
+
+/* Agrega columna para permisos de pendiente de entrega montura*/
+ALTER TABLE users ADD COLUMN puede_ver_pendiente_entrega_montura TINYINT(1) NOT NULL DEFAULT 0 AFTER puede_ver_lead_time;

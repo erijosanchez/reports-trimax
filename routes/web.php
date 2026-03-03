@@ -19,6 +19,7 @@ use App\Http\Controllers\DescuentosEspecialesController;
 use App\Http\Controllers\AIAssistantController;
 use App\Http\Controllers\LeadTimeController;
 use App\Http\Controllers\RequerimientoPersonalController;
+use App\Http\Controllers\PendienteEntregaMonturaController;
 
 // ============================================================
 // RUTAS PARA LARAVEL 11
@@ -191,6 +192,11 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
         // Ver lead time semanal y mensual
         Route::get('/lead-time/semanal', [LeadTimeController::class, 'semanal'])->name('lead-time.semanal');
         Route::get('api/lead-time/semanal-data', [LeadTimeController::class, 'getSemanalData'])->name('lead-time.semanal-data');
+
+        // Pendiente de entrega montura
+        Route::get('/pendiente-entrega-montura', [PendienteEntregaMonturaController::class, 'index'])->name('pendiente-montura.index');
+        Route::get('/api/comercial/pendiente-montura/data', [PendienteEntregaMonturaController::class, 'getData'])->name('api.pendiente-montura.data');
+        Route::post('/api/comercial/pendiente-montura/clear-cache', [PendienteEntregaMonturaController::class, 'clearCache'])->name('api.pendiente-montura.clear-cache');
     });
 
     // Recursos Humanos Routes (RRHH)

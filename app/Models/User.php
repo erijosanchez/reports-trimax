@@ -22,6 +22,7 @@ class User extends Authenticatable
         'puede_ver_consultar_orden',
         'puede_ver_acuerdos_comerciales',
         'puede_ver_lead_time',
+        'puede_ver_pendiente_entrega_montura',
         'puede_crear_requerimientos',
         'is_active',
         'last_login_at',
@@ -46,6 +47,7 @@ class User extends Authenticatable
         'puede_ver_consultar_orden' => 'boolean',
         'puede_ver_acuerdos_comerciales' => 'boolean',
         'puede_ver_lead_time' => 'boolean',
+        'puede_ver_pendiente_entrega_montura' => 'boolean',
         'puede_crear_requerimientos' => 'boolean',
         'last_login_at' => 'datetime',
         'two_factor_confirmed_at' => 'datetime',
@@ -189,6 +191,15 @@ class User extends Authenticatable
     public function puedeGestionarRequerimientos(): bool
     {
         return $this->isSuperAdmin() || $this->isRrhh();
+    }
+
+    /**
+     * Ver pediente de entrega montura:
+     * - Superadmin, admin y consultor pueden ver por defecto
+     */
+    public function puedeVerPendienteEntregaMontura(): bool
+    {
+        return $this->isSuperAdmin() || $this->isAdmin() || $this->puede_ver_pendiente_entrega_montura;
     }
 
     public function getRoleName()

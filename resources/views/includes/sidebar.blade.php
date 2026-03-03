@@ -80,6 +80,16 @@
                 </li>
             @endif
 
+            @if ($user->puedeVerPendienteEntregaMontura())
+                <li class="nav-item">
+                    <a class="nav-link {{ request()->routeIs('comercial.pendiente-montura.index') ? 'active' : '' }}"
+                        href="{{ route('comercial.pendiente-montura.index') }}">
+                        <i class="mdi mdi-glasses menu-icon"></i>
+                        <span class="menu-title">Entrega Montura</span>
+                    </a>
+                </li>
+            @endif
+
             @if ($user->puedeVerLeadTime())
                 <li class="nav-item">
                     <a class="nav-link {{ request()->routeIs('comercial.lead-time.*') ? '' : 'collapsed' }}"
