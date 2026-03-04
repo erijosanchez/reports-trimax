@@ -278,6 +278,19 @@
                                                                             </label>
                                                                         </div>
                                                                     </div>
+                                                                    <div class="col-md-6">
+                                                                        <div class="form-check form-check-success">
+                                                                            <label class="form-check-label">
+                                                                                <input type="checkbox"
+                                                                                    name="puede_ver_pendiente_entrega_montura"
+                                                                                    value="1"
+                                                                                    class="form-check-input"
+                                                                                    {{ old('puede_ver_pendiente_entrega_montura') ? 'checked' : '' }}>
+                                                                                Pendiente - Entrega Montura
+                                                                                <i class="input-helper"></i>
+                                                                            </label>
+                                                                        </div>
+                                                                    </div>
                                                                 </div>
                                                             </div>
 
@@ -285,7 +298,8 @@
                                                             <div class="mb-3">
                                                                 <p class="mb-2 text-muted text-uppercase fw-bold small"
                                                                     style="letter-spacing: 0.5px;">
-                                                                    <i class="me-1 mdi mdi-account-search"></i> Módulo RRHH — Requerimientos de Personal
+                                                                    <i class="me-1 mdi mdi-account-search"></i> Módulo RRHH
+                                                                    — Requerimientos de Personal
                                                                 </p>
                                                                 <div class="ms-1 row g-2">
                                                                     <div class="col-md-6">
@@ -299,7 +313,8 @@
                                                                                 Crear Requerimientos
                                                                                 <i class="input-helper"></i>
                                                                             </label>
-                                                                            <div><small class="text-muted">Puede solicitar nuevas contrataciones</small></div>
+                                                                            <div><small class="text-muted">Puede solicitar
+                                                                                    nuevas contrataciones</small></div>
                                                                         </div>
                                                                     </div>
                                                                     <div class="col-md-6">
@@ -313,7 +328,9 @@
                                                                                 Gestionar Requerimientos
                                                                                 <i class="input-helper"></i>
                                                                             </label>
-                                                                            <div><small class="text-muted">Asignar RH, cambiar estado, registrar avances</small></div>
+                                                                            <div><small class="text-muted">Asignar RH,
+                                                                                    cambiar estado, registrar
+                                                                                    avances</small></div>
                                                                         </div>
                                                                     </div>
                                                                     <div class="col-md-6">
@@ -327,14 +344,17 @@
                                                                                 Ver Todos los Requerimientos
                                                                                 <i class="input-helper"></i>
                                                                             </label>
-                                                                            <div><small class="text-muted">Sin esto, solo ve los suyos</small></div>
+                                                                            <div><small class="text-muted">Sin esto, solo
+                                                                                    ve los suyos</small></div>
                                                                         </div>
                                                                     </div>
                                                                 </div>
                                                                 <div class="mt-3 mb-0 px-3 py-2 border alert alert-light">
                                                                     <small class="text-muted">
                                                                         <i class="me-1 mdi-information-outline mdi"></i>
-                                                                        El rol <strong>RRHH</strong> tiene los 3 permisos automáticamente. Usa estos checkboxes para otros roles que necesiten acceso parcial.
+                                                                        El rol <strong>RRHH</strong> tiene los 3 permisos
+                                                                        automáticamente. Usa estos checkboxes para otros
+                                                                        roles que necesiten acceso parcial.
                                                                     </small>
                                                                 </div>
                                                             </div>
@@ -369,13 +389,15 @@
                                             </h5>
                                             <ul class="mb-0 text-muted">
                                                 <li class="mb-2">
-                                                    <strong>Super Admin:</strong> Acceso total al sistema, gestión de usuarios y configuración
+                                                    <strong>Super Admin:</strong> Acceso total al sistema, gestión de
+                                                    usuarios y configuración
                                                 </li>
                                                 <li class="mb-2">
                                                     <strong>Admin:</strong> Puede gestionar usuarios y dashboards
                                                 </li>
                                                 <li class="mb-2">
-                                                    <strong>RRHH:</strong> Acceso completo al módulo de requerimientos de personal
+                                                    <strong>RRHH:</strong> Acceso completo al módulo de requerimientos de
+                                                    personal
                                                 </li>
                                                 <li class="mb-2">
                                                     <strong>Sede:</strong> Acceso al dashboard de ventas de su sede asignada
@@ -400,10 +422,24 @@
     </div>
 
     <style>
-        .d-flex.gap-2>*+* { margin-left: 0.5rem; }
-        .input-group-text { background-color: #f8f9fa; border-color: #e3e6f0; }
-        .btn-outline-secondary { border-color: #e3e6f0; }
-        .btn-outline-secondary:hover { background-color: #f8f9fa; border-color: #e3e6f0; color: #6366f1; }
+        .d-flex.gap-2>*+* {
+            margin-left: 0.5rem;
+        }
+
+        .input-group-text {
+            background-color: #f8f9fa;
+            border-color: #e3e6f0;
+        }
+
+        .btn-outline-secondary {
+            border-color: #e3e6f0;
+        }
+
+        .btn-outline-secondary:hover {
+            background-color: #f8f9fa;
+            border-color: #e3e6f0;
+            color: #6366f1;
+        }
     </style>
 
     <script>
@@ -430,7 +466,8 @@
             togglePassword.addEventListener('click', function() {
                 const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
                 password.setAttribute('type', type);
-                this.querySelector('i').className = type === 'password' ? 'mdi mdi-eye-outline' : 'mdi mdi-eye-off-outline';
+                this.querySelector('i').className = type === 'password' ? 'mdi mdi-eye-outline' :
+                    'mdi mdi-eye-off-outline';
             });
 
             const togglePasswordConfirm = document.getElementById('togglePasswordConfirm');
@@ -438,7 +475,8 @@
             togglePasswordConfirm.addEventListener('click', function() {
                 const type = passwordConfirmation.getAttribute('type') === 'password' ? 'text' : 'password';
                 passwordConfirmation.setAttribute('type', type);
-                this.querySelector('i').className = type === 'password' ? 'mdi mdi-eye-outline' : 'mdi mdi-eye-off-outline';
+                this.querySelector('i').className = type === 'password' ? 'mdi mdi-eye-outline' :
+                    'mdi mdi-eye-off-outline';
             });
 
             passwordConfirmation.addEventListener('input', function() {

@@ -197,6 +197,15 @@
                                                                             </label>
                                                                         </div>
                                                                     </div>
+                                                                    <div class="col-md-6">
+                                                                        <div class="form-check form-check-success">
+                                                                            <label class="form-check-label">
+                                                                                <input type="checkbox" name="puede_ver_pendiente_entrega_montura" value="1" class="form-check-input"
+                                                                                    {{ old('puede_ver_pendiente_entrega_montura', $user->puede_ver_pendiente_entrega_montura ?? false) ? 'checked' : '' }}>
+                                                                                Pendiente de Entrega Montura <i class="input-helper"></i>
+                                                                            </label>
+                                                                        </div>
+                                                                    </div>
                                                                 </div>
                                                             </div>
 
@@ -342,6 +351,7 @@
                                                     'puede_ver_ventas_consolidadas'   => 'Ventas Consolidadas',
                                                     'puede_ver_descuentos_especiales' => 'Descuentos Especiales',
                                                     'puede_ver_lead_time'             => 'Lead Time',
+                                                    'puede_ver_pendiente_entrega_montura' => 'Pendiente de Entrega Montura',
                                                 ])->filter(fn($label, $campo) => $user->$campo);
 
                                                 $permisosRrhh = collect([
