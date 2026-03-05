@@ -22,8 +22,24 @@ class DescuentosEspecialesController extends Controller
         if (!auth()->user()->puedeVerDescuentosEspeciales()) {
             abort(403, 'No tienes permiso para ver Descuentos Especiales');
         }
-        
+
         return view('comercial.descuentos-especiales');
+    }
+
+    /**
+     * Obtener usuarios de una sede (para filtros)
+     */
+    private function obtenerUsuariosSede($descuento)
+    {
+        if ($descuento->creador && $descuento->creador->isSede()) {
+            return collect();
+        }
+
+        return User::where('sede', $descuento->sede)
+            ->whereHas('roles', function ($q) {
+                $q->where('name', 'sede');
+            })
+            ->get();
     }
 
     /**
@@ -579,29 +595,31 @@ class DescuentosEspecialesController extends Controller
     private function enviarNotificacionCreacion($descuento)
     {
         try {
-            // 🔥 CAMBIO: Notificar a auditor junior en lugar de planeamiento
             $auditorJunior = User::where('email', 'auditor.junior@trimaxperu.com')->first();
             $sergio = User::where('email', 'smonopoli@trimaxperu.com')->first();
             $planeamiento = User::where('email', 'planeamiento.comercial@trimaxperu.com')->first();
 
-            $usuarios = collect([$auditorJunior, $sergio, $planeamiento, $descuento->creador])->filter();
+            $usuarios = collect([$auditorJunior, $sergio, $planeamiento, $descuento->creador])
+                ->filter()
+                ->merge($this->obtenerUsuariosSede($descuento))
+                ->unique('id');
 
             Notification::send($usuarios, new DescuentoEspecialCreado($descuento));
 
-            \Log::info('✅ Notificaciones de creación enviadas a: ' . $usuarios->pluck('email')->implode(', '));
+            \Log::info('✅ Notificación creación enviada. Sede: ' . $descuento->sede . '. Total: ' . $usuarios->count());
         } catch (\Exception $e) {
             \Log::error('Error al enviar notificaciones de creación: ' . $e->getMessage());
         }
     }
 
     /**
-     * 📧 Enviar notificación de aprobación completa
+     *  Enviar notificación de aprobación completa
      * Enviar a: Auditor Junior, usuario solicitante, Sergio y planeamiento
      */
     private function enviarNotificacionAprobacion($descuento)
     {
         try {
-            // 🔥 Auditor Junior (el que aplica)
+            //  Auditor Junior (el que aplica)
             $auditorJunior = User::where('email', 'auditor.junior@trimaxperu.com')->first();
 
             // Sergio
@@ -610,14 +628,13 @@ class DescuentosEspecialesController extends Controller
             // Planeamiento
             $planeamiento = User::where('email', 'planeamiento.comercial@trimaxperu.com')->first();
 
-            // Usuario solicitante (creador)
-            $creador = $descuento->creador;
+            $usuarios = collect([$auditorJunior, $sergio, $planeamiento, $descuento->creador])
+                ->filter()
+                ->merge($this->obtenerUsuariosSede($descuento))
+                ->unique('id');
 
-            $destinatarios = collect([$auditorJunior, $sergio, $planeamiento, $creador])->filter()->unique('id');
-
-            Notification::send($destinatarios, new DescuentoEspecialAprobado($descuento));
-
-            \Log::info('✅ Notificaciones de aprobación enviadas a: ' . $destinatarios->pluck('email')->implode(', '));
+            Notification::send($usuarios, new DescuentoEspecialAprobado($descuento));
+            \Log::info('✅ Notificación aprobación enviada. Sede: ' . $descuento->sede . '. Total: ' . $usuarios->count());
         } catch (\Exception $e) {
             \Log::error('Error al enviar notificación de aprobación: ' . $e->getMessage());
         }
@@ -639,7 +656,9 @@ class DescuentosEspecialesController extends Controller
                 $destinatarios = $destinatarios->push($descuento->creador);
             }
 
-            $destinatarios = $destinatarios->unique('id');
+            $destinatarios = $destinatarios
+                ->merge($this->obtenerUsuariosSede($descuento))
+                ->unique('id');
 
             Notification::send($destinatarios, new DescuentoEspecialDeshabilitado($descuento, $motivo));
         } catch (\Exception $e) {
@@ -647,9 +666,6 @@ class DescuentosEspecialesController extends Controller
         }
     }
 
-    /**
-     * 📧 Enviar notificación de rehabilitación
-     */
     private function enviarNotificacionRehabilitacion($descuento, $motivo)
     {
         try {
@@ -663,7 +679,9 @@ class DescuentosEspecialesController extends Controller
                 $destinatarios = $destinatarios->push($descuento->creador);
             }
 
-            $destinatarios = $destinatarios->unique('id');
+            $destinatarios = $destinatarios
+                ->merge($this->obtenerUsuariosSede($descuento))
+                ->unique('id');
 
             Notification::send($destinatarios, new DescuentoEspecialRehabilitado($descuento, $motivo));
         } catch (\Exception $e) {

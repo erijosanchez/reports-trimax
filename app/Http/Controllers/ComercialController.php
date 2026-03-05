@@ -256,6 +256,23 @@ class ComercialController extends Controller
     }
 
     /**
+     * Obtener usuarios de la sede del acuerdo (si el creador no es de esa sede)
+     */
+
+    private function obtenerUsuariosSede($acuerdo)
+    {
+        if ($acuerdo->creador && $acuerdo->creador->isSede()) {
+            return collect(); // El creador ya ES la sede, no agregar más
+        }
+
+        return User::where('sede', $acuerdo->sede)
+            ->whereHas('roles', function ($q) {
+                $q->where('name', 'sede');
+            })
+            ->get();
+    }
+
+    /**
      * Aprobar acuerdo (Gerencia)
      */
     public function aprobarAcuerdo(Request $request, $id)
@@ -318,11 +335,13 @@ class ComercialController extends Controller
     private function enviarNotificacionCreacion($acuerdo)
     {
         try {
-            // Obtener usuarios que deben ser notificados
             $validador = User::where('email', 'planeamiento.comercial@trimaxperu.com')->first();
             $aprobador = User::where('email', 'smonopoli@trimaxperu.com')->first();
 
-            $usuarios = collect([$validador, $aprobador, $acuerdo->creador])->filter();
+            $usuarios = collect([$validador, $aprobador, $acuerdo->creador])
+                ->filter()
+                ->merge($this->obtenerUsuariosSede($acuerdo))
+                ->unique('id');
 
             Notification::send($usuarios, new AcuerdoCreado($acuerdo));
         } catch (\Exception $e) {
@@ -336,8 +355,12 @@ class ComercialController extends Controller
     private function enviarNotificacionAprobacion($acuerdo)
     {
         try {
-            // Notificar al creador
-            $acuerdo->creador->notify(new AcuerdoAprobado($acuerdo));
+            $usuarios = collect([$acuerdo->creador])
+                ->filter()
+                ->merge($this->obtenerUsuariosSede($acuerdo))
+                ->unique('id');
+
+            Notification::send($usuarios, new AcuerdoAprobado($acuerdo));
         } catch (\Exception $e) {
             \Log::error('Error al enviar notificación de aprobación: ' . $e->getMessage());
         }
