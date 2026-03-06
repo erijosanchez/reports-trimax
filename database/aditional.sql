@@ -496,3 +496,5 @@ CREATE TABLE requerimiento_historial (
 
 /* Agrega columna para permisos de pendiente de entrega montura*/
 ALTER TABLE users ADD COLUMN puede_ver_pendiente_entrega_montura TINYINT(1) NOT NULL DEFAULT 0 AFTER puede_ver_lead_time;
+
+ALTER TABLE users ADD COLUMN puede_ver_venta_clientes TINYINT(1) NOT NULL DEFAULT 0 AFTER puede_ver_pendiente_entrega_montura;

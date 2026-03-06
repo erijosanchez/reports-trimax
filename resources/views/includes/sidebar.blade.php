@@ -33,8 +33,7 @@
                 $user->puedeVerConsultarOrden() ||
                 $user->puedeVerAcuerdosComerciales() ||
                 $user->puedeVerDescuentosEspeciales() ||
-                $user->puedeVerVentasConsolidadas() ||
-                $user->puedeVerLeadTime();
+                $user->puedeVerVentasConsolidadas();
         @endphp
 
         @if ($tieneAccesoComercial)
@@ -46,6 +45,16 @@
                         href="{{ route('comercial.orden') }}">
                         <i class="mdi mdi-file-document-box menu-icon"></i>
                         <span class="menu-title">Consultar Orden</span>
+                    </a>
+                </li>
+            @endif
+
+            @if ($user->puedeVerConsultarOrden())
+                <li class="nav-item">
+                    <a class="nav-link {{ request()->routeIs('comercial.orden') ? 'active' : '' }}"
+                        href="{{ route('comercial.orden') }}">
+                        <i class="mdi mdi-library-books menu-icon"></i>
+                        <span class="menu-title">Ordenes por Sede</span>
                     </a>
                 </li>
             @endif
@@ -79,6 +88,48 @@
                     </a>
                 </li>
             @endif
+
+
+            <li class="nav-item">
+                <a class="nav-link {{ request()->routeIs('comercial.venta-cliente.*') ? '' : 'collapsed' }}"
+                    data-bs-toggle="collapse" href="#venta-clientes-menu"
+                    aria-expanded="{{ request()->routeIs('comercial.venta-cliente.*') ? 'true' : 'false' }}"
+                    aria-controls="venta-clientes-menu">
+
+                    <i class="mdi-account-group mdi menu-icon"></i>
+                    <span class="menu-title">Venta Clientes</span>
+                    <i class="menu-arrow"></i>
+                </a>
+
+                <div class="collapse {{ request()->routeIs('comercial.venta-cliente.*') ? 'show' : '' }}"
+                    id="venta-clientes-menu">
+                    <ul class="flex-column nav sub-menu">
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('comercial.venta-cliente.mes') ? 'active' : '' }}"
+                                href="{{ route('comercial.venta-cliente.mes') }}">
+                                Evolutivo — Mes
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('comercial.venta-cliente.anio') ? 'active' : '' }}"
+                                href="{{ route('comercial.venta-cliente.anio') }}">
+                                Evolutivo — Año
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </li>
+
+        @endif
+
+        {{-- <<<<<<<<<<<<<<<<<<<<<<<<<MODULO PRODUCCIÓN >>>>>>>>>>>>>>>>>>>> --}}
+        @php
+            $user = auth()->user();
+            $tieneAccesoProduccion = $user->puedeVerPendienteEntregaMontura() || $user->puedeVerLeadTime();
+        @endphp
+
+        @if ($tieneAccesoProduccion)
+            <li class="nav-item nav-category">PRODUCCIÓN</li>
 
             @if ($user->puedeVerPendienteEntregaMontura())
                 <li class="nav-item">
@@ -170,7 +221,7 @@
                                 Requerimientos
                             </a>
                         </li>
-                        
+
                         @if ($user->isRrhh() || $user->isSuperAdmin())
                             <li class="nav-item">
                                 <a class="nav-link {{ request()->routeIs('rrhh.requerimientos.dashboard') ? 'active' : '' }}"

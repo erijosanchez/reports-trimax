@@ -269,6 +269,29 @@
                                                                         <div class="form-check form-check-success">
                                                                             <label class="form-check-label">
                                                                                 <input type="checkbox"
+                                                                                    name="puede_ver_venta_clientes"
+                                                                                    value="1"
+                                                                                    class="form-check-input"
+                                                                                    {{ old('puede_ver_venta_clientes') ? 'checked' : '' }}>
+                                                                                Ventas por Cliente
+                                                                                <i class="input-helper"></i>
+                                                                            </label>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                            {{-- PRODUCCION --}}
+                                                            <div class="mb-3">
+                                                                <p class="mb-2 text-muted text-uppercase fw-bold small"
+                                                                    style="letter-spacing: 0.5px;">
+                                                                    <i class="me-1 mdi mdi-account-search"></i> Módulo Producción
+                                                                </p>
+                                                                <div class="ms-1 row g-2">
+                                                                    <div class="col-md-6">
+                                                                        <div class="form-check form-check-success">
+                                                                            <label class="form-check-label">
+                                                                                <input type="checkbox"
                                                                                     name="puede_ver_lead_time"
                                                                                     value="1"
                                                                                     class="form-check-input"

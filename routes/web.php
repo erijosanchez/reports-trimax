@@ -20,6 +20,7 @@ use App\Http\Controllers\AIAssistantController;
 use App\Http\Controllers\LeadTimeController;
 use App\Http\Controllers\RequerimientoPersonalController;
 use App\Http\Controllers\PendienteEntregaMonturaController;
+use App\Http\Controllers\VentaClienteController;
 
 // ============================================================
 // RUTAS PARA LARAVEL 11
@@ -197,6 +198,14 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
         Route::get('/pendiente-entrega-montura', [PendienteEntregaMonturaController::class, 'index'])->name('pendiente-montura.index');
         Route::get('/api/comercial/pendiente-montura/data', [PendienteEntregaMonturaController::class, 'getData'])->name('api.pendiente-montura.data');
         Route::post('/api/comercial/pendiente-montura/clear-cache', [PendienteEntregaMonturaController::class, 'clearCache'])->name('api.pendiente-montura.clear-cache');
+
+        // Venta Clientes
+        Route::get('/venta-clientes/evolutivo-mes',  [VentaClienteController::class, 'evolutivoMes'])->name('venta-cliente.mes');
+        Route::get('/venta-clientes/evolutivo-anio', [VentaClienteController::class, 'evolutivoAnio'])->name('venta-cliente.anio');
+        Route::get('/api/venta-clientes/mes-data',   [VentaClienteController::class, 'getEvolutivoMesData'])->name('venta-cliente.mes.data');
+        Route::get('/api/venta-clientes/anio-data',  [VentaClienteController::class, 'getEvolutivoAnioData'])->name('venta-cliente.anio.data');
+        Route::get('/api/venta-clientes/anios',      [VentaClienteController::class, 'getAnios'])->name('venta-cliente.anios');
+        Route::post('/api/venta-clientes/clear-cache', [VentaClienteController::class, 'clearCache'])->name('venta-cliente.cache.clear');
     });
 
     // Recursos Humanos Routes (RRHH)

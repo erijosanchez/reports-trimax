@@ -11,14 +11,14 @@
                         <div class="tab-pane fade show active" id="overview" role="tabpanel">
 
                             <!-- Header con Selectores -->
-                            <div class="row mb-4">
+                            <div class="mb-4 row">
                                 <div class="col-lg-8">
                                     <h2 class="mb-1 fw-bold">
-                                        <i class="mdi mdi-chart-line text-primary me-2"></i>
+                                        <i class="me-2 text-primary mdi mdi-chart-line"></i>
                                         Ventas por Sedes
                                     </h2>
-                                    <p class="text-muted mb-0">
-                                        <i class="mdi mdi-store me-2"></i>
+                                    <p class="mb-0 text-muted">
+                                        <i class="me-2 mdi mdi-store"></i>
                                         Monitoreo de todas las sedes
                                     </p>
                                 </div>
@@ -27,7 +27,7 @@
                                 <div class="col-lg-4">
                                     <div class="row g-2">
                                         <div class="col-6">
-                                            <label class="form-label small text-muted mb-1">Año</label>
+                                            <label class="mb-1 text-muted form-label small">Año</label>
                                             <select id="anioSelect" class="form-select">
                                                 @foreach ($aniosDisponibles as $anio)
                                                     <option value="{{ $anio }}"
@@ -38,7 +38,7 @@
                                             </select>
                                         </div>
                                         <div class="col-6">
-                                            <label class="form-label small text-muted mb-1">Mes</label>
+                                            <label class="mb-1 text-muted form-label small">Mes</label>
                                             <select id="mesSelect" class="form-select">
                                                 <option value="Enero" {{ $mesActual == 'Enero' ? 'selected' : '' }}>Enero
                                                 </option>
@@ -72,10 +72,10 @@
                             </div>
 
                             <!-- Cards Resumen Global -->
-                            <div class="row mb-4" id="cardsGlobales">
-                                <div class="col-lg-12 mb-2">
+                            <div class="mb-4 row" id="cardsGlobales">
+                                <div class="mb-2 col-lg-12">
                                     <h6 class="text-muted">
-                                        <i class="mdi mdi-store me-1"></i> Ventas Generales —
+                                        <i class="me-1 mdi mdi-store"></i> Ventas Generales —
                                         <span id="periodoDigital">{{ $mesActual }} {{ $anioActual }}</span>
                                     </h6>
                                 </div>
@@ -88,12 +88,12 @@
                                         ->count();
                                 @endphp
 
-                                <div class="col-lg-3 col-md-6 mb-3">
-                                    <div class="card card-tale h-100">
+                                <div class="mb-3 col-lg-3 col-md-6">
+                                    <div class="h-100 card card-tale">
                                         <div class="card-body">
                                             <div class="d-flex align-items-center">
-                                                <div class="icon-wrapper bg-white rounded me-3">
-                                                    <i class="mdi mdi-cart text-primary mdi-36px"></i>
+                                                <div class="bg-white me-3 rounded icon-wrapper">
+                                                    <i class="text-primary mdi mdi-cart mdi-36px"></i>
                                                 </div>
                                                 <div>
                                                     <p class="mb-1 text-white small">Venta Total</p>
@@ -106,12 +106,12 @@
                                     </div>
                                 </div>
 
-                                <div class="col-lg-3 col-md-6 mb-3">
-                                    <div class="card card-dark-blue h-100">
+                                <div class="mb-3 col-lg-3 col-md-6">
+                                    <div class="h-100 card card-dark-blue">
                                         <div class="card-body">
                                             <div class="d-flex align-items-center">
-                                                <div class="icon-wrapper bg-white rounded me-3">
-                                                    <i class="mdi mdi-target text-warning mdi-36px"></i>
+                                                <div class="bg-white me-3 rounded icon-wrapper">
+                                                    <i class="text-warning mdi mdi-target mdi-36px"></i>
                                                 </div>
                                                 <div>
                                                     <p class="mb-1 text-white small">Cuota Total</p>
@@ -124,12 +124,12 @@
                                     </div>
                                 </div>
 
-                                <div class="col-lg-3 col-md-6 mb-3">
-                                    <div class="card card-light-blue h-100">
+                                <div class="mb-3 col-lg-3 col-md-6">
+                                    <div class="h-100 card card-light-blue">
                                         <div class="card-body">
                                             <div class="d-flex align-items-center mb-2">
-                                                <div class="icon-wrapper bg-white rounded me-3">
-                                                    <i class="mdi mdi-chart-line text-success mdi-36px"></i>
+                                                <div class="bg-white me-3 rounded icon-wrapper">
+                                                    <i class="text-success mdi mdi-chart-line mdi-36px"></i>
                                                 </div>
                                                 <div>
                                                     <p class="mb-1 text-white small">Cumplimiento Promedio</p>
@@ -142,12 +142,12 @@
                                     </div>
                                 </div>
 
-                                <div class="col-lg-3 col-md-6 mb-3">
-                                    <div class="card card-light-danger h-100">
+                                <div class="mb-3 col-lg-3 col-md-6">
+                                    <div class="h-100 card card-light-danger">
                                         <div class="card-body">
                                             <div class="d-flex align-items-center">
-                                                <div class="icon-wrapper bg-white rounded me-3">
-                                                    <i class="mdi mdi-office-building text-info mdi-36px"></i>
+                                                <div class="bg-white me-3 rounded icon-wrapper">
+                                                    <i class="text-info mdi mdi-office-building mdi-36px"></i>
                                                 </div>
                                                 <div>
                                                     <p class="mb-1 text-white small">Sedes que Cumplen</p>
@@ -163,20 +163,20 @@
                             </div>
 
                             <!-- Cards Ventas Digitales -->
-                            <div class="row mb-4" id="cardsDigitales">
-                                <div class="col-lg-12 mb-2">
+                            <div class="mb-4 row" id="cardsDigitales">
+                                <div class="mb-2 col-lg-12">
                                     <h6 class="text-muted">
-                                        <i class="mdi mdi-monitor me-1"></i> Ventas Digitales —
+                                        <i class="me-1 mdi mdi-monitor"></i> Ventas Digitales —
                                         <span id="periodoDigital">{{ $mesActual }} {{ $anioActual }}</span>
                                     </h6>
                                 </div>
 
-                                <div class="col-lg-3 col-md-6 mb-3">
-                                    <div class="card card-tale h-100">
+                                <div class="mb-3 col-lg-3 col-md-6">
+                                    <div class="h-100 card card-tale">
                                         <div class="card-body">
                                             <div class="d-flex align-items-center">
-                                                <div class="icon-wrapper bg-white rounded me-3">
-                                                    <i class="mdi mdi-monitor-dashboard text-primary mdi-36px"></i>
+                                                <div class="bg-white me-3 rounded icon-wrapper">
+                                                    <i class="text-primary mdi mdi-monitor-dashboard mdi-36px"></i>
                                                 </div>
                                                 <div>
                                                     <p class="mb-1 text-white small">Venta Digital</p>
@@ -190,12 +190,12 @@
                                     </div>
                                 </div>
 
-                                <div class="col-lg-3 col-md-6 mb-3">
-                                    <div class="card card-dark-blue h-100">
+                                <div class="mb-3 col-lg-3 col-md-6">
+                                    <div class="h-100 card card-dark-blue">
                                         <div class="card-body">
                                             <div class="d-flex align-items-center">
-                                                <div class="icon-wrapper bg-white rounded me-3">
-                                                    <i class="mdi mdi-chart-line text-warning mdi-36px"></i>
+                                                <div class="bg-white me-3 rounded icon-wrapper">
+                                                    <i class="text-warning mdi mdi-chart-line mdi-36px"></i>
                                                 </div>
                                                 <div>
                                                     <p class="mb-1 text-white small">Venta Proy. Digital</p>
@@ -209,12 +209,12 @@
                                     </div>
                                 </div>
 
-                                <div class="col-lg-3 col-md-6 mb-3">
-                                    <div class="card card-light-blue h-100">
+                                <div class="mb-3 col-lg-3 col-md-6">
+                                    <div class="h-100 card card-light-blue">
                                         <div class="card-body">
                                             <div class="d-flex align-items-center">
-                                                <div class="icon-wrapper bg-white rounded me-3">
-                                                    <i class="mdi mdi-target text-success mdi-36px"></i>
+                                                <div class="bg-white me-3 rounded icon-wrapper">
+                                                    <i class="text-success mdi mdi-target mdi-36px"></i>
                                                 </div>
                                                 <div>
                                                     <p class="mb-1 text-white small">Cuota Digital</p>
@@ -228,12 +228,12 @@
                                     </div>
                                 </div>
 
-                                <div class="col-lg-3 col-md-6 mb-3">
-                                    <div class="card card-light-danger h-100">
+                                <div class="mb-3 col-lg-3 col-md-6">
+                                    <div class="h-100 card card-light-danger">
                                         <div class="card-body">
                                             <div class="d-flex align-items-center">
-                                                <div class="icon-wrapper bg-white rounded me-3">
-                                                    <i class="mdi mdi-percent text-info mdi-36px"></i>
+                                                <div class="bg-white me-3 rounded icon-wrapper">
+                                                    <i class="text-info mdi mdi-percent mdi-36px"></i>
                                                 </div>
                                                 <div>
                                                     <p class="mb-1 text-white small">Cum. Cuota Digital</p>
@@ -260,13 +260,13 @@
                             </div>
 
                             <!-- Gráficos -->
-                            <div class="row mb-4">
+                            <div class="mb-4 row">
                                 <!-- Gráfico Consolidado Mensual -->
-                                <div class="col-lg-8 mb-3">
+                                <div class="mb-3 col-lg-8">
                                     <div class="card">
                                         <div class="card-body">
-                                            <h4 class="card-title mb-4">
-                                                <i class="mdi mdi-chart-bar text-primary me-2"></i>
+                                            <h4 class="mb-4 card-title">
+                                                <i class="me-2 text-primary mdi mdi-chart-bar"></i>
                                                 Ventas Consolidadas Mensuales - <span
                                                     id="anioConsolidado">{{ $anioActual }}</span>
                                             </h4>
@@ -276,11 +276,11 @@
                                 </div>
 
                                 <!-- Top 5 Sedes -->
-                                <div class="col-lg-4 mb-3">
+                                <div class="mb-3 col-lg-4">
                                     <div class="card">
                                         <div class="card-body">
-                                            <h4 class="card-title mb-4">
-                                                <i class="mdi mdi-trophy text-warning me-2"></i>
+                                            <h4 class="mb-4 card-title">
+                                                <i class="me-2 text-warning mdi mdi-trophy"></i>
                                                 Top 5 Sedes
                                             </h4>
                                             <canvas id="topSedesChart" height="160"></canvas>
@@ -290,12 +290,12 @@
                             </div>
 
                             <!-- Gráfico Comparación Anual -->
-                            <div class="row mb-4">
+                            <div class="mb-4 row">
                                 <div class="col-12">
                                     <div class="card">
                                         <div class="card-body">
-                                            <h4 class="card-title mb-4">
-                                                <i class="mdi mdi-chart-areaspline text-info me-2"></i>
+                                            <h4 class="mb-4 card-title">
+                                                <i class="me-2 text-info mdi mdi-chart-areaspline"></i>
                                                 Comparación de {{ $mesActual }} - Histórico
                                                 de Años (Todas las Sedes)
                                             </h4>
@@ -310,9 +310,9 @@
                                 <div class="col-12">
                                     <div class="card">
                                         <div class="card-body">
-                                            <div class="d-flex justify-content-between align-items-center mb-4">
-                                                <h4 class="card-title mb-0">
-                                                    <i class="mdi mdi-table text-info me-2"></i>
+                                            <div class="d-flex align-items-center justify-content-between mb-4">
+                                                <h4 class="mb-0 card-title">
+                                                    <i class="mdi-table me-2 text-info mdi"></i>
                                                     Detalle por Sede - <span id="periodoTabla">{{ $mesActual }}
                                                         {{ $anioActual }}</span>
                                                 </h4>
@@ -360,23 +360,23 @@
                                                                     @if ($sede['cumplimiento_cuota'] >= 100)
                                                                         <span class="badge badge-success">
                                                                             <i
-                                                                                class="mdi mdi-check-circle me-1"></i>Cumplido
+                                                                                class="me-1 mdi mdi-check-circle"></i>Cumplido
                                                                         </span>
                                                                     @elseif($sede['cumplimiento_cuota'] >= 70)
                                                                         <span class="badge badge-warning">
-                                                                            <i class="mdi mdi-alert me-1"></i>En Progreso
+                                                                            <i class="me-1 mdi mdi-alert"></i>En Progreso
                                                                         </span>
                                                                     @else
                                                                         <span class="badge badge-danger">
-                                                                            <i class="mdi mdi-close-circle me-1"></i>Bajo
+                                                                            <i class="me-1 mdi mdi-close-circle"></i>Bajo
                                                                         </span>
                                                                     @endif
                                                                 </td>
                                                             </tr>
                                                         @empty
                                                             <tr>
-                                                                <td colspan="7" class="text-center py-4 text-muted">
-                                                                    <i class="mdi mdi-inbox mdi-48px d-block mb-3"></i>
+                                                                <td colspan="7" class="py-4 text-muted text-center">
+                                                                    <i class="d-block mb-3 mdi mdi-inbox mdi-48px"></i>
                                                                     No hay datos disponibles
                                                                 </td>
                                                             </tr>
@@ -681,8 +681,8 @@
             if (sedes.length === 0) {
                 tbody.innerHTML = `
             <tr>
-                <td colspan="7" class="text-center py-4 text-muted">
-                    <i class="mdi mdi-inbox mdi-48px d-block mb-3"></i>
+                <td colspan="7" class="py-4 text-muted text-center">
+                    <i class="d-block mb-3 mdi mdi-inbox mdi-48px"></i>
                     No hay datos disponibles
                 </td>
             </tr>
