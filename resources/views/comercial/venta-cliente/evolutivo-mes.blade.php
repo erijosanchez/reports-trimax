@@ -155,9 +155,9 @@
                                                     style="font-size:0.80rem; min-width:1400px;">
                                                     <thead class="table-light" style="position:sticky; top:0; z-index:5;">
                                                         <tr>
-                                                            <th style="min-width:90px;">SEDE</th>
+                                                            <th style="width:150px; max-width:150px;">SEDE</th>
                                                             <th style="min-width:100px;">RUC / DNI</th>
-                                                            <th style="min-width:200px;">CLIENTE</th>
+                                                            <th style="width:300px; max-width:300px;">CLIENTE</th>
                                                             <th class="text-end">ENE</th>
                                                             <th class="text-end">FEB</th>
                                                             <th class="text-end">MAR</th>
@@ -322,9 +322,9 @@
                 grandT += c.total || 0;
 
                 html += `<tr>
-            <td class="fw-medium">${c.sede}</td>
+            <td class="fw-medium" style="width:150px; max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${c.sede}</td>
             <td class="text-muted small">${c.ruc}</td>
-            <td>${c.razon}</td>
+            <td style="width:300px; max-width:300px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${c.razon}</td>
             ${celdas}
             <td class="text-end fw-bold" style="background:#eef2ff; color:#1e3a5f;">S/ ${fmtNum(c.total)}</td>
         </tr>`;
