@@ -13,3 +13,8 @@ Schedule::job(new AlertaSlaRequerimientosJob)
     ->dailyAt('08:00')
     ->withoutOverlapping()
     ->onOneServer();
+
+Schedule::command('trimax:sync-ordenes-sede')
+    ->everyFifteenMinutes()
+    ->withoutOverlapping()
+    ->runInBackground();

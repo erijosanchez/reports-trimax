@@ -206,6 +206,10 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
         Route::get('/api/venta-clientes/anio-data',  [VentaClienteController::class, 'getEvolutivoAnioData'])->name('venta-cliente.anio.data');
         Route::get('/api/venta-clientes/anios',      [VentaClienteController::class, 'getAnios'])->name('venta-cliente.anios');
         Route::post('/api/venta-clientes/clear-cache', [VentaClienteController::class, 'clearCache'])->name('venta-cliente.cache.clear');
+
+        // Ventas por cliente
+        Route::get('/ordenes-por-sede', [ComercialController::class, 'ordenesPorSede'])->name('ordenesPorSede');
+        Route::get('/ordenes-por-sede/data', [ComercialController::class, 'obtenerOrdenesPorSede'])->name('ordenesPorSede.data');
     });
 
     // Recursos Humanos Routes (RRHH)

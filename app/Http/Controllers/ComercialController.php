@@ -17,6 +17,8 @@ use App\Notifications\AcuerdoVigente;
 use Google\Client;
 use Google\Service\Sheets;
 use carbon\Carbon;
+use Illuminate\Support\Facades\DB;
+
 
 
 class ComercialController extends Controller
@@ -31,28 +33,46 @@ class ComercialController extends Controller
     public function obtenerEstadisticasGenerales(Request $request)
     {
         try {
-            ini_set('memory_limit', '512M');
-            ini_set('max_execution_time', '60');
+            $stats = \Cache::remember('stats_generales_global', 300, function () {
 
-            $cacheKey = 'google_sheets_stats_generales';
+                $row = DB::table('ordenes_historico')
+                    ->selectRaw("
+                    COUNT(*)                                                                AS total,
 
-            $stats = \Cache::store('file')->remember($cacheKey, 300, function () {
-                $rawData = $this->googleSheets->getSheetData('Historico');
-                $ordenes = $this->googleSheets->parseSheetData($rawData);
+                    -- En sede / En tránsito / Facturado
+                    SUM(CASE WHEN ubicacion_orden = 'En sede'              THEN 1 ELSE 0 END) AS en_sede,
+                    SUM(CASE WHEN ubicacion_orden = 'En Transito'          THEN 1 ELSE 0 END) AS en_transito,
+                    SUM(CASE WHEN ubicacion_orden = 'Facturado y entregado' THEN 1 ELSE 0 END) AS facturados,
 
-                return $this->calcularEstadisticas($ordenes);
+                    -- Disponibles para facturar = Solicitado (en sede o tránsito, aún no facturado)
+                    SUM(CASE WHEN estado_orden = 'Solicitado'              THEN 1 ELSE 0 END) AS disponibles_facturar,
+
+                    -- Importes: solo órdenes Solicitadas (pendientes de cobro)
+                    SUM(CASE WHEN ubicacion_orden = 'En sede'     AND estado_orden = 'Solicitado' THEN importe ELSE 0 END) AS importe_sede,
+                    SUM(CASE WHEN ubicacion_orden = 'En Transito' AND estado_orden = 'Solicitado' THEN importe ELSE 0 END) AS importe_transito
+                ")
+                    ->first();
+
+                return [
+                    'total'               => (int)   ($row->total               ?? 0),
+                    'en_sede'             => (int)   ($row->en_sede             ?? 0),
+                    'en_transito'         => (int)   ($row->en_transito         ?? 0),
+                    'facturados'          => (int)   ($row->facturados          ?? 0),
+                    'disponibles_facturar' => (int)   ($row->disponibles_facturar ?? 0),
+                    'importe_sede'        => round((float)($row->importe_sede    ?? 0), 2),
+                    'importe_transito'    => round((float)($row->importe_transito ?? 0), 2),
+                    'importe_total'       => round((float)(($row->importe_sede ?? 0) + ($row->importe_transito ?? 0)), 2),
+                ];
             });
 
             return response()->json([
                 'success' => true,
-                'stats' => $stats
+                'stats'   => $stats,   // ← blade usa response.stats
+                'data'    => $stats,   // ← por compatibilidad con versión anterior
             ]);
         } catch (\Exception $e) {
-            \Log::error('❌ Error en obtenerEstadisticasGenerales: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Error: ' . $e->getMessage()
-            ], 500);
+            \Log::error('Error en obtenerEstadisticasGenerales: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 
@@ -63,6 +83,165 @@ class ComercialController extends Controller
         }
 
         return view('comercial.acuerdos');
+    }
+
+    /**
+     * Vista: Órdenes por Sede
+     */
+    public function ordenesPorSede()
+    {
+        if (!auth()->user()->puedeVerAcuerdosComerciales()) {
+            abort(403, 'No tienes permiso para ver esta sección');
+        }
+
+        return view('comercial.ordenes-por-sede');
+    }
+
+    /**
+     * API: Órdenes por Sede — lee de MySQL (instantáneo)
+     */
+    public function obtenerOrdenesPorSede(Request $request)
+    {
+        try {
+            $mes  = (int) $request->input('mes',  now()->month);
+            $anio = (int) $request->input('anio', now()->year);
+
+            // Sin caché — MySQL es tan rápido que no hace falta
+            $rows = \DB::table('ordenes_sede_stats')
+                ->where('mes', $mes)
+                ->where('anio', $anio)
+                ->orderBy('sede')
+                ->orderBy('fecha')
+                ->get(['sede', 'fecha', 'cant', 'facturadas']);
+
+            if ($rows->isEmpty()) {
+                // Si no hay datos aún, disparar sync manual en background
+                // y avisar al usuario
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Sin datos para este período. El sistema sincronizará en breve.',
+                    'sync_pending' => true,
+                ]);
+            }
+
+            // ── Agrupar para la tabla ───────────────────────────────────────
+            $agrupado        = [];
+            $fechaTimestamps = [];
+            $sedesVistas     = [];
+
+            foreach ($rows as $row) {
+                $sede     = $row->sede;
+                $fechaKey = \Carbon\Carbon::parse($row->fecha)->format('d/m/Y');
+                $ts       = strtotime($row->fecha);
+
+                $agrupado[$sede][$fechaKey] = [
+                    'cant'       => $row->cant,
+                    'facturadas' => $row->facturadas,
+                    'pct'        => $row->cant > 0
+                        ? (int) round(($row->facturadas / $row->cant) * 100)
+                        : null,
+                ];
+
+                $fechaTimestamps[$fechaKey] = $ts;
+                $sedesVistas[$sede]         = true;
+            }
+
+            // Ordenar fechas cronológicamente
+            asort($fechaTimestamps);
+            $fechasOrdenadas = array_keys($fechaTimestamps);
+
+            // Sedes A-Z
+            ksort($sedesVistas);
+            $sedesOrdenadas = array_keys($sedesVistas);
+
+            // Construir tabla
+            $tabla           = [];
+            $totalesPorFecha = [];
+            $totalGenCant    = 0;
+            $totalGenFact    = 0;
+
+            foreach ($sedesOrdenadas as $sede) {
+                $fila = [
+                    'sede'             => $sede,
+                    'dias'             => [],
+                    'total_cant'       => 0,
+                    'total_facturadas' => 0,
+                    'total_pct'        => null,
+                ];
+
+                foreach ($fechasOrdenadas as $f) {
+                    $dia  = $agrupado[$sede][$f] ?? null;
+                    $cant = $dia['cant']       ?? 0;
+                    $fact = $dia['facturadas'] ?? 0;
+                    $pct  = $cant > 0 ? (int) round(($fact / $cant) * 100) : null;
+
+                    $fila['dias'][$f]         = ['cant' => $cant, 'pct' => $pct];
+                    $fila['total_cant']       += $cant;
+                    $fila['total_facturadas'] += $fact;
+
+                    $totalesPorFecha[$f]['cant']       = ($totalesPorFecha[$f]['cant']       ?? 0) + $cant;
+                    $totalesPorFecha[$f]['facturadas'] = ($totalesPorFecha[$f]['facturadas'] ?? 0) + $fact;
+                }
+
+                if ($fila['total_cant'] > 0) {
+                    $fila['total_pct'] = (int) round(
+                        ($fila['total_facturadas'] / $fila['total_cant']) * 100
+                    );
+                }
+
+                $totalGenCant += $fila['total_cant'];
+                $totalGenFact += $fila['total_facturadas'];
+                $tabla[]       = $fila;
+            }
+
+            $totalesConPct = [];
+            foreach ($fechasOrdenadas as $f) {
+                $c  = $totalesPorFecha[$f]['cant']       ?? 0;
+                $ff = $totalesPorFecha[$f]['facturadas'] ?? 0;
+                $totalesConPct[$f] = [
+                    'cant' => $c,
+                    'pct'  => $c > 0 ? (int) round(($ff / $c) * 100) : null,
+                ];
+            }
+
+            return response()->json([
+                'success' => true,
+                'data'    => [
+                    'fechas'     => $fechasOrdenadas,
+                    'tabla'      => $tabla,
+                    'totales'    => $totalesConPct,
+                    'total_cant' => $totalGenCant,
+                    'total_pct'  => $totalGenCant > 0
+                        ? (int) round(($totalGenFact / $totalGenCant) * 100)
+                        : null,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error en obtenerOrdenesPorSede: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Helper: fecha DD/MM/YYYY o YYYY-MM-DD HH:MM:SS → timestamp
+     * (agregar solo si no existe ya en el controller)
+     */
+    private function parsearFechaOrden($fechaStr)
+    {
+        if (!$fechaStr || $fechaStr === '-') return null;
+        $s = trim($fechaStr);
+
+        // DD/MM/YYYY
+        if (preg_match('/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/', $s, $m)) {
+            return mktime(0, 0, 0, (int)$m[2], (int)$m[1], (int)$m[3]);
+        }
+        // YYYY-MM-DD (con o sin hora)
+        if (preg_match('/^(\d{4})-(\d{2})-(\d{2})/', $s, $m)) {
+            return mktime(0, 0, 0, (int)$m[2], (int)$m[3], (int)$m[1]);
+        }
+
+        $ts = strtotime($s);
+        return ($ts && $ts > 0) ? $ts : null;
     }
 
     /** Acuerdos Comerciales Funciones */
@@ -407,69 +586,23 @@ class ComercialController extends Controller
     public function obtenerOrdenesRecientes(Request $request)
     {
         try {
-            ini_set('memory_limit', '512M');
-            ini_set('max_execution_time', '60');
+            $limite = (int) $request->input('limite', 1000);
+            $limite = min($limite, 2000);
 
-            $cacheKey = 'google_sheets_ultimas_1000';
-
-            $ordenes = \Cache::store('file')->remember($cacheKey, 300, function () {
-                $rawData = $this->googleSheets->getSheetData('Historico');
-                $todasOrdenes = $this->googleSheets->parseSheetData($rawData);
-
-                // Ordenar por fecha descendente y tomar solo 1000
-                usort($todasOrdenes, function ($a, $b) {
-                    $fechaA = $this->convertirFechaParaComparar($a['fecha_orden'] ?? '');
-                    $fechaB = $this->convertirFechaParaComparar($b['fecha_orden'] ?? '');
-                    return $fechaB <=> $fechaA; // Descendente (más recientes primero)
-                });
-
-                return array_slice($todasOrdenes, 0, 1000);
-            });
-
-            // Aplicar filtros solo a las 1000
-            if ($request->filled('sede')) {
-                $ordenes = array_filter($ordenes, function ($orden) use ($request) {
-                    return ($orden['descripcion_sede'] ?? '') === $request->sede;
-                });
-            }
-
-            if ($request->filled('estado')) {
-                $estado = mb_strtoupper($request->estado);
-                $ordenes = array_filter($ordenes, function ($orden) use ($estado) {
-                    $ubicacion = mb_strtoupper($orden['ubicacion_orden'] ?? '');
-
-                    if ($estado === 'FACTURADO') {
-                        return strpos($ubicacion, 'FACTURADO') !== false || strpos($ubicacion, 'ENTREGADO') !== false;
-                    } elseif ($estado === 'EN TRANSITO') {
-                        return strpos($ubicacion, 'TRANSITO') !== false;
-                    } elseif ($estado === 'EN SEDE') {
-                        return strpos($ubicacion, 'SEDE') !== false;
-                    }
-                    return true;
-                });
-            }
-
-            if ($request->filled('buscar')) {
-                $ordenes = $this->googleSheets->searchInData($ordenes, $request->buscar);
-            }
-
-            $ordenes = array_values($ordenes);
-            $stats = $this->calcularEstadisticas($ordenes);
+            $ordenes = DB::table('ordenes_historico')
+                ->orderByDesc('fecha_orden')
+                ->orderByDesc('id')
+                ->limit($limite)
+                ->get();
 
             return response()->json([
                 'success' => true,
-                'data' => $ordenes,
-                'stats' => $stats,
-                'total' => count($ordenes),
-                'es_reciente' => true,
-                'mensaje' => 'Mostrando las 1000 órdenes más recientes'
+                'data'    => $ordenes,
+                'total'   => $ordenes->count(),
             ]);
         } catch (\Exception $e) {
-            \Log::error('❌ Error en obtenerOrdenesRecientes: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Error: ' . $e->getMessage()
-            ], 500);
+            Log::error('Error en obtenerOrdenesRecientes: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 
@@ -492,104 +625,66 @@ class ComercialController extends Controller
     public function obtenerOrdenes(Request $request)
     {
         try {
-            // 🔥 OPTIMIZACIÓN PARA 80K FILAS
-            ini_set('memory_limit', '1024M'); // 1GB para estar seguros
-            ini_set('max_execution_time', '300'); // 5 minutos
-            set_time_limit(300);
+            $query = DB::table('ordenes_historico')
+                ->orderByDesc('fecha_orden')
+                ->orderByDesc('id');
 
-            // NO usar caché de base de datos para datasets grandes
-            // Usar caché de archivos o sin caché
-            $useCache = !$request->has('nocache');
-
-            if ($useCache) {
-                // Usar caché de archivos en lugar de database
-                $cacheKey = 'google_sheets_historico';
-                $ordenes = \Cache::store('file')->remember($cacheKey, 600, function () { // 10 minutos de caché
-                    $rawData = $this->googleSheets->getSheetData('Historico');
-                    return $this->googleSheets->parseSheetData($rawData);
-                });
-            } else {
-                $rawData = $this->googleSheets->getSheetData('Historico');
-                \Log::info('📊 Filas obtenidas: ' . count($rawData));
-                $ordenes = $this->googleSheets->parseSheetData($rawData);
+            // Filtros opcionales
+            if ($sede = $request->input('sede')) {
+                $query->where('descripcion_sede', $sede);
             }
-
-            if (empty($ordenes)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'No se pudieron obtener datos del Google Sheet'
-                ], 500);
+            if ($estado = $request->input('estado')) {
+                // Mapear valores del blade a los valores reales en BD
+                $estadoUpper = strtoupper($estado);
+                if ($estadoUpper === 'FACTURADO') {
+                    $query->where('ubicacion_orden', 'Facturado y entregado');
+                } elseif ($estadoUpper === 'EN TRANSITO') {
+                    $query->where('ubicacion_orden', 'En Transito');
+                } elseif ($estadoUpper === 'EN SEDE') {
+                    $query->where('ubicacion_orden', 'En sede');
+                } elseif ($estadoUpper === 'SOLICITADO') {
+                    $query->where('estado_orden', 'Solicitado');
+                } elseif ($estadoUpper === 'OTROS') {
+                    $query->whereNotIn('ubicacion_orden', [
+                        'Facturado y entregado',
+                        'En Transito',
+                        'En sede'
+                    ])->where('estado_orden', '!=', 'Solicitado');
+                }
             }
-
-            // Aplicar filtros
-            $filters = [];
-
-            if ($request->filled('sede')) {
-                $filters['descripcion_sede'] = $request->sede;
+            if ($tipoOrden = $request->input('tipo_orden')) {
+                $query->where('tipo_orden', 'like', "%{$tipoOrden}%");
             }
-
-            if ($request->filled('tipo_orden')) {
-                $filters['tipo_orden'] = $request->tipo_orden;
-            }
-
-            if (!empty($filters)) {
-                $ordenes = $this->googleSheets->filterByMultiple($ordenes, $filters);
-            }
-
-            // Filtrar por estado (ubicación)
-            if ($request->filled('estado')) {
-                $estado = mb_strtoupper($request->estado);
-                $ordenes = array_filter($ordenes, function ($orden) use ($estado) {
-                    $ubicacion = mb_strtoupper($orden['ubicacion_orden'] ?? '');
-
-                    if ($estado === 'FACTURADO') {
-                        return strpos($ubicacion, 'FACTURADO') !== false ||
-                            strpos($ubicacion, 'ENTREGADO') !== false;
-                    } elseif ($estado === 'EN TRANSITO') {
-                        return strpos($ubicacion, 'TRANSITO') !== false;
-                    } elseif ($estado === 'EN SEDE') {
-                        return strpos($ubicacion, 'SEDE') !== false;
-                    } elseif ($estado === 'OTROS') {
-                        return strpos($ubicacion, 'FACTURADO') === false &&
-                            strpos($ubicacion, 'ENTREGADO') === false &&
-                            strpos($ubicacion, 'TRANSITO') === false &&
-                            strpos($ubicacion, 'SEDE') === false;
-                    }
-
-                    return true;
+            if ($buscar = $request->input('buscar')) {
+                $query->where(function ($q) use ($buscar) {
+                    $q->where('numero_orden', 'like', "%{$buscar}%")
+                        ->orWhere('cliente',    'like', "%{$buscar}%")
+                        ->orWhere('ruc',        'like', "%{$buscar}%");
                 });
             }
 
-            // Búsqueda general
-            if ($request->filled('buscar')) {
-                $ordenes = $this->googleSheets->searchInData($ordenes, $request->buscar);
+            // limite=0 significa SIN LÍMITE (modo histórico completo)
+            $limite = (int) $request->input('limite', 1000);
+
+            if ($limite > 0) {
+                $limite = min($limite, 5000);
+                $query->limit($limite);
             }
+            // Si limite=0 → sin limit, devuelve todo
 
-            // Reindexar array
-            $ordenes = array_values($ordenes);
-
-            // Estadísticas
-            $stats = $this->calcularEstadisticas($ordenes);
-
-            // Liberar memoria
-            gc_collect_cycles();
+            $ordenes = $query->get();
 
             return response()->json([
                 'success' => true,
-                'data' => $ordenes,
-                'stats' => $stats,
-                'total' => count($ordenes)
+                'data'    => $ordenes,
+                'total'   => $ordenes->count(),
             ]);
         } catch (\Exception $e) {
-            \Log::error('❌ Error en obtenerOrdenes: ' . $e->getMessage());
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al obtener datos: ' . $e->getMessage()
-            ], 500);
+            Log::error('Error en obtenerOrdenes: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
-
+    
     /**
      * Rehabilitar acuerdo
      */
@@ -699,23 +794,20 @@ class ComercialController extends Controller
     public function obtenerSedes(Request $request)
     {
         try {
-            $cacheKey = 'google_sheets_sedes';
-
-            $sedes = \Cache::store('file')->remember($cacheKey, 600, function () {
-                $rawData = $this->googleSheets->getSheetData('Historico');
-                $ordenes = $this->googleSheets->parseSheetData($rawData);
-                return $this->googleSheets->getUniqueValues($ordenes, 'descripcion_sede');
-            });
+            $sedes = DB::table('ordenes_historico')
+                ->whereNotNull('descripcion_sede')
+                ->where('descripcion_sede', '!=', '')
+                ->distinct()
+                ->orderBy('descripcion_sede')
+                ->pluck('descripcion_sede');
 
             return response()->json([
                 'success' => true,
-                'data' => $sedes
+                'data'    => $sedes,
             ]);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Error: ' . $e->getMessage()
-            ], 500);
+            Log::error('Error en obtenerSedes: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 
@@ -725,10 +817,13 @@ class ComercialController extends Controller
     public function limpiarCache()
     {
         try {
-            \Cache::store('file')->forget('google_sheets_historico');
-            \Cache::store('file')->forget('google_sheets_sedes');
+            // Limpiar caché del semáforo por sede (todos los meses/años)
+            foreach (range(1, 12) as $m) {
+                foreach ([date('Y'), date('Y') - 1] as $a) {
+                    \Cache::store('file')->forget("ordenes_por_sede_{$m}_{$a}");
+                }
+            }
 
-            // Forzar garbage collection
             gc_collect_cycles();
 
             return response()->json([
@@ -1209,44 +1304,93 @@ class ComercialController extends Controller
     public function exportarExcel(Request $request)
     {
         try {
-            // Aumentar límite de memoria para exportación
-            ini_set('memory_limit', '1024M');
-            ini_set('max_execution_time', '300');
+            ini_set('memory_limit',       '256M');
+            ini_set('max_execution_time', '120');
 
-            // Obtener datos sin caché para export
-            $rawData = $this->googleSheets->getSheetData('Historico');
+            // Filtros opcionales
+            $mes   = $request->input('mes');
+            $anio  = $request->input('anio');
+            $sede  = $request->input('sede');
+            $estado = $request->input('estado');
 
-            if (empty($rawData)) {
-                return response()->json(['error' => 'No hay datos para exportar'], 404);
-            }
+            $query = DB::table('ordenes_historico')
+                ->orderBy('fecha_orden')
+                ->orderBy('descripcion_sede');
+
+            if ($mes)    $query->where('mes',  (int) $mes);
+            if ($anio)   $query->where('anio', (int) $anio);
+            if ($sede)   $query->where('descripcion_sede', $sede);
+            if ($estado) $query->where('estado_orden', strtoupper($estado));
 
             $filename = 'ordenes_historico_' . date('Y-m-d_His') . '.csv';
 
             $headers = [
-                'Content-Type' => 'text/csv; charset=UTF-8',
+                'Content-Type'        => 'text/csv; charset=UTF-8',
                 'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+                'Cache-Control'       => 'no-cache, no-store, must-revalidate',
             ];
 
-            $callback = function () use ($rawData) {
-                $file = fopen('php://output', 'w');
+            $callback = function () use ($query) {
+                $handle = fopen('php://output', 'w');
 
-                // BOM para Excel UTF-8
-                fprintf($file, chr(0xEF) . chr(0xBB) . chr(0xBF));
+                // BOM para Excel
+                fprintf($handle, chr(0xEF) . chr(0xBB) . chr(0xBF));
 
-                // Escribir todas las filas
-                foreach ($rawData as $row) {
-                    fputcsv($file, $row);
-                }
+                // Headers CSV
+                fputcsv($handle, [
+                    'Sede',
+                    'N° Orden',
+                    'RUC',
+                    'Cliente',
+                    'Diseño',
+                    'Producto',
+                    'Importe',
+                    'Orden Compra',
+                    'Fecha Orden',
+                    'Hora Orden',
+                    'Tipo Orden',
+                    'Usuario',
+                    'Estado',
+                    'Ubicación',
+                    'Tallado',
+                    'Tratamiento',
+                    'Lead Time',
+                ]);
 
-                fclose($file);
+                // Streaming por chunks para no cargar todo en memoria
+                $query->chunk(1000, function ($rows) use ($handle) {
+                    foreach ($rows as $row) {
+                        fputcsv($handle, [
+                            $row->descripcion_sede,
+                            $row->numero_orden,
+                            $row->ruc,
+                            $row->cliente,
+                            $row->diseno,
+                            $row->descripcion_producto,
+                            $row->importe,
+                            $row->orden_compra,
+                            $row->fecha_orden
+                                ? \Carbon\Carbon::parse($row->fecha_orden)->format('d/m/Y')
+                                : '',
+                            $row->hora_orden,
+                            $row->tipo_orden,
+                            $row->nombre_usuario,
+                            $row->estado_orden,
+                            $row->ubicacion_orden,
+                            $row->descripcion_tallado,
+                            $row->tratamiento,
+                            $row->lead_time,
+                        ]);
+                    }
+                });
+
+                fclose($handle);
             };
 
             return response()->stream($callback, 200, $headers);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al exportar: ' . $e->getMessage()
-            ], 500);
+            \Log::error('Error en exportarExcel: ' . $e->getMessage());
+            return response()->json(['error' => $e->getMessage()], 500);
         }
     }
 

@@ -1,8 +1,6 @@
-@extends('layouts.app')
+<?php $__env->startSection('title', 'Consulta de Orden'); ?>
 
-@section('title', 'Consulta de Orden')
-
-@section('content')
+<?php $__env->startSection('content'); ?>
     <div class="content-wrapper">
         <div class="row">
             <div class="col-sm-12">
@@ -15,7 +13,7 @@
                     <div class="mt-4 tab-content-basic tab-content">
                         <div class="tab-pane fade show active" id="overview" role="tabpanel" aria-labelledby="overview">
 
-                            {{-- Cards de Estadísticas --}}
+                            
                             <div class="mb-4 row">
                                 <div class="mb-3 mb-md-0 col-md-3">
                                     <div class="h-100 card">
@@ -78,7 +76,7 @@
                                     </div>
                                 </div>
 
-                                {{-- CARD DE IMPORTE --}}
+                                
                                 <div class="mb-3 mb-md-0 col-md-3">
                                     <div class="border-info h-100 card">
                                         <div class="card-body">
@@ -132,12 +130,12 @@
                                 </div>
                             </div>
 
-                            {{-- Filtros y Tabla --}}
+                            
                             <div class="row">
                                 <div class="grid-margin col-lg-12 stretch-card">
                                     <div class="card">
                                         <div class="card-body">
-                                            {{-- Sección de Filtros --}}
+                                            
                                             <div class="mb-3 row">
                                                 <div class="col-md-3">
                                                     <label class="form-label"><i class="mdi mdi-office-building"></i>
@@ -223,7 +221,7 @@
                                                 </div>
                                             </div>
 
-                                            {{-- Loading Spinner --}}
+                                            
                                             <div id="loadingSpinner" class="py-5 text-center">
                                                 <div class="spinner-border text-primary" role="status"
                                                     style="width: 3rem; height: 3rem;">
@@ -232,13 +230,13 @@
                                                 <p class="mt-3">Cargando todas las ordenes...</p>
                                             </div>
 
-                                            {{-- Error Message --}}
+                                            
                                             <div id="errorMessage" class="alert alert-danger" style="display: none;">
                                                 <i class="mdi mdi-alert-circle"></i>
                                                 <span id="errorText"></span>
                                             </div>
 
-                                            {{-- Tabla con columnas más anchas --}}
+                                            
                                             <div class="table-responsive p-2" id="tablaContainer" style="display: none;">
                                                 <table class="table table-hover table-sm" id="tablaOrdenes"
                                                     style="min-width: 2000px;">
@@ -273,12 +271,12 @@
                                                         </tr>
                                                     </thead>
                                                     <tbody id="tablaOrdenesBody">
-                                                        {{-- Los datos se cargan dinámicamente --}}
+                                                        
                                                     </tbody>
                                                 </table>
                                             </div>
 
-                                            {{-- Paginación mejorada --}}
+                                            
                                             <div class="mt-3 row" id="paginacionContainer" style="display: none;">
                                                 <div class="col-md-6">
                                                     <p class="text-muted">
@@ -291,7 +289,7 @@
                                                 <div class="col-md-6">
                                                     <nav>
                                                         <ul class="justify-content-end pagination" id="paginacion">
-                                                            {{-- Se genera dinámicamente --}}
+                                                            
                                                         </ul>
                                                     </nav>
                                                 </div>
@@ -307,7 +305,7 @@
         </div>
     </div>
 
-    {{-- Estilos adicionales --}}
+    
     <style>
         .icon-lg {
             width: 60px;
@@ -394,9 +392,9 @@
         }
     </style>
 
-@endsection
+<?php $__env->stopSection(); ?>
 
-@section('scripts')
+<?php $__env->startSection('scripts'); ?>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
@@ -489,7 +487,7 @@
             }
 
             $.ajax({
-                url: "{{ route('comercial.ordenes.estadisticas') }}",
+                url: "<?php echo route('comercial.ordenes.estadisticas'); ?>",
                 method: 'GET',
                 data: params,
                 timeout: 60000,
@@ -546,7 +544,7 @@
             }
 
             $.ajax({
-                url: "{{ route('comercial.ordenes.recientes') }}",
+                url: "<?php echo route('comercial.ordenes.recientes'); ?>",
                 method: 'GET',
                 data: params,
                 timeout: 60000,
@@ -606,7 +604,7 @@
             if (forceRefresh) params.nocache = Date.now();
 
             $.ajax({
-                url: "{{ route('comercial.ordenes.obtener') }}",
+                url: "<?php echo route('comercial.ordenes.obtener'); ?>",
                 method: 'GET',
                 data: params,
                 timeout: 120000,
@@ -643,7 +641,7 @@
 
         function cargarSedes() {
             $.ajax({
-                url: "{{ route('comercial.ordenes.sedes') }}",
+                url: "<?php echo route('comercial.ordenes.sedes'); ?>",
                 method: 'GET',
                 success: function(response) {
                     if (response.success && response.data) {
@@ -906,4 +904,6 @@
             $('#errorText').text(mensaje);
         }
     </script>
-@endsection
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH /var/www/resources/views/comercial/consulta-orden.blade.php ENDPATH**/ ?>

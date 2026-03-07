@@ -239,6 +239,37 @@ class GoogleSheetsService
     }
 
     /**
+     * Obtener solo columnas específicas del sheet (muy rápido)
+     * Evita parsear el dataset completo cuando solo se necesitan
+     * algunas columnas para cálculos/agrupaciones.
+     *
+     * @param string $sheetName  Nombre de la hoja
+     * @param string $range      Rango A1 notation, ej: 'A:M'
+     * @return array  Array de rows crudas (sin headers, sin fila de actualización)
+     */
+    public function getRawRows($sheetName, $range)
+    {
+        try {
+            $values = $this->getSheetData($sheetName, $range);
+
+            if (empty($values)) return [];
+
+            // Saltar fila de "Actualizado:" si existe
+            if (!empty($values[0][0]) && stripos(trim($values[0][0]), 'actualizado') !== false) {
+                array_shift($values);
+            }
+
+            // Saltar fila de headers
+            array_shift($values);
+
+            return $values;
+        } catch (\Exception $e) {
+            \Log::error("Error en getRawRows({$sheetName}, {$range}): " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
      * Obtener datos con caché de un spreadsheet específico
      */
     public function getSheetDataFromSpreadsheetCached($spreadsheetId, $sheetName, $range = null, $ttl = 300)
