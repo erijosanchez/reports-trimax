@@ -230,6 +230,21 @@
                                                                         <div class="form-check form-check-success">
                                                                             <label class="form-check-label">
                                                                                 <input type="checkbox"
+                                                                                    name="puede_ver_ordenes_x_sede"
+                                                                                    value="1"
+                                                                                    class="form-check-input"
+                                                                                    {{ old('puede_ver_ordenes_x_sede') ? 'checked' : '' }}>
+                                                                                Consultar Ordenes por Sede
+                                                                                <i class="input-helper"></i>
+                                                                            </label>
+                                                                            <div><small class="text-muted">Automático para
+                                                                                    rol Sede</small></div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-md-6">
+                                                                        <div class="form-check form-check-success">
+                                                                            <label class="form-check-label">
+                                                                                <input type="checkbox"
                                                                                     name="puede_ver_acuerdos_comerciales"
                                                                                     value="1"
                                                                                     class="form-check-input"

@@ -498,3 +498,58 @@ CREATE TABLE requerimiento_historial (
 ALTER TABLE users ADD COLUMN puede_ver_pendiente_entrega_montura TINYINT(1) NOT NULL DEFAULT 0 AFTER puede_ver_lead_time;
 
 ALTER TABLE users ADD COLUMN puede_ver_venta_clientes TINYINT(1) NOT NULL DEFAULT 0 AFTER puede_ver_pendiente_entrega_montura;
+
+ALTER TABLE users ADD COLUMN puede_ver_ordenes_x_sede TINYINT(1) NOT NULL DEFAULT 0 AFTER puede_ver_venta_clientes;
+
+/*Tabla para estadísticas de ordenes por sede*/
+CREATE TABLE ordenes_sede_stats (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    sede VARCHAR(100) NOT NULL,
+    fecha DATE NOT NULL,
+    mes SMALLINT UNSIGNED NOT NULL,
+    anio SMALLINT UNSIGNED NOT NULL,
+    cant INT UNSIGNED NOT NULL DEFAULT 0,
+    facturadas INT UNSIGNED NOT NULL DEFAULT 0,
+    created_at TIMESTAMP NULL DEFAULT NULL,
+    updated_at TIMESTAMP NULL DEFAULT NULL,
+    
+    UNIQUE KEY uq_sede_fecha (sede, fecha),
+    INDEX idx_mes_anio (mes, anio)
+);
+
+/*Tabla para histórico de ordenes*/
+
+CREATE TABLE ordenes_historico (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+
+    descripcion_sede VARCHAR(150) NULL,
+    numero_orden VARCHAR(50) NULL,
+    ruc VARCHAR(20) NULL,
+    cliente VARCHAR(200) NULL,
+    diseno VARCHAR(200) NULL,
+    descripcion_producto VARCHAR(300) NULL,
+    importe DECIMAL(12,2) NULL,
+    orden_compra VARCHAR(100) NULL,
+    fecha_orden DATE NULL,
+    hora_orden VARCHAR(20) NULL,
+    tipo_orden VARCHAR(100) NULL,
+    nombre_usuario VARCHAR(150) NULL,
+    estado_orden VARCHAR(50) NULL,
+    ubicacion_orden VARCHAR(150) NULL,
+    descripcion_tallado VARCHAR(300) NULL,
+    tratamiento VARCHAR(200) NULL,
+    lead_time SMALLINT UNSIGNED NULL,
+
+    mes SMALLINT UNSIGNED NULL,
+    anio SMALLINT UNSIGNED NULL,
+
+    created_at TIMESTAMP NULL DEFAULT NULL,
+    updated_at TIMESTAMP NULL DEFAULT NULL,
+
+    UNIQUE KEY uq_numero_orden (numero_orden),
+    INDEX idx_mes_anio (mes, anio),
+    INDEX idx_fecha_orden (fecha_orden),
+    INDEX idx_sede (descripcion_sede),
+    INDEX idx_estado (estado_orden),
+    INDEX idx_usuario (nombre_usuario)
+);

@@ -50,11 +50,11 @@
                 </li>
             <?php endif; ?>
 
-            <?php if($user->puedeVerConsultarOrden()): ?>
+            <?php if($user->puedeVerOrdenesXSede()): ?>
                 <li class="nav-item">
                     <a class="nav-link <?php echo request()->routeIs('comercial.ordenesPorSede') ? 'active' : ''; ?>"
                         href="<?php echo route('comercial.ordenesPorSede'); ?>">
-                        <i class="mdi mdi-library-books menu-icon"></i>
+                        <i class="mdi mdi-store menu-icon"></i>
                         <span class="menu-title">Ordenes por Sede</span>
                     </a>
                 </li>

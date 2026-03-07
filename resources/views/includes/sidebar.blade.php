@@ -50,11 +50,11 @@
                 </li>
             @endif
 
-            @if ($user->puedeVerConsultarOrden())
+            @if ($user->puedeVerOrdenesXSede())
                 <li class="nav-item">
                     <a class="nav-link {{ request()->routeIs('comercial.ordenesPorSede') ? 'active' : '' }}"
                         href="{{ route('comercial.ordenesPorSede') }}">
-                        <i class="mdi mdi-library-books menu-icon"></i>
+                        <i class="mdi mdi-store menu-icon"></i>
                         <span class="menu-title">Ordenes por Sede</span>
                     </a>
                 </li>
