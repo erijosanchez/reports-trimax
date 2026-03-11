@@ -67,8 +67,8 @@ class ComercialController extends Controller
 
             return response()->json([
                 'success' => true,
-                'stats'   => $stats,   // ← blade usa response.stats
-                'data'    => $stats,   // ← por compatibilidad con versión anterior
+                'stats'   => $stats,
+                'data'    => $stats,
             ]);
         } catch (\Exception $e) {
             \Log::error('Error en obtenerEstadisticasGenerales: ' . $e->getMessage());
@@ -85,9 +85,6 @@ class ComercialController extends Controller
         return view('comercial.acuerdos');
     }
 
-    /**
-     * Vista: Órdenes por Sede
-     */
     public function ordenesPorSede()
     {
         if (!auth()->user()->puedeVerAcuerdosComerciales()) {
@@ -97,16 +94,12 @@ class ComercialController extends Controller
         return view('comercial.ordenes-por-sede');
     }
 
-    /**
-     * API: Órdenes por Sede — lee de MySQL (instantáneo)
-     */
     public function obtenerOrdenesPorSede(Request $request)
     {
         try {
             $mes  = (int) $request->input('mes',  now()->month);
             $anio = (int) $request->input('anio', now()->year);
 
-            // Sin caché — MySQL es tan rápido que no hace falta
             $rows = \DB::table('ordenes_sede_stats')
                 ->where('mes', $mes)
                 ->where('anio', $anio)
@@ -115,8 +108,6 @@ class ComercialController extends Controller
                 ->get(['sede', 'fecha', 'cant', 'facturadas']);
 
             if ($rows->isEmpty()) {
-                // Si no hay datos aún, disparar sync manual en background
-                // y avisar al usuario
                 return response()->json([
                     'success' => false,
                     'message' => 'Sin datos para este período. El sistema sincronizará en breve.',
@@ -124,7 +115,6 @@ class ComercialController extends Controller
                 ]);
             }
 
-            // ── Agrupar para la tabla ───────────────────────────────────────
             $agrupado        = [];
             $fechaTimestamps = [];
             $sedesVistas     = [];
@@ -146,15 +136,12 @@ class ComercialController extends Controller
                 $sedesVistas[$sede]         = true;
             }
 
-            // Ordenar fechas cronológicamente
             asort($fechaTimestamps);
             $fechasOrdenadas = array_keys($fechaTimestamps);
 
-            // Sedes A-Z
             ksort($sedesVistas);
             $sedesOrdenadas = array_keys($sedesVistas);
 
-            // Construir tabla
             $tabla           = [];
             $totalesPorFecha = [];
             $totalGenCant    = 0;
@@ -222,20 +209,14 @@ class ComercialController extends Controller
         }
     }
 
-    /**
-     * Helper: fecha DD/MM/YYYY o YYYY-MM-DD HH:MM:SS → timestamp
-     * (agregar solo si no existe ya en el controller)
-     */
     private function parsearFechaOrden($fechaStr)
     {
         if (!$fechaStr || $fechaStr === '-') return null;
         $s = trim($fechaStr);
 
-        // DD/MM/YYYY
         if (preg_match('/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/', $s, $m)) {
             return mktime(0, 0, 0, (int)$m[2], (int)$m[1], (int)$m[3]);
         }
-        // YYYY-MM-DD (con o sin hora)
         if (preg_match('/^(\d{4})-(\d{2})-(\d{2})/', $s, $m)) {
             return mktime(0, 0, 0, (int)$m[2], (int)$m[3], (int)$m[1]);
         }
@@ -244,7 +225,6 @@ class ComercialController extends Controller
         return ($ts && $ts > 0) ? $ts : null;
     }
 
-    /** Acuerdos Comerciales Funciones */
     public function obtenerAcuerdos(Request $request)
     {
         try {
@@ -255,7 +235,6 @@ class ComercialController extends Controller
                 $query->where('sede', $user->sede);
             }
 
-            // Filtros (solo aplican si no es Sede, o son compatibles con su sede)
             if ($request->filled('usuario') && !$user->isSede()) {
                 $query->where('user_id', $request->usuario);
             }
@@ -298,9 +277,6 @@ class ComercialController extends Controller
         }
     }
 
-    /**
-     * Crear nuevo acuerdo
-     */
     public function crearAcuerdo(Request $request)
     {
         try {
@@ -319,13 +295,11 @@ class ComercialController extends Controller
                 'comentarios' => 'nullable|string',
                 'fecha_inicio' => 'required|date',
                 'fecha_fin' => 'required|date|after_or_equal:fecha_inicio',
-                'archivos.*' => 'nullable|file|max:10240' // 10MB
+                'archivos.*' => 'nullable|file|max:10240'
             ]);
 
-            // Generar número de acuerdo
             $numeroAcuerdo = AcuerdoComercial::generarNumeroAcuerdo();
 
-            // Subir archivos si existen
             $archivosAdjuntos = [];
             if ($request->hasFile('archivos')) {
                 foreach ($request->file('archivos') as $archivo) {
@@ -338,7 +312,6 @@ class ComercialController extends Controller
                 }
             }
 
-            // Crear acuerdo
             $acuerdo = AcuerdoComercial::create([
                 'numero_acuerdo' => $numeroAcuerdo,
                 'user_id' => Auth::id(),
@@ -362,7 +335,6 @@ class ComercialController extends Controller
                 'aprobado' => 'Pendiente'
             ]);
 
-            // 📧 Enviar notificaciones
             $this->enviarNotificacionCreacion($acuerdo);
 
             return response()->json([
@@ -385,7 +357,6 @@ class ComercialController extends Controller
         try {
             $acuerdo = AcuerdoComercial::findOrFail($id);
 
-            // Verificar permisos
             if (Auth::user()->email !== 'planeamiento.comercial@trimaxperu.com') {
                 return response()->json([
                     'success' => false,
@@ -397,7 +368,6 @@ class ComercialController extends Controller
                 'accion' => 'required|in:Aprobado,Rechazado'
             ]);
 
-            // Guardar estado anterior
             $estadoAnterior = $acuerdo->estado;
 
             $acuerdo->update([
@@ -406,15 +376,12 @@ class ComercialController extends Controller
                 'validado_at' => now()
             ]);
 
-            // Actualizar estado
             $acuerdo->actualizarEstado();
 
-            // Si pasa a Vigente, notificar a Juancho
             if ($estadoAnterior !== 'Vigente' && $acuerdo->estado === 'Vigente') {
                 $this->enviarNotificacionVigente($acuerdo);
             }
 
-            // Enviar notificación si está completamente aprobado
             if ($acuerdo->validado === 'Aprobado' && $acuerdo->aprobado === 'Aprobado') {
                 $this->enviarNotificacionAprobacion($acuerdo);
             }
@@ -434,14 +401,10 @@ class ComercialController extends Controller
         }
     }
 
-    /**
-     * Obtener usuarios de la sede del acuerdo (si el creador no es de esa sede)
-     */
-
     private function obtenerUsuariosSede($acuerdo)
     {
         if ($acuerdo->creador && $acuerdo->creador->isSede()) {
-            return collect(); // El creador ya ES la sede, no agregar más
+            return collect();
         }
 
         return User::where('sede', $acuerdo->sede)
@@ -451,15 +414,11 @@ class ComercialController extends Controller
             ->get();
     }
 
-    /**
-     * Aprobar acuerdo (Gerencia)
-     */
     public function aprobarAcuerdo(Request $request, $id)
     {
         try {
             $acuerdo = AcuerdoComercial::findOrFail($id);
 
-            // Verificar permisos
             if (Auth::user()->email !== 'smonopoli@trimaxperu.com') {
                 return response()->json([
                     'success' => false,
@@ -471,7 +430,6 @@ class ComercialController extends Controller
                 'accion' => 'required|in:Aprobado,Rechazado'
             ]);
 
-            // Guardar estado anterior
             $estadoAnterior = $acuerdo->estado;
 
             $acuerdo->update([
@@ -480,15 +438,12 @@ class ComercialController extends Controller
                 'aprobado_at' => now()
             ]);
 
-            // Actualizar estado
             $acuerdo->actualizarEstado();
 
-            // Si pasa a Vigente, notificar a Juancho
             if ($estadoAnterior !== 'Vigente' && $acuerdo->estado === 'Vigente') {
                 $this->enviarNotificacionVigente($acuerdo);
             }
 
-            // Enviar notificación si está completamente aprobado
             if ($acuerdo->validado === 'Aprobado' && $acuerdo->aprobado === 'Aprobado') {
                 $this->enviarNotificacionAprobacion($acuerdo);
             }
@@ -508,9 +463,6 @@ class ComercialController extends Controller
         }
     }
 
-    /**
-     * 📧 Enviar notificación de creación
-     */
     private function enviarNotificacionCreacion($acuerdo)
     {
         try {
@@ -528,9 +480,6 @@ class ComercialController extends Controller
         }
     }
 
-    /**
-     * 📧 Enviar notificación de aprobación
-     */
     private function enviarNotificacionAprobacion($acuerdo)
     {
         try {
@@ -545,9 +494,6 @@ class ComercialController extends Controller
         }
     }
 
-    /**
-     * Descargar archivo adjunto
-     */
     public function descargarArchivo($id, $index)
     {
         try {
@@ -571,18 +517,11 @@ class ComercialController extends Controller
         }
     }
 
-    /**
-     * Vista para consultar órdenes
-     */
-
     public function consultarOrden()
     {
         return view('comercial.consulta-orden');
     }
 
-    /**
-     * Obtener solo las 100 órdenes más recientes (CARGA RÁPIDA)
-     */
     public function obtenerOrdenesRecientes(Request $request)
     {
         try {
@@ -606,14 +545,10 @@ class ComercialController extends Controller
         }
     }
 
-    /**
-     * Convertir fecha para comparación
-     */
     private function convertirFechaParaComparar($fechaStr)
     {
         if (!$fechaStr || $fechaStr === '-') return 0;
 
-        // Formato DD/MM/YYYY
         $partes = explode('/', $fechaStr);
         if (count($partes) === 3) {
             return mktime(0, 0, 0, $partes[1], $partes[0], $partes[2]);
@@ -629,12 +564,10 @@ class ComercialController extends Controller
                 ->orderByDesc('fecha_orden')
                 ->orderByDesc('id');
 
-            // Filtros opcionales
             if ($sede = $request->input('sede')) {
                 $query->where('descripcion_sede', $sede);
             }
             if ($estado = $request->input('estado')) {
-                // Mapear valores del blade a los valores reales en BD
                 $estadoUpper = strtoupper($estado);
                 if ($estadoUpper === 'FACTURADO') {
                     $query->where('ubicacion_orden', 'Facturado y entregado');
@@ -663,14 +596,12 @@ class ComercialController extends Controller
                 });
             }
 
-            // limite=0 significa SIN LÍMITE (modo histórico completo)
             $limite = (int) $request->input('limite', 1000);
 
             if ($limite > 0) {
                 $limite = min($limite, 5000);
                 $query->limit($limite);
             }
-            // Si limite=0 → sin limit, devuelve todo
 
             $ordenes = $query->get();
 
@@ -684,16 +615,12 @@ class ComercialController extends Controller
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
-    
-    /**
-     * Rehabilitar acuerdo
-     */
+
     public function rehabilitarAcuerdo(Request $request, $id)
     {
         try {
             $acuerdo = AcuerdoComercial::findOrFail($id);
 
-            // Verificar permisos
             $emailsAutorizados = ['smonopoli@trimaxperu.com', 'planeamiento.comercial@trimaxperu.com'];
             if (!in_array(Auth::user()->email, $emailsAutorizados)) {
                 return response()->json([
@@ -702,7 +629,6 @@ class ComercialController extends Controller
                 ], 403);
             }
 
-            // Verificar que esté deshabilitado
             if ($acuerdo->habilitado) {
                 return response()->json([
                     'success' => false,
@@ -721,10 +647,8 @@ class ComercialController extends Controller
                 'rehabilitado_por' => Auth::id()
             ]);
 
-            // Actualizar estado
             $acuerdo->actualizarEstado();
 
-            // Enviar notificaciones
             $this->enviarNotificacionRehabilitacion($acuerdo, $validated['motivo']);
 
             return response()->json([
@@ -742,44 +666,31 @@ class ComercialController extends Controller
         }
     }
 
-    /**
-     * Enviar notificación cuando acuerdo pasa a Vigente
-     */
     private function enviarNotificacionVigente($acuerdo)
     {
         try {
-            // Obtener usuario de auditoría
             $auditor = User::where('email', 'auditor.junior@trimaxperu.com')->first();
 
             if ($auditor) {
                 $auditor->notify(new AcuerdoVigente($acuerdo));
-                \Log::info('✅ Notificación de acuerdo vigente enviada a auditor.junior@trimaxperu.com');
-            } else {
-                \Log::warning('⚠️ Usuario auditor.junior@trimaxperu.com no encontrado');
             }
         } catch (\Exception $e) {
             \Log::error('Error al enviar notificación de acuerdo vigente: ' . $e->getMessage());
         }
     }
 
-    /**
-     * Enviar notificación de rehabilitación
-     */
     private function enviarNotificacionRehabilitacion($acuerdo, $motivo)
     {
         try {
-            // Usuarios autorizados
             $destinatarios = User::whereIn('email', [
                 'smonopoli@trimaxperu.com',
                 'planeamiento.comercial@trimaxperu.com'
             ])->get();
 
-            // ✅ SIEMPRE incluir al creador del acuerdo
             if ($acuerdo->creador) {
                 $destinatarios = $destinatarios->push($acuerdo->creador);
             }
 
-            // Eliminar duplicados por ID
             $destinatarios = $destinatarios->unique('id');
 
             Notification::send($destinatarios, new AcuerdoRehabilitado($acuerdo, $motivo));
@@ -788,9 +699,6 @@ class ComercialController extends Controller
         }
     }
 
-    /**
-     * Obtener sedes únicas
-     */
     public function obtenerSedes(Request $request)
     {
         try {
@@ -811,13 +719,9 @@ class ComercialController extends Controller
         }
     }
 
-    /**
-     * Limpiar caché
-     */
     public function limpiarCache()
     {
         try {
-            // Limpiar caché del semáforo por sede (todos los meses/años)
             foreach (range(1, 12) as $m) {
                 foreach ([date('Y'), date('Y') - 1] as $a) {
                     \Cache::store('file')->forget("ordenes_por_sede_{$m}_{$a}");
@@ -838,9 +742,6 @@ class ComercialController extends Controller
         }
     }
 
-    /**
-     * Obtener usuarios que han creado acuerdos para el select
-     */
     public function obtenerUsuariosCreadores()
     {
         try {
@@ -870,15 +771,11 @@ class ComercialController extends Controller
         }
     }
 
-    /**
-     * Deshabilitar acuerdo
-     */
     public function deshabilitarAcuerdo(Request $request, $id)
     {
         try {
             $acuerdo = AcuerdoComercial::findOrFail($id);
 
-            // ✅ Verificar permisos
             $emailsAutorizados = ['smonopoli@trimaxperu.com', 'planeamiento.comercial@trimaxperu.com'];
             if (!in_array(Auth::user()->email, $emailsAutorizados)) {
                 return response()->json([
@@ -898,10 +795,8 @@ class ComercialController extends Controller
                 'deshabilitado_por' => Auth::id()
             ]);
 
-            // Actualizar estado
             $acuerdo->actualizarEstado();
 
-            // Enviar notificaciones
             $this->enviarNotificacionDeshabilitacion($acuerdo, $validated['motivo']);
 
             return response()->json([
@@ -919,15 +814,11 @@ class ComercialController extends Controller
         }
     }
 
-    /**
-     * Extender acuerdo
-     */
     public function extenderAcuerdo(Request $request, $id)
     {
         try {
             $acuerdo = AcuerdoComercial::findOrFail($id);
 
-            // ✅ Verificar permisos
             $emailsAutorizados = ['smonopoli@trimaxperu.com', 'planeamiento.comercial@trimaxperu.com'];
             if (!in_array(Auth::user()->email, $emailsAutorizados)) {
                 return response()->json([
@@ -948,10 +839,8 @@ class ComercialController extends Controller
                 'extendido_por' => Auth::id()
             ]);
 
-            // Actualizar estado
             $acuerdo->actualizarEstado();
 
-            // Enviar notificaciones
             $this->enviarNotificacionExtension($acuerdo, $validated['motivo'], $validated['nueva_fecha_fin']);
 
             return response()->json([
@@ -969,24 +858,18 @@ class ComercialController extends Controller
         }
     }
 
-    /**
-     * Enviar notificación de deshabilitación
-     */
     private function enviarNotificacionDeshabilitacion($acuerdo, $motivo)
     {
         try {
-            // Usuarios autorizados
             $destinatarios = User::whereIn('email', [
                 'smonopoli@trimaxperu.com',
                 'planeamiento.comercial@trimaxperu.com'
             ])->get();
 
-            // ✅ SIEMPRE incluir al creador del acuerdo
             if ($acuerdo->creador) {
                 $destinatarios = $destinatarios->push($acuerdo->creador);
             }
 
-            // Eliminar duplicados por ID
             $destinatarios = $destinatarios->unique('id');
 
             Notification::send($destinatarios, new AcuerdoDeshabilitado($acuerdo, $motivo));
@@ -995,24 +878,18 @@ class ComercialController extends Controller
         }
     }
 
-    /**
-     * Enviar notificación de extensión
-     */
     private function enviarNotificacionExtension($acuerdo, $motivo, $nuevaFecha)
     {
         try {
-            // Usuarios autorizados
             $destinatarios = User::whereIn('email', [
                 'smonopoli@trimaxperu.com',
                 'planeamiento.comercial@trimaxperu.com'
             ])->get();
 
-            // ✅ SIEMPRE incluir al creador del acuerdo
             if ($acuerdo->creador) {
                 $destinatarios = $destinatarios->push($acuerdo->creador);
             }
 
-            // Eliminar duplicados por ID
             $destinatarios = $destinatarios->unique('id');
 
             Notification::send($destinatarios, new AcuerdoExtendido($acuerdo, $motivo, $nuevaFecha));
@@ -1021,15 +898,11 @@ class ComercialController extends Controller
         }
     }
 
-    /**
-     * Editar acuerdo
-     */
     public function editarAcuerdo(Request $request, $id)
     {
         try {
             $acuerdo = AcuerdoComercial::findOrFail($id);
 
-            // Verificar permisos: solo el creador o usuarios autorizados pueden editar
             $emailsAutorizados = ['smonopoli@trimaxperu.com', 'planeamiento.comercial@trimaxperu.com'];
             if (Auth::id() !== $acuerdo->user_id && !in_array(Auth::user()->email, $emailsAutorizados)) {
                 return response()->json([
@@ -1056,7 +929,6 @@ class ComercialController extends Controller
                 'archivos.*' => 'nullable|file|max:10240'
             ]);
 
-            // Subir nuevos archivos si existen
             $archivosActuales = $acuerdo->archivos_adjuntos ?? [];
             if ($request->hasFile('archivos')) {
                 foreach ($request->file('archivos') as $archivo) {
@@ -1069,7 +941,6 @@ class ComercialController extends Controller
                 }
             }
 
-            // Actualizar acuerdo y resetear validaciones
             $acuerdo->update([
                 'sede' => $validated['sede'],
                 'ruc' => $validated['ruc'],
@@ -1086,8 +957,6 @@ class ComercialController extends Controller
                 'fecha_inicio' => $validated['fecha_inicio'],
                 'fecha_fin' => $validated['fecha_fin'],
                 'archivos_adjuntos' => $archivosActuales,
-
-                // 🔥 RESETEAR VALIDACIONES
                 'estado' => 'Solicitado',
                 'validado' => 'Pendiente',
                 'aprobado' => 'Pendiente',
@@ -1112,15 +981,11 @@ class ComercialController extends Controller
         }
     }
 
-    /**
-     * Cambiar estado de validación (para corregir errores)
-     */
     public function cambiarValidacion(Request $request, $id)
     {
         try {
             $acuerdo = AcuerdoComercial::findOrFail($id);
 
-            // Solo planeamiento puede cambiar validación
             if (Auth::user()->email !== 'planeamiento.comercial@trimaxperu.com') {
                 return response()->json([
                     'success' => false,
@@ -1138,7 +1003,6 @@ class ComercialController extends Controller
                 'validado_at' => now()
             ]);
 
-            // Actualizar estado general
             $acuerdo->actualizarEstado();
 
             return response()->json([
@@ -1156,15 +1020,11 @@ class ComercialController extends Controller
         }
     }
 
-    /**
-     * Cambiar estado de aprobación (para corregir errores)
-     */
     public function cambiarAprobacion(Request $request, $id)
     {
         try {
             $acuerdo = AcuerdoComercial::findOrFail($id);
 
-            // Solo gerencia puede cambiar aprobación
             if (Auth::user()->email !== 'smonopoli@trimaxperu.com') {
                 return response()->json([
                     'success' => false,
@@ -1182,7 +1042,6 @@ class ComercialController extends Controller
                 'aprobado_at' => now()
             ]);
 
-            // Actualizar estado general
             $acuerdo->actualizarEstado();
 
             return response()->json([
@@ -1200,41 +1059,30 @@ class ComercialController extends Controller
         }
     }
 
-    /**
-     * Calcular estadísticas de las órdenes
-     */
     private function calcularEstadisticas($ordenes)
     {
         $total = count($ordenes);
-
         $enTransito = 0;
         $enSede = 0;
         $facturados = 0;
         $entregados = 0;
-
         $importeTransito = 0;
         $importeSede = 0;
 
         foreach ($ordenes as $orden) {
             $ubicacion = mb_strtoupper($orden['ubicacion_orden'] ?? '');
             $estado = mb_strtoupper($orden['estado_orden'] ?? '');
-            $importeOriginal = $orden['importe'] ?? null;
-            $importe = $this->limpiarImporte($importeOriginal);
+            $importe = $this->limpiarImporte($orden['importe'] ?? null);
 
             if (stripos($ubicacion, 'FACTURADO') !== false || stripos($ubicacion, 'ENTREGADO') !== false) {
                 $facturados++;
-                // NO sumar importe aquí (ya está facturado)
             } elseif (stripos($ubicacion, 'SEDE') !== false) {
                 $enSede++;
-
-                // SOLO sumar importe si el estado es "SOLICITADO"
                 if ($estado === 'SOLICITADO') {
                     $importeSede += $importe;
                 }
             } elseif (stripos($ubicacion, 'TRANSITO') !== false) {
                 $enTransito++;
-
-                // SOLO sumar importe si el estado es "SOLICITADO"
                 if ($estado === 'SOLICITADO') {
                     $importeTransito += $importe;
                 }
@@ -1254,60 +1102,33 @@ class ComercialController extends Controller
         ];
     }
 
-    /**
-     * 🔥 Limpiar importe para cálculos - CON PROTECCIÓN ANTI-FECHAS
-     */
     private function limpiarImporte($importeStr)
     {
-        // Si está vacío, null o es guion, retornar 0
         if (!$importeStr || $importeStr === '-' || $importeStr === '' || $importeStr === null) {
             return 0;
         }
 
-        // Convertir a string
         $limpio = trim((string)$importeStr);
 
-        // Si es un string vacío después del trim, retornar 0
-        if ($limpio === '') {
-            return 0;
-        }
-
-        if (substr_count($limpio, '/') >= 2) {
-            return 0;
-        }
-
-        // Si tiene 4 dígitos consecutivos después de una barra, es fecha
-        if (preg_match('/\/\d{4}/', $limpio)) {
-            return 0;
-        }
+        if ($limpio === '') return 0;
+        if (substr_count($limpio, '/') >= 2) return 0;
+        if (preg_match('/\/\d{4}/', $limpio)) return 0;
 
         $limpio = preg_replace('/[^0-9.,\-]/', '', $limpio);
-
-        // Si tiene coma, convertirla a punto (para decimales: 2,5 -> 2.5)
         $limpio = str_replace(',', '.', $limpio);
-
-        // Convertir a float
         $numero = floatval($limpio);
 
-        // 🔥 VALIDACIÓN ADICIONAL: Si el número es mayor a 100,000 es sospechoso
-        // (asumiendo que ninguna orden individual cuesta más de 100k)
-        if ($numero > 100000) {
-            return 0;
-        }
+        if ($numero > 100000) return 0;
 
         return $numero;
     }
 
-    /**
-     * Exportar a CSV
-     */
     public function exportarExcel(Request $request)
     {
         try {
             ini_set('memory_limit',       '256M');
             ini_set('max_execution_time', '120');
 
-            // Filtros opcionales
             $mes   = $request->input('mes');
             $anio  = $request->input('anio');
             $sede  = $request->input('sede');
@@ -1332,11 +1153,8 @@ class ComercialController extends Controller
 
             $callback = function () use ($query) {
                 $handle = fopen('php://output', 'w');
-
-                // BOM para Excel
                 fprintf($handle, chr(0xEF) . chr(0xBB) . chr(0xBF));
 
-                // Headers CSV
                 fputcsv($handle, [
                     'Sede',
                     'N° Orden',
@@ -1357,7 +1175,6 @@ class ComercialController extends Controller
                     'Lead Time',
                 ]);
 
-                // Streaming por chunks para no cargar todo en memoria
                 $query->chunk(1000, function ($rows) use ($handle) {
                     foreach ($rows as $row) {
                         fputcsv($handle, [
@@ -1394,23 +1211,25 @@ class ComercialController extends Controller
         }
     }
 
+    // =========================================================================
+    // VENTAS SEDES (Super Admin / Admin)
+    // =========================================================================
+
     /**
-     * Dashboard consolidado de ventas de todas las sedes
+     * Vista principal: Ventas por Sedes
      */
     public function ventasSedes()
     {
-        // Verificar que sea super admin o admin
         if (!auth()->user()->puedeVerVentasConsolidadas()) {
             abort(403, 'No tienes permiso para ver las ventas consolidadas');
         }
 
-        $mesActual = ucfirst(Carbon::now()->locale('es')->translatedFormat('F'));
+        $mesActual  = ucfirst(Carbon::now()->locale('es')->translatedFormat('F'));
         $anioActual = Carbon::now()->year;
 
         $spreadsheetId = '1zQ8h0cX8YdQ4Jko69vGpDNMXMRrXD0ICCH6G4O6ubiY';
 
         try {
-            // Configurar Google Sheets
             $client = new Client();
             $client->setApplicationName('TRIMAX Ventas');
             $client->setScopes([Sheets::SPREADSHEETS_READONLY]);
@@ -1419,28 +1238,30 @@ class ComercialController extends Controller
 
             $service = new Sheets($client);
 
-            // Obtener todas las sedes con sus datos
-            $todasLasSedes = $this->obtenerDatosTodasLasSedes($service, $spreadsheetId, $mesActual, $anioActual);
+            // ✅ Obtener datos separados: sedes normales + monturas
+            $resultado        = $this->obtenerDatosTodasLasSedes($service, $spreadsheetId, $mesActual, $anioActual);
+            $todasLasSedes    = $resultado['sedes'];
+            $datosMonturas    = $resultado['monturas'];
+            $totalesTrimax    = $resultado['totales_trimax'];
 
-            // Obtener años disponibles
-            $aniosDisponibles = $this->obtenerAniosDisponiblesGlobal($service, $spreadsheetId);
-
-            // Obtener datos consolidados por año
+            $aniosDisponibles  = $this->obtenerAniosDisponiblesGlobal($service, $spreadsheetId);
             $datosConsolidados = $this->obtenerDatosConsolidados($service, $spreadsheetId, $anioActual);
-
-            // Obtener comparación anual
-            $comparacionAnual = $this->obtenerComparacionAnual($service, $spreadsheetId);
+            $comparacionAnual  = $this->obtenerComparacionAnual($service, $spreadsheetId);
         } catch (\Exception $e) {
             Log::error('Error en ventasSedes: ' . $e->getMessage());
 
-            $todasLasSedes = [];
-            $aniosDisponibles = [$anioActual];
+            $todasLasSedes    = [];
+            $datosMonturas    = $this->monturaVacia();
+            $totalesTrimax    = $this->trimaxVacio();
+            $aniosDisponibles  = [$anioActual];
             $datosConsolidados = ['meses' => [], 'ventas' => [], 'cuotas' => []];
-            $comparacionAnual = ['anios' => [], 'ventas' => []];
+            $comparacionAnual  = ['anios' => [], 'ventas' => []];
         }
 
         return view('comercial.ventas-sedes', compact(
             'todasLasSedes',
+            'datosMonturas',
+            'totalesTrimax',
             'mesActual',
             'anioActual',
             'aniosDisponibles',
@@ -1450,7 +1271,7 @@ class ComercialController extends Controller
     }
 
     /**
-     * API para obtener datos filtrados (AJAX)
+     * API AJAX: datos filtrados por año/mes
      */
     public function getVentasSedesData(Request $request)
     {
@@ -1459,7 +1280,7 @@ class ComercialController extends Controller
         }
 
         $anio = $request->input('anio', Carbon::now()->year);
-        $mes = $request->input('mes', ucfirst(Carbon::now()->locale('es')->translatedFormat('F')));
+        $mes  = $request->input('mes',  ucfirst(Carbon::now()->locale('es')->translatedFormat('F')));
 
         $spreadsheetId = '1zQ8h0cX8YdQ4Jko69vGpDNMXMRrXD0ICCH6G4O6ubiY';
 
@@ -1472,16 +1293,18 @@ class ComercialController extends Controller
 
             $service = new Sheets($client);
 
-            $todasLasSedes = $this->obtenerDatosTodasLasSedes($service, $spreadsheetId, $mes, $anio);
+            $resultado        = $this->obtenerDatosTodasLasSedes($service, $spreadsheetId, $mes, $anio);
             $datosConsolidados = $this->obtenerDatosConsolidados($service, $spreadsheetId, $anio);
-            $comparacionAnual = $this->obtenerComparacionAnualPorMes($service, $spreadsheetId, $mes);
+            $comparacionAnual  = $this->obtenerComparacionAnualPorMes($service, $spreadsheetId, $mes);
 
             return response()->json([
-                'sedes' => $todasLasSedes,
+                'sedes'       => $resultado['sedes'],
+                'monturas'    => $resultado['monturas'],
+                'totales_trimax' => $resultado['totales_trimax'],
                 'consolidado' => $datosConsolidados,
                 'comparacion' => $comparacionAnual,
-                'anio' => $anio,
-                'mes' => $mes
+                'anio'        => $anio,
+                'mes'         => $mes,
             ]);
         } catch (\Exception $e) {
             Log::error('Error en getVentasSedesData: ' . $e->getMessage());
@@ -1489,117 +1312,135 @@ class ComercialController extends Controller
         }
     }
 
-    /**
-     * Obtener datos de todas las sedes para un mes específico
-     */
-    private function obtenerDatosTodasLasSedes($service, $spreadsheetId, $mes, $anio)
-    {
-        $range = 'Historico!A:L'; // 🔥 Antes era A:H
-        $response = $service->spreadsheets_values->get($spreadsheetId, $range);
-        $values = $response->getValues();
+    // ─── HELPERS MONTURAS ────────────────────────────────────────────────────
 
-        $sedes = [];
+    private function sedesMonturas(): array
+    {
+        return ['CONSULTOR DE MONTURAS 1', 'CONSULTOR DE MONTURAS 2', 'MONTURAS GENERAL'];
+    }
+
+    private function monturaVacia(): array
+    {
+        return [
+            'venta_general'      => 0,
+            'venta_proyectada'   => 0,
+            'cuota'              => 0,
+            'cumplimiento_cuota' => 0,
+            'diferencia'         => 0,
+        ];
+    }
+
+    private function trimaxVacio(): array
+    {
+        return [
+            'venta_general'      => 0,
+            'venta_proyectada'   => 0,
+            'cuota'              => 0,
+            'cumplimiento_cuota' => 0,
+        ];
+    }
+
+    /**
+     * ✅ Obtener datos separados: sedes normales (sin monturas) + monturas + totales TRIMAX
+     */
+    private function obtenerDatosTodasLasSedes($service, $spreadsheetId, $mes, $anio): array
+    {
+        $range    = 'Historico!A:L';
+        $response = $service->spreadsheets_values->get($spreadsheetId, $range);
+        $values   = $response->getValues();
+
+        $sedesNormales  = [];
+        $acumMonturas   = $this->monturaVacia();
+        $hayMonturas    = false;
+        $sedesMonturas  = $this->sedesMonturas();
 
         if (empty($values)) {
-            return $sedes;
+            return [
+                'sedes'          => [],
+                'monturas'       => $acumMonturas,
+                'totales_trimax' => $this->trimaxVacio(),
+            ];
         }
 
         foreach ($values as $index => $row) {
             if ($index == 0) continue;
 
             if (!empty($row[0]) && !empty($row[1]) && !empty($row[2])) {
-                $sede         = trim(strtoupper($row[0]));
-                $anioSheet    = trim($row[1]);
-                $mesSheet     = trim(ucfirst(strtolower($row[2])));
+                $sede      = trim(strtoupper($row[0]));
+                $anioSheet = trim($row[1]);
+                $mesSheet  = trim(ucfirst(strtolower($row[2])));
 
-                if ($anioSheet == $anio && $mesSheet == $mes) {
-                    $ventaGeneral = $this->limpiarNumero($row[3] ?? 0);
-                    $cuota        = $this->limpiarNumero($row[5] ?? 0);
-                    $cumplimiento = $this->limpiarPorcentaje($row[6] ?? '0%');
+                if ($anioSheet != $anio || $mesSheet != $mes) continue;
 
-                    // Columnas digitales
-                    $ventaDigital     = $this->limpiarNumero($row[7] ?? 0);  // Col H
-                    $ventaProyDigital = $this->limpiarNumero($row[8] ?? 0);  // Col I
-                    $cuotaDigital     = $this->limpiarNumero($row[9] ?? 0);  // Col J
-                    $cumCuotaDigital  = $this->limpiarPorcentaje($row[10] ?? '0%'); // Col K
+                $ventaGeneral    = $this->limpiarNumero($row[3] ?? 0);
+                $ventaProy       = $this->limpiarNumero($row[4] ?? 0);
+                $cuota           = $this->limpiarNumero($row[5] ?? 0);
+                $cumplimiento    = $this->limpiarPorcentaje($row[6] ?? '0%');
+                $ventaDigital    = $this->limpiarNumero($row[7] ?? 0);
+                $ventaProyDigital = $this->limpiarNumero($row[8] ?? 0);
+                $cuotaDigital    = $this->limpiarNumero($row[9] ?? 0);
+                $cumCuotaDigital = $this->limpiarPorcentaje($row[10] ?? '0%');
 
-                    $sedes[] = [
-                        'sede'              => $sede,
-                        'venta_general'     => $ventaGeneral,
-                        'venta_proyectada'  => $this->limpiarNumero($row[4] ?? 0),
-                        'cuota'             => $cuota,
+                if (in_array($sede, $sedesMonturas)) {
+                    // ─── Acumular en MONTURAS ───────────────────────────────
+                    $acumMonturas['venta_general']    += $ventaGeneral;
+                    $acumMonturas['venta_proyectada'] += $ventaProy;
+                    $acumMonturas['cuota']            += $cuota;
+                    $acumMonturas['diferencia']       += ($ventaGeneral - $cuota);
+                    $hayMonturas = true;
+                } else {
+                    // ─── Sede normal ────────────────────────────────────────
+                    $sedesNormales[] = [
+                        'sede'               => $sede,
+                        'venta_general'      => $ventaGeneral,
+                        'venta_proyectada'   => $ventaProy,
+                        'cuota'              => $cuota,
                         'cumplimiento_cuota' => $cumplimiento,
-                        'diferencia'        => $ventaGeneral - $cuota,
-                        'venta_digital'     => $ventaDigital,
+                        'diferencia'         => $ventaGeneral - $cuota,
+                        'venta_digital'      => $ventaDigital,
                         'venta_proy_digital' => $ventaProyDigital,
-                        'cuota_digital'     => $cuotaDigital,
-                        'cum_cuota_digital' => $cumCuotaDigital,
+                        'cuota_digital'      => $cuotaDigital,
+                        'cum_cuota_digital'  => $cumCuotaDigital,
                     ];
                 }
             }
         }
 
-        // ─── FUSIONAR SEDES DE MONTURAS ───────────────────────────────────────
-        $sedesMonturas = ['CONSULTOR DE MONTURAS 1', 'CONSULTOR DE MONTURAS 2', 'MONTURAS GENERAL'];
-
-        $fusionada = [
-            'sede'               => 'MONTURAS',
-            'venta_general'      => 0,
-            'venta_proyectada'   => 0,
-            'cuota'              => 0,
-            'cumplimiento_cuota' => 0,
-            'diferencia'         => 0,
-            'venta_digital'      => 0,
-            'venta_proy_digital' => 0,
-            'cuota_digital'      => 0,
-            'cum_cuota_digital'  => 0,
-        ];
-
-        $hayMoturas = false;
-
-        $sedes = array_filter($sedes, function ($s) use ($sedesMonturas, &$fusionada, &$hayMonturas) {
-            if (in_array($s['sede'], $sedesMonturas)) {
-                $fusionada['venta_general']      += $s['venta_general'];
-                $fusionada['venta_proyectada']   += $s['venta_proyectada'];
-                $fusionada['cuota']              += $s['cuota'];
-                $fusionada['diferencia']         += $s['diferencia'];
-                $fusionada['venta_digital']      += $s['venta_digital'];
-                $fusionada['venta_proy_digital'] += $s['venta_proy_digital'];
-                $fusionada['cuota_digital']      += $s['cuota_digital'];
-                $hayMonturas = true;
-                return false;
-            }
-            return true;
-        });
-
-        if ($hayMonturas) {
-            $fusionada['cumplimiento_cuota'] = $fusionada['cuota'] > 0
-                ? ($fusionada['venta_general'] / $fusionada['cuota']) * 100
-                : 0;
-            $fusionada['cum_cuota_digital'] = $fusionada['cuota_digital'] > 0
-                ? ($fusionada['venta_digital'] / $fusionada['cuota_digital']) * 100
-                : 0;
-
-            $sedes[] = $fusionada;
+        // Calcular cumplimiento de monturas
+        if ($hayMonturas && $acumMonturas['cuota'] > 0) {
+            $acumMonturas['cumplimiento_cuota'] =
+                ($acumMonturas['venta_general'] / $acumMonturas['cuota']) * 100;
         }
 
-        $sedes = array_values($sedes);
+        // Ordenar sedes normales por cumplimiento desc
+        usort($sedesNormales, fn($a, $b) => $b['cumplimiento_cuota'] <=> $a['cumplimiento_cuota']);
 
-        usort($sedes, function ($a, $b) {
-            return $b['cumplimiento_cuota'] <=> $a['cumplimiento_cuota'];
-        });
+        // ─── Totales TRIMAX = sedes normales + monturas ──────────────────────
+        $totalVentaSedes = collect($sedesNormales)->sum('venta_general');
+        $totalCuotaSedes = collect($sedesNormales)->sum('cuota');
+        $totalVentaProy  = collect($sedesNormales)->sum('venta_proyectada');
 
-        return $sedes;
+        $totalesTrimax = [
+            'venta_general'    => $totalVentaSedes + $acumMonturas['venta_general'],
+            'venta_proyectada' => $totalVentaProy  + $acumMonturas['venta_proyectada'],
+            'cuota'            => $totalCuotaSedes + $acumMonturas['cuota'],
+        ];
+        $totalesTrimax['cumplimiento_cuota'] = $totalesTrimax['cuota'] > 0
+            ? ($totalesTrimax['venta_general'] / $totalesTrimax['cuota']) * 100
+            : 0;
+
+        return [
+            'sedes'          => $sedesNormales,
+            'monturas'       => $acumMonturas,
+            'totales_trimax' => $totalesTrimax,
+        ];
     }
 
-    /**
-     * Obtener datos consolidados por mes (suma de todas las sedes)
-     */
     private function obtenerDatosConsolidados($service, $spreadsheetId, $anio)
     {
-        $range = 'Historico!A:H';
+        $range    = 'Historico!A:H';
         $response = $service->spreadsheets_values->get($spreadsheetId, $range);
-        $values = $response->getValues();
+        $values   = $response->getValues();
 
         $ordenMeses = [
             'enero' => 1,
@@ -1614,7 +1455,7 @@ class ComercialController extends Controller
             'setiembre' => 9,
             'octubre' => 10,
             'noviembre' => 11,
-            'diciembre' => 12
+            'diciembre' => 12,
         ];
 
         $datosPorMes = [];
@@ -1626,13 +1467,13 @@ class ComercialController extends Controller
                 $anioSheet = trim($row[1]);
 
                 if ($anioSheet == $anio) {
-                    $mes = trim(ucfirst(strtolower($row[2])));
+                    $mes    = trim(ucfirst(strtolower($row[2])));
                     $mesKey = strtolower($mes);
 
                     if (!isset($datosPorMes[$mesKey])) {
                         $datosPorMes[$mesKey] = [
-                            'mes' => $mes,
-                            'orden' => $ordenMeses[$mesKey] ?? 99,
+                            'mes'    => $mes,
+                            'orden'  => $ordenMeses[$mesKey] ?? 99,
                             'ventas' => 0,
                             'cuotas' => 0,
                         ];
@@ -1644,32 +1485,25 @@ class ComercialController extends Controller
             }
         }
 
-        // Ordenar por mes
-        usort($datosPorMes, function ($a, $b) {
-            return $a['orden'] <=> $b['orden'];
-        });
+        usort($datosPorMes, fn($a, $b) => $a['orden'] <=> $b['orden']);
 
         return [
-            'meses' => array_column($datosPorMes, 'mes'),
+            'meses'  => array_column($datosPorMes, 'mes'),
             'ventas' => array_column($datosPorMes, 'ventas'),
             'cuotas' => array_column($datosPorMes, 'cuotas'),
         ];
     }
 
-    /**
-     * Obtener años disponibles
-     */
     private function obtenerAniosDisponiblesGlobal($service, $spreadsheetId)
     {
-        $range = 'Historico!B:B';
+        $range    = 'Historico!B:B';
         $response = $service->spreadsheets_values->get($spreadsheetId, $range);
-        $values = $response->getValues();
+        $values   = $response->getValues();
 
         $anios = [];
 
         foreach ($values as $index => $row) {
             if ($index == 0) continue;
-
             if (!empty($row[0]) && is_numeric($row[0])) {
                 $anios[] = (int)$row[0];
             }
@@ -1681,34 +1515,25 @@ class ComercialController extends Controller
         return $anios;
     }
 
-    /**
-     * Obtener comparación anual (suma total por año)
-     */
     private function obtenerComparacionAnual($service, $spreadsheetId)
     {
-        $range = 'Historico!A:H';
+        $range    = 'Historico!A:H';
         $response = $service->spreadsheets_values->get($spreadsheetId, $range);
-        $values = $response->getValues();
+        $values   = $response->getValues();
 
-        // Obtener mes actual
-        $mesActual = ucfirst(Carbon::now()->locale('es')->translatedFormat('F'));
-
+        $mesActual    = ucfirst(Carbon::now()->locale('es')->translatedFormat('F'));
         $datosPorAnio = [];
 
         foreach ($values as $index => $row) {
             if ($index == 0) continue;
 
             if (!empty($row[0]) && !empty($row[1]) && !empty($row[2]) && !empty($row[3])) {
-                $anio = trim($row[1]);
+                $anio     = trim($row[1]);
                 $mesSheet = trim(ucfirst(strtolower($row[2])));
-                $venta = $this->limpiarNumero($row[3] ?? 0);
+                $venta    = $this->limpiarNumero($row[3] ?? 0);
 
-                // 🔥 SOLO sumar ventas del MES ACTUAL
                 if ($mesSheet == $mesActual && is_numeric($anio)) {
-                    if (!isset($datosPorAnio[$anio])) {
-                        $datosPorAnio[$anio] = 0;
-                    }
-                    $datosPorAnio[$anio] += $venta;
+                    $datosPorAnio[$anio] = ($datosPorAnio[$anio] ?? 0) + $venta;
                 }
             }
         }
@@ -1716,20 +1541,17 @@ class ComercialController extends Controller
         ksort($datosPorAnio);
 
         return [
-            'anios' => array_keys($datosPorAnio),
+            'anios'  => array_keys($datosPorAnio),
             'ventas' => array_values($datosPorAnio),
-            'mes' => $mesActual
+            'mes'    => $mesActual,
         ];
     }
 
-    /**
-     * Obtener comparación de un MES ESPECÍFICO en diferentes años (para AJAX)
-     */
     private function obtenerComparacionAnualPorMes($service, $spreadsheetId, $mes)
     {
-        $range = 'Historico!A:H';
+        $range    = 'Historico!A:H';
         $response = $service->spreadsheets_values->get($spreadsheetId, $range);
-        $values = $response->getValues();
+        $values   = $response->getValues();
 
         $datosPorAnio = [];
 
@@ -1737,16 +1559,12 @@ class ComercialController extends Controller
             if ($index == 0) continue;
 
             if (!empty($row[0]) && !empty($row[1]) && !empty($row[2]) && !empty($row[3])) {
-                $anio = trim($row[1]);
+                $anio     = trim($row[1]);
                 $mesSheet = trim(ucfirst(strtolower($row[2])));
-                $venta = $this->limpiarNumero($row[3] ?? 0);
+                $venta    = $this->limpiarNumero($row[3] ?? 0);
 
-                // 🔥 Sumar ventas del MES RECIBIDO
                 if ($mesSheet == $mes && is_numeric($anio)) {
-                    if (!isset($datosPorAnio[$anio])) {
-                        $datosPorAnio[$anio] = 0;
-                    }
-                    $datosPorAnio[$anio] += $venta;
+                    $datosPorAnio[$anio] = ($datosPorAnio[$anio] ?? 0) + $venta;
                 }
             }
         }
@@ -1754,21 +1572,17 @@ class ComercialController extends Controller
         ksort($datosPorAnio);
 
         return [
-            'anios' => array_keys($datosPorAnio),
+            'anios'  => array_keys($datosPorAnio),
             'ventas' => array_values($datosPorAnio),
-            'mes' => $mes
+            'mes'    => $mes,
         ];
     }
 
-    /**
-     * Helpers para limpiar datos
-     */
     private function limpiarNumero($valor)
     {
         if (empty($valor)) return 0;
 
-        $valor = (string) $valor;
-        $valor = trim($valor);
+        $valor = trim((string)$valor);
 
         if (strpos($valor, '.') !== false && strpos($valor, ',') !== false) {
             $valor = str_replace('.', '', $valor);
