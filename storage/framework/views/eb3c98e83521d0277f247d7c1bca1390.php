@@ -220,6 +220,16 @@ unset($__errorArgs, $__bag); ?>
                                                                     <div class="col-md-6">
                                                                         <div class="form-check form-check-success">
                                                                             <label class="form-check-label">
+                                                                                <input type="checkbox" name="puede_ver_ordenes_x_sede" value="1" class="form-check-input"
+                                                                                    <?php echo old('puede_ver_ordenes_x_sede', $user->puede_ver_ordenes_x_sede ?? false) ? 'checked' : ''; ?>>
+                                                                                Ordenes por Sede <i class="input-helper"></i>
+                                                                            </label>
+                                                                            <div><small class="text-muted">Automático para rol Sede</small></div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-md-6">
+                                                                        <div class="form-check form-check-success">
+                                                                            <label class="form-check-label">
                                                                                 <input type="checkbox" name="puede_ver_acuerdos_comerciales" value="1" class="form-check-input"
                                                                                     <?php echo old('puede_ver_acuerdos_comerciales', $user->puede_ver_acuerdos_comerciales ?? false) ? 'checked' : ''; ?>>
                                                                                 Acuerdos Comerciales <i class="input-helper"></i>
@@ -447,6 +457,7 @@ unset($__errorArgs, $__bag); ?>
                                                     'puede_ver_venta_clientes'         => 'Ventas por Cliente',
                                                     'puede_ver_lead_time'             => 'Lead Time',
                                                     'puede_ver_pendiente_entrega_montura' => 'Pendiente de Entrega Montura',
+                                                    'puede_ver_ordenes_x_sede' => 'Ordenes por Sede',
                                                 ])->filter(fn($label, $campo) => $user->$campo);
 
                                                 $permisosRrhh = collect([

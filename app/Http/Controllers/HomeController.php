@@ -63,33 +63,16 @@ class HomeController extends Controller
             // Obtener datos históricos del año actual
             $historico = $this->obtenerDatosHistoricos($service, $spreadsheetId, $sedeUsuario, $anioActual);
 
-            // ✅ NUEVO: Obtener años disponibles
+            // Obtener años disponibles
             $aniosDisponibles = $this->obtenerAniosDisponibles($service, $spreadsheetId, $sedeUsuario);
 
-            // ✅ NUEVO: Obtener datos anuales para comparación
+            // Obtener datos anuales para comparación
             $datosAnuales = $this->obtenerDatosAnuales($service, $spreadsheetId, $sedeUsuario);
         } catch (\Exception $e) {
             Log::error('Error conectando con Google Sheets: ' . $e->getMessage());
 
-            $datos = [
-                'venta_general' => 0,
-                'venta_proyectada' => 0,
-                'cuota' => 0,
-                'cumplimiento_cuota' => 0,
-                'venta_total' => 0,
-                'venta_digital'     => 0,
-                'venta_proy_digital' => 0,
-                'cuota_digital'     => 0,
-                'cum_cuota_digital' => 0,
-            ];
-
-            $historico = [
-                'meses' => [],
-                'ventas' => [],
-                'cuotas' => [],
-                'cumplimientos' => []
-            ];
-
+            $datos = $this->datosVacios($sedeUsuario);
+            $historico = ['meses' => [], 'ventas' => [], 'cuotas' => [], 'cumplimientos' => []];
             $aniosDisponibles = [$anioActual];
             $datosAnuales = ['anios' => [], 'ventas' => [], 'mes' => $mesActual];
         }
@@ -98,7 +81,35 @@ class HomeController extends Controller
     }
 
     /**
-     * ✅ NUEVO: API para obtener datos de un año específico (AJAX)
+     * Datos vacíos con estructura correcta (incluye consultores si es MONTURAS)
+     */
+    private function datosVacios(string $sede): array
+    {
+        $datos = [
+            'venta_general'      => 0,
+            'venta_proyectada'   => 0,
+            'cuota'              => 0,
+            'cumplimiento_cuota' => 0,
+            'venta_total'        => 0,
+            'venta_digital'      => 0,
+            'venta_proy_digital' => 0,
+            'cuota_digital'      => 0,
+            'cum_cuota_digital'  => 0,
+        ];
+
+        if ($sede === 'MONTURAS') {
+            $datos['consultores'] = [
+                'CONSULTOR DE MONTURAS 1' => 0,
+                'CONSULTOR DE MONTURAS 2' => 0,
+                'MONTURAS GENERAL'        => 0,
+            ];
+        }
+
+        return $datos;
+    }
+
+    /**
+     * API para obtener datos de un año/mes específico (AJAX)
      */
     public function getVentasData(Request $request)
     {
@@ -110,7 +121,7 @@ class HomeController extends Controller
 
         $sedeUsuario = strtoupper($user->sede);
         $anio = $request->input('anio', Carbon::now()->year);
-        $mes = $request->input('mes', ucfirst(Carbon::now()->locale('es')->translatedFormat('F')));
+        $mes  = $request->input('mes', ucfirst(Carbon::now()->locale('es')->translatedFormat('F')));
 
         $spreadsheetId = '1zQ8h0cX8YdQ4Jko69vGpDNMXMRrXD0ICCH6G4O6ubiY';
 
@@ -123,14 +134,14 @@ class HomeController extends Controller
 
             $service = new Sheets($client);
 
-            $datos = $this->obtenerDatosVentas($service, $spreadsheetId, $sedeUsuario, $mes, $anio);
+            $datos    = $this->obtenerDatosVentas($service, $spreadsheetId, $sedeUsuario, $mes, $anio);
             $historico = $this->obtenerDatosHistoricos($service, $spreadsheetId, $sedeUsuario, $anio);
 
             return response()->json([
-                'datos' => $datos,
+                'datos'    => $datos,
                 'historico' => $historico,
-                'anio' => $anio,
-                'mes' => $mes
+                'anio'     => $anio,
+                'mes'      => $mes,
             ]);
         } catch (\Exception $e) {
             Log::error('Error obteniendo datos de ventas: ' . $e->getMessage());
@@ -157,27 +168,16 @@ class HomeController extends Controller
      */
     private function obtenerDatosVentas($service, $spreadsheetId, $sede, $mes, $anio)
     {
-        $range = 'Historico!A:K';
+        $range    = 'Historico!A:K';
         $response = $service->spreadsheets_values->get($spreadsheetId, $range);
-        $values = $response->getValues();
+        $values   = $response->getValues();
 
-        $datos = [
-            'venta_general' => 0,
-            'venta_proyectada' => 0,
-            'cuota' => 0,
-            'cumplimiento_cuota' => 0,
-            'venta_total' => 0,
-            'venta_digital'     => 0,
-            'venta_proy_digital' => 0,
-            'cuota_digital'     => 0,
-            'cum_cuota_digital' => 0,
-        ];
+        $datos = $this->datosVacios($sede);
 
         if (empty($values)) {
             return $datos;
         }
 
-        // Si la sede es MONTURAS, buscar estas 3 sedes y sumarlas
         $esMonturas = ($sede === 'MONTURAS');
 
         foreach ($values as $index => $row) {
@@ -196,6 +196,11 @@ class HomeController extends Controller
                     $datos['venta_digital']      += $this->limpiarNumero($row[7] ?? 0);
                     $datos['venta_proy_digital'] += $this->limpiarNumero($row[8] ?? 0);
                     $datos['cuota_digital']      += $this->limpiarNumero($row[9] ?? 0);
+
+                    // ✅ Desglose por consultor MONTURAS
+                    if ($esMonturas && array_key_exists($sedeSheet, $datos['consultores'])) {
+                        $datos['consultores'][$sedeSheet] += $this->limpiarNumero($row[3] ?? 0);
+                    }
 
                     if (!$esMonturas) break;
                 }
@@ -227,19 +232,19 @@ class HomeController extends Controller
         if (empty($values)) return $historico;
 
         $ordenMeses = [
-            'enero' => 1,
-            'febrero' => 2,
-            'marzo' => 3,
-            'abril' => 4,
-            'mayo'  => 5,
-            'junio'   => 6,
-            'julio' => 7,
-            'agosto' => 8,
+            'enero'      => 1,
+            'febrero'    => 2,
+            'marzo'      => 3,
+            'abril'      => 4,
+            'mayo'       => 5,
+            'junio'      => 6,
+            'julio'      => 7,
+            'agosto'     => 8,
             'septiembre' => 9,
-            'setiembre' => 9,
-            'octubre' => 10,
-            'noviembre' => 11,
-            'diciembre' => 12
+            'setiembre'  => 9,
+            'octubre'    => 10,
+            'noviembre'  => 11,
+            'diciembre'  => 12,
         ];
 
         $datosTemp = [];
@@ -287,7 +292,7 @@ class HomeController extends Controller
     }
 
     /**
-     * ✅ NUEVO: Obtener años disponibles en el sheet para esta sede
+     * Obtener años disponibles en el sheet para esta sede
      */
     private function obtenerAniosDisponibles($service, $spreadsheetId, $sede)
     {
@@ -304,7 +309,6 @@ class HomeController extends Controller
                 $sedeSheet = trim(strtoupper($row[0]));
                 $anio      = trim($row[1]);
 
-                // ✅ FIX: ahora soporta MONTURAS
                 if ($this->coincideSede($sedeSheet, $sede) && is_numeric($anio)) {
                     $anios[] = (int)$anio;
                 }
@@ -318,7 +322,7 @@ class HomeController extends Controller
     }
 
     /**
-     * ✅ NUEVO: Obtener datos anuales (suma de ventas por año)
+     * Obtener datos anuales (suma de ventas por año)
      */
     private function obtenerDatosAnuales($service, $spreadsheetId, $sede)
     {
@@ -338,7 +342,6 @@ class HomeController extends Controller
                 $mesSheet  = trim(ucfirst(strtolower($row[2])));
                 $venta     = $this->limpiarNumero($row[3] ?? 0);
 
-                // ✅ FIX: ahora soporta MONTURAS y acumula las 3 sedes
                 if ($this->coincideSede($sedeSheet, $sede) && $mesSheet == $mesActual && is_numeric($anio)) {
                     if (!isset($datosAnuales[$anio])) {
                         $datosAnuales[$anio] = 0;
@@ -353,7 +356,7 @@ class HomeController extends Controller
         return [
             'anios'  => array_keys($datosAnuales),
             'ventas' => array_values($datosAnuales),
-            'mes'    => $mesActual
+            'mes'    => $mesActual,
         ];
     }
 

@@ -38,20 +38,20 @@
                                         <div class="col-6">
                                             <label class="mb-1 text-muted form-label small">Mes</label>
                                             <select id="mesSelect" class="form-select">
-                                                <option value="Enero" <?php echo $mesActual == 'Enero' ? 'selected' : ''; ?>>
-                                                    Enero</option>
+                                                <option value="Enero" <?php echo $mesActual == 'Enero' ? 'selected' : ''; ?>>Enero
+                                                </option>
                                                 <option value="Febrero" <?php echo $mesActual == 'Febrero' ? 'selected' : ''; ?>>
                                                     Febrero</option>
-                                                <option value="Marzo" <?php echo $mesActual == 'Marzo' ? 'selected' : ''; ?>>
-                                                    Marzo</option>
-                                                <option value="Abril" <?php echo $mesActual == 'Abril' ? 'selected' : ''; ?>>
-                                                    Abril</option>
-                                                <option value="Mayo" <?php echo $mesActual == 'Mayo' ? 'selected' : ''; ?>>
-                                                    Mayo</option>
-                                                <option value="Junio" <?php echo $mesActual == 'Junio' ? 'selected' : ''; ?>>
-                                                    Junio</option>
-                                                <option value="Julio" <?php echo $mesActual == 'Julio' ? 'selected' : ''; ?>>
-                                                    Julio</option>
+                                                <option value="Marzo" <?php echo $mesActual == 'Marzo' ? 'selected' : ''; ?>>Marzo
+                                                </option>
+                                                <option value="Abril" <?php echo $mesActual == 'Abril' ? 'selected' : ''; ?>>Abril
+                                                </option>
+                                                <option value="Mayo" <?php echo $mesActual == 'Mayo' ? 'selected' : ''; ?>>Mayo
+                                                </option>
+                                                <option value="Junio" <?php echo $mesActual == 'Junio' ? 'selected' : ''; ?>>Junio
+                                                </option>
+                                                <option value="Julio" <?php echo $mesActual == 'Julio' ? 'selected' : ''; ?>>Julio
+                                                </option>
                                                 <option value="Agosto" <?php echo $mesActual == 'Agosto' ? 'selected' : ''; ?>>
                                                     Agosto</option>
                                                 <option value="Septiembre"
@@ -159,9 +159,66 @@
                                 </div>
                             </div>
 
+                            
+                            <?php if($sedeUsuario === 'MONTURAS'): ?>
+                                <div class="mb-4 row" id="cardsConsultores">
+                                    <div class="mb-2 col-lg-12">
+                                        <h6 class="text-muted">
+                                            <i class="mdi-account-group me-1 mdi"></i> Ventas por Consultor
+                                        </h6>
+                                    </div>
+
+                                    <?php
+                                        $consultoresConfig = [
+                                            'CONSULTOR DE MONTURAS 1' => [
+                                                'label' => 'Consultor 1',
+                                                'icon' => 'mdi-account',
+                                                'class' => 'card-consultor-1',
+                                            ],
+                                            'CONSULTOR DE MONTURAS 2' => [
+                                                'label' => 'Consultor 2',
+                                                'icon' => 'mdi-account',
+                                                'class' => 'card-consultor-2',
+                                            ],
+                                            'MONTURAS GENERAL' => [
+                                                'label' => 'Monturas General',
+                                                'icon' => 'mdi-store',
+                                                'class' => 'card-consultor-general',
+                                            ],
+                                        ];
+                                    ?>
+
+                                    <?php $__currentLoopData = $consultoresConfig; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $key => $cfg): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                        <?php $venta = $datos['consultores'][$key] ?? 0; ?>
+                                        <div class="mb-3 col-lg-4 col-md-6">
+                                            <div class="h-100 card card-consultor <?php echo $cfg['class']; ?>">
+                                                <div class="card-body">
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="bg-white me-3 rounded icon-wrapper">
+                                                            <i class="mdi <?php echo $cfg['icon']; ?> mdi-36px icon-consultor"></i>
+                                                        </div>
+                                                        <div>
+                                                            <p
+                                                                class="mb-1 text-white text-uppercase tracking-wide small fw-semibold">
+                                                                <?php echo $cfg['label']; ?>
+
+                                                            </p>
+                                                            <h4 class="mb-0 text-white fw-bold consultor-venta"
+                                                                data-key="<?php echo $key; ?>">
+                                                                S/ <?php echo number_format($venta, 0, '.', ','); ?>
+
+                                                            </h4>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                </div>
+                            <?php endif; ?>
+
                             <!--  Cards Ventas Digitales -->
                             <?php if($sedeUsuario !== 'MONTURAS'): ?>
-                                <!-- Solo mostrar para sedes que no son MONTURAS -->
                                 <div class="mb-4 row" id="cardsDigitales">
                                     <div class="mb-2 col-lg-12">
                                         <h6 class="text-muted">
@@ -394,11 +451,53 @@
             --bs-gutter-x: 0.5rem;
             --bs-gutter-y: 0.5rem;
         }
+
+        /* ✅ Cards de consultores MONTURAS */
+        .card-consultor {
+            border: none;
+            border-radius: 10px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .card-consultor:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .card-consultor-1 {
+            background: linear-gradient(135deg, #6366f1, #4f46e5);
+        }
+
+        .card-consultor-2 {
+            background: linear-gradient(135deg, #0ea5e9, #0284c7);
+        }
+
+        .card-consultor-general {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+
+        .card-consultor .icon-consultor {
+            color: #4f46e5;
+        }
+
+        .card-consultor-2 .icon-consultor {
+            color: #0284c7;
+        }
+
+        .card-consultor-general .icon-consultor {
+            color: #059669;
+        }
+
+        .tracking-wide {
+            letter-spacing: 0.05em;
+        }
     </style>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         let ventasCuotaChart, cumplimientoChart, ventasAnualesChart;
+
+        const esMonturas = <?php echo $sedeUsuario === 'MONTURAS' ? 'true' : 'false'; ?>;
 
         let historico = {
             meses: <?php echo json_encode($historico['meses'], 15, 512) ?>,
@@ -427,6 +526,15 @@
                 document.getElementById('cumplimiento').textContent = data.datos.cumplimiento_cuota.toFixed(2) + '%';
                 document.getElementById('ventaTotal').textContent = 'S/ ' + formatNumber(data.datos.venta_proyectada);
                 actualizarColorCumplimiento(data.datos.cumplimiento_cuota);
+
+                // ✅ Cards consultores MONTURAS
+                if (esMonturas && data.datos.consultores) {
+                    document.querySelectorAll('.consultor-venta').forEach(el => {
+                        const key = el.dataset.key;
+                        const venta = data.datos.consultores[key] ?? 0;
+                        el.textContent = 'S/ ' + formatNumber(venta);
+                    });
+                }
 
                 // Cards digitales - solo si existen en el DOM (no MONTURAS)
                 if (document.getElementById('ventaDigital')) {
@@ -480,7 +588,6 @@
             progress.style.width = Math.min(cumplimiento, 100) + '%';
         }
 
-        // 🔥 Color dinámico para card cum digital
         function actualizarColorCumDigital(cum) {
             const card = document.getElementById('cardCumDigital');
             const progress = document.getElementById('progressCumDigital');
