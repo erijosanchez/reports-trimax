@@ -94,7 +94,7 @@
                                                 <small class="text-muted" id="textoInfoCarga"></small>
                                             </div>
                                             <div id="tablaContainer" class="table-responsive p-1"
-                                                style="display:none;max-height:68vh;overflow:auto;">
+                                                style="display:none;max-height:80vh;overflow:auto;">
                                                 <table id="tablaOrdenes" class="table table-bordered table-sm mb-0">
                                                     <thead id="tablaThead" style="position:sticky;top:0;z-index:10;">
                                                     </thead>
