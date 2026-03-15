@@ -29,7 +29,8 @@
                                             <label class="mb-1 text-muted form-label small">Año</label>
                                             <select id="anioSelect" class="form-select">
                                                 @foreach ($aniosDisponibles as $anio)
-                                                    <option value="{{ $anio }}" {{ $anio == $anioActual ? 'selected' : '' }}>
+                                                    <option value="{{ $anio }}"
+                                                        {{ $anio == $anioActual ? 'selected' : '' }}>
                                                         {{ $anio }}
                                                     </option>
                                                 @endforeach
@@ -38,31 +39,45 @@
                                         <div class="col-6">
                                             <label class="mb-1 text-muted form-label small">Mes</label>
                                             <select id="mesSelect" class="form-select">
-                                                <option value="Enero" {{ $mesActual == 'Enero' ? 'selected' : '' }}>Enero</option>
-                                                <option value="Febrero" {{ $mesActual == 'Febrero' ? 'selected' : '' }}>Febrero</option>
-                                                <option value="Marzo" {{ $mesActual == 'Marzo' ? 'selected' : '' }}>Marzo</option>
-                                                <option value="Abril" {{ $mesActual == 'Abril' ? 'selected' : '' }}>Abril</option>
-                                                <option value="Mayo" {{ $mesActual == 'Mayo' ? 'selected' : '' }}>Mayo</option>
-                                                <option value="Junio" {{ $mesActual == 'Junio' ? 'selected' : '' }}>Junio</option>
-                                                <option value="Julio" {{ $mesActual == 'Julio' ? 'selected' : '' }}>Julio</option>
-                                                <option value="Agosto" {{ $mesActual == 'Agosto' ? 'selected' : '' }}>Agosto</option>
-                                                <option value="Septiembre" {{ $mesActual == 'Septiembre' || $mesActual == 'Setiembre' ? 'selected' : '' }}>Septiembre</option>
-                                                <option value="Octubre" {{ $mesActual == 'Octubre' ? 'selected' : '' }}>Octubre</option>
-                                                <option value="Noviembre" {{ $mesActual == 'Noviembre' ? 'selected' : '' }}>Noviembre</option>
-                                                <option value="Diciembre" {{ $mesActual == 'Diciembre' ? 'selected' : '' }}>Diciembre</option>
+                                                <option value="Enero" {{ $mesActual == 'Enero' ? 'selected' : '' }}>
+                                                    Enero</option>
+                                                <option value="Febrero" {{ $mesActual == 'Febrero' ? 'selected' : '' }}>
+                                                    Febrero</option>
+                                                <option value="Marzo" {{ $mesActual == 'Marzo' ? 'selected' : '' }}>
+                                                    Marzo</option>
+                                                <option value="Abril" {{ $mesActual == 'Abril' ? 'selected' : '' }}>
+                                                    Abril</option>
+                                                <option value="Mayo" {{ $mesActual == 'Mayo' ? 'selected' : '' }}>
+                                                    Mayo</option>
+                                                <option value="Junio" {{ $mesActual == 'Junio' ? 'selected' : '' }}>
+                                                    Junio</option>
+                                                <option value="Julio" {{ $mesActual == 'Julio' ? 'selected' : '' }}>
+                                                    Julio</option>
+                                                <option value="Agosto" {{ $mesActual == 'Agosto' ? 'selected' : '' }}>
+                                                    Agosto</option>
+                                                <option value="Septiembre"
+                                                    {{ $mesActual == 'Septiembre' || $mesActual == 'Setiembre' ? 'selected' : '' }}>
+                                                    Septiembre</option>
+                                                <option value="Octubre" {{ $mesActual == 'Octubre' ? 'selected' : '' }}>
+                                                    Octubre</option>
+                                                <option value="Noviembre"
+                                                    {{ $mesActual == 'Noviembre' ? 'selected' : '' }}>Noviembre</option>
+                                                <option value="Diciembre"
+                                                    {{ $mesActual == 'Diciembre' ? 'selected' : '' }}>Diciembre</option>
                                             </select>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            {{-- ✅ SECCIÓN 1: VENTA TOTAL TRIMAX (Lunas + Monturas) --}}
+                            {{-- ✅ SECCIÓN 1: VENTA TOTAL TRIMAX --}}
                             <div class="mb-4 row">
                                 <div class="mb-2 col-lg-12">
                                     <h6 class="fw-bold" style="color: #c8a000;">
                                         <i class="me-1 mdi mdi-crown"></i>
                                         VENTA TOTAL TRIMAX
-                                        <small class="ms-2 text-muted fw-normal" style="font-size: 0.75rem;">(Lunas + Monturas)</small>
+                                        <small class="ms-2 text-muted fw-normal" style="font-size: 0.75rem;">(Lunas +
+                                            Monturas)</small>
                                     </h6>
                                 </div>
 
@@ -74,9 +89,10 @@
                                                     <i class="mdi mdi-cart mdi-36px" style="color: #b8860b;"></i>
                                                 </div>
                                                 <div>
-                                                    <p class="mb-1 text-white small fw-semibold">Venta General</p>
+                                                    <p class="mb-1 text-white small fw-semibold">Venta Total</p>
                                                     <h4 class="mb-0 text-white fw-bold" id="trimaxVentaGeneral">
-                                                        S/ {{ number_format($totalesTrimax['venta_general'], 0, '.', ',') }}
+                                                        S/
+                                                        {{ number_format($totalesTrimax['venta_general'], 0, '.', ',') }}
                                                     </h4>
                                                 </div>
                                             </div>
@@ -94,7 +110,8 @@
                                                 <div>
                                                     <p class="mb-1 text-white small fw-semibold">Venta Proyectada</p>
                                                     <h4 class="mb-0 text-white fw-bold" id="trimaxVentaProy">
-                                                        S/ {{ number_format($totalesTrimax['venta_proyectada'], 0, '.', ',') }}
+                                                        S/
+                                                        {{ number_format($totalesTrimax['venta_proyectada'], 0, '.', ',') }}
                                                     </h4>
                                                 </div>
                                             </div>
@@ -110,7 +127,7 @@
                                                     <i class="mdi mdi-target mdi-36px" style="color: #b8860b;"></i>
                                                 </div>
                                                 <div>
-                                                    <p class="mb-1 text-white small fw-semibold">Cuota del Mes</p>
+                                                    <p class="mb-1 text-white small fw-semibold">PPTO del Mes</p>
                                                     <h4 class="mb-0 text-white fw-bold" id="trimaxCuota">
                                                         S/ {{ number_format($totalesTrimax['cuota'], 0, '.', ',') }}
                                                     </h4>
@@ -125,7 +142,8 @@
                                         <div class="card-body">
                                             <div class="d-flex align-items-center mb-2">
                                                 <div class="bg-white me-3 rounded icon-wrapper">
-                                                    <i class="mdi mdi-chart-line mdi-36px" style="color: #b8860b;" id="iconTrimaxCum"></i>
+                                                    <i class="mdi mdi-chart-line mdi-36px" style="color: #b8860b;"
+                                                        id="iconTrimaxCum"></i>
                                                 </div>
                                                 <div>
                                                     <p class="mb-1 text-white small fw-semibold">% Cumplimiento</p>
@@ -136,27 +154,29 @@
                                             </div>
                                             <div class="progress" style="height: 8px;">
                                                 <div class="progress-bar" id="progressTrimax"
-                                                    style="width: {{ min($totalesTrimax['cumplimiento_cuota'], 100) }}%; background-color: #ffd700;"></div>
+                                                    style="width: {{ min($totalesTrimax['cumplimiento_cuota'], 100) }}%; background-color: #ffd700;">
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            {{-- ✅ SECCIÓN 2: VENTAS GENERALES (solo sedes normales, sin monturas) --}}
+                            {{-- ✅ SECCIÓN 2: VENTAS GENERALES --}}
                             <div class="mb-4 row" id="cardsGlobales">
                                 <div class="mb-2 col-lg-12">
                                     <h6 class="text-muted">
-                                        <i class="me-1 mdi mdi-store"></i> Ventas Generales —
+                                        <i class="me-1 mdi mdi-store"></i> Ventas Generales (Lunas) —
                                         <span id="periodoGeneral">{{ $mesActual }} {{ $anioActual }}</span>
                                     </h6>
                                 </div>
 
                                 @php
                                     $totalVentas = collect($todasLasSedes)->sum('venta_general');
+                                    $ventaProyectada = collect($todasLasSedes)->sum('venta_proyectada');
                                     $totalCuotas = collect($todasLasSedes)->sum('cuota');
-                                    $cumplimientoPromedio = $totalCuotas > 0 ? ($totalVentas / $totalCuotas) * 100 : 0;
-                                    $sedesCumplen = collect($todasLasSedes)->filter(fn($s) => $s['cumplimiento_cuota'] >= 100)->count();
+                                    $cumplimientoPromedio =
+                                        $totalCuotas > 0 ? ($ventaProyectada / $totalCuotas) * 100 : 0;
                                 @endphp
 
                                 <div class="mb-3 col-lg-3 col-md-6">
@@ -167,7 +187,7 @@
                                                     <i class="text-primary mdi mdi-cart mdi-36px"></i>
                                                 </div>
                                                 <div>
-                                                    <p class="mb-1 text-white small">Venta Total</p>
+                                                    <p class="mb-1 text-white small">Venta General</p>
                                                     <h4 class="mb-0 text-white fw-bold" id="totalVentas">
                                                         S/ {{ number_format($totalVentas, 0, '.', ',') }}
                                                     </h4>
@@ -182,12 +202,12 @@
                                         <div class="card-body">
                                             <div class="d-flex align-items-center">
                                                 <div class="bg-white me-3 rounded icon-wrapper">
-                                                    <i class="text-warning mdi mdi-target mdi-36px"></i>
+                                                    <i class="mdi mdi-currency-usd mdi-36px" style="color: #4747A1;"></i>
                                                 </div>
                                                 <div>
-                                                    <p class="mb-1 text-white small">Cuota Total</p>
-                                                    <h4 class="mb-0 text-white fw-bold" id="totalCuotas">
-                                                        S/ {{ number_format($totalCuotas, 0, '.', ',') }}
+                                                    <p class="mb-1 text-white small">Venta Proyectada</p>
+                                                    <h4 class="mb-0 text-white fw-bold" id="ventaProyectada">
+                                                        S/ {{ number_format($ventaProyectada, 0, '.', ',') }}
                                                     </h4>
                                                 </div>
                                             </div>
@@ -200,12 +220,12 @@
                                         <div class="card-body">
                                             <div class="d-flex align-items-center">
                                                 <div class="bg-white me-3 rounded icon-wrapper">
-                                                    <i class="text-success mdi mdi-chart-line mdi-36px"></i>
+                                                    <i class="mdi mdi-target mdi-36px" style="color: #7978E9"></i>
                                                 </div>
                                                 <div>
-                                                    <p class="mb-1 text-white small">Cumplimiento Promedio</p>
-                                                    <h4 class="mb-0 text-white fw-bold" id="cumplimientoPromedio">
-                                                        {{ number_format($cumplimientoPromedio, 2) }}%
+                                                    <p class="mb-1 text-white small">PPTO General</p>
+                                                    <h4 class="mb-0 text-white fw-bold" id="totalCuotas">
+                                                        S/ {{ number_format($totalCuotas, 0, '.', ',') }}
                                                     </h4>
                                                 </div>
                                             </div>
@@ -214,17 +234,22 @@
                                 </div>
 
                                 <div class="mb-3 col-lg-3 col-md-6">
-                                    <div class="h-100 card card-light-danger">
+                                    <div class="h-100 card card-light-danger" id="cardGeneralCum">
                                         <div class="card-body">
-                                            <div class="d-flex align-items-center">
+                                            <div class="d-flex align-items-center mb-2">
                                                 <div class="bg-white me-3 rounded icon-wrapper">
-                                                    <i class="text-info mdi mdi-office-building mdi-36px"></i>
+                                                    <i class="mdi mdi-chart-line mdi-36px" style="color: #F3797E"></i>
                                                 </div>
                                                 <div>
-                                                    <p class="mb-1 text-white small">Sedes que Cumplen</p>
-                                                    <h4 class="mb-0 text-white fw-bold" id="sedesCumplen">
-                                                        <span>{{ $sedesCumplen }}</span> / <span id="totalSedes">{{ count($todasLasSedes) }}</span>
+                                                    <p class="mb-1 text-white small">% Cumplimiento</p>
+                                                    <h4 class="mb-0 text-white fw-bold" id="cumplimientoPromedio">
+                                                        {{ number_format($cumplimientoPromedio, 2) }}%
                                                     </h4>
+                                                </div>
+                                            </div>
+                                            <div class="progress" style="height: 8px;">
+                                                <div class="progress-bar" id="progressGeneral"
+                                                    style="width: {{ min($cumplimientoPromedio, 100) }}%; background-color: #7dd3fc;">
                                                 </div>
                                             </div>
                                         </div>
@@ -241,6 +266,16 @@
                                     </h6>
                                 </div>
 
+                                @php
+                                    $totalVentaDigital = collect($todasLasSedes)->sum('venta_digital');
+                                    $totalVentaProyDigital = collect($todasLasSedes)->sum('venta_proy_digital');
+                                    $totalCuotaDigital = collect($todasLasSedes)->sum('cuota_digital');
+                                    $cumDigital =
+                                        $totalCuotaDigital > 0
+                                            ? ($totalVentaProyDigital / $totalCuotaDigital) * 100
+                                            : 0;
+                                @endphp
+
                                 <div class="mb-3 col-lg-3 col-md-6">
                                     <div class="h-100 card card-tale">
                                         <div class="card-body">
@@ -251,7 +286,7 @@
                                                 <div>
                                                     <p class="mb-1 text-white small">Venta Digital</p>
                                                     <h4 class="mb-0 text-white fw-bold" id="totalVentaDigital">
-                                                        S/ {{ number_format(collect($todasLasSedes)->sum('venta_digital'), 0, '.', ',') }}
+                                                        S/ {{ number_format($totalVentaDigital, 0, '.', ',') }}
                                                     </h4>
                                                 </div>
                                             </div>
@@ -264,12 +299,12 @@
                                         <div class="card-body">
                                             <div class="d-flex align-items-center">
                                                 <div class="bg-white me-3 rounded icon-wrapper">
-                                                    <i class="text-warning mdi mdi-chart-line mdi-36px"></i>
+                                                    <i class="mdi mdi-currency-usd mdi-36px" style="color: #4747A1;"></i>
                                                 </div>
                                                 <div>
                                                     <p class="mb-1 text-white small">Venta Proy. Digital</p>
                                                     <h4 class="mb-0 text-white fw-bold" id="totalVentaProyDigital">
-                                                        S/ {{ number_format(collect($todasLasSedes)->sum('venta_proy_digital'), 0, '.', ',') }}
+                                                        S/ {{ number_format($totalVentaProyDigital, 0, '.', ',') }}
                                                     </h4>
                                                 </div>
                                             </div>
@@ -282,12 +317,12 @@
                                         <div class="card-body">
                                             <div class="d-flex align-items-center">
                                                 <div class="bg-white me-3 rounded icon-wrapper">
-                                                    <i class="text-success mdi mdi-target mdi-36px"></i>
+                                                    <i class="mdi mdi-target mdi-36px" style="color: #7978E9"></i>
                                                 </div>
                                                 <div>
-                                                    <p class="mb-1 text-white small">Cuota Digital</p>
+                                                    <p class="mb-1 text-white small">PPTO Digital</p>
                                                     <h4 class="mb-0 text-white fw-bold" id="totalCuotaDigital">
-                                                        S/ {{ number_format(collect($todasLasSedes)->sum('cuota_digital'), 0, '.', ',') }}
+                                                        S/ {{ number_format($totalCuotaDigital, 0, '.', ',') }}
                                                     </h4>
                                                 </div>
                                             </div>
@@ -296,22 +331,22 @@
                                 </div>
 
                                 <div class="mb-3 col-lg-3 col-md-6">
-                                    <div class="h-100 card card-light-danger">
+                                    <div class="h-100 card card-light-danger" id="cardDigitalCum">
                                         <div class="card-body">
-                                            <div class="d-flex align-items-center">
+                                            <div class="d-flex align-items-center mb-2">
                                                 <div class="bg-white me-3 rounded icon-wrapper">
-                                                    <i class="text-info mdi mdi-percent mdi-36px"></i>
+                                                    <i class="mdi mdi-chart-line mdi-36px" style="color: #F3797E"></i>
                                                 </div>
                                                 <div>
-                                                    <p class="mb-1 text-white small">Cum. Cuota Digital</p>
-                                                    @php
-                                                        $totalVentaDigital = collect($todasLasSedes)->sum('venta_digital');
-                                                        $totalCuotaDigital = collect($todasLasSedes)->sum('cuota_digital');
-                                                        $cumDigitalPromedio = $totalCuotaDigital > 0 ? ($totalVentaDigital / $totalCuotaDigital) * 100 : 0;
-                                                    @endphp
+                                                    <p class="mb-1 text-white small">% Cumplimiento</p>
                                                     <h4 class="mb-0 text-white fw-bold" id="totalCumCuotaDigital">
-                                                        {{ number_format($cumDigitalPromedio, 2) }}%
+                                                        {{ number_format($cumDigital, 2) }}%
                                                     </h4>
+                                                </div>
+                                            </div>
+                                            <div class="progress" style="height: 8px;">
+                                                <div class="progress-bar" id="progressDigital"
+                                                    style="width: {{ min($cumDigital, 100) }}%; background-color: #7dd3fc;">
                                                 </div>
                                             </div>
                                         </div>
@@ -338,7 +373,8 @@
                                                 <div>
                                                     <p class="mb-1 text-white small fw-semibold">Venta General</p>
                                                     <h4 class="mb-0 text-white fw-bold" id="monturasVentaGeneral">
-                                                        S/ {{ number_format($datosMonturas['venta_general'], 0, '.', ',') }}
+                                                        S/
+                                                        {{ number_format($datosMonturas['venta_general'], 0, '.', ',') }}
                                                     </h4>
                                                 </div>
                                             </div>
@@ -356,7 +392,8 @@
                                                 <div>
                                                     <p class="mb-1 text-white small fw-semibold">Venta Proyectada</p>
                                                     <h4 class="mb-0 text-white fw-bold" id="monturasVentaProy">
-                                                        S/ {{ number_format($datosMonturas['venta_proyectada'], 0, '.', ',') }}
+                                                        S/
+                                                        {{ number_format($datosMonturas['venta_proyectada'], 0, '.', ',') }}
                                                     </h4>
                                                 </div>
                                             </div>
@@ -372,7 +409,7 @@
                                                     <i class="mdi mdi-target mdi-36px" style="color: #0f766e;"></i>
                                                 </div>
                                                 <div>
-                                                    <p class="mb-1 text-white small fw-semibold">Cuota del Mes</p>
+                                                    <p class="mb-1 text-white small fw-semibold">PPTO del Mes</p>
                                                     <h4 class="mb-0 text-white fw-bold" id="monturasCuota">
                                                         S/ {{ number_format($datosMonturas['cuota'], 0, '.', ',') }}
                                                     </h4>
@@ -414,7 +451,8 @@
                                         <div class="card-body">
                                             <h4 class="mb-4 card-title">
                                                 <i class="me-2 text-primary mdi mdi-chart-bar"></i>
-                                                Ventas Consolidadas Mensuales - <span id="anioConsolidado">{{ $anioActual }}</span>
+                                                Ventas Consolidadas Mensuales - <span
+                                                    id="anioConsolidado">{{ $anioActual }}</span>
                                             </h4>
                                             <canvas id="consolidadoChart" height="80"></canvas>
                                         </div>
@@ -457,9 +495,11 @@
                                             <div class="d-flex align-items-center justify-content-between mb-4">
                                                 <h4 class="mb-0 card-title">
                                                     <i class="mdi-table me-2 text-info mdi"></i>
-                                                    Detalle por Sede - <span id="periodoTabla">{{ $mesActual }} {{ $anioActual }}</span>
+                                                    Detalle por Sede - <span id="periodoTabla">{{ $mesActual }}
+                                                        {{ $anioActual }}</span>
                                                 </h4>
-                                                <input type="text" id="buscarSede" class="form-control form-control-sm" placeholder="Buscar sede...">
+                                                <input type="text" id="buscarSede"
+                                                    class="form-control form-control-sm" placeholder="Buscar sede...">
                                             </div>
                                             <div class="table-responsive">
                                                 <table class="table table-hover" id="tablaVentas">
@@ -468,7 +508,8 @@
                                                             <th>#</th>
                                                             <th>Sede</th>
                                                             <th>Venta General</th>
-                                                            <th>Cuota</th>
+                                                            <th>Venta Proy.</th>
+                                                            <th>PPTO</th>
                                                             <th>Diferencia</th>
                                                             <th>% Cumplimiento</th>
                                                             <th class="text-center">Estado</th>
@@ -479,12 +520,19 @@
                                                             <tr data-sede="{{ $sede['sede'] }}">
                                                                 <td class="fw-bold">{{ $index + 1 }}</td>
                                                                 <td class="fw-semibold">{{ $sede['sede'] }}</td>
-                                                                <td>S/ {{ number_format($sede['venta_general'], 0, '.', ',') }}</td>
-                                                                <td>S/ {{ number_format($sede['cuota'], 0, '.', ',') }}</td>
-                                                                <td class="{{ $sede['diferencia'] >= 0 ? 'text-success' : 'text-danger' }} fw-bold">
-                                                                    {{ $sede['diferencia'] >= 0 ? '+' : '' }}S/ {{ number_format($sede['diferencia'], 0, '.', ',') }}
+                                                                <td>S/
+                                                                    {{ number_format($sede['venta_general'], 0, '.', ',') }}
                                                                 </td>
-                                                                <td class="fw-bold
+                                                                <td>S/ {{ number_format($sede['venta_proyectada'], 0, '.', ',') }}</td>
+                                                                <td>S/ {{ number_format($sede['cuota'], 0, '.', ',') }}
+                                                                </td>
+                                                                <td
+                                                                    class="{{ $sede['diferencia'] >= 0 ? 'text-success' : 'text-danger' }} fw-bold">
+                                                                    {{ $sede['diferencia'] >= 0 ? '+' : '' }}S/
+                                                                    {{ number_format($sede['diferencia'], 0, '.', ',') }}
+                                                                </td>
+                                                                <td
+                                                                    class="fw-bold
                                                                     @if ($sede['cumplimiento_cuota'] >= 100) text-success
                                                                     @elseif($sede['cumplimiento_cuota'] >= 70) text-warning
                                                                     @else text-danger @endif">
@@ -492,11 +540,15 @@
                                                                 </td>
                                                                 <td class="text-center">
                                                                     @if ($sede['cumplimiento_cuota'] >= 100)
-                                                                        <span class="badge badge-success"><i class="me-1 mdi mdi-check-circle"></i>Cumplido</span>
+                                                                        <span class="badge badge-success"><i
+                                                                                class="me-1 mdi mdi-check-circle"></i>Cumplido</span>
                                                                     @elseif($sede['cumplimiento_cuota'] >= 70)
-                                                                        <span class="badge badge-warning"><i class="me-1 mdi mdi-alert"></i>En Progreso</span>
+                                                                        <span class="badge badge-warning"><i
+                                                                                class="me-1 mdi mdi-alert"></i>En
+                                                                            Progreso</span>
                                                                     @else
-                                                                        <span class="badge badge-danger"><i class="me-1 mdi mdi-close-circle"></i>Bajo</span>
+                                                                        <span class="badge badge-danger"><i
+                                                                                class="me-1 mdi mdi-close-circle"></i>Bajo</span>
                                                                     @endif
                                                                 </td>
                                                             </tr>
@@ -546,7 +598,6 @@
             max-width: 200px;
         }
 
-        /* ✅ Card VENTA TOTAL TRIMAX - dorado */
         .card-trimax {
             background: linear-gradient(135deg, #92710a, #c8a000, #a07800);
             border: none;
@@ -560,7 +611,6 @@
             box-shadow: 0 8px 25px rgba(184, 134, 11, 0.5);
         }
 
-        /* ✅ Card MONTURAS - verde esmeralda */
         .card-monturas {
             background: linear-gradient(135deg, #0f766e, #14b8a6, #0d9488);
             border: none;
@@ -586,19 +636,19 @@
         let consolidadoChart, topSedesChart, comparacionAnualChart;
 
         let datosConsolidados = {
-            meses:  @json($datosConsolidados['meses']),
+            meses: @json($datosConsolidados['meses']),
             ventas: @json($datosConsolidados['ventas']),
             cuotas: @json($datosConsolidados['cuotas'])
         };
 
         let comparacionAnual = {
-            anios:  @json($comparacionAnual['anios']),
+            anios: @json($comparacionAnual['anios']),
             ventas: @json($comparacionAnual['ventas'])
         };
 
         let sedesActuales = @json($todasLasSedes);
 
-        document.addEventListener('DOMContentLoaded', function () {
+        document.addEventListener('DOMContentLoaded', function() {
             inicializarGraficos();
             document.getElementById('anioSelect').addEventListener('change', actualizarDatos);
             document.getElementById('mesSelect').addEventListener('change', actualizarDatos);
@@ -607,7 +657,7 @@
 
         async function actualizarDatos() {
             const anio = document.getElementById('anioSelect').value;
-            const mes  = document.getElementById('mesSelect').value;
+            const mes = document.getElementById('mesSelect').value;
 
             try {
                 const response = await fetch(`{{ route('comercial.ventas.sedes.data') }}?anio=${anio}&mes=${mes}`);
@@ -615,30 +665,30 @@
 
                 sedesActuales = data.sedes;
 
-                // ── Actualizar TRIMAX ──────────────────────────────────────
+                // ── TRIMAX ─────────────────────────────────────────────────
                 const t = data.totales_trimax;
                 document.getElementById('trimaxVentaGeneral').textContent = 'S/ ' + formatNumber(t.venta_general);
-                document.getElementById('trimaxVentaProy').textContent    = 'S/ ' + formatNumber(t.venta_proyectada);
-                document.getElementById('trimaxCuota').textContent        = 'S/ ' + formatNumber(t.cuota);
+                document.getElementById('trimaxVentaProy').textContent = 'S/ ' + formatNumber(t.venta_proyectada);
+                document.getElementById('trimaxCuota').textContent = 'S/ ' + formatNumber(t.cuota);
                 document.getElementById('trimaxCumplimiento').textContent = t.cumplimiento_cuota.toFixed(2) + '%';
-                document.getElementById('progressTrimax').style.width     = Math.min(t.cumplimiento_cuota, 100) + '%';
+                document.getElementById('progressTrimax').style.width = Math.min(t.cumplimiento_cuota, 100) + '%';
 
-                // ── Actualizar VENTAS GENERALES (sedes sin monturas) ───────
+                // ── VENTAS GENERALES + DIGITALES ───────────────────────────
                 actualizarCardsGlobales(data.sedes);
 
-                // ── Actualizar MONTURAS ────────────────────────────────────
+                // ── MONTURAS ───────────────────────────────────────────────
                 const m = data.monturas;
-                document.getElementById('monturasVentaGeneral').textContent  = 'S/ ' + formatNumber(m.venta_general);
-                document.getElementById('monturasVentaProy').textContent     = 'S/ ' + formatNumber(m.venta_proyectada);
-                document.getElementById('monturasCuota').textContent         = 'S/ ' + formatNumber(m.cuota);
-                document.getElementById('monturasCumplimiento').textContent  = m.cumplimiento_cuota.toFixed(2) + '%';
+                document.getElementById('monturasVentaGeneral').textContent = 'S/ ' + formatNumber(m.venta_general);
+                document.getElementById('monturasVentaProy').textContent = 'S/ ' + formatNumber(m.venta_proyectada);
+                document.getElementById('monturasCuota').textContent = 'S/ ' + formatNumber(m.cuota);
+                document.getElementById('monturasCumplimiento').textContent = m.cumplimiento_cuota.toFixed(2) + '%';
                 const cum = m.cumplimiento_cuota;
                 const colorMonturas = cum >= 100 ? '#6ee7b7' : (cum >= 70 ? '#fcd34d' : '#fca5a5');
                 const progressMonturas = document.getElementById('progressMonturas');
-                progressMonturas.style.width           = Math.min(cum, 100) + '%';
+                progressMonturas.style.width = Math.min(cum, 100) + '%';
                 progressMonturas.style.backgroundColor = colorMonturas;
 
-                // ── Gráficos y tabla ───────────────────────────────────────
+                // ── Gráficos ───────────────────────────────────────────────
                 datosConsolidados = data.consolidado;
                 actualizarGraficoConsolidado();
 
@@ -651,9 +701,9 @@
                 // ── Títulos ────────────────────────────────────────────────
                 const periodo = mes + ' ' + anio;
                 document.getElementById('anioConsolidado').textContent = anio;
-                document.getElementById('periodoTabla').textContent    = periodo;
-                document.getElementById('periodoGeneral').textContent  = periodo;
-                document.getElementById('periodoDigital').textContent  = periodo;
+                document.getElementById('periodoTabla').textContent = periodo;
+                document.getElementById('periodoGeneral').textContent = periodo;
+                document.getElementById('periodoDigital').textContent = periodo;
                 document.getElementById('periodoMonturas').textContent = periodo;
 
             } catch (error) {
@@ -662,26 +712,35 @@
         }
 
         function actualizarCardsGlobales(sedes) {
-            const totalVentas        = sedes.reduce((s, x) => s + x.venta_general, 0);
-            const totalCuotas        = sedes.reduce((s, x) => s + x.cuota, 0);
-            const cumplimientoPromedio = totalCuotas > 0 ? (totalVentas / totalCuotas) * 100 : 0;
-            const sedesCumplen       = sedes.filter(s => s.cumplimiento_cuota >= 100).length;
+            // ── Generales ──────────────────────────────────────────────────
+            const totalVentas = sedes.reduce((s, x) => s + x.venta_general, 0);
+            const totalVentaProy = sedes.reduce((s, x) => s + x.venta_proyectada, 0);
+            const totalCuotas = sedes.reduce((s, x) => s + x.cuota, 0);
+            // ✅ % Cumplimiento = Venta Proyectada / PPTO General
+            const cumplimiento = totalCuotas > 0 ? (totalVentaProy / totalCuotas) * 100 : 0;
 
-            document.getElementById('totalVentas').textContent          = 'S/ ' + formatNumber(totalVentas);
-            document.getElementById('totalCuotas').textContent          = 'S/ ' + formatNumber(totalCuotas);
-            document.getElementById('cumplimientoPromedio').textContent = cumplimientoPromedio.toFixed(2) + '%';
-            document.getElementById('sedesCumplen').innerHTML           =
-                `<span>${sedesCumplen}</span> / <span id="totalSedes">${sedes.length}</span>`;
+            document.getElementById('totalVentas').textContent = 'S/ ' + formatNumber(totalVentas);
+            document.getElementById('ventaProyectada').textContent = 'S/ ' + formatNumber(totalVentaProy);
+            document.getElementById('totalCuotas').textContent = 'S/ ' + formatNumber(totalCuotas);
+            document.getElementById('cumplimientoPromedio').textContent = cumplimiento.toFixed(2) + '%';
 
-            const totalVentaDigital    = sedes.reduce((s, x) => s + (x.venta_digital    || 0), 0);
+            const progressGeneral = document.getElementById('progressGeneral');
+            if (progressGeneral) progressGeneral.style.width = Math.min(cumplimiento, 100) + '%';
+
+            // ── Digitales ──────────────────────────────────────────────────
+            const totalVentaDigital = sedes.reduce((s, x) => s + (x.venta_digital || 0), 0);
             const totalVentaProyDigital = sedes.reduce((s, x) => s + (x.venta_proy_digital || 0), 0);
-            const totalCuotaDigital    = sedes.reduce((s, x) => s + (x.cuota_digital    || 0), 0);
-            const cumDigital           = totalCuotaDigital > 0 ? (totalVentaDigital / totalCuotaDigital) * 100 : 0;
+            const totalCuotaDigital = sedes.reduce((s, x) => s + (x.cuota_digital || 0), 0);
+            // ✅ % Cumplimiento Digital = Venta Proy Digital / PPTO Digital
+            const cumDigital = totalCuotaDigital > 0 ? (totalVentaProyDigital / totalCuotaDigital) * 100 : 0;
 
-            document.getElementById('totalVentaDigital').textContent     = 'S/ ' + formatNumber(totalVentaDigital);
+            document.getElementById('totalVentaDigital').textContent = 'S/ ' + formatNumber(totalVentaDigital);
             document.getElementById('totalVentaProyDigital').textContent = 'S/ ' + formatNumber(totalVentaProyDigital);
-            document.getElementById('totalCuotaDigital').textContent     = 'S/ ' + formatNumber(totalCuotaDigital);
-            document.getElementById('totalCumCuotaDigital').textContent  = cumDigital.toFixed(2) + '%';
+            document.getElementById('totalCuotaDigital').textContent = 'S/ ' + formatNumber(totalCuotaDigital);
+            document.getElementById('totalCumCuotaDigital').textContent = cumDigital.toFixed(2) + '%';
+
+            const progressDigital = document.getElementById('progressDigital');
+            if (progressDigital) progressDigital.style.width = Math.min(cumDigital, 100) + '%';
         }
 
         function formatNumber(num) {
@@ -702,7 +761,7 @@
                         borderWidth: 2,
                         borderRadius: 5
                     }, {
-                        label: 'Cuota',
+                        label: 'PPTO',
                         data: datosConsolidados.cuotas,
                         backgroundColor: 'rgba(255, 206, 86, 0.7)',
                         borderColor: 'rgba(255, 206, 86, 1)',
@@ -713,7 +772,9 @@
                 options: {
                     responsive: true,
                     plugins: {
-                        legend: { position: 'top' },
+                        legend: {
+                            position: 'top'
+                        },
                         tooltip: {
                             callbacks: {
                                 label: ctx => ctx.dataset.label + ': S/ ' + ctx.parsed.y.toLocaleString()
@@ -723,7 +784,9 @@
                     scales: {
                         y: {
                             beginAtZero: true,
-                            ticks: { callback: val => 'S/ ' + (val / 1000000).toFixed(1) + 'M' }
+                            ticks: {
+                                callback: val => 'S/ ' + (val / 1000000).toFixed(1) + 'M'
+                            }
                         }
                     }
                 }
@@ -750,7 +813,9 @@
                 options: {
                     responsive: true,
                     plugins: {
-                        legend: { position: 'bottom' },
+                        legend: {
+                            position: 'bottom'
+                        },
                         tooltip: {
                             callbacks: {
                                 label: ctx => ctx.label + ': ' + ctx.parsed.toFixed(2) + '%'
@@ -780,7 +845,9 @@
                 options: {
                     responsive: true,
                     plugins: {
-                        legend: { position: 'top' },
+                        legend: {
+                            position: 'top'
+                        },
                         tooltip: {
                             callbacks: {
                                 label: ctx => 'Total: S/ ' + ctx.parsed.y.toLocaleString()
@@ -790,7 +857,9 @@
                     scales: {
                         y: {
                             beginAtZero: true,
-                            ticks: { callback: val => 'S/ ' + (val / 1000000).toFixed(1) + 'M' }
+                            ticks: {
+                                callback: val => 'S/ ' + (val / 1000000).toFixed(1) + 'M'
+                            }
                         }
                     }
                 }
@@ -798,32 +867,33 @@
         }
 
         function actualizarGraficoConsolidado() {
-            consolidadoChart.data.labels            = datosConsolidados.meses;
-            consolidadoChart.data.datasets[0].data  = datosConsolidados.ventas;
-            consolidadoChart.data.datasets[1].data  = datosConsolidados.cuotas;
+            consolidadoChart.data.labels = datosConsolidados.meses;
+            consolidadoChart.data.datasets[0].data = datosConsolidados.ventas;
+            consolidadoChart.data.datasets[1].data = datosConsolidados.cuotas;
             consolidadoChart.update();
         }
 
         function actualizarGraficoTopSedes(sedes) {
             const top5 = sedes.slice(0, 5);
-            topSedesChart.data.labels            = top5.map(s => s.sede);
-            topSedesChart.data.datasets[0].data  = top5.map(s => s.cumplimiento_cuota);
+            topSedesChart.data.labels = top5.map(s => s.sede);
+            topSedesChart.data.datasets[0].data = top5.map(s => s.cumplimiento_cuota);
             topSedesChart.update();
         }
 
         function actualizarGraficoComparacionAnual() {
-            comparacionAnualChart.data.labels           = comparacionAnual.anios;
+            comparacionAnualChart.data.labels = comparacionAnual.anios;
             comparacionAnualChart.data.datasets[0].data = comparacionAnual.ventas;
             comparacionAnualChart.update();
         }
 
         function actualizarTabla(sedes) {
             const tbody = document.getElementById('tablaBody');
+            const diferencia = sede.venta_proyectada - sede.cuota;
 
             if (sedes.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="7" class="py-4 text-muted text-center">
+                        <td colspan="8" class="py-4 text-muted text-center">
                             <i class="d-block mb-3 mdi mdi-inbox mdi-48px"></i>
                             No hay datos disponibles
                         </td>
@@ -834,12 +904,24 @@
             let html = '';
             sedes.forEach((sede, index) => {
                 const cum = sede.cumplimiento_cuota;
-                let badgeClass = 'badge-danger', badgeIcon = 'mdi-close-circle', badgeText = 'Bajo', textClass = 'text-danger';
+                let badgeClass = 'badge-danger',
+                    badgeIcon = 'mdi-close-circle',
+                    badgeText = 'Bajo',
+                    textClass = 'text-danger';
 
-                if (cum >= 100)       { badgeClass = 'badge-success'; badgeIcon = 'mdi-check-circle'; badgeText = 'Cumplido';    textClass = 'text-success'; }
-                else if (cum >= 70)   { badgeClass = 'badge-warning'; badgeIcon = 'mdi-alert';        badgeText = 'En Progreso'; textClass = 'text-warning'; }
+                if (cum >= 100) {
+                    badgeClass = 'badge-success';
+                    badgeIcon = 'mdi-check-circle';
+                    badgeText = 'Cumplido';
+                    textClass = 'text-success';
+                } else if (cum >= 70) {
+                    badgeClass = 'badge-warning';
+                    badgeIcon = 'mdi-alert';
+                    badgeText = 'En Progreso';
+                    textClass = 'text-warning';
+                }
 
-                const diferencia      = sede.venta_general - sede.cuota;
+                const diferencia = sede.venta_general - sede.cuota;
                 const diferenciaClass = diferencia >= 0 ? 'text-success' : 'text-danger';
                 const diferenciaSigno = diferencia >= 0 ? '+' : '';
 
@@ -848,6 +930,7 @@
                         <td class="fw-bold">${index + 1}</td>
                         <td class="fw-semibold">${sede.sede}</td>
                         <td>S/ ${formatNumber(sede.venta_general)}</td>
+                        <td>S/ ${formatNumber(sede.venta_proyectada)}</td>
                         <td>S/ ${formatNumber(sede.cuota)}</td>
                         <td class="${diferenciaClass} fw-bold">${diferenciaSigno}S/ ${formatNumber(diferencia)}</td>
                         <td class="fw-bold ${textClass}">${cum.toFixed(2)}%</td>

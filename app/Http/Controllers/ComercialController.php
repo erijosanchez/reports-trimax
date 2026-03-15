@@ -540,7 +540,7 @@ class ComercialController extends Controller
                 'total'   => $ordenes->count(),
             ]);
         } catch (\Exception $e) {
-            Log::error('Error en obtenerOrdenesRecientes: ' . $e->getMessage());
+            \Log::error('Error en obtenerOrdenesRecientes: ' . $e->getMessage());
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
@@ -611,7 +611,7 @@ class ComercialController extends Controller
                 'total'   => $ordenes->count(),
             ]);
         } catch (\Exception $e) {
-            Log::error('Error en obtenerOrdenes: ' . $e->getMessage());
+            \Log::error('Error en obtenerOrdenes: ' . $e->getMessage());
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
@@ -714,7 +714,7 @@ class ComercialController extends Controller
                 'data'    => $sedes,
             ]);
         } catch (\Exception $e) {
-            Log::error('Error en obtenerSedes: ' . $e->getMessage());
+            \Log::error('Error en obtenerSedes: ' . $e->getMessage());
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
@@ -1215,9 +1215,6 @@ class ComercialController extends Controller
     // VENTAS SEDES (Super Admin / Admin)
     // =========================================================================
 
-    /**
-     * Vista principal: Ventas por Sedes
-     */
     public function ventasSedes()
     {
         if (!auth()->user()->puedeVerVentasConsolidadas()) {
@@ -1238,21 +1235,20 @@ class ComercialController extends Controller
 
             $service = new Sheets($client);
 
-            // ✅ Obtener datos separados: sedes normales + monturas
-            $resultado        = $this->obtenerDatosTodasLasSedes($service, $spreadsheetId, $mesActual, $anioActual);
-            $todasLasSedes    = $resultado['sedes'];
-            $datosMonturas    = $resultado['monturas'];
-            $totalesTrimax    = $resultado['totales_trimax'];
+            $resultado         = $this->obtenerDatosTodasLasSedes($service, $spreadsheetId, $mesActual, $anioActual);
+            $todasLasSedes     = $resultado['sedes'];
+            $datosMonturas     = $resultado['monturas'];
+            $totalesTrimax     = $resultado['totales_trimax'];
 
             $aniosDisponibles  = $this->obtenerAniosDisponiblesGlobal($service, $spreadsheetId);
             $datosConsolidados = $this->obtenerDatosConsolidados($service, $spreadsheetId, $anioActual);
             $comparacionAnual  = $this->obtenerComparacionAnual($service, $spreadsheetId);
         } catch (\Exception $e) {
-            Log::error('Error en ventasSedes: ' . $e->getMessage());
+            \Log::error('Error en ventasSedes: ' . $e->getMessage());
 
-            $todasLasSedes    = [];
-            $datosMonturas    = $this->monturaVacia();
-            $totalesTrimax    = $this->trimaxVacio();
+            $todasLasSedes     = [];
+            $datosMonturas     = $this->monturaVacia();
+            $totalesTrimax     = $this->trimaxVacio();
             $aniosDisponibles  = [$anioActual];
             $datosConsolidados = ['meses' => [], 'ventas' => [], 'cuotas' => []];
             $comparacionAnual  = ['anios' => [], 'ventas' => []];
@@ -1270,9 +1266,6 @@ class ComercialController extends Controller
         ));
     }
 
-    /**
-     * API AJAX: datos filtrados por año/mes
-     */
     public function getVentasSedesData(Request $request)
     {
         if (!auth()->user()->isSuperAdmin() && !auth()->user()->isAdmin()) {
@@ -1293,26 +1286,26 @@ class ComercialController extends Controller
 
             $service = new Sheets($client);
 
-            $resultado        = $this->obtenerDatosTodasLasSedes($service, $spreadsheetId, $mes, $anio);
+            $resultado         = $this->obtenerDatosTodasLasSedes($service, $spreadsheetId, $mes, $anio);
             $datosConsolidados = $this->obtenerDatosConsolidados($service, $spreadsheetId, $anio);
             $comparacionAnual  = $this->obtenerComparacionAnualPorMes($service, $spreadsheetId, $mes);
 
             return response()->json([
-                'sedes'       => $resultado['sedes'],
-                'monturas'    => $resultado['monturas'],
+                'sedes'          => $resultado['sedes'],
+                'monturas'       => $resultado['monturas'],
                 'totales_trimax' => $resultado['totales_trimax'],
-                'consolidado' => $datosConsolidados,
-                'comparacion' => $comparacionAnual,
-                'anio'        => $anio,
-                'mes'         => $mes,
+                'consolidado'    => $datosConsolidados,
+                'comparacion'    => $comparacionAnual,
+                'anio'           => $anio,
+                'mes'            => $mes,
             ]);
         } catch (\Exception $e) {
-            Log::error('Error en getVentasSedesData: ' . $e->getMessage());
+            \Log::error('Error en getVentasSedesData: ' . $e->getMessage());
             return response()->json(['error' => 'Error al obtener datos'], 500);
         }
     }
 
-    // ─── HELPERS MONTURAS ────────────────────────────────────────────────────
+    // ─── HELPERS ─────────────────────────────────────────────────────────────
 
     private function sedesMonturas(): array
     {
@@ -1341,18 +1334,37 @@ class ComercialController extends Controller
     }
 
     /**
-     * ✅ Obtener datos separados: sedes normales (sin monturas) + monturas + totales TRIMAX
+     * Mapeo de columnas del sheet (base 0):
+     *  A=0  Sedes
+     *  B=1  Año
+     *  C=2  Mes
+     *  D=3  Venta General
+     *  E=4  Venta Proy
+     *  F=5  Cuota (antigua)
+     *  G=6  Cum Cuota
+     *  H=7  Venta Digital
+     *  I=8  Venta Proy Digital
+     *  J=9  Cuota Digital (antigua)
+     *  K=10 Cum Cuota Digital
+     *  L=11 Validación
+     *  M=12 Venta G
+     *  N=13 Venta D
+     *  O=14 PPTO General   ← cuota real general
+     *  P=15 PPTO Digital   ← cuota real digital
+     *  Q=16 Cum PPTO
+     *  R=17 Cum PPTO I
      */
     private function obtenerDatosTodasLasSedes($service, $spreadsheetId, $mes, $anio): array
     {
-        $range    = 'Historico!A:L';
+        // ✅ Range extendido hasta R para llegar a PPTO General (O) y PPTO Digital (P)
+        $range    = 'Historico!A:R';
         $response = $service->spreadsheets_values->get($spreadsheetId, $range);
         $values   = $response->getValues();
 
-        $sedesNormales  = [];
-        $acumMonturas   = $this->monturaVacia();
-        $hayMonturas    = false;
-        $sedesMonturas  = $this->sedesMonturas();
+        $sedesNormales = [];
+        $acumMonturas  = $this->monturaVacia();
+        $hayMonturas   = false;
+        $sedesMonturas = $this->sedesMonturas();
 
         if (empty($values)) {
             return [
@@ -1372,50 +1384,50 @@ class ComercialController extends Controller
 
                 if ($anioSheet != $anio || $mesSheet != $mes) continue;
 
-                $ventaGeneral    = $this->limpiarNumero($row[3] ?? 0);
-                $ventaProy       = $this->limpiarNumero($row[4] ?? 0);
-                $cuota           = $this->limpiarNumero($row[5] ?? 0);
-                $cumplimiento    = $this->limpiarPorcentaje($row[6] ?? '0%');
-                $ventaDigital    = $this->limpiarNumero($row[7] ?? 0);
-                $ventaProyDigital = $this->limpiarNumero($row[8] ?? 0);
-                $cuotaDigital    = $this->limpiarNumero($row[9] ?? 0);
-                $cumCuotaDigital = $this->limpiarPorcentaje($row[10] ?? '0%');
+                $ventaGeneral     = $this->limpiarNumero($row[3]  ?? 0);
+                $ventaProy        = $this->limpiarNumero($row[4]  ?? 0);
+                $ventaDigital     = $this->limpiarNumero($row[7]  ?? 0);
+                $ventaProyDigital = $this->limpiarNumero($row[8]  ?? 0);
+                $cumplimiento     = $this->limpiarPorcentaje($row[6] ?? '0%');
+                $cumCuotaDigital  = $this->limpiarPorcentaje($row[10] ?? '0%');
+
+                // ✅ PPTO General = col O (índice 14) | PPTO Digital = col P (índice 15)
+                $pptoGeneral = $this->limpiarNumero($row[14] ?? 0);
+                $pptoDigital = $this->limpiarNumero($row[15] ?? 0);
 
                 if (in_array($sede, $sedesMonturas)) {
-                    // ─── Acumular en MONTURAS ───────────────────────────────
                     $acumMonturas['venta_general']    += $ventaGeneral;
                     $acumMonturas['venta_proyectada'] += $ventaProy;
-                    $acumMonturas['cuota']            += $cuota;
-                    $acumMonturas['diferencia']       += ($ventaGeneral - $cuota);
+                    $acumMonturas['cuota']            += $pptoGeneral;
+                    $acumMonturas['diferencia']       += ($ventaGeneral - $pptoGeneral);
                     $hayMonturas = true;
                 } else {
-                    // ─── Sede normal ────────────────────────────────────────
                     $sedesNormales[] = [
                         'sede'               => $sede,
                         'venta_general'      => $ventaGeneral,
                         'venta_proyectada'   => $ventaProy,
-                        'cuota'              => $cuota,
+                        'cuota'              => $pptoGeneral,   // ✅ PPTO General
+                        'diferencia'         => $ventaProy - $pptoGeneral,
                         'cumplimiento_cuota' => $cumplimiento,
-                        'diferencia'         => $ventaGeneral - $cuota,
                         'venta_digital'      => $ventaDigital,
                         'venta_proy_digital' => $ventaProyDigital,
-                        'cuota_digital'      => $cuotaDigital,
+                        'cuota_digital'      => $pptoDigital,   // ✅ PPTO Digital
                         'cum_cuota_digital'  => $cumCuotaDigital,
                     ];
                 }
             }
         }
 
-        // Calcular cumplimiento de monturas
+        // Cumplimiento monturas = Venta Proy / PPTO General
         if ($hayMonturas && $acumMonturas['cuota'] > 0) {
             $acumMonturas['cumplimiento_cuota'] =
-                ($acumMonturas['venta_general'] / $acumMonturas['cuota']) * 100;
+                ($acumMonturas['venta_proyectada'] / $acumMonturas['cuota']) * 100;
         }
 
-        // Ordenar sedes normales por cumplimiento desc
+        // Ordenar sedes por cumplimiento desc
         usort($sedesNormales, fn($a, $b) => $b['cumplimiento_cuota'] <=> $a['cumplimiento_cuota']);
 
-        // ─── Totales TRIMAX = sedes normales + monturas ──────────────────────
+        // Totales TRIMAX = sedes normales + monturas
         $totalVentaSedes = collect($sedesNormales)->sum('venta_general');
         $totalCuotaSedes = collect($sedesNormales)->sum('cuota');
         $totalVentaProy  = collect($sedesNormales)->sum('venta_proyectada');
@@ -1425,8 +1437,10 @@ class ComercialController extends Controller
             'venta_proyectada' => $totalVentaProy  + $acumMonturas['venta_proyectada'],
             'cuota'            => $totalCuotaSedes + $acumMonturas['cuota'],
         ];
+
+        // ✅ Cumplimiento TRIMAX = Venta Proyectada / PPTO General
         $totalesTrimax['cumplimiento_cuota'] = $totalesTrimax['cuota'] > 0
-            ? ($totalesTrimax['venta_general'] / $totalesTrimax['cuota']) * 100
+            ? ($totalesTrimax['venta_proyectada'] / $totalesTrimax['cuota']) * 100
             : 0;
 
         return [
@@ -1438,7 +1452,8 @@ class ComercialController extends Controller
 
     private function obtenerDatosConsolidados($service, $spreadsheetId, $anio)
     {
-        $range    = 'Historico!A:H';
+        // ✅ Range extendido hasta P para llegar a PPTO General (col O = índice 14)
+        $range    = 'Historico!A:P';
         $response = $service->spreadsheets_values->get($spreadsheetId, $range);
         $values   = $response->getValues();
 
@@ -1479,8 +1494,9 @@ class ComercialController extends Controller
                         ];
                     }
 
-                    $datosPorMes[$mesKey]['ventas'] += $this->limpiarNumero($row[3] ?? 0);
-                    $datosPorMes[$mesKey]['cuotas'] += $this->limpiarNumero($row[5] ?? 0);
+                    $datosPorMes[$mesKey]['ventas'] += $this->limpiarNumero($row[3]  ?? 0);
+                    // ✅ Cuota del gráfico = PPTO General (col O = índice 14)
+                    $datosPorMes[$mesKey]['cuotas'] += $this->limpiarNumero($row[14] ?? 0);
                 }
             }
         }
@@ -1517,7 +1533,7 @@ class ComercialController extends Controller
 
     private function obtenerComparacionAnual($service, $spreadsheetId)
     {
-        $range    = 'Historico!A:H';
+        $range    = 'Historico!A:D';
         $response = $service->spreadsheets_values->get($spreadsheetId, $range);
         $values   = $response->getValues();
 
@@ -1549,7 +1565,7 @@ class ComercialController extends Controller
 
     private function obtenerComparacionAnualPorMes($service, $spreadsheetId, $mes)
     {
-        $range    = 'Historico!A:H';
+        $range    = 'Historico!A:D';
         $response = $service->spreadsheets_values->get($spreadsheetId, $range);
         $values   = $response->getValues();
 
