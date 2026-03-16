@@ -1117,7 +1117,7 @@
 
             // Poblar años
             $.ajax({
-                url: "{{ route('comercial.lead-time.years') }}",
+                url: "{{ route('produccion.lead-time.years') }}",
                 method: 'GET',
                 success({
                     success,
@@ -1152,7 +1152,7 @@
             );
 
             $.ajax({
-                url: "{{ route('comercial.lead-time.semanal-data') }}",
+                url: "{{ route('produccion.lead-time.semanal-data') }}",
                 method: 'GET',
                 data: {
                     year: kwCurrentYear,
@@ -1763,7 +1763,7 @@
         /* ── CLEAR CACHE ── */
         function kwClearCache() {
             $.ajax({
-                url: "{{ route('comercial.lead-time.clear-cache') }}",
+                url: "{{ route('produccion.lead-time.clear-cache') }}",
                 method: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')

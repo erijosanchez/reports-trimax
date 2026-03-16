@@ -217,7 +217,7 @@
                     const rango = document.getElementById('filtroRango').value;
 
                     fetch(
-                            `{{ route('comercial.api.pendiente-montura.data') }}?sede=${encodeURIComponent(sede)}&rango=${encodeURIComponent(rango)}`)
+                            `{{ route('produccion.api.pendiente-montura.data') }}?sede=${encodeURIComponent(sede)}&rango=${encodeURIComponent(rango)}`)
                         .then(function(r) {
                             return r.json();
                         })
@@ -243,7 +243,7 @@
                 };
 
                 if (limpiarCache) {
-                    fetch('{{ route('comercial.api.pendiente-montura.clear-cache') }}', {
+                    fetch('{{ route('produccion.api.pendiente-montura.clear-cache') }}', {
                         method: 'POST',
                         headers: {
                             'X-CSRF-TOKEN': '{{ csrf_token() }}',

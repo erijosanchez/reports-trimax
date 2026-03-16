@@ -18,3 +18,8 @@ Schedule::command('trimax:sync-ordenes-sede')
     ->everyFifteenMinutes()
     ->withoutOverlapping()
     ->runInBackground();
+
+Schedule::command('trimax:sync-asignacion-bases')
+    ->everyFifteenMinutes()
+    ->withoutOverlapping()
+    ->runInBackground();

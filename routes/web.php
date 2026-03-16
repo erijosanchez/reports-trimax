@@ -21,6 +21,7 @@ use App\Http\Controllers\LeadTimeController;
 use App\Http\Controllers\RequerimientoPersonalController;
 use App\Http\Controllers\PendienteEntregaMonturaController;
 use App\Http\Controllers\VentaClienteController;
+use App\Http\Controllers\AsignacionBasesController;
 
 // ============================================================
 // RUTAS PARA LARAVEL 11
@@ -184,21 +185,6 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
         Route::get('/ventas-sedes', [ComercialController::class, 'ventasSedes'])->name('ventas.sedes');
         Route::get('/api/ventas-sedes-data', [ComercialController::class, 'getVentasSedesData'])->name('ventas.sedes.data');
 
-        // Ver lead time
-        Route::get('/lead-time/dashboard/otp', [LeadTimeController::class, 'index'])->name('lead-time.index');
-        Route::get('api/lead-time/data', [LeadTimeController::class, 'getData'])->name('lead-time.data');
-        Route::get('api/lead-time/years', [LeadTimeController::class, 'getAvailableYears'])->name('lead-time.years');
-        Route::post('api/lead-time/clear-cache', [LeadTimeController::class, 'clearCache'])->name('lead-time.clear-cache');
-
-        // Ver lead time semanal y mensual
-        Route::get('/lead-time/semanal', [LeadTimeController::class, 'semanal'])->name('lead-time.semanal');
-        Route::get('api/lead-time/semanal-data', [LeadTimeController::class, 'getSemanalData'])->name('lead-time.semanal-data');
-
-        // Pendiente de entrega montura
-        Route::get('/pendiente-entrega-montura', [PendienteEntregaMonturaController::class, 'index'])->name('pendiente-montura.index');
-        Route::get('/api/comercial/pendiente-montura/data', [PendienteEntregaMonturaController::class, 'getData'])->name('api.pendiente-montura.data');
-        Route::post('/api/comercial/pendiente-montura/clear-cache', [PendienteEntregaMonturaController::class, 'clearCache'])->name('api.pendiente-montura.clear-cache');
-
         // Venta Clientes
         Route::get('/venta-clientes/evolutivo-mes',  [VentaClienteController::class, 'evolutivoMes'])->name('venta-cliente.mes');
         Route::get('/venta-clientes/evolutivo-anio', [VentaClienteController::class, 'evolutivoAnio'])->name('venta-cliente.anio');
@@ -210,6 +196,33 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
         // Ventas por cliente
         Route::get('/ordenes-por-sede', [ComercialController::class, 'ordenesPorSede'])->name('ordenesPorSede');
         Route::get('/ordenes-por-sede/data', [ComercialController::class, 'obtenerOrdenesPorSede'])->name('ordenesPorSede.data');
+    });
+
+    // Producción Routes (Producción )
+    Route::prefix('produccion')->name('produccion.')->group(function () {
+
+        // Ver lead time
+        Route::get('/lead-time/dashboard/otp', [LeadTimeController::class, 'index'])->name('lead-time.index');
+        Route::get('api/lead-time/data', [LeadTimeController::class, 'getData'])->name('lead-time.data');
+        Route::get('api/lead-time/years', [LeadTimeController::class, 'getAvailableYears'])->name('lead-time.years');
+        Route::post('api/lead-time/clear-cache', [LeadTimeController::class, 'clearCache'])->name('lead-time.clear-cache');
+
+        // Ver lead time semanal y mensual 
+        Route::get('/lead-time/semanal', [LeadTimeController::class, 'semanal'])->name('lead-time.semanal');
+        Route::get('api/lead-time/semanal-data', [LeadTimeController::class, 'getSemanalData'])->name('lead-time.semanal-data');
+
+        // Pendiente Entrega Montura
+        Route::get('/pendiente-entrega-montura', [PendienteEntregaMonturaController::class, 'index'])->name('pendiente-montura.index');
+        Route::get('/api/comercial/pendiente-montura/data', [PendienteEntregaMonturaController::class, 'getData'])->name('api.pendiente-montura.data');
+        Route::post('/api/comercial/pendiente-montura/clear-cache', [PendienteEntregaMonturaController::class, 'clearCache'])->name('api.pendiente-montura.clear-cache');
+
+        // Asignación de Bases
+        Route::get('/asignacion-bases/evolutivo', [AsignacionBasesController::class, 'evolutivo'])->name('asignacion-bases.index');
+        Route::get('/asignacion-bases/demanda', [AsignacionBasesController::class, 'demanda'])->name('asignacion-bases.demanda');
+        Route::get('/api/asignacion-bases/evolutivo-data', [AsignacionBasesController::class, 'getEvolutivoData'])->name('asignacion-bases.evolutivo-data');
+        Route::get('/api/asignacion-bases/demanda-semanal', [AsignacionBasesController::class, 'getDemandaSemanalData'])->name('asignacion-bases.demanda-semanal-data');
+        Route::get('/api/asignacion-bases/demanda-mensual', [AsignacionBasesController::class, 'getDemandaMensualData'])->name('asignacion-bases.demanda-mensual-data');
+        Route::post('/api/asignacion-bases/clear-cache', [AsignacionBasesController::class, 'clearCache'])->name('asignacion-bases.clear-cache');
     });
 
     // Recursos Humanos Routes (RRHH)

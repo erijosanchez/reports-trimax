@@ -553,3 +553,34 @@ CREATE TABLE ordenes_historico (
     INDEX idx_estado (estado_orden),
     INDEX idx_usuario (nombre_usuario)
 );
+
+/*tabla para la asignacion de bases */
+CREATE TABLE asignacion_bases (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    
+    fecha_asignacion DATE NOT NULL,
+    numero_orden VARCHAR(20) NOT NULL,
+    codigo_pt VARCHAR(50) NULL,
+    producto_pt VARCHAR(255) NULL,
+    id_catalogo_base VARCHAR(20) NULL,
+    descripcion_base VARCHAR(255) NULL,
+    cantidad TINYINT UNSIGNED NOT NULL DEFAULT 1,
+    ojo CHAR(1) NULL, -- D o I
+    estado_asignacion CHAR(1) NOT NULL, -- R o N
+    descripcion_art VARCHAR(255) NULL,
+    precio DECIMAL(10,4) NULL,
+    mes TINYINT UNSIGNED NOT NULL,
+    anio SMALLINT UNSIGNED NOT NULL,
+    
+    created_at TIMESTAMP NULL,
+    updated_at TIMESTAMP NULL,
+
+    UNIQUE KEY uq_asignacion_bases (numero_orden, ojo, fecha_asignacion, id_catalogo_base),
+
+    INDEX idx_numero_orden (numero_orden),
+    INDEX idx_id_catalogo_base (id_catalogo_base),
+    INDEX idx_estado_asignacion (estado_asignacion),
+    INDEX idx_anio (anio),
+    INDEX idx_fecha_estado (fecha_asignacion, estado_asignacion),
+    INDEX idx_anio_mes_estado (anio, mes, estado_asignacion)
+);

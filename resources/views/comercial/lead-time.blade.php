@@ -1321,7 +1321,7 @@ $(document).ready(() => {
     $('#filterMonth').val(now.getMonth() + 1);
 
     $.ajax({
-        url: "{{ route('comercial.lead-time.years') }}",
+        url: "{{ route('produccion.lead-time.years') }}",
         method: 'GET',
         success({ success, years }) {
             const $y = $('#filterYear').empty();
@@ -1351,7 +1351,7 @@ function loadData() {
     showLoading();
 
     $.ajax({
-        url: "{{ route('comercial.lead-time.data') }}",
+        url: "{{ route('produccion.lead-time.data') }}",
         method: 'GET',
         data: { year, month },
         timeout: 60000,
@@ -1707,7 +1707,7 @@ function renderEmpty(msg) {
 /* ── CLEAR CACHE ── */
 function clearCache() {
     $.ajax({
-        url: "{{ route('comercial.lead-time.clear-cache') }}",
+        url: "{{ route('produccion.lead-time.clear-cache') }}",
         method: 'POST',
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')

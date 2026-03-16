@@ -135,8 +135,8 @@
 
             <?php if($user->puedeVerPendienteEntregaMontura()): ?>
                 <li class="nav-item">
-                    <a class="nav-link <?php echo request()->routeIs('comercial.pendiente-montura.index') ? 'active' : ''; ?>"
-                        href="<?php echo route('comercial.pendiente-montura.index'); ?>">
+                    <a class="nav-link <?php echo request()->routeIs('produccion.pendiente-montura.index') ? 'active' : ''; ?>"
+                        href="<?php echo route('produccion.pendiente-montura.index'); ?>">
                         <i class="mdi mdi-glasses menu-icon"></i>
                         <span class="menu-title">Entrega Montura</span>
                     </a>
@@ -145,9 +145,9 @@
 
             <?php if($user->puedeVerLeadTime()): ?>
                 <li class="nav-item">
-                    <a class="nav-link <?php echo request()->routeIs('comercial.lead-time.*') ? '' : 'collapsed'; ?>"
+                    <a class="nav-link <?php echo request()->routeIs('produccion.lead-time.*') ? '' : 'collapsed'; ?>"
                         data-bs-toggle="collapse" href="#lead-time-menu"
-                        aria-expanded="<?php echo request()->routeIs('comercial.lead-time.*') ? 'true' : 'false'; ?>"
+                        aria-expanded="<?php echo request()->routeIs('produccion.lead-time.*') ? 'true' : 'false'; ?>"
                         aria-controls="lead-time-menu">
 
                         <i class="mdi-clock-outline mdi menu-icon"></i>
@@ -155,20 +155,20 @@
                         <i class="menu-arrow"></i>
                     </a>
 
-                    <div class="collapse <?php echo request()->routeIs('comercial.lead-time.*') ? 'show' : ''; ?>"
+                    <div class="collapse <?php echo request()->routeIs('produccion.lead-time.*') ? 'show' : ''; ?>"
                         id="lead-time-menu">
 
                         <ul class="flex-column nav sub-menu">
                             <li class="nav-item">
-                                <a class="nav-link <?php echo request()->routeIs('comercial.lead-time.index') ? 'active' : ''; ?>"
-                                    href="<?php echo route('comercial.lead-time.index'); ?>">
+                                <a class="nav-link <?php echo request()->routeIs('produccion.lead-time.index') ? 'active' : ''; ?>"
+                                    href="<?php echo route('produccion.lead-time.index'); ?>">
                                     Lead Time Dashboard
                                 </a>
                             </li>
 
                             <li class="nav-item">
-                                <a class="nav-link <?php echo request()->routeIs('comercial.lead-time.semanal') ? 'active' : ''; ?>"
-                                    href="<?php echo route('comercial.lead-time.semanal'); ?>">
+                                <a class="nav-link <?php echo request()->routeIs('produccion.lead-time.semanal') ? 'active' : ''; ?>"
+                                    href="<?php echo route('produccion.lead-time.semanal'); ?>">
                                     Lead Time x Tiempo
                                 </a>
                             </li>
@@ -176,6 +176,35 @@
                     </div>
                 </li>
             <?php endif; ?>
+
+            <li class="nav-item">
+                <a class="nav-link <?php echo request()->routeIs('produccion.asignacion-bases.*') ? '' : 'collapsed'; ?>"
+                    data-bs-toggle="collapse" href="#asignacion-bases-menu"
+                    aria-expanded="<?php echo request()->routeIs('produccion.asignacion-bases.*') ? 'true' : 'false'; ?>"
+                    aria-controls="asignacion-bases-menu">
+                    <i class="mdi-layers-outline mdi menu-icon"></i>
+                    <span class="menu-title">Asignación de Bases</span>
+                    <i class="menu-arrow"></i>
+                </a>
+
+                <div class="collapse <?php echo request()->routeIs('produccion.asignacion-bases.*') ? 'show' : ''; ?>"
+                    id="asignacion-bases-menu">
+                    <ul class="flex-column nav sub-menu">
+                        <li class="nav-item">
+                            <a class="nav-link <?php echo request()->routeIs('produccion.asignacion-bases.index') ? 'active' : ''; ?>"
+                                href="<?php echo route('produccion.asignacion-bases.index'); ?>">
+                                Evolutivo
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link <?php echo request()->routeIs('produccion.asignacion-bases.demanda') ? 'active' : ''; ?>"
+                                href="<?php echo route('produccion.asignacion-bases.demanda'); ?>">
+                                Demanda
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </li>
         <?php endif; ?>
 
         
@@ -318,6 +347,5 @@
             </a>
         </li>
     </ul>
-</nav>
 </nav>
 <?php /**PATH /var/www/resources/views/includes/sidebar.blade.php ENDPATH**/ ?>
