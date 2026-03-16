@@ -217,12 +217,13 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
         Route::post('/api/comercial/pendiente-montura/clear-cache', [PendienteEntregaMonturaController::class, 'clearCache'])->name('api.pendiente-montura.clear-cache');
 
         // Asignación de Bases
-        Route::get('/asignacion-bases/evolutivo', [AsignacionBasesController::class, 'evolutivo'])->name('asignacion-bases.index');
+        Route::get('/asignacion-bases/evolutivo-b', [AsignacionBasesController::class, 'evolutivo'])->name('asignacion-bases.index');
         Route::get('/asignacion-bases/demanda', [AsignacionBasesController::class, 'demanda'])->name('asignacion-bases.demanda');
         Route::get('/api/asignacion-bases/evolutivo-data', [AsignacionBasesController::class, 'getEvolutivoData'])->name('asignacion-bases.evolutivo-data');
         Route::get('/api/asignacion-bases/demanda-semanal', [AsignacionBasesController::class, 'getDemandaSemanalData'])->name('asignacion-bases.demanda-semanal-data');
         Route::get('/api/asignacion-bases/demanda-mensual', [AsignacionBasesController::class, 'getDemandaMensualData'])->name('asignacion-bases.demanda-mensual-data');
         Route::post('/api/asignacion-bases/clear-cache', [AsignacionBasesController::class, 'clearCache'])->name('asignacion-bases.clear-cache');
+        Route::get('/api/asignacion-bases/evolutivo-diario', [AsignacionBasesController::class, 'getEvolutivoDiarioData'])->name('asignacion-bases.evolutivo-diario-data');
     });
 
     // Recursos Humanos Routes (RRHH)

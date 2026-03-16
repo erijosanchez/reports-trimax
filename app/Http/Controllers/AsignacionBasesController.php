@@ -22,36 +22,65 @@ class AsignacionBasesController extends Controller
     public function evolutivo(Request $request)
     {
         $aniosDisponibles = $this->service->getAniosDisponibles();
-        $anioActual       = $request->get('anio', $aniosDisponibles[0] ?? now()->year);
+        $anioActual       = (int) $request->get('anio', $aniosDisponibles[0] ?? now()->year);
+        $mesActual        = (int) $request->get('mes', now()->month);
 
-        $semanal  = $this->service->getEvolutivoSemanal((int) $anioActual);
-        $mensual  = $this->service->getEvolutivoMensual((int) $anioActual);
-        $grafLinea = $this->service->getGraficoLinealDiario((int) $anioActual);
-        $grafBarras = $this->service->getGraficoBarrasMensual((int) $anioActual);
+        $mesesNombres = [
+            1 => 'Enero',
+            2 => 'Febrero',
+            3 => 'Marzo',
+            4 => 'Abril',
+            5 => 'Mayo',
+            6 => 'Junio',
+            7 => 'Julio',
+            8 => 'Agosto',
+            9 => 'Setiembre',
+            10 => 'Octubre',
+            11 => 'Noviembre',
+            12 => 'Diciembre',
+        ];
+
+        $diario     = $this->service->getEvolutivoDiario($anioActual, $mesActual);
+        $mensual    = $this->service->getEvolutivoMensual($anioActual);
+        $grafLinea  = $this->service->getGraficoLinealDiario($anioActual, $mesActual);
+        $grafBarras = $this->service->getGraficoBarrasMensual($anioActual);
+        $mesNombre  = $mesesNombres[$mesActual];
 
         return view('produccion.asignacion-bases.evolutivo', compact(
             'aniosDisponibles',
             'anioActual',
-            'semanal',
+            'mesActual',
+            'mesNombre',
+            'diario',
             'mensual',
             'grafLinea',
             'grafBarras'
         ));
     }
 
-    /**
-     * AJAX: refresca todos los datos del evolutivo para un año dado.
-     */
+    // Método getEvolutivoData() — agregar grafBarras al JSON:
     public function getEvolutivoData(Request $request)
     {
         $anio = (int) $request->get('anio', now()->year);
 
         return response()->json([
-            'semanal'    => $this->service->getEvolutivoSemanal($anio),
             'mensual'    => $this->service->getEvolutivoMensual($anio),
-            'grafLinea'  => $this->service->getGraficoLinealDiario($anio),
             'grafBarras' => $this->service->getGraficoBarrasMensual($anio),
         ]);
+    }
+
+    // datos diarios AJAX:  
+    public function getEvolutivoDiarioData(Request $request)
+    {
+        $anio = (int) $request->get('anio', now()->year);
+        $mes  = (int) $request->get('mes',  now()->month);
+
+        $diario    = $this->service->getEvolutivoDiario($anio, $mes);
+        $grafLinea = $this->service->getGraficoLinealDiario($anio, $mes);
+
+        return response()->json(array_merge($diario, [
+            'grafLinea' => $grafLinea,
+        ]));
     }
 
     // ──────────────────────────────────────────────────────────────────────────

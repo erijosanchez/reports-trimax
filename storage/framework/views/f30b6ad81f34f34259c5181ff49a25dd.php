@@ -20,21 +20,17 @@
                         </p>
                     </div>
 
+                    
                     <div class="d-flex align-items-center gap-2">
-                        
                         <div>
                             <label class="mb-1 text-muted form-label small">Año</label>
                             <select id="anioSelect" class="form-select-sm form-select">
                                 <?php $__currentLoopData = $aniosDisponibles; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $anio): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                     <option value="<?php echo $anio; ?>" <?php echo $anio == $anioActual ? 'selected' : ''; ?>>
-                                        <?php echo $anio; ?>
-
-                                    </option>
+                                        <?php echo $anio; ?></option>
                                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </select>
                         </div>
-
-                        
                         <div class="mt-3">
                             <button id="btnLimpiarCache" class="btn-outline-secondary btn btn-sm" title="Limpiar caché">
                                 <i class="mdi mdi-refresh"></i>
@@ -46,123 +42,131 @@
                 
                 <div class="mb-4 card">
                     <div class="card-body">
-                        <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
                             <h5 class="mb-0 card-title">
-                                <i class="mdi-table me-2 text-primary mdi"></i>
-                                Evolutivo Semanal — Cantidad
+                                <i class="me-2 text-primary mdi mdi-calendar-today"></i>
+                                Evolutivo Diario
                             </h5>
-                            <span class="bg-primary badge" id="labelAnioSemanal"><?php echo $anioActual; ?></span>
+                            
+                            <div class="d-flex align-items-center gap-2">
+                                <select id="mesSelectDiario" class="form-select-sm form-select" style="width:140px">
+                                    <?php $__currentLoopData = [1 => 'Enero', 2 => 'Febrero', 3 => 'Marzo', 4 => 'Abril', 5 => 'Mayo', 6 => 'Junio', 7 => 'Julio', 8 => 'Agosto', 9 => 'Setiembre', 10 => 'Octubre', 11 => 'Noviembre', 12 => 'Diciembre']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $num => $nombre): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                        <option value="<?php echo $num; ?>" <?php echo $num == $mesActual ? 'selected' : ''; ?>>
+                                            <?php echo $nombre; ?></option>
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                </select>
+                                <span class="bg-primary badge" id="labelPeriodoDiario"><?php echo $mesNombre; ?>
+
+                                    <?php echo $anioActual; ?></span>
+                            </div>
                         </div>
 
-                        <div class="table-responsive">
-                            <table class="evolutivo-table table table-bordered table-sm" id="tablaSemanalCantidad">
+                        
+                        <p class="mb-2 text-muted small fw-semibold">
+                            <i class="me-1 mdi mdi-counter"></i>Cantidad
+                        </p>
+                        <div class="table-responsive mb-4">
+                            <table class="evolutivo-table table table-bordered table-sm" id="tablaDiariaCantidad">
                                 <thead>
-                                    <tr class="table-dark">
+                                    <tr class="table-dark" id="headerDiarioCantidad">
                                         <th style="min-width:90px">Estado</th>
-                                        <?php $__currentLoopData = $semanal['semanas']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $s): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                            <th class="text-center small"><?php echo $s['label']; ?></th>
+                                        <?php $__currentLoopData = $diario['dias']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $d): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                            <th class="text-center small">
+                                                <?php echo str_pad($d['dia'], 2, '0', STR_PAD_LEFT); ?>/<?php echo str_pad($mesActual, 2, '0', STR_PAD_LEFT); ?>/<?php echo $anioActual; ?>
+
+                                            </th>
                                         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                         <th class="text-center">TOTAL</th>
                                         <th class="text-center">ACUM</th>
                                     </tr>
                                 </thead>
-                                <tbody id="bodySemanaCantidad">
-                                    <?php
-                                        $acumR = 0;
-                                        $acumN = 0;
-                                        $acumT = 0;
-                                    ?>
-                                    
+                                <tbody id="bodyDiarioCantidad">
                                     <tr class="fila-rectifica">
                                         <td class="bg-danger text-white fw-bold">Rectifica</td>
-                                        <?php $__currentLoopData = $semanal['semanas']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $s): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                            <td class="text-center"><?php echo $s['R_cantidad'] ?: ''; ?></td>
+                                        <?php $__currentLoopData = $diario['dias']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $d): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                            <td class="text-center"><?php echo $d['R_cantidad'] ?: ''; ?></td>
                                         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                                        <td class="bg-danger text-white text-center fw-bold"><?php echo $semanal['total_R']; ?></td>
-                                        <td class="text-center fw-bold"><?php echo $semanal['total_R']; ?></td>
+                                        <td class="bg-danger text-white text-center fw-bold"><?php echo $diario['total_R']; ?></td>
+                                        <td class="text-center fw-bold"><?php echo $diario['total_R']; ?></td>
                                     </tr>
-                                    
                                     <tr class="fila-normal">
                                         <td class="bg-success text-white fw-bold">Normal</td>
-                                        <?php $__currentLoopData = $semanal['semanas']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $s): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                            <td class="text-center"><?php echo $s['N_cantidad'] ?: ''; ?></td>
+                                        <?php $__currentLoopData = $diario['dias']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $d): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                            <td class="text-center"><?php echo $d['N_cantidad'] ?: ''; ?></td>
                                         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                                        <td class="bg-success text-white text-center fw-bold"><?php echo $semanal['total_N']; ?></td>
-                                        <td class="text-center fw-bold"><?php echo $semanal['total_N']; ?></td>
+                                        <td class="bg-success text-white text-center fw-bold"><?php echo $diario['total_N']; ?></td>
+                                        <td class="text-center fw-bold"><?php echo $diario['total_N']; ?></td>
                                     </tr>
-                                    
                                     <tr class="fila-kpi">
                                         <td class="fw-bold" style="background:#fff3cd;">KPI</td>
-                                        <?php $__currentLoopData = $semanal['semanas']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $s): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                        <?php $__currentLoopData = $diario['dias']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $d): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                             <td class="text-center small" style="background:#fff3cd;">
-                                                <?php if($s['kpi'] > 0): ?>
+                                                <?php if($d['kpi'] > 0): ?>
                                                     <span
-                                                        class="badge <?php echo $s['kpi'] <= 20 ? 'bg-success' : ($s['kpi'] <= 50 ? 'bg-warning' : 'bg-danger'); ?>">
-                                                        <?php echo $s['kpi']; ?>%
+                                                        class="badge <?php echo $d['kpi'] < 5 ? 'bg-success' : ($d['kpi'] < 7 ? 'bg-warning text-dark' : 'bg-danger'); ?>">
+                                                        <?php echo $d['kpi']; ?>%
                                                     </span>
                                                 <?php endif; ?>
                                             </td>
                                         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                         <td class="text-center fw-bold" style="background:#fff3cd;">
                                             <span
-                                                class="badge <?php echo $semanal['total_kpi'] <= 20 ? 'bg-success' : ($semanal['total_kpi'] <= 50 ? 'bg-warning' : 'bg-danger'); ?>">
-                                                <?php echo $semanal['total_kpi']; ?>%
+                                                class="badge <?php echo $diario['total_kpi'] < 5 ? 'bg-success' : ($diario['total_kpi'] < 7 ? 'bg-warning text-dark' : 'bg-danger'); ?>">
+                                                <?php echo $diario['total_kpi']; ?>%
                                             </span>
                                         </td>
                                         <td class="text-center fw-bold" style="background:#fff3cd;">
-                                            <?php echo $semanal['total_kpi']; ?>%</td>
+                                            <?php echo $diario['total_kpi']; ?>%</td>
                                     </tr>
                                 </tbody>
                             </table>
                         </div>
-                    </div>
-                </div>
 
-                
-                <div class="mb-4 card">
-                    <div class="card-body">
-                        <h5 class="mb-3 card-title">
-                            <i class="me-2 text-warning mdi mdi-currency-usd"></i>
-                            Evolutivo Semanal — Monto (S/)
-                        </h5>
+                        
+                        <p class="mb-2 text-muted small fw-semibold">
+                            <i class="me-1 mdi mdi-currency-usd"></i>Monto (S/)
+                        </p>
                         <div class="table-responsive">
-                            <table class="evolutivo-table table table-bordered table-sm" id="tablaSemanalPrecio">
+                            <table class="evolutivo-table table table-bordered table-sm" id="tablaDiariaPrecio">
                                 <thead>
-                                    <tr class="table-dark">
+                                    <tr class="table-dark" id="headerDiarioPrecio">
                                         <th style="min-width:90px">Estado</th>
-                                        <?php $__currentLoopData = $semanal['semanas']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $s): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                            <th class="text-center small"><?php echo $s['label']; ?></th>
+                                        <?php $__currentLoopData = $diario['dias']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $d): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                            <th class="text-center small">
+                                                <?php echo str_pad($d['dia'], 2, '0', STR_PAD_LEFT); ?>/<?php echo str_pad($mesActual, 2, '0', STR_PAD_LEFT); ?>/<?php echo $anioActual; ?>
+
+                                            </th>
                                         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                         <th class="text-center">TOTAL</th>
                                         <th class="text-center">ACUM</th>
                                     </tr>
                                 </thead>
-                                <tbody id="bodySemanaPrecios">
+                                <tbody id="bodyDiarioPrecio">
                                     <tr class="fila-rectifica">
                                         <td class="bg-danger text-white fw-bold">Rectifica</td>
-                                        <?php $__currentLoopData = $semanal['semanas']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $s): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                        <?php $__currentLoopData = $diario['dias']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $d): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                             <td class="text-center small">
-                                                <?php echo $s['R_precio'] > 0 ? 'S/ ' . number_format($s['R_precio'], 0, '.', ',') : ''; ?>
+                                                <?php echo $d['R_precio'] > 0 ? 'S/ ' . number_format($d['R_precio'], 0, '.', ',') : ''; ?>
 
                                             </td>
                                         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                         <td class="bg-danger text-white text-center fw-bold">S/
-                                            <?php echo number_format($semanal['total_R_precio'], 0, '.', ','); ?></td>
+                                            <?php echo number_format($diario['total_R_precio'], 0, '.', ','); ?></td>
                                         <td class="text-center fw-bold">S/
-                                            <?php echo number_format($semanal['total_R_precio'], 0, '.', ','); ?></td>
+                                            <?php echo number_format($diario['total_R_precio'], 0, '.', ','); ?></td>
                                     </tr>
                                     <tr class="fila-normal">
                                         <td class="bg-success text-white fw-bold">Normal</td>
-                                        <?php $__currentLoopData = $semanal['semanas']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $s): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                        <?php $__currentLoopData = $diario['dias']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $d): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                             <td class="text-center small">
-                                                <?php echo $s['N_precio'] > 0 ? 'S/ ' . number_format($s['N_precio'], 0, '.', ',') : ''; ?>
+                                                <?php echo $d['N_precio'] > 0 ? 'S/ ' . number_format($d['N_precio'], 0, '.', ',') : ''; ?>
 
                                             </td>
                                         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                         <td class="bg-success text-white text-center fw-bold">S/
-                                            <?php echo number_format($semanal['total_N_precio'], 0, '.', ','); ?></td>
+                                            <?php echo number_format($diario['total_N_precio'], 0, '.', ','); ?></td>
                                         <td class="text-center fw-bold">S/
-                                            <?php echo number_format($semanal['total_N_precio'], 0, '.', ','); ?></td>
+                                            <?php echo number_format($diario['total_N_precio'], 0, '.', ','); ?></td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -173,12 +177,15 @@
                 
                 <div class="mb-4 card">
                     <div class="card-body">
-                        <h5 class="mb-3 card-title">
-                            <i class="me-2 text-info mdi mdi-calendar-month"></i>
-                            Evolutivo Mensual — Cantidad
-                        </h5>
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <h5 class="mb-0 card-title">
+                                <i class="me-2 text-info mdi mdi-calendar-month"></i>
+                                Evolutivo Mensual — Cantidad
+                            </h5>
+                            <span class="bg-info badge" id="labelAnioMensual"><?php echo $anioActual; ?></span>
+                        </div>
                         <div class="table-responsive">
-                            <table class="evolutivo-table table table-bordered table-sm" id="tablaMensualCantidad">
+                            <table class="evolutivo-table table table-bordered table-sm">
                                 <thead>
                                     <tr class="table-dark">
                                         <th style="min-width:90px">Estado</th>
@@ -195,7 +202,9 @@
                                         <?php $__currentLoopData = $mensual['meses']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $m): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                             <td class="text-center"><?php echo $m['R_cantidad'] ?: ''; ?></td>
                                         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                                        <td class="bg-danger text-white text-center fw-bold"><?php echo $mensual['total_R']; ?></td>
+                                        <td class="bg-danger text-white text-center fw-bold"><?php echo $mensual['total_R']; ?>
+
+                                        </td>
                                         <td class="text-center fw-bold"><?php echo $mensual['total_R']; ?></td>
                                     </tr>
                                     <tr class="fila-normal">
@@ -214,17 +223,13 @@
                                             <td class="text-center small" style="background:#fff3cd;">
                                                 <?php if($m['kpi'] > 0): ?>
                                                     <span
-                                                        class="badge <?php echo $m['kpi'] <= 20 ? 'bg-success' : ($m['kpi'] <= 50 ? 'bg-warning' : 'bg-danger'); ?>">
-                                                        <?php echo $m['kpi']; ?>%
-                                                    </span>
+                                                        class="badge <?php echo $m['kpi'] < 5 ? 'bg-success' : ($m['kpi'] < 7 ? 'bg-warning text-dark' : 'bg-danger'); ?>"><?php echo $m['kpi']; ?>%</span>
                                                 <?php endif; ?>
                                             </td>
                                         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                         <td class="text-center fw-bold" style="background:#fff3cd;">
                                             <span
-                                                class="badge <?php echo $mensual['total_kpi'] <= 20 ? 'bg-success' : ($mensual['total_kpi'] <= 50 ? 'bg-warning' : 'bg-danger'); ?>">
-                                                <?php echo $mensual['total_kpi']; ?>%
-                                            </span>
+                                                class="badge <?php echo $mensual['total_kpi'] < 5 ? 'bg-success' : ($mensual['total_kpi'] < 7 ? 'bg-warning text-dark' : 'bg-danger'); ?>"><?php echo $mensual['total_kpi']; ?>%</span>
                                         </td>
                                         <td class="text-center fw-bold" style="background:#fff3cd;">
                                             <?php echo $mensual['total_kpi']; ?>%</td>
@@ -243,7 +248,7 @@
                             Evolutivo Mensual — Monto (S/)
                         </h5>
                         <div class="table-responsive">
-                            <table class="evolutivo-table table table-bordered table-sm" id="tablaMensualPrecio">
+                            <table class="evolutivo-table table table-bordered table-sm">
                                 <thead>
                                     <tr class="table-dark">
                                         <th style="min-width:90px">Estado</th>
@@ -321,8 +326,8 @@
         .evolutivo-table th,
         .evolutivo-table td {
             white-space: nowrap;
-            font-size: 0.8rem;
-            padding: 5px 8px;
+            font-size: 0.78rem;
+            padding: 4px 7px;
         }
 
         .fila-rectifica td {
@@ -347,13 +352,12 @@
 
         document.addEventListener('DOMContentLoaded', function() {
             inicializarGraficos();
-
-            document.getElementById('anioSelect').addEventListener('change', actualizarTodo);
+            document.getElementById('anioSelect').addEventListener('change', actualizarMensual);
+            document.getElementById('mesSelectDiario').addEventListener('change', actualizarDiario);
             document.getElementById('btnLimpiarCache').addEventListener('click', limpiarCache);
         });
 
         function inicializarGraficos() {
-            // Línea diaria
             grafLinea = new Chart(document.getElementById('grafLinealDiario'), {
                 type: 'line',
                 data: {
@@ -375,11 +379,6 @@
                     plugins: {
                         legend: {
                             display: false
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: ctx => 'Rectificados: ' + ctx.parsed.y
-                            }
                         }
                     },
                     scales: {
@@ -393,7 +392,6 @@
                 }
             });
 
-            // Barras mensual
             grafBarras = new Chart(document.getElementById('grafBarrasMensual'), {
                 type: 'bar',
                 data: {
@@ -431,94 +429,145 @@
             });
         }
 
-        async function actualizarTodo() {
+        // ── Actualizar tablas DIARIAS + gráfico línea (cambio de mes o año) ────────
+        async function actualizarDiario() {
+            const anio = document.getElementById('anioSelect').value;
+            const mes = document.getElementById('mesSelectDiario').value;
+
+            try {
+                const res = await fetch(
+                    `<?php echo route('produccion.asignacion-bases.evolutivo-diario-data'); ?>?anio=${anio}&mes=${mes}`);
+                const data = await res.json();
+
+                renderTablaDiariaCantidad(data);
+                renderTablaDiariaPrecio(data);
+
+                // Actualizar gráfico de línea con datos del mes seleccionado
+                grafLinea.data.labels = data.grafLinea.labels;
+                grafLinea.data.datasets[0].data = data.grafLinea.data;
+                grafLinea.update();
+
+                const mesOpt = document.getElementById('mesSelectDiario');
+                document.getElementById('labelPeriodoDiario').textContent =
+                    mesOpt.options[mesOpt.selectedIndex].text + ' ' + anio;
+
+            } catch (e) {
+                console.error('Error diario:', e);
+            }
+        }
+
+        // ── Actualizar tablas MENSUALES (cambio de año) ───────────────────────────
+        async function actualizarMensual() {
             const anio = document.getElementById('anioSelect').value;
 
             try {
                 const res = await fetch(`<?php echo route('produccion.asignacion-bases.evolutivo-data'); ?>?anio=${anio}`);
                 const data = await res.json();
 
-                actualizarTablaSemanalCantidad(data.semanal);
-                actualizarTablaSemanalPrecio(data.semanal);
-                actualizarTablaMensualCantidad(data.mensual);
-                actualizarTablaMensualPrecio(data.mensual);
-
-                // Gráficos
-                grafLinea.data.labels = data.grafLinea.labels;
-                grafLinea.data.datasets[0].data = data.grafLinea.data;
-                grafLinea.update();
+                renderTablaMensualCantidad(data.mensual);
+                renderTablaMensualPrecio(data.mensual);
 
                 grafBarras.data.labels = data.grafBarras.labels;
                 grafBarras.data.datasets[0].data = data.grafBarras.data;
                 grafBarras.update();
 
-                document.getElementById('labelAnioSemanal').textContent = anio;
+                document.getElementById('labelAnioMensual').textContent = anio;
+
+                // También actualizar diario con el nuevo año
+                await actualizarDiario();
 
             } catch (e) {
-                console.error('Error al actualizar evolutivo:', e);
+                console.error('Error mensual:', e);
             }
         }
 
+        // ── Renders ───────────────────────────────────────────────────────────────
         function badgeKpi(kpi) {
-            const cls = kpi <= 20 ? 'bg-success' : (kpi <= 50 ? 'bg-warning' : 'bg-danger');
-            return kpi > 0 ? `<span class="badge ${cls}">${kpi}%</span>` : '';
+            if (!kpi) return '';
+            let cls;
+            if (kpi < 5) cls = 'bg-success';
+            else if (kpi < 7) cls = 'bg-warning text-dark';
+            else cls = 'bg-danger';
+            return `<span class="badge ${cls}">${kpi}%</span>`;
         }
 
-        function actualizarTablaSemanalCantidad(semanal) {
-            const semanas = semanal.semanas;
-            const filas = ['fila-rectifica', 'fila-normal', 'fila-kpi'];
-            const tbody = document.getElementById('bodySemanaCantidad');
+        function renderTablaDiariaCantidad(data) {
+            const dias = data.dias;
+            const thead = document.getElementById('headerDiarioCantidad');
+            const tbody = document.getElementById('bodyDiarioCantidad');
+
+            const anio = document.getElementById('anioSelect').value;
+            const mes = document.getElementById('mesSelectDiario').value.toString().padStart(2, '0');
+
+            // Rebuild headers con fecha dd/mm/yyyy
+            let headers = '<tr class="table-dark"><th style="min-width:90px">Estado</th>';
+            dias.forEach(d => {
+                const dia = d.dia.toString().padStart(2, '0');
+                headers += `<th class="text-center small">${dia}/${mes}/${anio}</th>`;
+            });
+            headers += '<th class="text-center">TOTAL</th><th class="text-center">ACUM</th></tr>';
+            thead.innerHTML = headers;
 
             let rowR = `<tr class="fila-rectifica"><td class="bg-danger text-white fw-bold">Rectifica</td>`;
             let rowN = `<tr class="fila-normal"><td class="bg-success text-white fw-bold">Normal</td>`;
             let rowK = `<tr class="fila-kpi"><td class="fw-bold" style="background:#fff3cd;">KPI</td>`;
 
-            semanas.forEach(s => {
-                rowR += `<td class="text-center">${s.R_cantidad || ''}</td>`;
-                rowN += `<td class="text-center">${s.N_cantidad || ''}</td>`;
-                rowK += `<td class="text-center small" style="background:#fff3cd;">${badgeKpi(s.kpi)}</td>`;
+            dias.forEach(d => {
+                rowR += `<td class="text-center">${d.R_cantidad || ''}</td>`;
+                rowN += `<td class="text-center">${d.N_cantidad || ''}</td>`;
+                rowK += `<td class="text-center small" style="background:#fff3cd;">${badgeKpi(d.kpi)}</td>`;
             });
 
             rowR +=
-                `<td class="bg-danger text-white text-center fw-bold">${semanal.total_R}</td><td class="text-center fw-bold">${semanal.total_R}</td></tr>`;
+                `<td class="bg-danger text-white text-center fw-bold">${data.total_R}</td><td class="text-center fw-bold">${data.total_R}</td></tr>`;
             rowN +=
-                `<td class="bg-success text-white text-center fw-bold">${semanal.total_N}</td><td class="text-center fw-bold">${semanal.total_N}</td></tr>`;
+                `<td class="bg-success text-white text-center fw-bold">${data.total_N}</td><td class="text-center fw-bold">${data.total_N}</td></tr>`;
             rowK +=
-                `<td class="text-center fw-bold" style="background:#fff3cd;">${badgeKpi(semanal.total_kpi)}</td><td class="text-center fw-bold" style="background:#fff3cd;">${semanal.total_kpi}%</td></tr>`;
+                `<td class="text-center fw-bold" style="background:#fff3cd;">${badgeKpi(data.total_kpi)}</td><td class="text-center fw-bold" style="background:#fff3cd;">${data.total_kpi}%</td></tr>`;
 
             tbody.innerHTML = rowR + rowN + rowK;
         }
 
-        function actualizarTablaSemanalPrecio(semanal) {
-            const semanas = semanal.semanas;
-            const tbody = document.getElementById('bodySemanaPrecios');
-            const fmt = v => v > 0 ? 'S/ ' + v.toLocaleString('es-PE') : '';
+        function renderTablaDiariaPrecio(data) {
+            const dias = data.dias;
+            const thead = document.getElementById('headerDiarioPrecio');
+            const tbody = document.getElementById('bodyDiarioPrecio');
+            const fmt = v => v > 0 ? 'S/ ' + Math.round(v).toLocaleString('es-PE') : '';
+
+            const anio = document.getElementById('anioSelect').value;
+            const mes = document.getElementById('mesSelectDiario').value.toString().padStart(2, '0');
+
+            let headers = '<tr class="table-dark"><th style="min-width:90px">Estado</th>';
+            dias.forEach(d => {
+                const dia = d.dia.toString().padStart(2, '0');
+                headers += `<th class="text-center small">${dia}/${mes}/${anio}</th>`;
+            });
+            headers += '<th class="text-center">TOTAL</th><th class="text-center">ACUM</th></tr>';
+            thead.innerHTML = headers;
 
             let rowR = `<tr class="fila-rectifica"><td class="bg-danger text-white fw-bold">Rectifica</td>`;
             let rowN = `<tr class="fila-normal"><td class="bg-success text-white fw-bold">Normal</td>`;
 
-            semanas.forEach(s => {
-                rowR += `<td class="text-center small">${fmt(s.R_precio)}</td>`;
-                rowN += `<td class="text-center small">${fmt(s.N_precio)}</td>`;
+            dias.forEach(d => {
+                rowR += `<td class="text-center small">${fmt(d.R_precio)}</td>`;
+                rowN += `<td class="text-center small">${fmt(d.N_precio)}</td>`;
             });
 
             rowR +=
-                `<td class="bg-danger text-white text-center fw-bold">S/ ${semanal.total_R_precio.toLocaleString('es-PE')}</td><td class="text-center fw-bold">S/ ${semanal.total_R_precio.toLocaleString('es-PE')}</td></tr>`;
+                `<td class="bg-danger text-white text-center fw-bold">S/ ${Math.round(data.total_R_precio).toLocaleString('es-PE')}</td><td class="text-center fw-bold">S/ ${Math.round(data.total_R_precio).toLocaleString('es-PE')}</td></tr>`;
             rowN +=
-                `<td class="bg-success text-white text-center fw-bold">S/ ${semanal.total_N_precio.toLocaleString('es-PE')}</td><td class="text-center fw-bold">S/ ${semanal.total_N_precio.toLocaleString('es-PE')}</td></tr>`;
+                `<td class="bg-success text-white text-center fw-bold">S/ ${Math.round(data.total_N_precio).toLocaleString('es-PE')}</td><td class="text-center fw-bold">S/ ${Math.round(data.total_N_precio).toLocaleString('es-PE')}</td></tr>`;
 
             tbody.innerHTML = rowR + rowN;
         }
 
-        function actualizarTablaMensualCantidad(mensual) {
-            const meses = mensual.meses;
+        function renderTablaMensualCantidad(mensual) {
             const tbody = document.getElementById('bodyMensualCantidad');
-
             let rowR = `<tr class="fila-rectifica"><td class="bg-danger text-white fw-bold">Rectifica</td>`;
             let rowN = `<tr class="fila-normal"><td class="bg-success text-white fw-bold">Normal</td>`;
             let rowK = `<tr class="fila-kpi"><td class="fw-bold" style="background:#fff3cd;">KPI</td>`;
 
-            meses.forEach(m => {
+            mensual.meses.forEach(m => {
                 rowR += `<td class="text-center">${m.R_cantidad || ''}</td>`;
                 rowN += `<td class="text-center">${m.N_cantidad || ''}</td>`;
                 rowK += `<td class="text-center small" style="background:#fff3cd;">${badgeKpi(m.kpi)}</td>`;
@@ -534,15 +583,14 @@
             tbody.innerHTML = rowR + rowN + rowK;
         }
 
-        function actualizarTablaMensualPrecio(mensual) {
-            const meses = mensual.meses;
+        function renderTablaMensualPrecio(mensual) {
             const tbody = document.getElementById('bodyMensualPrecio');
             const fmt = v => v > 0 ? 'S/ ' + Math.round(v).toLocaleString('es-PE') : '';
 
             let rowR = `<tr class="fila-rectifica"><td class="bg-danger text-white fw-bold">Rectifica</td>`;
             let rowN = `<tr class="fila-normal"><td class="bg-success text-white fw-bold">Normal</td>`;
 
-            meses.forEach(m => {
+            mensual.meses.forEach(m => {
                 rowR += `<td class="text-center small">${fmt(m.R_precio)}</td>`;
                 rowN += `<td class="text-center small">${fmt(m.N_precio)}</td>`;
             });
@@ -559,7 +607,6 @@
             const btn = document.getElementById('btnLimpiarCache');
             btn.disabled = true;
             btn.innerHTML = '<i class="mdi mdi-loading mdi-spin"></i>';
-
             try {
                 await fetch('<?php echo route('produccion.asignacion-bases.clear-cache'); ?>', {
                     method: 'POST',
@@ -567,11 +614,10 @@
                         'X-CSRF-TOKEN': '<?php echo csrf_token(); ?>'
                     }
                 });
-                await actualizarTodo();
+                await actualizarMensual();
             } catch (e) {
                 console.error(e);
             }
-
             btn.disabled = false;
             btn.innerHTML = '<i class="mdi mdi-refresh"></i>';
         }

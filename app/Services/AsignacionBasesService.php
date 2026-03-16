@@ -192,24 +192,26 @@ class AsignacionBasesService
     // GRÁFICOS
     // ──────────────────────────────────────────────────────────────────────────
 
-    public function getGraficoLinealDiario(int $anio): array
+    public function getGraficoLinealDiario(int $anio, int $mes): array
     {
-        return Cache::remember("asignacion_grafico_diario_{$anio}", $this->cacheTtl, function () use ($anio) {
+        return Cache::remember("asignacion_grafico_diario_{$anio}_{$mes}", $this->cacheTtl, function () use ($anio, $mes) {
 
             $rows = DB::table('asignacion_bases')
                 ->select('fecha_asignacion', DB::raw('SUM(cantidad) as total'))
                 ->where('anio', $anio)
+                ->where('mes', $mes)
                 ->where('estado_asignacion', 'R')
                 ->groupBy('fecha_asignacion')
                 ->orderBy('fecha_asignacion')
                 ->get();
 
             return [
-                'labels' => $rows->map(fn($r) => Carbon::parse($r->fecha_asignacion)->format('d/m'))->toArray(),
+                'labels' => $rows->map(fn($r) => Carbon::parse($r->fecha_asignacion)->format('d/m/Y'))->toArray(),
                 'data'   => $rows->pluck('total')->map(fn($v) => (int) $v)->toArray(),
             ];
         });
     }
+
 
     public function getGraficoBarrasMensual(int $anio): array
     {
@@ -257,14 +259,14 @@ class AsignacionBasesService
 
             $rows = DB::table('asignacion_bases')
                 ->select(
-                    'id_catalogo_base',
                     'descripcion_base',
+                    'descripcion_art',
                     'fecha_asignacion',
                     DB::raw('SUM(cantidad) as total_cant')
                 )
                 ->where('anio', $anio)
                 ->where('mes', $mes)
-                ->groupBy('id_catalogo_base', 'descripcion_base', 'fecha_asignacion')
+                ->groupBy('descripcion_base', 'descripcion_art', 'fecha_asignacion')
                 ->orderBy('fecha_asignacion')
                 ->get();
 
@@ -276,12 +278,12 @@ class AsignacionBasesService
                 $semana = (int) ceil($dia / 7);
                 if ($semana > 5) $semana = 5;
 
-                $key = ($row->id_catalogo_base ?? '') . '|' . ($row->descripcion_base ?? '');
+                $key = ($row->descripcion_base ?? '') . '|' . ($row->descripcion_art ?? '');
 
                 if (!isset($productos[$key])) {
                     $productos[$key] = [
-                        'codigo'      => $row->id_catalogo_base ?? '',
-                        'descripcion' => $row->descripcion_base ?? '',
+                        'codigo'      => $row->descripcion_base ?? '',   // Código Base = descripcion_base
+                        'descripcion' => $row->descripcion_art  ?? '',   // Descripción = descripcion_art
                         'semanas'     => [1 => 0, 2 => 0, 3 => 0, 4 => 0, 5 => 0],
                         'total'       => 0,
                     ];
@@ -342,13 +344,13 @@ class AsignacionBasesService
 
             $rows = DB::table('asignacion_bases')
                 ->select(
-                    'id_catalogo_base',
                     'descripcion_base',
+                    'descripcion_art',
                     'mes',
                     DB::raw('SUM(cantidad) as total_cant')
                 )
                 ->where('anio', $anio)
-                ->groupBy('id_catalogo_base', 'descripcion_base', 'mes')
+                ->groupBy('descripcion_base', 'descripcion_art', 'mes')
                 ->orderBy('mes')
                 ->get();
 
@@ -356,14 +358,14 @@ class AsignacionBasesService
             $totalPorMes = array_fill_keys(range(1, 12), 0);
 
             foreach ($rows as $row) {
-                $m   = (int) $row->mes;
-                $key = ($row->id_catalogo_base ?? '') . '|' . ($row->descripcion_base ?? '');
+                $m    = (int) $row->mes;
+                $key  = ($row->descripcion_base ?? '') . '|' . ($row->descripcion_art ?? '');
                 $cant = (int) $row->total_cant;
 
                 if (!isset($productos[$key])) {
                     $productos[$key] = [
-                        'codigo'      => $row->id_catalogo_base ?? '',
-                        'descripcion' => $row->descripcion_base ?? '',
+                        'codigo'      => $row->descripcion_base ?? '',   // Código Base = descripcion_base
+                        'descripcion' => $row->descripcion_art  ?? '',   // Descripción = descripcion_art
                         'meses'       => array_fill_keys(range(1, 12), 0),
                         'total'       => 0,
                     ];
@@ -437,7 +439,84 @@ class AsignacionBasesService
 
             for ($m = 1; $m <= 12; $m++) {
                 Cache::forget("asignacion_demanda_semanal_{$anio}_{$m}");
+                Cache::forget("asignacion_evolutivo_diario_{$anio}_{$m}");
             }
         }
+    }
+
+    public function getEvolutivoDiario(int $anio, int $mes): array
+    {
+        return Cache::remember("asignacion_evolutivo_diario_{$anio}_{$mes}", $this->cacheTtl, function () use ($anio, $mes) {
+
+            $rows = DB::table('asignacion_bases')
+                ->select(
+                    'fecha_asignacion',
+                    'estado_asignacion',
+                    DB::raw('SUM(cantidad) as total_cant'),
+                    DB::raw('SUM(precio * cantidad) as total_precio')
+                )
+                ->where('anio', $anio)
+                ->where('mes', $mes)
+                ->groupBy('fecha_asignacion', 'estado_asignacion')
+                ->orderBy('fecha_asignacion')
+                ->get();
+
+            // Número de días del mes
+            $diasEnMes = \Carbon\Carbon::createFromDate($anio, $mes, 1)->daysInMonth;
+
+            // Inicializar todos los días
+            $dias = [];
+            for ($d = 1; $d <= $diasEnMes; $d++) {
+                $dias[$d] = [
+                    'dia'        => $d,
+                    'R_cantidad' => 0,
+                    'N_cantidad' => 0,
+                    'R_precio'   => 0,
+                    'N_precio'   => 0,
+                ];
+            }
+
+            foreach ($rows as $row) {
+                $dia    = (int) \Carbon\Carbon::parse($row->fecha_asignacion)->format('j');
+                $estado = $row->estado_asignacion;
+
+                if ($estado === 'R') {
+                    $dias[$dia]['R_cantidad'] += (int)   $row->total_cant;
+                    $dias[$dia]['R_precio']   += (float) $row->total_precio;
+                } else {
+                    $dias[$dia]['N_cantidad'] += (int)   $row->total_cant;
+                    $dias[$dia]['N_precio']   += (float) $row->total_precio;
+                }
+            }
+
+            // Calcular KPI por día y redondear precios
+            $result = [];
+            foreach ($dias as $d) {
+                $kpi = $d['N_cantidad'] > 0
+                    ? round(($d['R_cantidad'] / $d['N_cantidad']) * 100, 1)
+                    : 0;
+
+                $result[] = [
+                    'dia'        => $d['dia'],
+                    'R_cantidad' => $d['R_cantidad'],
+                    'N_cantidad' => $d['N_cantidad'],
+                    'kpi'        => $kpi,
+                    'R_precio'   => round($d['R_precio'], 2),
+                    'N_precio'   => round($d['N_precio'], 2),
+                ];
+            }
+
+            $totalR = array_sum(array_column($result, 'R_cantidad'));
+            $totalN = array_sum(array_column($result, 'N_cantidad'));
+
+            return [
+                'dias'           => $result,
+                'total_R'        => $totalR,
+                'total_N'        => $totalN,
+                'total_kpi'      => $totalN > 0 ? round(($totalR / $totalN) * 100, 1) : 0,
+                'total_R_precio' => round(array_sum(array_column($result, 'R_precio')), 2),
+                'total_N_precio' => round(array_sum(array_column($result, 'N_precio')), 2),
+            ];
+        });
     }
 }
