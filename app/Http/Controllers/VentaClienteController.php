@@ -78,6 +78,11 @@ class VentaClienteController extends Controller
 
             $anio = $request->input('anio', now()->year);
 
+            // filtrar por la sede del usuario
+            $user = auth()->user();
+            $esSede = $user->isSede();
+            $sedeFija = $esSede ? strtoupper($user->sede) : null;
+
             $meses = [
                 'ENERO',
                 'FEBRERO',
@@ -105,6 +110,8 @@ class VentaClienteController extends Controller
                 $importe = $this->limpiarNumero($row[5] ?? 0);
 
                 if ($anioR != $anio || !$sede || !$ruc) continue;
+                // Si es sede, solo su sede
+                if ($sedeFija && $sede !== $sedeFija) continue;
 
                 $key = "{$sede}||{$ruc}||{$razon}";
 
@@ -171,6 +178,10 @@ class VentaClienteController extends Controller
             $clientes = [];
             $aniosSet = [];
 
+            $user     = auth()->user();
+            $esSede   = $user->isSede();
+            $sedeFija = $esSede ? strtoupper(trim($user->sede)) : null;
+
             foreach ($raw as $row) {
                 $sede    = strtoupper(trim($row[0] ?? ''));
                 $ruc     = trim($row[1] ?? '');
@@ -179,6 +190,8 @@ class VentaClienteController extends Controller
                 $importe = $this->limpiarNumero($row[5] ?? 0);
 
                 if (!$sede || !$ruc || !is_numeric($anioR)) continue;
+                // Si es sede, solo su sede
+                if ($sedeFija && $sede !== $sedeFija) continue;
 
                 $anioInt            = (int) $anioR;
                 $aniosSet[$anioInt] = true;
@@ -236,8 +249,14 @@ class VentaClienteController extends Controller
             $raw   = $this->getRawData();
             $anios = [];
 
+            $user    = auth()->user();
+            $esSede  = $user->isSede();
+            $sedeFija = $esSede ? strtoupper(trim($user->sede)) : null;
+
             foreach ($raw as $row) {
-                $a = trim($row[3] ?? '');
+                $sede = strtoupper(trim($row[0] ?? ''));
+                $a    = trim($row[3] ?? '');
+                if ($sedeFija && $sede !== $sedeFija) continue;
                 if (is_numeric($a)) $anios[(int)$a] = true;
             }
 
