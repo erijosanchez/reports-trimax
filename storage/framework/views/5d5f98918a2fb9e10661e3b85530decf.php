@@ -127,7 +127,10 @@
         
         <?php
             $user = auth()->user();
-            $tieneAccesoProduccion = $user->puedeVerPendienteEntregaMontura() || $user->puedeVerLeadTime();
+            $tieneAccesoProduccion =
+                $user->puedeVerPendienteEntregaMontura() ||
+                $user->puedeVerLeadTime() ||
+                $user->puedeVerAsignacionBases();
         ?>
 
         <?php if($tieneAccesoProduccion): ?>
@@ -177,34 +180,36 @@
                 </li>
             <?php endif; ?>
 
-            <li class="nav-item">
-                <a class="nav-link <?php echo request()->routeIs('produccion.asignacion-bases.*') ? '' : 'collapsed'; ?>"
-                    data-bs-toggle="collapse" href="#asignacion-bases-menu"
-                    aria-expanded="<?php echo request()->routeIs('produccion.asignacion-bases.*') ? 'true' : 'false'; ?>"
-                    aria-controls="asignacion-bases-menu">
-                    <i class="mdi-layers-outline mdi menu-icon"></i>
-                    <span class="menu-title">Asignación de Bases</span>
-                    <i class="menu-arrow"></i>
-                </a>
+            <?php if($user->puedeVerAsignacionBases()): ?>
+                <li class="nav-item">
+                    <a class="nav-link <?php echo request()->routeIs('produccion.asignacion-bases.*') ? '' : 'collapsed'; ?>"
+                        data-bs-toggle="collapse" href="#asignacion-bases-menu"
+                        aria-expanded="<?php echo request()->routeIs('produccion.asignacion-bases.*') ? 'true' : 'false'; ?>"
+                        aria-controls="asignacion-bases-menu">
+                        <i class="mdi-layers-outline mdi menu-icon"></i>
+                        <span class="menu-title">Asignación de Bases</span>
+                        <i class="menu-arrow"></i>
+                    </a>
 
-                <div class="collapse <?php echo request()->routeIs('produccion.asignacion-bases.*') ? 'show' : ''; ?>"
-                    id="asignacion-bases-menu">
-                    <ul class="flex-column nav sub-menu">
-                        <li class="nav-item">
-                            <a class="nav-link <?php echo request()->routeIs('produccion.asignacion-bases.index') ? 'active' : ''; ?>"
-                                href="<?php echo route('produccion.asignacion-bases.index'); ?>">
-                                Evolutivo
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link <?php echo request()->routeIs('produccion.asignacion-bases.demanda') ? 'active' : ''; ?>"
-                                href="<?php echo route('produccion.asignacion-bases.demanda'); ?>">
-                                Demanda
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-            </li>
+                    <div class="collapse <?php echo request()->routeIs('produccion.asignacion-bases.*') ? 'show' : ''; ?>"
+                        id="asignacion-bases-menu">
+                        <ul class="flex-column nav sub-menu">
+                            <li class="nav-item">
+                                <a class="nav-link <?php echo request()->routeIs('produccion.asignacion-bases.index') ? 'active' : ''; ?>"
+                                    href="<?php echo route('produccion.asignacion-bases.index'); ?>">
+                                    Evolutivo
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link <?php echo request()->routeIs('produccion.asignacion-bases.demanda') ? 'active' : ''; ?>"
+                                    href="<?php echo route('produccion.asignacion-bases.demanda'); ?>">
+                                    Demanda
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </li>
+            <?php endif; ?>
         <?php endif; ?>
 
         

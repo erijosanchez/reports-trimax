@@ -1,8 +1,6 @@
-@extends('layouts.app')
+<?php $__env->startSection('title', 'Editar Usuario'); ?>
 
-@section('title', 'Editar Usuario')
-
-@section('content')
+<?php $__env->startSection('content'); ?>
     <div class="content-wrapper">
         <div class="row">
             <div class="col-sm-12">
@@ -15,7 +13,7 @@
                                 <div class="col-sm-12">
                                     <div class="d-flex align-items-center justify-content-between mb-4">
                                         <div class="d-flex align-items-center">
-                                            <a href="{{ route('admin.users') }}" class="me-3 btn btn-light btn-sm">
+                                            <a href="<?php echo route('admin.users'); ?>" class="me-3 btn btn-light btn-sm">
                                                 <i class="mdi-arrow-left mdi"></i>
                                             </a>
                                             <div>
@@ -27,11 +25,11 @@
                                             </div>
                                         </div>
                                         <div>
-                                            @if ($user->is_active)
+                                            <?php if($user->is_active): ?>
                                                 <span class="badge badge-success">Activo</span>
-                                            @else
+                                            <?php else: ?>
                                                 <span class="badge badge-danger">Inactivo</span>
-                                            @endif
+                                            <?php endif; ?>
                                         </div>
                                     </div>
                                 </div>
@@ -47,9 +45,9 @@
                                                 Información del Usuario
                                             </h4>
 
-                                            <form method="POST" action="{{ route('admin.users.update', $user->id) }}">
-                                                @csrf
-                                                @method('PUT')
+                                            <form method="POST" action="<?php echo route('admin.users.update', $user->id); ?>">
+                                                <?php echo csrf_field(); ?>
+                                                <?php echo method_field('PUT'); ?>
 
                                                 <!-- Nombre -->
                                                 <div class="mb-4">
@@ -59,10 +57,24 @@
                                                     <div class="input-group">
                                                         <span class="input-group-text"><i class="mdi mdi-account"></i></span>
                                                         <input type="text" name="name"
-                                                            class="form-control @error('name') is-invalid @enderror"
-                                                            value="{{ old('name', $user->name) }}" required>
+                                                            class="form-control <?php $__errorArgs = ['name'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>"
+                                                            value="<?php echo old('name', $user->name); ?>" required>
                                                     </div>
-                                                    @error('name')<div class="mt-1 text-danger"><small>{{ $message }}</small></div>@enderror
+                                                    <?php $__errorArgs = ['name'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?><div class="mt-1 text-danger"><small><?php echo $message; ?></small></div><?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
                                                 </div>
 
                                                 <!-- Email -->
@@ -73,10 +85,24 @@
                                                     <div class="input-group">
                                                         <span class="input-group-text"><i class="mdi mdi-email"></i></span>
                                                         <input type="email" name="email"
-                                                            class="form-control @error('email') is-invalid @enderror"
-                                                            value="{{ old('email', $user->email) }}" required>
+                                                            class="form-control <?php $__errorArgs = ['email'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>"
+                                                            value="<?php echo old('email', $user->email); ?>" required>
                                                     </div>
-                                                    @error('email')<div class="mt-1 text-danger"><small>{{ $message }}</small></div>@enderror
+                                                    <?php $__errorArgs = ['email'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?><div class="mt-1 text-danger"><small><?php echo $message; ?></small></div><?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
                                                 </div>
 
                                                 <!-- Rol -->
@@ -87,38 +113,68 @@
                                                     <div class="input-group">
                                                         <span class="input-group-text"><i class="mdi mdi-shield-account"></i></span>
                                                         <select name="role" id="role"
-                                                            class="form-select @error('role') is-invalid @enderror" required>
-                                                            @foreach ($roles as $role)
-                                                                <option value="{{ $role->name }}"
-                                                                    {{ old('role', $user->hasRole($role->name) ? $role->name : '') === $role->name ? 'selected' : '' }}>
-                                                                    {{ ucfirst($role->name) }}
+                                                            class="form-select <?php $__errorArgs = ['role'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>" required>
+                                                            <?php $__currentLoopData = $roles; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $role): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                                                <option value="<?php echo $role->name; ?>"
+                                                                    <?php echo old('role', $user->hasRole($role->name) ? $role->name : '') === $role->name ? 'selected' : ''; ?>>
+                                                                    <?php echo ucfirst($role->name); ?>
+
                                                                 </option>
-                                                            @endforeach
+                                                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                                         </select>
                                                     </div>
-                                                    @error('role')<div class="mt-1 text-danger"><small>{{ $message }}</small></div>@enderror
+                                                    <?php $__errorArgs = ['role'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?><div class="mt-1 text-danger"><small><?php echo $message; ?></small></div><?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
                                                 </div>
 
                                                 <!-- Campo Sede -->
                                                 <div class="mb-4" id="sedeField"
-                                                    style="{{ old('role', $user->hasRole('sede') ? 'sede' : '') === 'sede' ? 'display: block;' : 'display: none;' }}">
+                                                    style="<?php echo old('role', $user->hasRole('sede') ? 'sede' : '') === 'sede' ? 'display: block;' : 'display: none;'; ?>">
                                                     <label class="form-label">
                                                         Sede <span class="text-danger">*</span>
                                                     </label>
                                                     <div class="input-group">
                                                         <span class="input-group-text"><i class="mdi mdi-office-building"></i></span>
                                                         <select name="sede" id="sede"
-                                                            class="form-select @error('sede') is-invalid @enderror">
+                                                            class="form-select <?php $__errorArgs = ['sede'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>">
                                                             <option value="">Seleccionar sede...</option>
-                                                            @foreach ($sedes as $key => $nombre)
-                                                                <option value="{{ $key }}"
-                                                                    {{ old('sede', $user->sede) === $key ? 'selected' : '' }}>
-                                                                    {{ $nombre }}
+                                                            <?php $__currentLoopData = $sedes; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $key => $nombre): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                                                <option value="<?php echo $key; ?>"
+                                                                    <?php echo old('sede', $user->sede) === $key ? 'selected' : ''; ?>>
+                                                                    <?php echo $nombre; ?>
+
                                                                 </option>
-                                                            @endforeach
+                                                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                                         </select>
                                                     </div>
-                                                    @error('sede')<div class="mt-1 text-danger"><small>{{ $message }}</small></div>@enderror
+                                                    <?php $__errorArgs = ['sede'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?><div class="mt-1 text-danger"><small><?php echo $message; ?></small></div><?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
                                                     <small class="text-muted">Asigna la sede a la que pertenece este usuario</small>
                                                 </div>
 
@@ -128,7 +184,7 @@
                                                         <label class="form-check-label">
                                                             <input type="checkbox" name="is_active" value="1"
                                                                 class="form-check-input"
-                                                                {{ old('is_active', $user->is_active) ? 'checked' : '' }}>
+                                                                <?php echo old('is_active', $user->is_active) ? 'checked' : ''; ?>>
                                                             Usuario activo
                                                             <i class="input-helper"></i>
                                                         </label>
@@ -136,7 +192,7 @@
                                                     <small class="ms-4 text-muted">Los usuarios inactivos no podrán acceder al sistema</small>
                                                 </div>
 
-                                                @if (auth()->user()->isSuperAdmin())
+                                                <?php if(auth()->user()->isSuperAdmin()): ?>
                                                     <div class="mb-4">
                                                         <div class="pt-4 border-top">
                                                             <h5 class="mb-1">
@@ -145,7 +201,7 @@
                                                             </h5>
                                                             <p class="mb-3 text-muted small">Solo el Super Admin puede otorgar estos permisos</p>
 
-                                                            {{-- MÓDULO COMERCIAL --}}
+                                                            
                                                             <div class="mb-4">
                                                                 <p class="mb-2 text-muted text-uppercase fw-bold small" style="letter-spacing: 0.5px;">
                                                                     <i class="me-1 mdi-briefcase-outline mdi"></i> Módulo Comercial
@@ -155,7 +211,7 @@
                                                                         <div class="form-check form-check-success">
                                                                             <label class="form-check-label">
                                                                                 <input type="checkbox" name="puede_ver_consultar_orden" value="1" class="form-check-input"
-                                                                                    {{ old('puede_ver_consultar_orden', $user->puede_ver_consultar_orden ?? false) ? 'checked' : '' }}>
+                                                                                    <?php echo old('puede_ver_consultar_orden', $user->puede_ver_consultar_orden ?? false) ? 'checked' : ''; ?>>
                                                                                 Consultar Orden <i class="input-helper"></i>
                                                                             </label>
                                                                             <div><small class="text-muted">Automático para rol Sede</small></div>
@@ -165,7 +221,7 @@
                                                                         <div class="form-check form-check-success">
                                                                             <label class="form-check-label">
                                                                                 <input type="checkbox" name="puede_ver_ordenes_x_sede" value="1" class="form-check-input"
-                                                                                    {{ old('puede_ver_ordenes_x_sede', $user->puede_ver_ordenes_x_sede ?? false) ? 'checked' : '' }}>
+                                                                                    <?php echo old('puede_ver_ordenes_x_sede', $user->puede_ver_ordenes_x_sede ?? false) ? 'checked' : ''; ?>>
                                                                                 Ordenes por Sede <i class="input-helper"></i>
                                                                             </label>
                                                                             <div><small class="text-muted">Automático para rol Sede</small></div>
@@ -175,7 +231,7 @@
                                                                         <div class="form-check form-check-success">
                                                                             <label class="form-check-label">
                                                                                 <input type="checkbox" name="puede_ver_acuerdos_comerciales" value="1" class="form-check-input"
-                                                                                    {{ old('puede_ver_acuerdos_comerciales', $user->puede_ver_acuerdos_comerciales ?? false) ? 'checked' : '' }}>
+                                                                                    <?php echo old('puede_ver_acuerdos_comerciales', $user->puede_ver_acuerdos_comerciales ?? false) ? 'checked' : ''; ?>>
                                                                                 Acuerdos Comerciales <i class="input-helper"></i>
                                                                             </label>
                                                                         </div>
@@ -184,7 +240,7 @@
                                                                         <div class="form-check form-check-success">
                                                                             <label class="form-check-label">
                                                                                 <input type="checkbox" name="puede_ver_ventas_consolidadas" value="1" class="form-check-input"
-                                                                                    {{ old('puede_ver_ventas_consolidadas', $user->puede_ver_ventas_consolidadas ?? false) ? 'checked' : '' }}>
+                                                                                    <?php echo old('puede_ver_ventas_consolidadas', $user->puede_ver_ventas_consolidadas ?? false) ? 'checked' : ''; ?>>
                                                                                 Ventas Consolidadas <i class="input-helper"></i>
                                                                             </label>
                                                                         </div>
@@ -193,7 +249,7 @@
                                                                         <div class="form-check form-check-success">
                                                                             <label class="form-check-label">
                                                                                 <input type="checkbox" name="puede_ver_descuentos_especiales" value="1" class="form-check-input"
-                                                                                    {{ old('puede_ver_descuentos_especiales', $user->puede_ver_descuentos_especiales ?? false) ? 'checked' : '' }}>
+                                                                                    <?php echo old('puede_ver_descuentos_especiales', $user->puede_ver_descuentos_especiales ?? false) ? 'checked' : ''; ?>>
                                                                                 Descuentos Especiales <i class="input-helper"></i>
                                                                             </label>
                                                                         </div>
@@ -205,7 +261,7 @@
                                                                                     name="puede_ver_venta_clientes"
                                                                                     value="1"
                                                                                     class="form-check-input"
-                                                                                    {{ old('puede_ver_venta_clientes', $user->puede_ver_venta_clientes ?? false) ? 'checked' : '' }}>
+                                                                                    <?php echo old('puede_ver_venta_clientes', $user->puede_ver_venta_clientes ?? false) ? 'checked' : ''; ?>>
                                                                                 Ventas por Cliente
                                                                                 <i class="input-helper"></i>
                                                                             </label>
@@ -214,7 +270,7 @@
                                                                 </div>
                                                             </div>
 
-                                                            {{-- PRODUCCION --}}
+                                                            
                                                             <div class="mb-3">
                                                                 <p class="mb-2 text-muted text-uppercase fw-bold small"
                                                                     style="letter-spacing: 0.5px;">
@@ -225,7 +281,7 @@
                                                                         <div class="form-check form-check-success">
                                                                             <label class="form-check-label">
                                                                                 <input type="checkbox" name="puede_ver_lead_time" value="1" class="form-check-input"
-                                                                                    {{ old('puede_ver_lead_time', $user->puede_ver_lead_time ?? false) ? 'checked' : '' }}>
+                                                                                    <?php echo old('puede_ver_lead_time', $user->puede_ver_lead_time ?? false) ? 'checked' : ''; ?>>
                                                                                 Lead Time <i class="input-helper"></i>
                                                                             </label>
                                                                         </div>
@@ -234,7 +290,7 @@
                                                                         <div class="form-check form-check-success">
                                                                             <label class="form-check-label">
                                                                                 <input type="checkbox" name="puede_ver_pendiente_entrega_montura" value="1" class="form-check-input"
-                                                                                    {{ old('puede_ver_pendiente_entrega_montura', $user->puede_ver_pendiente_entrega_montura ?? false) ? 'checked' : '' }}>
+                                                                                    <?php echo old('puede_ver_pendiente_entrega_montura', $user->puede_ver_pendiente_entrega_montura ?? false) ? 'checked' : ''; ?>>
                                                                                 Pendiente de Entrega Montura <i class="input-helper"></i>
                                                                             </label>
                                                                         </div>
@@ -244,7 +300,7 @@
                                                                         <div class="form-check form-check-success">
                                                                             <label class="form-check-label">
                                                                                 <input type="checkbox" name="puede_ver_asignacion_bases" value="1" class="form-check-input"
-                                                                                    {{ old('puede_ver_asignacion_bases', $user->puede_ver_asignacion_bases ?? false) ? 'checked' : '' }}>
+                                                                                    <?php echo old('puede_ver_asignacion_bases', $user->puede_ver_asignacion_bases ?? false) ? 'checked' : ''; ?>>
                                                                                 Asignación de Bases <i class="input-helper"></i>
                                                                             </label>
                                                                         </div>
@@ -252,7 +308,7 @@
                                                                 </div>
                                                             </div>
 
-                                                            {{-- MÓDULO RRHH --}}
+                                                            
                                                             <div class="mb-3">
                                                                 <p class="mb-2 text-muted text-uppercase fw-bold small" style="letter-spacing: 0.5px;">
                                                                     <i class="me-1 mdi mdi-account-search"></i> Módulo RRHH — Requerimientos de Personal
@@ -262,7 +318,7 @@
                                                                         <div class="form-check form-check-success">
                                                                             <label class="form-check-label">
                                                                                 <input type="checkbox" name="puede_crear_requerimientos" value="1" class="form-check-input"
-                                                                                    {{ old('puede_crear_requerimientos', $user->puede_crear_requerimientos ?? false) ? 'checked' : '' }}>
+                                                                                    <?php echo old('puede_crear_requerimientos', $user->puede_crear_requerimientos ?? false) ? 'checked' : ''; ?>>
                                                                                 Crear Requerimientos
                                                                                 <i class="input-helper"></i>
                                                                             </label>
@@ -273,7 +329,7 @@
                                                                         <div class="form-check form-check-success">
                                                                             <label class="form-check-label">
                                                                                 <input type="checkbox" name="puede_gestionar_requerimientos" value="1" class="form-check-input"
-                                                                                    {{ old('puede_gestionar_requerimientos', $user->puede_gestionar_requerimientos ?? false) ? 'checked' : '' }}>
+                                                                                    <?php echo old('puede_gestionar_requerimientos', $user->puede_gestionar_requerimientos ?? false) ? 'checked' : ''; ?>>
                                                                                 Gestionar Requerimientos
                                                                                 <i class="input-helper"></i>
                                                                             </label>
@@ -284,7 +340,7 @@
                                                                         <div class="form-check form-check-success">
                                                                             <label class="form-check-label">
                                                                                 <input type="checkbox" name="puede_ver_todos_requerimientos" value="1" class="form-check-input"
-                                                                                    {{ old('puede_ver_todos_requerimientos', $user->puede_ver_todos_requerimientos ?? false) ? 'checked' : '' }}>
+                                                                                    <?php echo old('puede_ver_todos_requerimientos', $user->puede_ver_todos_requerimientos ?? false) ? 'checked' : ''; ?>>
                                                                                 Ver Todos los Requerimientos
                                                                                 <i class="input-helper"></i>
                                                                             </label>
@@ -302,7 +358,7 @@
 
                                                         </div>
                                                     </div>
-                                                @endif
+                                                <?php endif; ?>
 
                                                 <!-- Cambiar contraseña -->
                                                 <div class="mb-4 pt-4 border-top">
@@ -315,13 +371,27 @@
                                                         <div class="input-group">
                                                             <span class="input-group-text"><i class="mdi mdi-lock"></i></span>
                                                             <input type="password" id="password" name="password"
-                                                                class="form-control @error('password') is-invalid @enderror"
+                                                                class="form-control <?php $__errorArgs = ['password'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>"
                                                                 placeholder="Dejar en blanco para mantener la actual">
                                                             <button type="button" class="btn-outline-secondary btn" id="togglePassword">
                                                                 <i class="mdi-eye-outline mdi"></i>
                                                             </button>
                                                         </div>
-                                                        @error('password')<div class="mt-1 text-danger"><small>{{ $message }}</small></div>@enderror
+                                                        <?php $__errorArgs = ['password'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?><div class="mt-1 text-danger"><small><?php echo $message; ?></small></div><?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
                                                         <small class="text-muted">Mínimo 8 caracteres. Dejar en blanco para no cambiar.</small>
                                                     </div>
                                                     <div class="mb-3">
@@ -339,7 +409,7 @@
 
                                                 <!-- Botones -->
                                                 <div class="d-flex justify-content-between gap-2 pt-3 border-top">
-                                                    <a href="{{ route('admin.users') }}" class="btn btn-light">
+                                                    <a href="<?php echo route('admin.users'); ?>" class="btn btn-light">
                                                         <i class="me-1 mdi mdi-close"></i>Cancelar
                                                     </a>
                                                     <button type="submit" class="btn btn-primary">
@@ -362,32 +432,33 @@
 
                                             <div class="mb-4 pb-3 border-bottom text-center">
                                                 <img class="mb-3 rounded-circle" style="width: 100px; height: 100px;"
-                                                    src="https://ui-avatars.com/api/?name={{ urlencode($user->name) }}&size=200&background=6366f1&color=fff"
+                                                    src="https://ui-avatars.com/api/?name=<?php echo urlencode($user->name); ?>&size=200&background=6366f1&color=fff"
                                                     alt="profile">
-                                                <h5 class="mb-1">{{ $user->name }}</h5>
-                                                <p class="mb-0 text-muted">{{ $user->email }}</p>
+                                                <h5 class="mb-1"><?php echo $user->name; ?></h5>
+                                                <p class="mb-0 text-muted"><?php echo $user->email; ?></p>
                                             </div>
 
                                             <div class="mb-3 pb-3 border-bottom">
                                                 <div class="d-flex align-items-center justify-content-between mb-2">
                                                     <span class="text-muted">Rol actual</span>
                                                     <span class="badge badge-primary">
-                                                        {{ $user->roles->first()->name ?? 'Sin rol' }}
+                                                        <?php echo $user->roles->first()->name ?? 'Sin rol'; ?>
+
                                                     </span>
                                                 </div>
                                             </div>
 
-                                            @if ($user->hasRole('sede') && $user->sede)
+                                            <?php if($user->hasRole('sede') && $user->sede): ?>
                                                 <div class="mb-3 pb-3 border-bottom">
                                                     <div class="d-flex align-items-center justify-content-between">
                                                         <span class="text-muted">Sede asignada</span>
-                                                        <span class="badge badge-info">{{ $user->getSedeName() }}</span>
+                                                        <span class="badge badge-info"><?php echo $user->getSedeName(); ?></span>
                                                     </div>
                                                 </div>
-                                            @endif
+                                            <?php endif; ?>
 
-                                            {{-- Permisos activos agrupados --}}
-                                            @php
+                                            
+                                            <?php
                                                 $permisosComerciales = collect([
                                                     'puede_ver_consultar_orden'       => 'Consultar Orden',
                                                     'puede_ver_acuerdos_comerciales'  => 'Acuerdos Comerciales',
@@ -405,75 +476,77 @@
                                                     'puede_gestionar_requerimientos'  => 'Gestionar Reqs.',
                                                     'puede_ver_todos_requerimientos'  => 'Ver Todos',
                                                 ])->filter(fn($label, $campo) => $user->$campo);
-                                            @endphp
+                                            ?>
 
-                                            @if ($permisosComerciales->isNotEmpty())
+                                            <?php if($permisosComerciales->isNotEmpty()): ?>
                                                 <div class="mb-3 pb-3 border-bottom">
                                                     <p class="mb-2 text-muted"><small><i class="me-1 mdi-briefcase-outline mdi"></i>Permisos Comerciales</small></p>
                                                     <div class="d-flex flex-wrap gap-1">
-                                                        @foreach ($permisosComerciales as $label)
+                                                        <?php $__currentLoopData = $permisosComerciales; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $label): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                                             <span class="badge badge-success">
-                                                                <i class="me-1 mdi mdi-check"></i>{{ $label }}
+                                                                <i class="me-1 mdi mdi-check"></i><?php echo $label; ?>
+
                                                             </span>
-                                                        @endforeach
+                                                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                                     </div>
                                                 </div>
-                                            @endif
+                                            <?php endif; ?>
 
-                                            @if ($permisosRrhh->isNotEmpty())
+                                            <?php if($permisosRrhh->isNotEmpty()): ?>
                                                 <div class="mb-3 pb-3 border-bottom">
                                                     <p class="mb-2 text-muted"><small><i class="me-1 mdi mdi-account-search"></i>Permisos RRHH</small></p>
                                                     <div class="d-flex flex-wrap gap-1">
-                                                        @foreach ($permisosRrhh as $label)
+                                                        <?php $__currentLoopData = $permisosRrhh; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $label): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                                             <span class="badge badge-primary">
-                                                                <i class="me-1 mdi mdi-check"></i>{{ $label }}
+                                                                <i class="me-1 mdi mdi-check"></i><?php echo $label; ?>
+
                                                             </span>
-                                                        @endforeach
+                                                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                                     </div>
                                                 </div>
-                                            @endif
+                                            <?php endif; ?>
 
                                             <div class="mb-3 pb-3 border-bottom">
                                                 <div class="d-flex align-items-center justify-content-between">
                                                     <span class="text-muted">Estado</span>
-                                                    @if ($user->is_active)
+                                                    <?php if($user->is_active): ?>
                                                         <span class="badge badge-success">Activo</span>
-                                                    @else
+                                                    <?php else: ?>
                                                         <span class="badge badge-danger">Inactivo</span>
-                                                    @endif
+                                                    <?php endif; ?>
                                                 </div>
                                             </div>
 
                                             <div class="mb-3 pb-3 border-bottom">
                                                 <div class="d-flex align-items-center justify-content-between">
                                                     <span class="text-muted">Registrado</span>
-                                                    <small class="text-muted">{{ $user->created_at->format('d/m/Y') }}</small>
+                                                    <small class="text-muted"><?php echo $user->created_at->format('d/m/Y'); ?></small>
                                                 </div>
                                             </div>
 
                                             <div class="mb-3 pb-3 border-bottom">
                                                 <div class="d-flex align-items-center justify-content-between">
                                                     <span class="text-muted">Última actualización</span>
-                                                    <small class="text-muted">{{ $user->updated_at->diffForHumans() }}</small>
+                                                    <small class="text-muted"><?php echo $user->updated_at->diffForHumans(); ?></small>
                                                 </div>
                                             </div>
 
-                                            @if (isset($user->dashboards))
+                                            <?php if(isset($user->dashboards)): ?>
                                                 <div>
                                                     <div class="d-flex align-items-center justify-content-between">
                                                         <span class="text-muted">Dashboards asignados</span>
-                                                        <span class="badge badge-info">{{ $user->dashboards->count() }}</span>
+                                                        <span class="badge badge-info"><?php echo $user->dashboards->count(); ?></span>
                                                     </div>
                                                 </div>
-                                            @endif
+                                            <?php endif; ?>
                                         </div>
                                     </div>
                                 </div>
 
                                 <div class="grid-margin col-lg-12 stretch-card">
-                                    @if (auth()->user()->isSuperAdmin() &&
+                                    <?php if(auth()->user()->isSuperAdmin() &&
                                             $user->id !== auth()->id() &&
-                                            !in_array($user->roles->first()->name ?? '', ['super_admin']))
+                                            !in_array($user->roles->first()->name ?? '', ['super_admin'])): ?>
                                         <div class="border-danger card">
                                             <div class="card-body">
                                                 <h5 class="mb-3 text-danger">
@@ -483,9 +556,9 @@
                                                 <p class="mb-3 text-muted small">
                                                     Eliminar este usuario es permanente y no se puede deshacer.
                                                 </p>
-                                                <form method="POST" action="{{ route('admin.users.destroy', $user->id) }}">
-                                                    @csrf
-                                                    @method('DELETE')
+                                                <form method="POST" action="<?php echo route('admin.users.destroy', $user->id); ?>">
+                                                    <?php echo csrf_field(); ?>
+                                                    <?php echo method_field('DELETE'); ?>
                                                     <button type="submit" class="w-100 btn btn-danger"
                                                         onclick="return confirm('¿Estás seguro de eliminar este usuario?\n\nEsta acción no se puede deshacer.')">
                                                         <i class="me-1 mdi mdi-delete-forever"></i>Eliminar Usuario
@@ -493,7 +566,7 @@
                                                 </form>
                                             </div>
                                         </div>
-                                    @endif
+                                    <?php endif; ?>
                                 </div>
                             </div>
                         </div>
@@ -560,4 +633,5 @@
             }
         });
     </script>
-@endsection
+<?php $__env->stopSection(); ?>
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH /var/www/resources/views/admin/users-edit.blade.php ENDPATH**/ ?>

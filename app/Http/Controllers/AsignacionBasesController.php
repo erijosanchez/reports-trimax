@@ -21,6 +21,10 @@ class AsignacionBasesController extends Controller
 
     public function evolutivo(Request $request)
     {
+        if (!auth()->user()->puedeVerAsignacionBases()) {
+            abort(403, 'No tienes permiso para ver la asignación de bases');
+        }
+
         $aniosDisponibles = $this->service->getAniosDisponibles();
         $anioActual       = (int) $request->get('anio', $aniosDisponibles[0] ?? now()->year);
         $mesActual        = (int) $request->get('mes', now()->month);
@@ -89,6 +93,10 @@ class AsignacionBasesController extends Controller
 
     public function demanda(Request $request)
     {
+        if (!auth()->user()->puedeVerAsignacionBases()) {
+            abort(403, 'No tienes permiso para ver la asignación de bases');
+        }
+
         $aniosDisponibles = $this->service->getAniosDisponibles();
         $anioActual       = (int) $request->get('anio', $aniosDisponibles[0] ?? now()->year);
         $mesActual        = (int) $request->get('mes', now()->month);

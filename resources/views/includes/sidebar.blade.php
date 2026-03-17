@@ -127,7 +127,10 @@
         {{-- <<<<<<<<<<<<<<<<<<<<<<<<<MODULO PRODUCCIÓN >>>>>>>>>>>>>>>>>>>> --}}
         @php
             $user = auth()->user();
-            $tieneAccesoProduccion = $user->puedeVerPendienteEntregaMontura() || $user->puedeVerLeadTime();
+            $tieneAccesoProduccion =
+                $user->puedeVerPendienteEntregaMontura() ||
+                $user->puedeVerLeadTime() ||
+                $user->puedeVerAsignacionBases();
         @endphp
 
         @if ($tieneAccesoProduccion)
@@ -177,34 +180,36 @@
                 </li>
             @endif
 
-            <li class="nav-item">
-                <a class="nav-link {{ request()->routeIs('produccion.asignacion-bases.*') ? '' : 'collapsed' }}"
-                    data-bs-toggle="collapse" href="#asignacion-bases-menu"
-                    aria-expanded="{{ request()->routeIs('produccion.asignacion-bases.*') ? 'true' : 'false' }}"
-                    aria-controls="asignacion-bases-menu">
-                    <i class="mdi-layers-outline mdi menu-icon"></i>
-                    <span class="menu-title">Asignación de Bases</span>
-                    <i class="menu-arrow"></i>
-                </a>
+            @if ($user->puedeVerAsignacionBases())
+                <li class="nav-item">
+                    <a class="nav-link {{ request()->routeIs('produccion.asignacion-bases.*') ? '' : 'collapsed' }}"
+                        data-bs-toggle="collapse" href="#asignacion-bases-menu"
+                        aria-expanded="{{ request()->routeIs('produccion.asignacion-bases.*') ? 'true' : 'false' }}"
+                        aria-controls="asignacion-bases-menu">
+                        <i class="mdi-layers-outline mdi menu-icon"></i>
+                        <span class="menu-title">Asignación de Bases</span>
+                        <i class="menu-arrow"></i>
+                    </a>
 
-                <div class="collapse {{ request()->routeIs('produccion.asignacion-bases.*') ? 'show' : '' }}"
-                    id="asignacion-bases-menu">
-                    <ul class="flex-column nav sub-menu">
-                        <li class="nav-item">
-                            <a class="nav-link {{ request()->routeIs('produccion.asignacion-bases.index') ? 'active' : '' }}"
-                                href="{{ route('produccion.asignacion-bases.index') }}">
-                                Evolutivo
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {{ request()->routeIs('produccion.asignacion-bases.demanda') ? 'active' : '' }}"
-                                href="{{ route('produccion.asignacion-bases.demanda') }}">
-                                Demanda
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-            </li>
+                    <div class="collapse {{ request()->routeIs('produccion.asignacion-bases.*') ? 'show' : '' }}"
+                        id="asignacion-bases-menu">
+                        <ul class="flex-column nav sub-menu">
+                            <li class="nav-item">
+                                <a class="nav-link {{ request()->routeIs('produccion.asignacion-bases.index') ? 'active' : '' }}"
+                                    href="{{ route('produccion.asignacion-bases.index') }}">
+                                    Evolutivo
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {{ request()->routeIs('produccion.asignacion-bases.demanda') ? 'active' : '' }}"
+                                    href="{{ route('produccion.asignacion-bases.demanda') }}">
+                                    Demanda
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </li>
+            @endif
         @endif
 
         {{-- MÓDULO MARKETING (Solo marketing y superadmin) --}}

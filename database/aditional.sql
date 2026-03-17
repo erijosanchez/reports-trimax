@@ -501,6 +501,8 @@ ALTER TABLE users ADD COLUMN puede_ver_venta_clientes TINYINT(1) NOT NULL DEFAUL
 
 ALTER TABLE users ADD COLUMN puede_ver_ordenes_x_sede TINYINT(1) NOT NULL DEFAULT 0 AFTER puede_ver_venta_clientes;
 
+ALTER TABLE users ADD COLUMN puede_ver_asignacion_bases TINYINT(1) NOT NULL DEFAULT 0 AFTER puede_ver_ordenes_x_sede;
+
 /*Tabla para estadísticas de ordenes por sede*/
 CREATE TABLE ordenes_sede_stats (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,

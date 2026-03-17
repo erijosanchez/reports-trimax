@@ -59,6 +59,8 @@ class UserController extends Controller
             'puede_ver_lead_time',
             'puede_ver_pendiente_entrega_montura',
             'puede_ver_venta_clientes',
+            'puede_ver_ordenes_x_sede',
+            'puede_ver_asignacion_bases',
             // RRHH
             'puede_crear_requerimientos',
             'puede_gestionar_requerimientos',

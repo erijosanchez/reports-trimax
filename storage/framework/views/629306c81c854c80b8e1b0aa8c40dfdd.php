@@ -1,8 +1,6 @@
-@extends('layouts.app')
+<?php $__env->startSection('title', 'Crear Usuario'); ?>
 
-@section('title', 'Crear Usuario')
-
-@section('content')
+<?php $__env->startSection('content'); ?>
     <div class="content-wrapper">
         <div class="row">
             <div class="col-sm-12">
@@ -14,7 +12,7 @@
                             <div class="row">
                                 <div class="col-sm-12">
                                     <div class="d-flex align-items-center mb-4">
-                                        <a href="{{ route('admin.users') }}" class="me-3 btn btn-light btn-sm">
+                                        <a href="<?php echo route('admin.users'); ?>" class="me-3 btn btn-light btn-sm">
                                             <i class="mdi-arrow-left mdi"></i>
                                         </a>
                                         <div>
@@ -38,8 +36,8 @@
                                                 Información del Usuario
                                             </h4>
 
-                                            <form method="POST" action="{{ route('admin.users.store') }}">
-                                                @csrf
+                                            <form method="POST" action="<?php echo route('admin.users.store'); ?>">
+                                                <?php echo csrf_field(); ?>
 
                                                 <!-- Nombre -->
                                                 <div class="mb-4">
@@ -51,15 +49,29 @@
                                                             <i class="mdi mdi-account"></i>
                                                         </span>
                                                         <input type="text" name="name"
-                                                            class="form-control @error('name') is-invalid @enderror"
-                                                            value="{{ old('name') }}" required
+                                                            class="form-control <?php $__errorArgs = ['name'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>"
+                                                            value="<?php echo old('name'); ?>" required
                                                             placeholder="Ej: Juan Pérez">
                                                     </div>
-                                                    @error('name')
+                                                    <?php $__errorArgs = ['name'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
                                                         <div class="mt-1 text-danger">
-                                                            <small>{{ $message }}</small>
+                                                            <small><?php echo $message; ?></small>
                                                         </div>
-                                                    @enderror
+                                                    <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
                                                 </div>
 
                                                 <!-- Email -->
@@ -72,15 +84,29 @@
                                                             <i class="mdi mdi-email"></i>
                                                         </span>
                                                         <input type="email" name="email"
-                                                            class="form-control @error('email') is-invalid @enderror"
-                                                            value="{{ old('email') }}" required
+                                                            class="form-control <?php $__errorArgs = ['email'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>"
+                                                            value="<?php echo old('email'); ?>" required
                                                             placeholder="usuario@ejemplo.com">
                                                     </div>
-                                                    @error('email')
+                                                    <?php $__errorArgs = ['email'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
                                                         <div class="mt-1 text-danger">
-                                                            <small>{{ $message }}</small>
+                                                            <small><?php echo $message; ?></small>
                                                         </div>
-                                                    @enderror
+                                                    <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
                                                     <small class="text-muted">
                                                         El usuario utilizará este correo para iniciar sesión
                                                     </small>
@@ -96,18 +122,32 @@
                                                             <i class="mdi mdi-lock"></i>
                                                         </span>
                                                         <input type="password" id="password" name="password"
-                                                            class="form-control @error('password') is-invalid @enderror"
+                                                            class="form-control <?php $__errorArgs = ['password'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>"
                                                             required placeholder="Mínimo 8 caracteres">
                                                         <button type="button" class="btn-outline-secondary btn"
                                                             id="togglePassword">
                                                             <i class="mdi-eye-outline mdi"></i>
                                                         </button>
                                                     </div>
-                                                    @error('password')
+                                                    <?php $__errorArgs = ['password'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
                                                         <div class="mt-1 text-danger">
-                                                            <small>{{ $message }}</small>
+                                                            <small><?php echo $message; ?></small>
                                                         </div>
-                                                    @enderror
+                                                    <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
                                                     <small class="text-muted">
                                                         Debe contener al menos 8 caracteres
                                                     </small>
@@ -142,22 +182,37 @@
                                                             <i class="mdi mdi-shield-account"></i>
                                                         </span>
                                                         <select name="role" id="role"
-                                                            class="form-select @error('role') is-invalid @enderror"
+                                                            class="form-select <?php $__errorArgs = ['role'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>"
                                                             required>
                                                             <option value="">Seleccionar rol...</option>
-                                                            @foreach ($roles as $role)
-                                                                <option value="{{ $role->name }}"
-                                                                    {{ old('role') === $role->name ? 'selected' : '' }}>
-                                                                    {{ ucfirst($role->name) }}
+                                                            <?php $__currentLoopData = $roles; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $role): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                                                <option value="<?php echo $role->name; ?>"
+                                                                    <?php echo old('role') === $role->name ? 'selected' : ''; ?>>
+                                                                    <?php echo ucfirst($role->name); ?>
+
                                                                 </option>
-                                                            @endforeach
+                                                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                                         </select>
                                                     </div>
-                                                    @error('role')
+                                                    <?php $__errorArgs = ['role'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
                                                         <div class="mt-1 text-danger">
-                                                            <small>{{ $message }}</small>
+                                                            <small><?php echo $message; ?></small>
                                                         </div>
-                                                    @enderror
+                                                    <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
                                                     <small class="text-muted">
                                                         Define los permisos de acceso del usuario
                                                     </small>
@@ -173,27 +228,42 @@
                                                             <i class="mdi mdi-office-building"></i>
                                                         </span>
                                                         <select name="sede" id="sede"
-                                                            class="form-select @error('sede') is-invalid @enderror">
+                                                            class="form-select <?php $__errorArgs = ['sede'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>">
                                                             <option value="">Seleccionar sede...</option>
-                                                            @foreach ($sedes as $key => $nombre)
-                                                                <option value="{{ $key }}"
-                                                                    {{ old('sede') === $key ? 'selected' : '' }}>
-                                                                    {{ $nombre }}
+                                                            <?php $__currentLoopData = $sedes; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $key => $nombre): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                                                <option value="<?php echo $key; ?>"
+                                                                    <?php echo old('sede') === $key ? 'selected' : ''; ?>>
+                                                                    <?php echo $nombre; ?>
+
                                                                 </option>
-                                                            @endforeach
+                                                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                                         </select>
                                                     </div>
-                                                    @error('sede')
+                                                    <?php $__errorArgs = ['sede'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
                                                         <div class="mt-1 text-danger">
-                                                            <small>{{ $message }}</small>
+                                                            <small><?php echo $message; ?></small>
                                                         </div>
-                                                    @enderror
+                                                    <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
                                                     <small class="text-muted">
                                                         Asigna la sede a la que pertenece este usuario
                                                     </small>
                                                 </div>
 
-                                                @if (auth()->user()->isSuperAdmin())
+                                                <?php if(auth()->user()->isSuperAdmin()): ?>
                                                     <div class="mb-4">
                                                         <div class="pt-4 border-top">
                                                             <h5 class="mb-1">
@@ -203,7 +273,7 @@
                                                             <p class="mb-3 text-muted small">Solo el Super Admin puede
                                                                 otorgar estos permisos</p>
 
-                                                            {{-- SECCIÓN COMERCIAL --}}
+                                                            
                                                             <div class="mb-4">
                                                                 <p class="mb-2 text-muted text-uppercase fw-bold small"
                                                                     style="letter-spacing: 0.5px;">
@@ -218,7 +288,7 @@
                                                                                     name="puede_ver_consultar_orden"
                                                                                     value="1"
                                                                                     class="form-check-input"
-                                                                                    {{ old('puede_ver_consultar_orden') ? 'checked' : '' }}>
+                                                                                    <?php echo old('puede_ver_consultar_orden') ? 'checked' : ''; ?>>
                                                                                 Consultar Orden
                                                                                 <i class="input-helper"></i>
                                                                             </label>
@@ -233,7 +303,7 @@
                                                                                     name="puede_ver_ordenes_x_sede"
                                                                                     value="1"
                                                                                     class="form-check-input"
-                                                                                    {{ old('puede_ver_ordenes_x_sede') ? 'checked' : '' }}>
+                                                                                    <?php echo old('puede_ver_ordenes_x_sede') ? 'checked' : ''; ?>>
                                                                                 Consultar Ordenes por Sede
                                                                                 <i class="input-helper"></i>
                                                                             </label>
@@ -248,7 +318,7 @@
                                                                                     name="puede_ver_acuerdos_comerciales"
                                                                                     value="1"
                                                                                     class="form-check-input"
-                                                                                    {{ old('puede_ver_acuerdos_comerciales') ? 'checked' : '' }}>
+                                                                                    <?php echo old('puede_ver_acuerdos_comerciales') ? 'checked' : ''; ?>>
                                                                                 Acuerdos Comerciales
                                                                                 <i class="input-helper"></i>
                                                                             </label>
@@ -261,7 +331,7 @@
                                                                                     name="puede_ver_ventas_consolidadas"
                                                                                     value="1"
                                                                                     class="form-check-input"
-                                                                                    {{ old('puede_ver_ventas_consolidadas') ? 'checked' : '' }}>
+                                                                                    <?php echo old('puede_ver_ventas_consolidadas') ? 'checked' : ''; ?>>
                                                                                 Ventas Consolidadas
                                                                                 <i class="input-helper"></i>
                                                                             </label>
@@ -274,7 +344,7 @@
                                                                                     name="puede_ver_descuentos_especiales"
                                                                                     value="1"
                                                                                     class="form-check-input"
-                                                                                    {{ old('puede_ver_descuentos_especiales') ? 'checked' : '' }}>
+                                                                                    <?php echo old('puede_ver_descuentos_especiales') ? 'checked' : ''; ?>>
                                                                                 Descuentos Especiales
                                                                                 <i class="input-helper"></i>
                                                                             </label>
@@ -287,7 +357,7 @@
                                                                                     name="puede_ver_venta_clientes"
                                                                                     value="1"
                                                                                     class="form-check-input"
-                                                                                    {{ old('puede_ver_venta_clientes') ? 'checked' : '' }}>
+                                                                                    <?php echo old('puede_ver_venta_clientes') ? 'checked' : ''; ?>>
                                                                                 Ventas por Cliente
                                                                                 <i class="input-helper"></i>
                                                                             </label>
@@ -296,7 +366,7 @@
                                                                 </div>
                                                             </div>
 
-                                                            {{-- PRODUCCION --}}
+                                                            
                                                             <div class="mb-3">
                                                                 <p class="mb-2 text-muted text-uppercase fw-bold small"
                                                                     style="letter-spacing: 0.5px;">
@@ -310,7 +380,7 @@
                                                                                     name="puede_ver_lead_time"
                                                                                     value="1"
                                                                                     class="form-check-input"
-                                                                                    {{ old('puede_ver_lead_time') ? 'checked' : '' }}>
+                                                                                    <?php echo old('puede_ver_lead_time') ? 'checked' : ''; ?>>
                                                                                 Lead Time
                                                                                 <i class="input-helper"></i>
                                                                             </label>
@@ -323,7 +393,7 @@
                                                                                     name="puede_ver_pendiente_entrega_montura"
                                                                                     value="1"
                                                                                     class="form-check-input"
-                                                                                    {{ old('puede_ver_pendiente_entrega_montura') ? 'checked' : '' }}>
+                                                                                    <?php echo old('puede_ver_pendiente_entrega_montura') ? 'checked' : ''; ?>>
                                                                                 Pendiente - Entrega Montura
                                                                                 <i class="input-helper"></i>
                                                                             </label>
@@ -336,7 +406,7 @@
                                                                                     name="puede_ver_asignacion_bases"
                                                                                     value="1"
                                                                                     class="form-check-input"
-                                                                                    {{ old('puede_ver_asignacion_bases') ? 'checked' : '' }}>
+                                                                                    <?php echo old('puede_ver_asignacion_bases') ? 'checked' : ''; ?>>
                                                                                 Asignación de Bases
                                                                                 <i class="input-helper"></i>
                                                                             </label>
@@ -346,7 +416,7 @@
                                                                 </div>
                                                             </div>
 
-                                                            {{-- SECCIÓN RRHH --}}
+                                                            
                                                             <div class="mb-3">
                                                                 <p class="mb-2 text-muted text-uppercase fw-bold small"
                                                                     style="letter-spacing: 0.5px;">
@@ -361,7 +431,7 @@
                                                                                     name="puede_crear_requerimientos"
                                                                                     value="1"
                                                                                     class="form-check-input"
-                                                                                    {{ old('puede_crear_requerimientos') ? 'checked' : '' }}>
+                                                                                    <?php echo old('puede_crear_requerimientos') ? 'checked' : ''; ?>>
                                                                                 Crear Requerimientos
                                                                                 <i class="input-helper"></i>
                                                                             </label>
@@ -376,7 +446,7 @@
                                                                                     name="puede_gestionar_requerimientos"
                                                                                     value="1"
                                                                                     class="form-check-input"
-                                                                                    {{ old('puede_gestionar_requerimientos') ? 'checked' : '' }}>
+                                                                                    <?php echo old('puede_gestionar_requerimientos') ? 'checked' : ''; ?>>
                                                                                 Gestionar Requerimientos
                                                                                 <i class="input-helper"></i>
                                                                             </label>
@@ -392,7 +462,7 @@
                                                                                     name="puede_ver_todos_requerimientos"
                                                                                     value="1"
                                                                                     class="form-check-input"
-                                                                                    {{ old('puede_ver_todos_requerimientos') ? 'checked' : '' }}>
+                                                                                    <?php echo old('puede_ver_todos_requerimientos') ? 'checked' : ''; ?>>
                                                                                 Ver Todos los Requerimientos
                                                                                 <i class="input-helper"></i>
                                                                             </label>
@@ -413,11 +483,11 @@
 
                                                         </div>
                                                     </div>
-                                                @endif
+                                                <?php endif; ?>
 
                                                 <!-- Botones -->
                                                 <div class="d-flex justify-content-end gap-2 pt-3 border-top">
-                                                    <a href="{{ route('admin.users') }}" class="btn btn-light">
+                                                    <a href="<?php echo route('admin.users'); ?>" class="btn btn-light">
                                                         <i class="me-1 mdi mdi-close"></i>Cancelar
                                                     </a>
                                                     <button type="submit" class="btn btn-success">
@@ -540,4 +610,6 @@
             });
         });
     </script>
-@endsection
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH /var/www/resources/views/admin/users-create.blade.php ENDPATH**/ ?>
