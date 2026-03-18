@@ -108,6 +108,15 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
     Route::prefix('marketing')->name('marketing.')->group(function () {
         // Marketing Dashboard
         Route::get('/amdpanel', [MarketingController::class, 'index'])->name('index');
+        // Ver detalles de encuesta
+        Route::get('/surveys/{survey}', [MarketingController::class, 'showSurvey'])
+            ->name('/surveys.show');
+        // Obtener estadísticas filtradas (AJAX)
+        Route::get('/stats', [MarketingController::class, 'getStats'])
+            ->name('stats');
+
+        Route::get('/encuestas/ajax', [MarketingController::class, 'encuestasAjax'])
+            ->name('encuestas.ajax');
 
         Route::prefix('users')->name('users.')->group(function () {
             // User Management (Super Admin and Marketing only)

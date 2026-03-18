@@ -1,8 +1,6 @@
-@extends('layouts.app')
+<?php $__env->startSection('title', 'Dashboard Marketing'); ?>
 
-@section('title', 'Dashboard Marketing')
-
-@section('content')
+<?php $__env->startSection('content'); ?>
     <div class="content-wrapper">
         <div class="row">
             <div class="col-sm-12">
@@ -10,7 +8,7 @@
                     <div class="tab-content-basic tab-content">
                         <div class="tab-pane fade show active" id="overview" role="tabpanel">
 
-                            {{-- ════════════ HEADER ════════════ --}}
+                            
                             <div class="d-flex align-items-center justify-content-between mb-4">
                                 <div>
                                     <h3 class="mb-0 rate-percentage">
@@ -24,41 +22,42 @@
                                 </button>
                             </div>
 
-                            {{-- ════════════ FILTROS ════════════ --}}
+                            
                             <div class="collapse mb-4" id="filterCollapse">
                                 <div class="card">
                                     <div class="card-body">
                                         <h5 class="mb-3 card-title"><i
                                                 class="mdi-filter-variant me-2 text-primary mdi"></i>Filtros</h5>
-                                        <form method="GET" action="{{ route('marketing.index') }}">
+                                        <form method="GET" action="<?php echo route('marketing.index'); ?>">
                                             <div class="row">
                                                 <div class="col-md-3">
                                                     <label class="form-label">Fecha Inicio</label>
                                                     <input type="date" name="start_date" class="form-control"
-                                                        value="{{ $startDate }}">
+                                                        value="<?php echo $startDate; ?>">
                                                 </div>
                                                 <div class="col-md-3">
                                                     <label class="form-label">Fecha Fin</label>
                                                     <input type="date" name="end_date" class="form-control"
-                                                        value="{{ $endDate }}">
+                                                        value="<?php echo $endDate; ?>">
                                                 </div>
                                                 <div class="col-md-4">
                                                     <label class="form-label">Consultor / Sede / Trimax</label>
                                                     <select name="user_id" class="form-select">
                                                         <option value="">Todos</option>
-                                                        @foreach ($users as $u)
-                                                            <option value="{{ $u->id }}"
-                                                                {{ $userId == $u->id ? 'selected' : '' }}>
-                                                                {{ $u->name }} —
-                                                                @if ($u->role === 'consultor')
+                                                        <?php $__currentLoopData = $users; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $u): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                                            <option value="<?php echo $u->id; ?>"
+                                                                <?php echo $userId == $u->id ? 'selected' : ''; ?>>
+                                                                <?php echo $u->name; ?> —
+                                                                <?php if($u->role === 'consultor'): ?>
                                                                     Consultor
-                                                                @elseif($u->role === 'trimax')
+                                                                <?php elseif($u->role === 'trimax'): ?>
                                                                     TRIMAX
-                                                                @else
-                                                                    Sede {{ $u->location }}
-                                                                @endif
+                                                                <?php else: ?>
+                                                                    Sede <?php echo $u->location; ?>
+
+                                                                <?php endif; ?>
                                                             </option>
-                                                        @endforeach
+                                                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                                     </select>
                                                 </div>
                                                 <div class="d-flex align-items-end col-md-2">
@@ -72,9 +71,9 @@
                                 </div>
                             </div>
 
-                            {{-- ════════════ STATS CARDS ════════════ --}}
+                            
                             <div class="mb-2 row">
-                                @php
+                                <?php
                                     $statCards = [
                                         [
                                             'label' => 'Total Encuestas',
@@ -107,26 +106,26 @@
                                             'color' => 'danger',
                                         ],
                                     ];
-                                @endphp
+                                ?>
 
-                                @foreach ($statCards as $card)
+                                <?php $__currentLoopData = $statCards; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $card): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                     <div class="grid-margin col-xl col-lg-4 col-md-4 col-sm-6 stretch-card">
                                         <div class="card card-statistics">
                                             <div class="card-body">
                                                 <div class="d-flex flex-column align-items-center">
-                                                    <div class="icon-wrapper bg-{{ $card['color'] }}-subtle rounded mb-3">
+                                                    <div class="icon-wrapper bg-<?php echo $card['color']; ?>-subtle rounded mb-3">
                                                         <i
-                                                            class="mdi {{ $card['icon'] }} text-{{ $card['color'] }} icon-lg"></i>
+                                                            class="mdi <?php echo $card['icon']; ?> text-<?php echo $card['color']; ?> icon-lg"></i>
                                                     </div>
-                                                    <h3 class="mb-1 rate-percentage">{{ $card['value'] }}</h3>
-                                                    <p class="mb-0 statistics-title">{{ $card['label'] }}</p>
+                                                    <h3 class="mb-1 rate-percentage"><?php echo $card['value']; ?></h3>
+                                                    <p class="mb-0 statistics-title"><?php echo $card['label']; ?></p>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
-                                @endforeach
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
 
-                                {{-- Promedio combinado --}}
+                                
                                 <div class="grid-margin col-xl col-lg-4 col-md-4 col-sm-6 stretch-card">
                                     <div class="card card-statistics" style="border-top: 3px solid #6366f1;">
                                         <div class="card-body">
@@ -135,18 +134,18 @@
                                                     <i class="text-primary mdi mdi-star icon-lg"></i>
                                                 </div>
                                                 <h3 class="mb-0 rate-percentage">
-                                                    {{ number_format($stats['average_combined'], 2) }}</h3>
+                                                    <?php echo number_format($stats['average_combined'], 2); ?></h3>
                                                 <p class="mb-0 text-center statistics-title" style="font-size:0.72rem;">
                                                     Promedio Combinado</p>
                                                 <div class="d-flex gap-3 mt-2">
                                                     <small class="text-muted">
                                                         <span
-                                                            class="text-success fw-bold">{{ number_format($stats['average_experience'], 2) }}</span>
+                                                            class="text-success fw-bold"><?php echo number_format($stats['average_experience'], 2); ?></span>
                                                         Exp
                                                     </small>
                                                     <small class="text-muted">
                                                         <span
-                                                            class="text-info fw-bold">{{ number_format($stats['average_service'], 2) }}</span>
+                                                            class="text-info fw-bold"><?php echo number_format($stats['average_service'], 2); ?></span>
                                                         Atc
                                                     </small>
                                                 </div>
@@ -156,7 +155,7 @@
                                 </div>
                             </div>
 
-                            {{-- ════════════ TABS ════════════ --}}
+                            
                             <ul class="mb-4 nav nav-tabs nav-tabs-line" id="dashboardTabs" role="tablist">
                                 <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab"
                                         data-bs-target="#tab-general" type="button"><i
@@ -173,26 +172,26 @@
                                 <li class="nav-item"><button class="nav-link" data-bs-toggle="tab"
                                         data-bs-target="#tab-alertas" type="button">
                                         <i class="me-1 mdi mdi-alert-circle"></i>Alertas
-                                        @if ($stats['muy_insatisfecho'] + $stats['insatisfecho'] > 0)
+                                        <?php if($stats['muy_insatisfecho'] + $stats['insatisfecho'] > 0): ?>
                                             <span
-                                                class="bg-danger ms-1 badge">{{ $stats['muy_insatisfecho'] + $stats['insatisfecho'] }}</span>
-                                        @endif
+                                                class="bg-danger ms-1 badge"><?php echo $stats['muy_insatisfecho'] + $stats['insatisfecho']; ?></span>
+                                        <?php endif; ?>
                                     </button></li>
                                 <li class="nav-item"><button class="nav-link" data-bs-toggle="tab"
                                         data-bs-target="#tab-encuestas" type="button" id="btn-tab-encuestas">
                                         <i class="me-1 mdi mdi-clipboard-list"></i>Todas las Encuestas
                                         <span class="bg-primary ms-1 badge"
-                                            id="badge-total-encuestas">{{ $stats['total'] }}</span>
+                                            id="badge-total-encuestas"><?php echo $stats['total']; ?></span>
                                     </button></li>
                             </ul>
 
                             <div class="tab-content" id="dashboardTabsContent">
 
-                                {{-- ══ TAB: GENERAL ══ --}}
+                                
                                 <div class="tab-pane fade show active" id="tab-general" role="tabpanel">
 
                                     <div class="row">
-                                        {{-- Donut experiencia --}}
+                                        
                                         <div class="grid-margin col-lg-4 stretch-card">
                                             <div class="h-100 card">
                                                 <div class="card-body">
@@ -200,20 +199,20 @@
                                                             class="me-1 text-success mdi mdi-emoticon-happy"></i>Experiencia
                                                         General</h5>
                                                     <p class="mb-3 text-muted small">Promedio: <strong
-                                                            class="text-success">{{ number_format($stats['average_experience'], 2) }}/4</strong>
+                                                            class="text-success"><?php echo number_format($stats['average_experience'], 2); ?>/4</strong>
                                                     </p>
-                                                    @if ($stats['total'] > 0)
+                                                    <?php if($stats['total'] > 0): ?>
                                                         <canvas id="chartExperience" height="220"></canvas>
-                                                    @else
+                                                    <?php else: ?>
                                                         <div class="py-5 text-muted text-center"><i
                                                                 class="d-block mb-2 mdi mdi-chart-donut mdi-48px"></i>Sin
                                                             datos en este período</div>
-                                                    @endif
+                                                    <?php endif; ?>
                                                 </div>
                                             </div>
                                         </div>
 
-                                        {{-- Donut atención --}}
+                                        
                                         <div class="grid-margin col-lg-4 stretch-card">
                                             <div class="h-100 card">
                                                 <div class="card-body">
@@ -221,20 +220,20 @@
                                                             class="me-1 text-info mdi mdi-account-check"></i>Calidad de
                                                         Atención</h5>
                                                     <p class="mb-3 text-muted small">Promedio: <strong
-                                                            class="text-info">{{ number_format($stats['average_service'], 2) }}/4</strong>
+                                                            class="text-info"><?php echo number_format($stats['average_service'], 2); ?>/4</strong>
                                                     </p>
-                                                    @if ($stats['total'] > 0)
+                                                    <?php if($stats['total'] > 0): ?>
                                                         <canvas id="chartService" height="220"></canvas>
-                                                    @else
+                                                    <?php else: ?>
                                                         <div class="py-5 text-muted text-center"><i
                                                                 class="d-block mb-2 mdi mdi-chart-donut mdi-48px"></i>Sin
                                                             datos en este período</div>
-                                                    @endif
+                                                    <?php endif; ?>
                                                 </div>
                                             </div>
                                         </div>
 
-                                        {{-- Bar: promedio combinado por usuario --}}
+                                        
                                         <div class="grid-margin col-lg-4 stretch-card">
                                             <div class="h-100 card">
                                                 <div class="card-body">
@@ -243,19 +242,19 @@
                                                         Combinado</h5>
                                                     <p class="mb-3 text-muted small">Promedio (Exp + Atc) / 2 por persona
                                                     </p>
-                                                    @if ($userStats->where('total', '>', 0)->count() > 0)
+                                                    <?php if($userStats->where('total', '>', 0)->count() > 0): ?>
                                                         <canvas id="chartRanking" height="220"></canvas>
-                                                    @else
+                                                    <?php else: ?>
                                                         <div class="py-5 text-muted text-center"><i
                                                                 class="d-block mb-2 mdi mdi-chart-bar mdi-48px"></i>Sin
                                                             datos</div>
-                                                    @endif
+                                                    <?php endif; ?>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
 
-                                    {{-- Tabla por usuario --}}
+                                    
                                     <div class="grid-margin card">
                                         <div class="card-body">
                                             <h4 class="mb-4 card-title"><i
@@ -279,69 +278,70 @@
                                                         </tr>
                                                     </thead>
                                                     <tbody>
-                                                        @forelse($userStats as $s)
+                                                        <?php $__empty_1 = true; $__currentLoopData = $userStats; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $s): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                                                             <tr
-                                                                @if ($s['role'] === 'trimax') style="background:rgba(26,26,46,.04)" @endif>
+                                                                <?php if($s['role'] === 'trimax'): ?> style="background:rgba(26,26,46,.04)" <?php endif; ?>>
                                                                 <td>
                                                                     <div class="d-flex align-items-center">
                                                                         <img class="me-2 rounded-circle img-xs"
-                                                                            src="https://ui-avatars.com/api/?name={{ urlencode($s['name']) }}&background={{ $s['role'] === 'trimax' ? '1a1a2e' : '6366f1' }}&color=fff"
+                                                                            src="https://ui-avatars.com/api/?name=<?php echo urlencode($s['name']); ?>&background=<?php echo $s['role'] === 'trimax' ? '1a1a2e' : '6366f1'; ?>&color=fff"
                                                                             alt="">
                                                                         <div>
-                                                                            <strong>{{ $s['name'] }}</strong>
-                                                                            @if ($s['role'] === 'consultor' && $s['sedes_count'] > 0)
+                                                                            <strong><?php echo $s['name']; ?></strong>
+                                                                            <?php if($s['role'] === 'consultor' && $s['sedes_count'] > 0): ?>
                                                                                 <br><small class="text-muted"><i
                                                                                         class="mdi mdi-office-building"></i>
-                                                                                    {{ $s['sedes_count'] }} sede(s)</small>
-                                                                            @endif
+                                                                                    <?php echo $s['sedes_count']; ?> sede(s)</small>
+                                                                            <?php endif; ?>
                                                                         </div>
                                                                     </div>
                                                                 </td>
                                                                 <td>
-                                                                    @if ($s['role'] === 'consultor')
+                                                                    <?php if($s['role'] === 'consultor'): ?>
                                                                         <span class="badge badge-primary">Consultor</span>
-                                                                    @elseif($s['role'] === 'trimax')
+                                                                    <?php elseif($s['role'] === 'trimax'): ?>
                                                                         <span class="badge"
                                                                             style="background:#1a1a2e;color:#fff">TRIMAX</span>
-                                                                    @else
+                                                                    <?php else: ?>
                                                                         <span class="badge badge-info">Sede
-                                                                            {{ $s['location'] }}</span>
-                                                                    @endif
+                                                                            <?php echo $s['location']; ?></span>
+                                                                    <?php endif; ?>
                                                                 </td>
                                                                 <td class="text-center"><strong
-                                                                        class="text-primary">{{ $s['total'] }}</strong>
+                                                                        class="text-primary"><?php echo $s['total']; ?></strong>
                                                                 </td>
                                                                 <td class="text-center"><span
-                                                                        class="badge badge-success">{{ $s['muy_feliz'] }}</span>
+                                                                        class="badge badge-success"><?php echo $s['muy_feliz']; ?></span>
                                                                 </td>
                                                                 <td class="text-center"><span
-                                                                        class="badge badge-info">{{ $s['feliz'] }}</span>
+                                                                        class="badge badge-info"><?php echo $s['feliz']; ?></span>
                                                                 </td>
                                                                 <td class="text-center"><span
-                                                                        class="badge badge-warning">{{ $s['insatisfecho'] }}</span>
+                                                                        class="badge badge-warning"><?php echo $s['insatisfecho']; ?></span>
                                                                 </td>
                                                                 <td class="text-center"><span
-                                                                        class="badge badge-danger">{{ $s['muy_insatisfecho'] }}</span>
+                                                                        class="badge badge-danger"><?php echo $s['muy_insatisfecho']; ?></span>
                                                                 </td>
                                                                 <td class="text-center">
                                                                     <span
-                                                                        class="text-success fw-bold">{{ number_format($s['average_experience'], 2) }}</span>
+                                                                        class="text-success fw-bold"><?php echo number_format($s['average_experience'], 2); ?></span>
                                                                 </td>
                                                                 <td class="text-center">
                                                                     <span
-                                                                        class="text-info fw-bold">{{ number_format($s['average_service'], 2) }}</span>
+                                                                        class="text-info fw-bold"><?php echo number_format($s['average_service'], 2); ?></span>
                                                                 </td>
                                                                 <td class="text-center">
-                                                                    @php $comb = $s['average_combined']; @endphp
+                                                                    <?php $comb = $s['average_combined']; ?>
                                                                     <span
-                                                                        class="badge {{ $comb >= 3.5 ? 'badge-success' : ($comb >= 2.5 ? 'badge-warning' : 'badge-danger') }} px-3 py-2"
+                                                                        class="badge <?php echo $comb >= 3.5 ? 'badge-success' : ($comb >= 2.5 ? 'badge-warning' : 'badge-danger'); ?> px-3 py-2"
                                                                         style="font-size:.85rem;">
-                                                                        ⭐ {{ number_format($comb, 2) }}
+                                                                        ⭐ <?php echo number_format($comb, 2); ?>
+
                                                                     </span>
                                                                 </td>
                                                                 <td>
-                                                                    @if ($s['total'] > 0)
-                                                                        @php
+                                                                    <?php if($s['total'] > 0): ?>
+                                                                        <?php
                                                                             $t = $s['total'];
                                                                             $p1 = round(($s['muy_feliz'] / $t) * 100);
                                                                             $p2 = round(($s['feliz'] / $t) * 100);
@@ -351,52 +351,52 @@
                                                                             $p4 = round(
                                                                                 ($s['muy_insatisfecho'] / $t) * 100,
                                                                             );
-                                                                        @endphp
+                                                                        ?>
                                                                         <div class="progress"
                                                                             style="height:22px;border-radius:4px;">
-                                                                            @if ($p1 > 0)
+                                                                            <?php if($p1 > 0): ?>
                                                                                 <div class="bg-success progress-bar"
-                                                                                    style="width:{{ $p1 }}%"
-                                                                                    title="Muy Feliz {{ $p1 }}%">
-                                                                                    {{ $p1 > 10 ? $p1 . '%' : '' }}</div>
-                                                                            @endif
-                                                                            @if ($p2 > 0)
+                                                                                    style="width:<?php echo $p1; ?>%"
+                                                                                    title="Muy Feliz <?php echo $p1; ?>%">
+                                                                                    <?php echo $p1 > 10 ? $p1 . '%' : ''; ?></div>
+                                                                            <?php endif; ?>
+                                                                            <?php if($p2 > 0): ?>
                                                                                 <div class="bg-info progress-bar"
-                                                                                    style="width:{{ $p2 }}%"
-                                                                                    title="Feliz {{ $p2 }}%">
-                                                                                    {{ $p2 > 10 ? $p2 . '%' : '' }}</div>
-                                                                            @endif
-                                                                            @if ($p3 > 0)
+                                                                                    style="width:<?php echo $p2; ?>%"
+                                                                                    title="Feliz <?php echo $p2; ?>%">
+                                                                                    <?php echo $p2 > 10 ? $p2 . '%' : ''; ?></div>
+                                                                            <?php endif; ?>
+                                                                            <?php if($p3 > 0): ?>
                                                                                 <div class="bg-warning progress-bar"
-                                                                                    style="width:{{ $p3 }}%"
-                                                                                    title="Insatisfecho {{ $p3 }}%">
-                                                                                    {{ $p3 > 10 ? $p3 . '%' : '' }}</div>
-                                                                            @endif
-                                                                            @if ($p4 > 0)
+                                                                                    style="width:<?php echo $p3; ?>%"
+                                                                                    title="Insatisfecho <?php echo $p3; ?>%">
+                                                                                    <?php echo $p3 > 10 ? $p3 . '%' : ''; ?></div>
+                                                                            <?php endif; ?>
+                                                                            <?php if($p4 > 0): ?>
                                                                                 <div class="bg-danger progress-bar"
-                                                                                    style="width:{{ $p4 }}%"
-                                                                                    title="Muy Insatisfecho {{ $p4 }}%">
-                                                                                    {{ $p4 > 10 ? $p4 . '%' : '' }}</div>
-                                                                            @endif
+                                                                                    style="width:<?php echo $p4; ?>%"
+                                                                                    title="Muy Insatisfecho <?php echo $p4; ?>%">
+                                                                                    <?php echo $p4 > 10 ? $p4 . '%' : ''; ?></div>
+                                                                            <?php endif; ?>
                                                                         </div>
-                                                                    @else
+                                                                    <?php else: ?>
                                                                         <small class="text-muted">Sin encuestas</small>
-                                                                    @endif
+                                                                    <?php endif; ?>
                                                                 </td>
                                                             </tr>
-                                                        @empty
+                                                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                                                             <tr>
                                                                 <td colspan="11" class="py-4 text-muted text-center">No
                                                                     hay datos disponibles</td>
                                                             </tr>
-                                                        @endforelse
+                                                        <?php endif; ?>
                                                     </tbody>
                                                 </table>
                                             </div>
                                         </div>
                                     </div>
 
-                                    {{-- Encuestas recientes --}}
+                                    
                                     <div class="grid-margin card">
                                         <div class="card-body">
                                             <h4 class="mb-4 card-title"><i
@@ -418,71 +418,73 @@
                                                         </tr>
                                                     </thead>
                                                     <tbody>
-                                                        @foreach ($recentSurveys as $sv)
-                                                            @php $comb = round(($sv->experience_rating + $sv->service_quality_rating)/2, 2); @endphp
-                                                            <tr class="survey-row" data-survey-id="{{ $sv->id }}"
+                                                        <?php $__currentLoopData = $recentSurveys; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $sv): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                                            <?php $comb = round(($sv->experience_rating + $sv->service_quality_rating)/2, 2); ?>
+                                                            <tr class="survey-row" data-survey-id="<?php echo $sv->id; ?>"
                                                                 style="cursor:pointer;"
                                                                 title="Clic para ver detalle completo">
-                                                                <td><small class="text-muted">#{{ $sv->id }}</small>
+                                                                <td><small class="text-muted">#<?php echo $sv->id; ?></small>
                                                                 </td>
                                                                 <td>
                                                                     <small
-                                                                        class="text-muted">{{ $sv->created_at->format('d/m/Y') }}</small><br>
-                                                                    <small>{{ $sv->created_at->format('H:i') }}</small>
+                                                                        class="text-muted"><?php echo $sv->created_at->format('d/m/Y'); ?></small><br>
+                                                                    <small><?php echo $sv->created_at->format('H:i'); ?></small>
                                                                 </td>
                                                                 <td>
-                                                                    @if ($sv->client_name)
+                                                                    <?php if($sv->client_name): ?>
                                                                         <div class="d-flex align-items-center">
                                                                             <img class="me-2 rounded-circle img-xs"
-                                                                                src="https://ui-avatars.com/api/?name={{ urlencode($sv->client_name) }}&background=10b981&color=fff"
+                                                                                src="https://ui-avatars.com/api/?name=<?php echo urlencode($sv->client_name); ?>&background=10b981&color=fff"
                                                                                 alt="">
-                                                                            <strong>{{ $sv->client_name }}</strong>
+                                                                            <strong><?php echo $sv->client_name; ?></strong>
                                                                         </div>
-                                                                    @else
+                                                                    <?php else: ?>
                                                                         <span class="text-muted"><i
                                                                                 class="mdi mdi-account-off"></i>
                                                                             Anónimo</span>
-                                                                    @endif
+                                                                    <?php endif; ?>
                                                                 </td>
                                                                 <td>
-                                                                    <strong>{{ $sv->userMarketing->name }}</strong><br>
+                                                                    <strong><?php echo $sv->userMarketing->name; ?></strong><br>
                                                                     <small class="text-muted">
-                                                                        @if ($sv->userMarketing->role === 'consultor')
+                                                                        <?php if($sv->userMarketing->role === 'consultor'): ?>
                                                                             Consultor
-                                                                        @elseif($sv->userMarketing->role === 'trimax')
+                                                                        <?php elseif($sv->userMarketing->role === 'trimax'): ?>
                                                                             TRIMAX General
-                                                                        @else
-                                                                            Sede {{ $sv->userMarketing->location }}
-                                                                        @endif
+                                                                        <?php else: ?>
+                                                                            Sede <?php echo $sv->userMarketing->location; ?>
+
+                                                                        <?php endif; ?>
                                                                     </small>
                                                                 </td>
                                                                 <td class="text-center">
-                                                                    @include(
+                                                                    <?php echo $__env->make(
                                                                         'marketing.dashboard._rating_badge',
                                                                         ['rating' => $sv->experience_rating]
-                                                                    )
+                                                                    , array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
                                                                 </td>
                                                                 <td class="text-center">
-                                                                    @include(
+                                                                    <?php echo $__env->make(
                                                                         'marketing.dashboard._rating_badge',
                                                                         ['rating' => $sv->service_quality_rating]
-                                                                    )
+                                                                    , array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
                                                                 </td>
                                                                 <td class="text-center">
                                                                     <span
-                                                                        class="badge {{ $comb >= 3.5 ? 'badge-success' : ($comb >= 2.5 ? 'badge-warning' : 'badge-danger') }}">
-                                                                        {{ number_format($comb, 2) }}
+                                                                        class="badge <?php echo $comb >= 3.5 ? 'badge-success' : ($comb >= 2.5 ? 'badge-warning' : 'badge-danger'); ?>">
+                                                                        <?php echo number_format($comb, 2); ?>
+
                                                                     </span>
                                                                 </td>
                                                                 <td>
-                                                                    @if ($sv->comments)
-                                                                        <small>{{ Str::limit($sv->comments, 45) }}</small>
-                                                                    @else
+                                                                    <?php if($sv->comments): ?>
+                                                                        <small><?php echo Str::limit($sv->comments, 45); ?></small>
+                                                                    <?php else: ?>
                                                                         <small class="text-muted">—</small>
-                                                                    @endif
+                                                                    <?php endif; ?>
                                                                 </td>
                                                             </tr>
-                                                        @endforeach
+                                                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                                     </tbody>
                                                 </table>
                                             </div>
@@ -490,79 +492,85 @@
                                     </div>
                                 </div>
 
-                                {{-- ══ TAB: POR ZONA ══ --}}
+                                
                                 <div class="tab-pane fade" id="tab-zona" role="tabpanel">
-                                    @php
+                                    <?php
                                         $sedeStats = $userStats->where('role', 'sede');
                                         $zonas = $sedeStats->groupBy('location');
-                                    @endphp
+                                    ?>
                                     <div class="row">
-                                        @foreach ($zonas as $loc => $sedes)
-                                            @php
+                                        <?php $__currentLoopData = $zonas; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $loc => $sedes): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                            <?php
                                                 $zt = $sedes->sum('total');
                                                 $zavg = $sedes->avg('average_combined');
-                                            @endphp
+                                            ?>
                                             <div class="grid-margin col-xl-4 col-lg-6 col-md-6 stretch-card">
                                                 <div class="card">
                                                     <div class="card-body">
                                                         <div class="d-flex align-items-start justify-content-between mb-3">
                                                             <h5 class="mb-0 card-title"><i
-                                                                    class="me-1 text-primary mdi mdi-map-marker"></i>{{ $loc }}
+                                                                    class="me-1 text-primary mdi mdi-map-marker"></i><?php echo $loc; ?>
+
                                                             </h5>
-                                                            <span class="badge badge-primary">{{ $sedes->count() }}
+                                                            <span class="badge badge-primary"><?php echo $sedes->count(); ?>
+
                                                                 sede(s)</span>
                                                         </div>
                                                         <div class="mb-3 text-center row">
                                                             <div class="col-6">
-                                                                <h3 class="mb-0 rate-percentage">{{ $zt }}</h3>
+                                                                <h3 class="mb-0 rate-percentage"><?php echo $zt; ?></h3>
                                                                 <p class="mb-0 statistics-title">Encuestas</p>
                                                             </div>
                                                             <div class="col-6">
                                                                 <h3 class="mb-0 rate-percentage">
-                                                                    {{ number_format($zavg, 2) }}</h3>
+                                                                    <?php echo number_format($zavg, 2); ?></h3>
                                                                 <p class="mb-0 statistics-title">Promedio ⭐</p>
                                                             </div>
                                                         </div>
-                                                        @if ($zt > 0)
-                                                            @php
+                                                        <?php if($zt > 0): ?>
+                                                            <?php
                                                                 $zmf = $sedes->sum('muy_feliz');
                                                                 $zf = $sedes->sum('feliz');
                                                                 $zi = $sedes->sum('insatisfecho');
                                                                 $zmi = $sedes->sum('muy_insatisfecho');
-                                                            @endphp
+                                                            ?>
                                                             <div class="progress" style="height:22px;">
-                                                                @if ($zmf > 0)
+                                                                <?php if($zmf > 0): ?>
                                                                     <div class="bg-success progress-bar"
-                                                                        style="width:{{ round(($zmf / $zt) * 100) }}%">
-                                                                        {{ round(($zmf / $zt) * 100) > 10 ? round(($zmf / $zt) * 100) . '%' : '' }}
+                                                                        style="width:<?php echo round(($zmf / $zt) * 100); ?>%">
+                                                                        <?php echo round(($zmf / $zt) * 100) > 10 ? round(($zmf / $zt) * 100) . '%' : ''; ?>
+
                                                                     </div>
-                                                                @endif
-                                                                @if ($zf > 0)
+                                                                <?php endif; ?>
+                                                                <?php if($zf > 0): ?>
                                                                     <div class="bg-info progress-bar"
-                                                                        style="width:{{ round(($zf / $zt) * 100) }}%">
-                                                                        {{ round(($zf / $zt) * 100) > 10 ? round(($zf / $zt) * 100) . '%' : '' }}
+                                                                        style="width:<?php echo round(($zf / $zt) * 100); ?>%">
+                                                                        <?php echo round(($zf / $zt) * 100) > 10 ? round(($zf / $zt) * 100) . '%' : ''; ?>
+
                                                                     </div>
-                                                                @endif
-                                                                @if ($zi > 0)
+                                                                <?php endif; ?>
+                                                                <?php if($zi > 0): ?>
                                                                     <div class="bg-warning progress-bar"
-                                                                        style="width:{{ round(($zi / $zt) * 100) }}%">
-                                                                        {{ round(($zi / $zt) * 100) > 10 ? round(($zi / $zt) * 100) . '%' : '' }}
+                                                                        style="width:<?php echo round(($zi / $zt) * 100); ?>%">
+                                                                        <?php echo round(($zi / $zt) * 100) > 10 ? round(($zi / $zt) * 100) . '%' : ''; ?>
+
                                                                     </div>
-                                                                @endif
-                                                                @if ($zmi > 0)
+                                                                <?php endif; ?>
+                                                                <?php if($zmi > 0): ?>
                                                                     <div class="bg-danger progress-bar"
-                                                                        style="width:{{ round(($zmi / $zt) * 100) }}%">
-                                                                        {{ round(($zmi / $zt) * 100) > 10 ? round(($zmi / $zt) * 100) . '%' : '' }}
+                                                                        style="width:<?php echo round(($zmi / $zt) * 100); ?>%">
+                                                                        <?php echo round(($zmi / $zt) * 100) > 10 ? round(($zmi / $zt) * 100) . '%' : ''; ?>
+
                                                                     </div>
-                                                                @endif
+                                                                <?php endif; ?>
                                                             </div>
-                                                        @endif
+                                                        <?php endif; ?>
                                                     </div>
                                                 </div>
                                             </div>
-                                        @endforeach
+                                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                     </div>
-                                    @if ($zonas->count() > 1)
+                                    <?php if($zonas->count() > 1): ?>
                                         <div class="grid-margin card">
                                             <div class="card-body">
                                                 <h5 class="mb-3 card-title"><i
@@ -571,16 +579,16 @@
                                                 <canvas id="chartZona" height="80"></canvas>
                                             </div>
                                         </div>
-                                    @endif
+                                    <?php endif; ?>
                                 </div>
 
-                                {{-- ══ TAB: RECONOCIMIENTOS ══ --}}
+                                
                                 <div class="tab-pane fade" id="tab-reconocimientos" role="tabpanel">
-                                    @php
+                                    <?php
                                         $personal = $userStats->whereNotIn('role', ['trimax'])->where('total', '>', 0);
                                         $topRated = $personal->sortByDesc('average_combined')->take(3)->values();
                                         $mostSurveys = $personal->sortByDesc('total')->take(3)->values();
-                                    @endphp
+                                    ?>
                                     <div class="row">
                                         <div class="grid-margin col-lg-6 stretch-card">
                                             <div class="card">
@@ -588,28 +596,30 @@
                                                     <h4 class="mb-4 card-title"><i
                                                             class="me-2 text-warning mdi mdi-trophy"></i>Mejor Promedio
                                                         Combinado</h4>
-                                                    @forelse($topRated as $i => $u)
+                                                    <?php $__empty_1 = true; $__currentLoopData = $topRated; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $i => $u): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                                                         <div class="d-flex align-items-center py-3 border-bottom">
                                                             <span class="me-3"
-                                                                style="font-size:2rem">{{ ['🥇', '🥈', '🥉'][$i] ?? '#' . ($i + 1) }}</span>
+                                                                style="font-size:2rem"><?php echo ['🥇', '🥈', '🥉'][$i] ?? '#' . ($i + 1); ?></span>
                                                             <div class="flex-grow-1">
-                                                                <h6 class="mb-1">{{ $u['name'] }}</h6>
+                                                                <h6 class="mb-1"><?php echo $u['name']; ?></h6>
                                                                 <div class="d-flex flex-wrap gap-2">
                                                                     <span class="badge badge-success">⭐
-                                                                        {{ number_format($u['average_combined'], 2) }}
+                                                                        <?php echo number_format($u['average_combined'], 2); ?>
+
                                                                         combinado</span>
                                                                     <small class="text-muted">Exp:
-                                                                        {{ number_format($u['average_experience'], 2) }} |
+                                                                        <?php echo number_format($u['average_experience'], 2); ?> |
                                                                         Atc:
-                                                                        {{ number_format($u['average_service'], 2) }}</small>
-                                                                    <small class="text-muted">{{ $u['total'] }}
+                                                                        <?php echo number_format($u['average_service'], 2); ?></small>
+                                                                    <small class="text-muted"><?php echo $u['total']; ?>
+
                                                                         encuestas</small>
                                                                 </div>
                                                             </div>
                                                         </div>
-                                                    @empty
+                                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                                                         <p class="py-4 text-muted text-center">Sin datos suficientes</p>
-                                                    @endforelse
+                                                    <?php endif; ?>
                                                 </div>
                                             </div>
                                         </div>
@@ -619,34 +629,35 @@
                                                     <h4 class="mb-4 card-title"><i
                                                             class="me-2 text-primary mdi mdi-chart-line"></i>Más Evaluados
                                                     </h4>
-                                                    @forelse($mostSurveys as $i => $u)
+                                                    <?php $__empty_1 = true; $__currentLoopData = $mostSurveys; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $i => $u): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                                                         <div class="mb-3 card"
                                                             style="background:linear-gradient(135deg,#667eea,#764ba2)">
                                                             <div
                                                                 class="d-flex align-items-center justify-content-between text-white card-body">
                                                                 <div>
-                                                                    <h6 class="mb-1 text-white">{{ $u['name'] }}</h6>
+                                                                    <h6 class="mb-1 text-white"><?php echo $u['name']; ?></h6>
                                                                     <p class="opacity-75 mb-0" style="font-size:.8rem">
-                                                                        ⭐ {{ number_format($u['average_combined'], 2) }}
+                                                                        ⭐ <?php echo number_format($u['average_combined'], 2); ?>
+
                                                                         promedio combinado
                                                                     </p>
                                                                 </div>
                                                                 <div class="text-end">
-                                                                    <h2 class="mb-0 text-white">{{ $u['total'] }}</h2>
+                                                                    <h2 class="mb-0 text-white"><?php echo $u['total']; ?></h2>
                                                                     <small class="opacity-75">encuestas</small>
                                                                 </div>
                                                             </div>
                                                         </div>
-                                                    @empty
+                                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                                                         <p class="py-4 text-muted text-center">Sin datos suficientes</p>
-                                                    @endforelse
+                                                    <?php endif; ?>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
 
-                                {{-- ══ TAB: TENDENCIAS ══ --}}
+                                
                                 <div class="tab-pane fade" id="tab-tendencias" role="tabpanel">
                                     <div class="grid-margin card">
                                         <div class="card-body">
@@ -654,13 +665,13 @@
                                                     class="me-2 text-info mdi mdi-chart-timeline"></i>Evolución Diaria</h5>
                                             <p class="mb-3 text-muted small">Promedio de experiencia, atención y combinado
                                                 por día</p>
-                                            @if ($dailyTrend->count() > 0)
+                                            <?php if($dailyTrend->count() > 0): ?>
                                                 <canvas id="chartTrend" height="80"></canvas>
-                                            @else
+                                            <?php else: ?>
                                                 <div class="py-5 text-muted text-center"><i
                                                         class="d-block mb-2 mdi mdi-chart-line mdi-48px"></i>Sin datos en
                                                     el período seleccionado</div>
-                                            @endif
+                                            <?php endif; ?>
                                         </div>
                                     </div>
                                     <div class="grid-margin card">
@@ -668,18 +679,18 @@
                                             <h5 class="mb-1 card-title"><i
                                                     class="me-2 text-primary mdi mdi-chart-bar"></i>Volumen diario de
                                                 encuestas</h5>
-                                            @if ($dailyTrend->count() > 0)
+                                            <?php if($dailyTrend->count() > 0): ?>
                                                 <canvas id="chartVolume" height="80"></canvas>
-                                            @else
+                                            <?php else: ?>
                                                 <div class="py-4 text-muted text-center">Sin datos</div>
-                                            @endif
+                                            <?php endif; ?>
                                         </div>
                                     </div>
                                 </div>
 
-                                {{-- ══ TAB: ALERTAS ══ --}}
+                                
                                 <div class="tab-pane fade" id="tab-alertas" role="tabpanel">
-                                    @php
+                                    <?php
                                         $lowRated = $userStats
                                             ->filter(fn($u) => $u['average_combined'] < 2.5 && $u['total'] > 0)
                                             ->sortBy('average_combined');
@@ -688,9 +699,9 @@
                                                 fn($s) => $s->experience_rating <= 2 || $s->service_quality_rating <= 2,
                                             )
                                             ->take(20);
-                                    @endphp
+                                    ?>
 
-                                    @if ($lowRated->count() > 0)
+                                    <?php if($lowRated->count() > 0): ?>
                                         <div class="grid-margin card">
                                             <div class="card-body">
                                                 <div class="mb-0 border-0 alert alert-danger">
@@ -709,41 +720,42 @@
                                                                 </tr>
                                                             </thead>
                                                             <tbody>
-                                                                @foreach ($lowRated as $u)
+                                                                <?php $__currentLoopData = $lowRated; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $u): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                                                     <tr>
-                                                                        <td><strong>{{ $u['name'] }}</strong></td>
+                                                                        <td><strong><?php echo $u['name']; ?></strong></td>
                                                                         <td>
-                                                                            @if ($u['role'] === 'consultor')
+                                                                            <?php if($u['role'] === 'consultor'): ?>
                                                                                 <span
                                                                                     class="badge badge-primary">Consultor</span>
-                                                                            @elseif($u['role'] === 'trimax')
+                                                                            <?php elseif($u['role'] === 'trimax'): ?>
                                                                                 <span class="badge"
                                                                                     style="background:#1a1a2e;color:#fff">TRIMAX</span>
-                                                                            @else<span
+                                                                            <?php else: ?><span
                                                                                     class="badge badge-info">Sede</span>
-                                                                            @endif
+                                                                            <?php endif; ?>
                                                                         </td>
                                                                         <td class="text-center"><span
-                                                                                class="badge badge-danger">{{ number_format($u['average_experience'], 2) }}</span>
+                                                                                class="badge badge-danger"><?php echo number_format($u['average_experience'], 2); ?></span>
                                                                         </td>
                                                                         <td class="text-center"><span
-                                                                                class="badge badge-danger">{{ number_format($u['average_service'], 2) }}</span>
+                                                                                class="badge badge-danger"><?php echo number_format($u['average_service'], 2); ?></span>
                                                                         </td>
                                                                         <td class="text-center"><span
-                                                                                class="badge badge-danger fw-bold">{{ number_format($u['average_combined'], 2) }}</span>
+                                                                                class="badge badge-danger fw-bold"><?php echo number_format($u['average_combined'], 2); ?></span>
                                                                         </td>
                                                                         <td class="text-center">
-                                                                            {{ $u['muy_insatisfecho'] + $u['insatisfecho'] }}
+                                                                            <?php echo $u['muy_insatisfecho'] + $u['insatisfecho']; ?>
+
                                                                         </td>
                                                                     </tr>
-                                                                @endforeach
+                                                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                                             </tbody>
                                                         </table>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
-                                    @else
+                                    <?php else: ?>
                                         <div class="grid-margin card">
                                             <div class="card-body">
                                                 <div class="mb-0 border-0 alert alert-success">
@@ -753,9 +765,9 @@
                                                 </div>
                                             </div>
                                         </div>
-                                    @endif
+                                    <?php endif; ?>
 
-                                    @if ($recentBad->count() > 0)
+                                    <?php if($recentBad->count() > 0): ?>
                                         <div class="grid-margin card">
                                             <div class="card-body">
                                                 <h4 class="mb-3 card-title"><i
@@ -776,73 +788,74 @@
                                                             </tr>
                                                         </thead>
                                                         <tbody>
-                                                            @foreach ($recentBad as $sv)
+                                                            <?php $__currentLoopData = $recentBad; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $sv): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                                                 <tr class="survey-row"
-                                                                    data-survey-id="{{ $sv->id }}"
+                                                                    data-survey-id="<?php echo $sv->id; ?>"
                                                                     style="cursor:pointer;">
                                                                     <td><small
-                                                                            class="text-muted">#{{ $sv->id }}</small>
+                                                                            class="text-muted">#<?php echo $sv->id; ?></small>
                                                                     </td>
-                                                                    <td><small>{{ $sv->created_at->format('d/m H:i') }}</small>
+                                                                    <td><small><?php echo $sv->created_at->format('d/m H:i'); ?></small>
                                                                     </td>
-                                                                    <td>{{ $sv->client_name ?: 'Anónimo' }}</td>
-                                                                    <td>{{ $sv->userMarketing->name }}</td>
-                                                                    <td class="text-center">@include(
+                                                                    <td><?php echo $sv->client_name ?: 'Anónimo'; ?></td>
+                                                                    <td><?php echo $sv->userMarketing->name; ?></td>
+                                                                    <td class="text-center"><?php echo $__env->make(
                                                                         'marketing.dashboard._rating_badge',
                                                                         ['rating' => $sv->experience_rating]
-                                                                    )
+                                                                    , array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
                                                                     </td>
-                                                                    <td class="text-center">@include(
+                                                                    <td class="text-center"><?php echo $__env->make(
                                                                         'marketing.dashboard._rating_badge',
                                                                         ['rating' => $sv->service_quality_rating]
-                                                                    )
+                                                                    , array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
                                                                     </td>
-                                                                    <td><small>{{ Str::limit($sv->comments ?? '—', 50) }}</small>
+                                                                    <td><small><?php echo Str::limit($sv->comments ?? '—', 50); ?></small>
                                                                     </td>
                                                                 </tr>
-                                                            @endforeach
+                                                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                                         </tbody>
                                                     </table>
                                                 </div>
                                             </div>
                                         </div>
-                                    @endif
+                                    <?php endif; ?>
                                 </div>
 
-                                {{-- ══ TAB: TODAS LAS ENCUESTAS ══ --}}
+                                
                                 <div class="tab-pane fade" id="tab-encuestas" role="tabpanel">
 
-                                    {{-- Filtros inline del tab --}}
+                                    
                                     <div class="grid-margin card">
                                         <div class="py-3 card-body">
                                             <div class="align-items-end row g-2">
                                                 <div class="col-md-3">
                                                     <label class="mb-1 form-label small">Fecha Inicio</label>
                                                     <input type="date" id="enc-start"
-                                                        class="form-control form-control-sm" value="{{ $startDate }}">
+                                                        class="form-control form-control-sm" value="<?php echo $startDate; ?>">
                                                 </div>
                                                 <div class="col-md-3">
                                                     <label class="mb-1 form-label small">Fecha Fin</label>
                                                     <input type="date" id="enc-end"
-                                                        class="form-control form-control-sm" value="{{ $endDate }}">
+                                                        class="form-control form-control-sm" value="<?php echo $endDate; ?>">
                                                 </div>
                                                 <div class="col-md-3">
                                                     <label class="mb-1 form-label small">Evaluado</label>
                                                     <select id="enc-user" class="form-select-sm form-select">
                                                         <option value="">Todos</option>
-                                                        @foreach ($users as $u)
-                                                            <option value="{{ $u->id }}"
-                                                                {{ $userId == $u->id ? 'selected' : '' }}>
-                                                                {{ $u->name }}
-                                                                @if ($u->role === 'consultor')
+                                                        <?php $__currentLoopData = $users; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $u): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                                            <option value="<?php echo $u->id; ?>"
+                                                                <?php echo $userId == $u->id ? 'selected' : ''; ?>>
+                                                                <?php echo $u->name; ?>
+
+                                                                <?php if($u->role === 'consultor'): ?>
                                                                     (Consultor)
-                                                                @elseif($u->role === 'trimax')
+                                                                <?php elseif($u->role === 'trimax'): ?>
                                                                     (TRIMAX)
-                                                                @else
+                                                                <?php else: ?>
                                                                     (Sede)
-                                                                @endif
+                                                                <?php endif; ?>
                                                             </option>
-                                                        @endforeach
+                                                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                                     </select>
                                                 </div>
                                                 <div class="col-md-2">
@@ -869,7 +882,7 @@
                                         </div>
                                     </div>
 
-                                    {{-- Tabla --}}
+                                    
                                     <div class="grid-margin card">
                                         <div class="card-body">
                                             <div class="d-flex align-items-center justify-content-between mb-3">
@@ -882,13 +895,13 @@
                                                     en la fila para ver detalle</small>
                                             </div>
 
-                                            {{-- Spinner --}}
+                                            
                                             <div id="enc-loading" class="py-5 text-center" style="display:none;">
                                                 <div class="spinner-border text-primary" role="status"></div>
                                                 <p class="mt-2 text-muted small">Cargando encuestas...</p>
                                             </div>
 
-                                            {{-- Tabla resultado --}}
+                                            
                                             <div class="table-responsive" id="enc-table-wrapper">
                                                 <table class="table table-hover" id="enc-table">
                                                     <thead>
@@ -917,7 +930,7 @@
                                                 </table>
                                             </div>
 
-                                            {{-- Paginación --}}
+                                            
                                             <div id="enc-pagination"
                                                 class="d-flex align-items-center justify-content-between mt-3"
                                                 style="display:none!important;">
@@ -928,7 +941,7 @@
                                     </div>
                                 </div>
 
-                            </div>{{-- /tab-content --}}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -936,7 +949,7 @@
         </div>
     </div>
 
-    {{-- ════════════ MODAL DETALLE ENCUESTA ════════════ --}}
+    
     <div class="modal fade" id="surveyDetailModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="shadow border-0 modal-content">
@@ -1061,31 +1074,31 @@
             color: #c62828;
         }
     </style>
-@endsection
+<?php $__env->stopSection(); ?>
 
-@push('scripts')
+<?php $__env->startPush('scripts'); ?>
     <script>
         // ─── DATOS PARA GRÁFICOS ────────────────────────────────────────────────
         const statsData = {
-            muy_feliz: {{ $stats['muy_feliz'] }},
-            feliz: {{ $stats['feliz'] }},
-            insatisfecho: {{ $stats['insatisfecho'] }},
-            muy_insatisfecho: {{ $stats['muy_insatisfecho'] }},
-            avg_experience: {{ $stats['average_experience'] }},
-            avg_service: {{ $stats['average_service'] }},
+            muy_feliz: <?php echo $stats['muy_feliz']; ?>,
+            feliz: <?php echo $stats['feliz']; ?>,
+            insatisfecho: <?php echo $stats['insatisfecho']; ?>,
+            muy_insatisfecho: <?php echo $stats['muy_insatisfecho']; ?>,
+            avg_experience: <?php echo $stats['average_experience']; ?>,
+            avg_service: <?php echo $stats['average_service']; ?>,
         };
 
-        const userStatsData = @json($userStats->values()->where('total', '>', 0)->take(12)->values());
+        const userStatsData = <?php echo json_encode($userStats->values()->where('total', '>', 0)->take(12)->values()) ?>;
 
-        const dailyData = @json($dailyTrend);
+        const dailyData = <?php echo json_encode($dailyTrend, 15, 512) ?>;
 
-        @php
+        <?php
             $zonas = $userStats->where('role', 'sede')->groupBy('location');
             $zonaLabels = $zonas->keys();
             $zonaAvgs = $zonas->map(fn($s) => round($s->avg('average_combined'), 2))->values();
-        @endphp
-        const zonaLabels = @json($zonaLabels);
-        const zonaAvgs = @json($zonaAvgs);
+        ?>
+        const zonaLabels = <?php echo json_encode($zonaLabels, 15, 512) ?>;
+        const zonaAvgs = <?php echo json_encode($zonaAvgs, 15, 512) ?>;
 
         // ─── HELPERS ────────────────────────────────────────────────────────────
         const COLORS = {
@@ -1432,7 +1445,7 @@
 
                     body.innerHTML = `
             <div class="p-4">
-                {{-- Evaluado --}}
+                
                 <div class="d-flex align-items-center mb-4 pb-3 border-bottom">
                     <img class="me-3 rounded-circle" width="56" height="56"
                          src="https://ui-avatars.com/api/?name=${encodeURIComponent(sv.evaluado_name)}&background=6366f1&color=fff&size=128" alt="">
@@ -1446,7 +1459,7 @@
                     </div>
                 </div>
 
-                {{-- Calificaciones --}}
+                
                 <div class="mb-4 row">
                     <div class="text-center col-4">
                         <small class="d-block mb-2 text-muted fw-bold">Experiencia</small>
@@ -1465,7 +1478,7 @@
                     </div>
                 </div>
 
-                {{-- Barra visual --}}
+                
                 <div class="mb-4">
                     <div class="d-flex justify-content-between mb-1">
                         <small class="text-muted">Distribución del promedio combinado</small>
@@ -1476,7 +1489,7 @@
                     </div>
                 </div>
 
-                {{-- Comentarios --}}
+                
                 <div>
                     <p class="mb-2 fw-bold"><i class="me-1 text-primary mdi mdi-comment-text"></i>Comentarios del cliente</p>
                     ${sv.comments
@@ -1624,4 +1637,6 @@
             loadEncuestas(1);
         });
     </script>
-@endpush
+<?php $__env->stopPush(); ?>
+
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH /var/www/resources/views/marketing/dashboard/index.blade.php ENDPATH**/ ?>
