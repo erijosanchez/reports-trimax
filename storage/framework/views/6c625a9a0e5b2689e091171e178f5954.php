@@ -1,13 +1,13 @@
-@extends('layouts.app')
 
-@section('title', 'Demanda — Asignación de Bases')
 
-@section('content')
+<?php $__env->startSection('title', 'Demanda — Asignación de Bases'); ?>
+
+<?php $__env->startSection('content'); ?>
     <div class="content-wrapper">
         <div class="row">
             <div class="col-sm-12">
 
-                {{-- HEADER --}}
+                
                 <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
                     <div>
                         <h2 class="mb-1 fw-bold">
@@ -24,21 +24,23 @@
                         <div>
                             <label class="mb-1 text-muted form-label small">Año</label>
                             <select id="anioSelect" class="form-select-sm form-select">
-                                @foreach ($aniosDisponibles as $anio)
-                                    <option value="{{ $anio }}" {{ $anio == $anioActual ? 'selected' : '' }}>
-                                        {{ $anio }}
+                                <?php $__currentLoopData = $aniosDisponibles; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $anio): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <option value="<?php echo $anio; ?>" <?php echo $anio == $anioActual ? 'selected' : ''; ?>>
+                                        <?php echo $anio; ?>
+
                                     </option>
-                                @endforeach
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </select>
                         </div>
                         <div>
                             <label class="mb-1 text-muted form-label small">Mes</label>
                             <select id="mesSelect" class="form-select-sm form-select">
-                                @foreach ($mesesNombres as $num => $nombre)
-                                    <option value="{{ $num }}" {{ $num == $mesActual ? 'selected' : '' }}>
-                                        {{ $nombre }}
+                                <?php $__currentLoopData = $mesesNombres; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $num => $nombre): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <option value="<?php echo $num; ?>" <?php echo $num == $mesActual ? 'selected' : ''; ?>>
+                                        <?php echo $nombre; ?>
+
                                     </option>
-                                @endforeach
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </select>
                         </div>
                         <div class="mt-3">
@@ -49,12 +51,10 @@
                     </div>
                 </div>
 
-                {{-- ══════════════════════════════════════════════
-                    TABS: SEMANAL / MENSUAL
-                ══════════════════════════════════════════════ --}}
+                
                 <div class="mb-4 card">
 
-                    {{-- Nav Tabs pegadas al contenido --}}
+                    
                     <ul class="px-3 pt-2 nav nav-tabs" id="demandaTabs" role="tablist"
                         style="border-bottom: 0; margin-bottom: -1px; position: relative; z-index: 1;">
                         <li class="nav-item" role="presentation">
@@ -64,8 +64,8 @@
                                     style="font-size:0.82rem; padding: 6px 14px;">
                                 <i class="me-1 text-info mdi mdi-view-week"></i>
                                 Demanda Semanal —
-                                <span id="labelMesSemanal">{{ $mesesNombres[$mesActual] }}</span>
-                                <span id="labelAnioSemanal">{{ $anioActual }}</span>
+                                <span id="labelMesSemanal"><?php echo $mesesNombres[$mesActual]; ?></span>
+                                <span id="labelAnioSemanal"><?php echo $anioActual; ?></span>
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
@@ -75,20 +75,20 @@
                                     style="font-size:0.82rem; padding: 6px 14px;">
                                 <i class="me-1 text-primary mdi mdi-calendar-month"></i>
                                 Demanda Mensual —
-                                <span id="labelAnioMensual">{{ $anioActual }}</span>
+                                <span id="labelAnioMensual"><?php echo $anioActual; ?></span>
                             </button>
                         </li>
                     </ul>
 
                     <div class="tab-content card-body" style="border-top: 1px solid #dee2e6; padding-top: 16px;">
 
-                        {{-- ── TAB 1: SEMANAL ── --}}
+                        
                         <div class="tab-pane fade show active" id="pane-semanal" role="tabpanel">
 
                             <div class="d-flex align-items-center gap-2 mb-3">
-                                @foreach (['A' => 'success', 'B' => 'primary', 'C' => 'warning', 'D' => 'secondary'] as $cat => $color)
-                                    <span class="badge bg-{{ $color }}">{{ $cat }}</span>
-                                @endforeach
+                                <?php $__currentLoopData = ['A' => 'success', 'B' => 'primary', 'C' => 'warning', 'D' => 'secondary']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $cat => $color): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <span class="badge bg-<?php echo $color; ?>"><?php echo $cat; ?></span>
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                 <small class="align-self-center text-muted">= clasificación ABC</small>
                                 <button onclick="exportarExcel('tablaSemanal', 'semanal')"
                                         class="ms-auto btn-outline-success btn btn-sm"
@@ -113,69 +113,69 @@
                                         </tr>
                                     </thead>
                                     <tbody id="bodySemanal">
-                                        @forelse($semanal['productos'] as $p)
-                                            @php
+                                        <?php $__empty_1 = true; $__currentLoopData = $semanal['productos']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $p): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                                            <?php
                                                 $catColor = match ($p['categoria']) {
                                                     'A' => 'success',
                                                     'B' => 'primary',
                                                     'C' => 'warning',
                                                     default => 'secondary',
                                                 };
-                                            @endphp
+                                            ?>
                                             <tr>
                                                 <td class="text-center">
-                                                    <span class="badge bg-{{ $catColor }}">{{ $p['categoria'] }}</span>
+                                                    <span class="badge bg-<?php echo $catColor; ?>"><?php echo $p['categoria']; ?></span>
                                                 </td>
-                                                <td class="small">{{ $p['codigo'] }}</td>
-                                                <td class="small">{{ $p['descripcion'] }}</td>
-                                                @for ($s = 1; $s <= 5; $s++)
-                                                    <td class="text-center small">{{ $p['semanas_fmt'][$s] ?? '0' }}</td>
-                                                @endfor
-                                                <td class="text-center fw-bold">{{ $p['total_fmt'] }}</td>
+                                                <td class="small"><?php echo $p['codigo']; ?></td>
+                                                <td class="small"><?php echo $p['descripcion']; ?></td>
+                                                <?php for($s = 1; $s <= 5; $s++): ?>
+                                                    <td class="text-center small"><?php echo $p['semanas_fmt'][$s] ?? '0'; ?></td>
+                                                <?php endfor; ?>
+                                                <td class="text-center fw-bold"><?php echo $p['total_fmt']; ?></td>
                                             </tr>
-                                        @empty
+                                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                                             <tr>
                                                 <td colspan="9" class="py-4 text-muted text-center">
                                                     <i class="d-block mb-2 mdi mdi-inbox mdi-48px"></i>
                                                     No hay datos para este período
                                                 </td>
                                             </tr>
-                                        @endforelse
+                                        <?php endif; ?>
                                     </tbody>
                                 </table>
                             </div>
 
-                            {{-- Leyenda ABC Semanal --}}
+                            
                             <div class="mt-3 p-3 rounded" style="background:#f8f9fa; border:1px solid #dee2e6;">
                                 <p class="mb-2 text-muted small fw-bold">
                                     <i class="me-1 mdi-information-outline mdi"></i>
                                     Clasificación ABC (Pareto) — de mayor a menor
                                 </p>
                                 <div class="d-flex flex-wrap gap-3" id="rankingSemanal">
-                                    @php
+                                    <?php
                                         $categorias  = collect($semanal['productos'])->groupBy('categoria');
                                         $totalGenSem = $semanal['total_general'];
                                         $colors = ['A' => 'success', 'B' => 'primary', 'C' => 'warning', 'D' => 'secondary'];
-                                    @endphp
-                                    @foreach (['A', 'B', 'C', 'D'] as $cat)
-                                        @php
+                                    ?>
+                                    <?php $__currentLoopData = ['A', 'B', 'C', 'D']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $cat): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                        <?php
                                             $items  = $categorias[$cat] ?? collect();
                                             $sumCat = $items->sum('total');
                                             $pct    = $totalGenSem > 0 ? round(($sumCat / $totalGenSem) * 100) : 0;
-                                        @endphp
+                                        ?>
                                         <div class="d-flex align-items-center gap-2">
-                                            <span class="badge bg-{{ $colors[$cat] }}">{{ $cat }}</span>
+                                            <span class="badge bg-<?php echo $colors[$cat]; ?>"><?php echo $cat; ?></span>
                                             <span class="text-muted small">
-                                                {{ $items->count() }} ítems · {{ $sumCat }} uds · {{ $pct }}%
+                                                <?php echo $items->count(); ?> ítems · <?php echo $sumCat; ?> uds · <?php echo $pct; ?>%
                                             </span>
                                         </div>
-                                    @endforeach
-                                    <div class="ms-auto small fw-bold">Total: {{ $totalGenSem }} uds</div>
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                    <div class="ms-auto small fw-bold">Total: <?php echo $totalGenSem; ?> uds</div>
                                 </div>
                             </div>
                         </div>
 
-                        {{-- ── TAB 2: MENSUAL ── --}}
+                        
                         <div class="tab-pane fade" id="pane-mensual" role="tabpanel">
 
                             <div class="d-flex justify-content-end mb-3">
@@ -193,76 +193,76 @@
                                             <th class="text-center" style="width:40px">Cat.</th>
                                             <th style="min-width:120px">Código Base</th>
                                             <th style="min-width:200px">Descripción</th>
-                                            @foreach ($mensual['meses_labels'] as $m)
-                                                <th class="text-center small">{{ Str::upper(substr($m, 0, 3)) }}</th>
-                                            @endforeach
+                                            <?php $__currentLoopData = $mensual['meses_labels']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $m): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                                <th class="text-center small"><?php echo Str::upper(substr($m, 0, 3)); ?></th>
+                                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                             <th class="text-center fw-bold">Total Acum.</th>
                                         </tr>
                                     </thead>
                                     <tbody id="bodyMensual">
-                                        @forelse($mensual['productos'] as $p)
-                                            @php
+                                        <?php $__empty_1 = true; $__currentLoopData = $mensual['productos']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $p): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                                            <?php
                                                 $catColor = match ($p['categoria']) {
                                                     'A' => 'success',
                                                     'B' => 'primary',
                                                     'C' => 'warning',
                                                     default => 'secondary',
                                                 };
-                                            @endphp
+                                            ?>
                                             <tr>
                                                 <td class="text-center">
-                                                    <span class="badge bg-{{ $catColor }}">{{ $p['categoria'] }}</span>
+                                                    <span class="badge bg-<?php echo $catColor; ?>"><?php echo $p['categoria']; ?></span>
                                                 </td>
-                                                <td class="small">{{ $p['codigo'] }}</td>
-                                                <td class="small">{{ $p['descripcion'] }}</td>
-                                                @for ($m = 1; $m <= 12; $m++)
-                                                    <td class="text-center small">{{ $p['meses_fmt'][$m] ?? '0' }}</td>
-                                                @endfor
-                                                <td class="text-center fw-bold">{{ $p['total_fmt'] }}</td>
+                                                <td class="small"><?php echo $p['codigo']; ?></td>
+                                                <td class="small"><?php echo $p['descripcion']; ?></td>
+                                                <?php for($m = 1; $m <= 12; $m++): ?>
+                                                    <td class="text-center small"><?php echo $p['meses_fmt'][$m] ?? '0'; ?></td>
+                                                <?php endfor; ?>
+                                                <td class="text-center fw-bold"><?php echo $p['total_fmt']; ?></td>
                                             </tr>
-                                        @empty
+                                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                                             <tr>
                                                 <td colspan="16" class="py-4 text-muted text-center">
                                                     <i class="d-block mb-2 mdi mdi-inbox mdi-48px"></i>
                                                     No hay datos para este año
                                                 </td>
                                             </tr>
-                                        @endforelse
+                                        <?php endif; ?>
                                     </tbody>
                                 </table>
                             </div>
 
-                            {{-- Leyenda ABC Mensual --}}
+                            
                             <div class="mt-3 p-3 rounded" style="background:#f8f9fa; border:1px solid #dee2e6;">
                                 <p class="mb-2 text-muted small fw-bold">
                                     <i class="me-1 mdi-information-outline mdi"></i>
                                     Clasificación ABC (Pareto) — de mayor a menor
                                 </p>
                                 <div class="d-flex flex-wrap gap-3" id="rankingMensual">
-                                    @php
+                                    <?php
                                         $categoriasMen = collect($mensual['productos'])->groupBy('categoria');
                                         $totalGenMen   = $mensual['total_general'];
-                                    @endphp
-                                    @foreach (['A', 'B', 'C', 'D'] as $cat)
-                                        @php
+                                    ?>
+                                    <?php $__currentLoopData = ['A', 'B', 'C', 'D']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $cat): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                        <?php
                                             $items  = $categoriasMen[$cat] ?? collect();
                                             $sumCat = $items->sum('total');
                                             $pct    = $totalGenMen > 0 ? round(($sumCat / $totalGenMen) * 100) : 0;
-                                        @endphp
+                                        ?>
                                         <div class="d-flex align-items-center gap-2">
-                                            <span class="badge bg-{{ $colors[$cat] }}">{{ $cat }}</span>
+                                            <span class="badge bg-<?php echo $colors[$cat]; ?>"><?php echo $cat; ?></span>
                                             <span class="text-muted small">
-                                                {{ $items->count() }} ítems · {{ $sumCat }} uds · {{ $pct }}%
+                                                <?php echo $items->count(); ?> ítems · <?php echo $sumCat; ?> uds · <?php echo $pct; ?>%
                                             </span>
                                         </div>
-                                    @endforeach
-                                    <div class="ms-auto small fw-bold">Total: {{ $totalGenMen }} uds</div>
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                    <div class="ms-auto small fw-bold">Total: <?php echo $totalGenMen; ?> uds</div>
                                 </div>
                             </div>
                         </div>
 
-                    </div>{{-- /.tab-content --}}
-                </div>{{-- /.card --}}
+                    </div>
+                </div>
 
             </div>
         </div>
@@ -344,7 +344,7 @@
             const mes  = document.getElementById('mesSelect').value;
 
             try {
-                const res  = await fetch(`{{ route('produccion.asignacion-bases.demanda-semanal-data') }}?anio=${anio}&mes=${mes}`);
+                const res  = await fetch(`<?php echo route('produccion.asignacion-bases.demanda-semanal-data'); ?>?anio=${anio}&mes=${mes}`);
                 const data = await res.json();
                 renderTablaSemanal(data);
 
@@ -362,7 +362,7 @@
             await actualizarSemanal();
 
             try {
-                const res  = await fetch(`{{ route('produccion.asignacion-bases.demanda-mensual-data') }}?anio=${anio}`);
+                const res  = await fetch(`<?php echo route('produccion.asignacion-bases.demanda-mensual-data'); ?>?anio=${anio}`);
                 const data = await res.json();
                 renderTablaMensual(data);
                 document.getElementById('labelAnioMensual').textContent = anio;
@@ -453,9 +453,9 @@
             btn.disabled = true;
             btn.innerHTML = '<i class="mdi mdi-loading mdi-spin"></i>';
             try {
-                await fetch('{{ route('produccion.asignacion-bases.clear-cache') }}', {
+                await fetch('<?php echo route('produccion.asignacion-bases.clear-cache'); ?>', {
                     method: 'POST',
-                    headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+                    headers: { 'X-CSRF-TOKEN': '<?php echo csrf_token(); ?>' }
                 });
                 await actualizarTodo();
             } catch (e) {
@@ -465,4 +465,5 @@
             btn.innerHTML = '<i class="mdi mdi-refresh"></i>';
         }
     </script>
-@endsection
+<?php $__env->stopSection(); ?>
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH /var/www/resources/views/produccion/asignacion-bases/demanda.blade.php ENDPATH**/ ?>

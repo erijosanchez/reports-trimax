@@ -118,7 +118,6 @@
 
     <p style="font-size:12px; color:#94a3b8; text-align:center;">
         Este correo se generó automáticamente porque se recibió una encuesta con calificación ≤ 2.<br>
-        Solo los usuarios con rol <strong>Marketing</strong> y <strong>Super Admin</strong> reciben esta alerta.
     </p>
 
 @endsection
