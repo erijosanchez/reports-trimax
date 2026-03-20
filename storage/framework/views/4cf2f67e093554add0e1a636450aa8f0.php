@@ -1,9 +1,9 @@
-{{-- resources/views/comercial/venta-cliente/evolutivo-mes.blade.php --}}
-@extends('layouts.app')
 
-@section('title', 'Venta Clientes Evolutivo - Mes')
 
-@section('content')
+
+<?php $__env->startSection('title', 'Venta Clientes Evolutivo - Mes'); ?>
+
+<?php $__env->startSection('content'); ?>
     <div class="content-wrapper">
         <div class="row">
             <div class="col-sm-12">
@@ -11,7 +11,7 @@
                     <div class="tab-content-basic tab-content">
                         <div class="tab-pane fade show active" id="overview" role="tabpanel">
 
-                            {{-- ══ HEADER ══ --}}
+                            
                             <div class="mb-4 row">
                                 <div class="col-lg-7">
                                     <h2 class="mb-1 fw-bold">
@@ -21,12 +21,12 @@
                                     <p class="mb-0 text-muted">
                                         <i class="me-1 mdi mdi-google-spreadsheet"></i>
                                         Importes mensuales por cliente &nbsp;|&nbsp;
-                                        <span id="subtituloPeriodo">{{ now()->year }}</span>
+                                        <span id="subtituloPeriodo"><?php echo now()->year; ?></span>
                                     </p>
                                 </div>
                                 <div class="d-flex align-items-center justify-content-end gap-2 mt-3 mt-lg-0 col-lg-5">
 
-                                    {{-- Selector Año --}}
+                                    
                                     <div id="wrapAnio" style="width:110px;">
                                         <label class="mb-1 text-muted form-label small">Año</label>
                                         <select id="selectAnio" class="form-select-sm form-select">
@@ -34,7 +34,7 @@
                                         </select>
                                     </div>
 
-                                    {{-- Selector Rango --}}
+                                    
                                     <div style="width:190px;">
                                         <label class="mb-1 text-muted form-label small">Rango de meses</label>
                                         <select id="selectRango" class="form-select-sm form-select">
@@ -42,7 +42,7 @@
                                         </select>
                                     </div>
 
-                                    {{-- Refresh --}}
+                                    
                                     <div style="margin-top:22px;">
                                         <button id="btnRefresh" class="btn-outline-secondary btn btn-sm"
                                             title="Limpiar caché">
@@ -52,7 +52,7 @@
                                 </div>
                             </div>
 
-                            {{-- ══ KPI CARDS ══ --}}
+                            
                             <div class="mb-4 row">
                                 <div class="mb-3 col-lg-3 col-md-6">
                                     <div class="h-100 card card-tale">
@@ -116,34 +116,9 @@
                                 </div>
                             </div>
 
-                            {{-- ══ GRÁFICOS (comentados para uso futuro) ══
-                        <div class="mb-4 row">
-                            <div class="mb-3 col-lg-8">
-                                <div class="card">
-                                    <div class="card-body">
-                                        <h4 class="mb-4 card-title">
-                                            <i class="me-2 text-primary mdi mdi-chart-bar"></i>
-                                            Venta Mensual Consolidada — <span id="tituloGrafico">{{ now()->year }}</span>
-                                        </h4>
-                                        <canvas id="chartMensual" height="90"></canvas>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="mb-3 col-lg-4">
-                                <div class="card">
-                                    <div class="card-body">
-                                        <h4 class="mb-4 card-title">
-                                            <i class="me-2 text-warning mdi mdi-trophy"></i>
-                                            Top 5 Clientes
-                                        </h4>
-                                        <canvas id="chartTop5" height="185"></canvas>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        ══ FIN GRÁFICOS --}}
+                            
 
-                            {{-- ══ TABLA ══ --}}
+                            
                             <div class="row">
                                 <div class="col-12">
                                     <div class="card">
@@ -152,7 +127,7 @@
                                                 <h4 class="mb-0 card-title">
                                                     <i class="mdi-table me-2 text-info mdi"></i>
                                                     Detalle por Cliente —
-                                                    <span id="tituloTabla">{{ now()->year }}</span>
+                                                    <span id="tituloTabla"><?php echo now()->year; ?></span>
                                                 </h4>
                                                 <div class="d-flex align-items-center gap-2">
                                                     <input type="text" id="buscador"
@@ -213,8 +188,8 @@
         // Cache de datos por año: { 2024: [...], 2025: [...] }
         const cacheData = {};
 
-        let anioActual = {{ now()->year }};
-        let mesActual = {{ now()->month }};
+        let anioActual = <?php echo now()->year; ?>;
+        let mesActual = <?php echo now()->month; ?>;
         let aniosDisp = [];
 
         // Estado del último render — para el buscador
@@ -242,7 +217,7 @@
 
         // ── Carga años y genera opciones de rango ─────────────────────────────
         async function cargarAnios() {
-            const res = await fetch('{{ route('comercial.venta-cliente.anios') }}');
+            const res = await fetch('<?php echo route('comercial.venta-cliente.anios'); ?>');
             const data = await res.json();
             aniosDisp = (data.anios || []).map(Number).sort((a, b) => b - a);
 
@@ -287,7 +262,7 @@
         // ── Fetch de un año con cache (siempre devuelve copia para no mutar) ────
         async function fetchAnio(anio) {
             if (!cacheData[anio]) {
-                const res = await fetch(`{{ route('comercial.venta-cliente.mes.data') }}?anio=${anio}`);
+                const res = await fetch(`<?php echo route('comercial.venta-cliente.mes.data'); ?>?anio=${anio}`);
                 const data = await res.json();
                 if (!data.success) throw new Error(data.message || 'Error desconocido');
                 cacheData[anio] = data.data || [];
@@ -544,10 +519,10 @@
             this.disabled = true;
             this.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
             Object.keys(cacheData).forEach(k => delete cacheData[k]);
-            await fetch('{{ route('comercial.venta-cliente.cache.clear') }}', {
+            await fetch('<?php echo route('comercial.venta-cliente.cache.clear'); ?>', {
                 method: 'POST',
                 headers: {
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'X-CSRF-TOKEN': '<?php echo csrf_token(); ?>',
                     'Content-Type': 'application/json'
                 }
             });
@@ -562,4 +537,6 @@
             await cargarDatos();
         })();
     </script>
-@endsection
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH /var/www/resources/views/comercial/venta-cliente/evolutivo-mes.blade.php ENDPATH**/ ?>

@@ -1,9 +1,9 @@
-{{-- resources/views/comercial/venta-cliente/evolutivo-mes.blade.php --}}
-@extends('layouts.app')
 
-@section('title', 'Venta Clientes Evolutivo - Mes')
 
-@section('content')
+
+<?php $__env->startSection('title', 'Venta Clientes Evolutivo - Mes'); ?>
+
+<?php $__env->startSection('content'); ?>
     <div class="content-wrapper">
         <div class="row">
             <div class="col-sm-12">
@@ -11,7 +11,7 @@
                     <div class="tab-content-basic tab-content">
                         <div class="tab-pane fade show active" id="overview" role="tabpanel">
 
-                            {{-- ══ HEADER ══ --}}
+                            
                             <div class="mb-4 row">
                                 <div class="col-lg-8">
                                     <h2 class="mb-1 fw-bold">
@@ -21,7 +21,7 @@
                                     <p class="mb-0 text-muted">
                                         <i class="me-1 mdi mdi-google-spreadsheet"></i>
                                         Importes mensuales por cliente &nbsp;|&nbsp;
-                                        <span id="subtituloPeriodo">{{ now()->year }}</span>
+                                        <span id="subtituloPeriodo"><?php echo now()->year; ?></span>
                                     </p>
                                 </div>
                                 <div class="d-flex align-items-center justify-content-end gap-2 mt-3 mt-lg-0 col-lg-4">
@@ -40,7 +40,7 @@
                                 </div>
                             </div>
 
-                            {{-- ══ KPI CARDS ══ --}}
+                            
                             <div class="mb-4 row">
                                 <div class="mb-3 col-lg-3 col-md-6">
                                     <div class="h-100 card card-tale">
@@ -104,7 +104,7 @@
                                 </div>
                             </div>
 
-                            {{-- ══ TABLA ══ --}}
+                            
                             <div class="row">
                                 <div class="col-12">
                                     <div class="card">
@@ -113,7 +113,7 @@
                                                 <h4 class="mb-0 card-title">
                                                     <i class="mdi-table me-2 text-info mdi"></i>
                                                     Detalle por Cliente —
-                                                    <span id="tituloTabla">{{ now()->year }}</span>
+                                                    <span id="tituloTabla"><?php echo now()->year; ?></span>
                                                 </h4>
                                                 <div class="d-flex align-items-center gap-2">
                                                     <input type="text" id="buscador"
@@ -186,7 +186,7 @@
         ];
 
         let todosLosClientes = [];
-        let anioActual = {{ now()->year }};
+        let anioActual = <?php echo now()->year; ?>;
 
         function fmt(n) {
             if (!n) return '<span class="text-muted">—</span>';
@@ -204,7 +204,7 @@
         }
 
         async function cargarAnios() {
-            const res  = await fetch('{{ route('comercial.venta-cliente.anios') }}');
+            const res  = await fetch('<?php echo route('comercial.venta-cliente.anios'); ?>');
             const data = await res.json();
             const sel  = document.getElementById('selectAnio');
             sel.innerHTML = '';
@@ -225,7 +225,7 @@
             document.getElementById('buscador').value = '';
 
             try {
-                const res  = await fetch(`{{ route('comercial.venta-cliente.mes.data') }}?anio=${anio}`);
+                const res  = await fetch(`<?php echo route('comercial.venta-cliente.mes.data'); ?>?anio=${anio}`);
                 const data = await res.json();
                 if (!data.success) throw new Error(data.message || 'Error desconocido');
 
@@ -348,10 +348,10 @@
         document.getElementById('btnRefresh').addEventListener('click', async function () {
             this.disabled = true;
             this.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
-            await fetch('{{ route('comercial.venta-cliente.cache.clear') }}', {
+            await fetch('<?php echo route('comercial.venta-cliente.cache.clear'); ?>', {
                 method: 'POST',
                 headers: {
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'X-CSRF-TOKEN': '<?php echo csrf_token(); ?>',
                     'Content-Type': 'application/json'
                 }
             });
@@ -365,4 +365,5 @@
             await cargarDatos(anioActual);
         })();
     </script>
-@endsection
+<?php $__env->stopSection(); ?>
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH /var/www/resources/views/comercial/venta-cliente/evolutivo-anio.blade.php ENDPATH**/ ?>
