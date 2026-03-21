@@ -175,6 +175,13 @@
                                     Lead Time x Tiempo
                                 </a>
                             </li>
+
+                            <li class="nav-item">
+                                <a class="nav-link <?php echo request()->routeIs('produccion.lead-time.objetivo-mas') ? 'active' : ''; ?>"
+                                    href="<?php echo route('produccion.lead-time.objetivo-mas'); ?>">
+                                    Lead Time Objetivo +
+                                </a>
+                            </li>
                         </ul>
                     </div>
                 </li>

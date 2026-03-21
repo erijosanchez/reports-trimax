@@ -34,6 +34,43 @@ class LeadTimeController extends Controller
     }
 
     /**
+     * Vista Lead Time Objetivo +
+     */
+    public function objetivoMas()
+    {
+        if (!auth()->user()->puedeVerLeadTime()) {
+            abort(403, 'No tienes permiso para ver el Lead Time');
+        }
+
+        return view('comercial.lead-time-objetivo-mas');
+    }
+
+    /**
+     * API: Obtener datos Lead Time Objetivo +
+     */
+    public function getObjetivoMasData(Request $request)
+    {
+        try {
+            $year = (int) $request->get('year', Carbon::now()->year);
+
+            $cacheKey = "lead_time_objetivo_mas_{$year}";
+
+            $result = Cache::remember($cacheKey, 300, function () use ($year) {
+                return $this->processObjetivoMasData($year);
+            });
+
+            return response()->json([
+                'success' => true,
+                'data'    => $result,
+                'filters' => ['year' => $year],
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error en LeadTime getObjetivoMasData: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
      * Vista KPI Lead Time Semanal
      */
     public function semanal()
@@ -640,6 +677,204 @@ class LeadTimeController extends Controller
     }
 
     /**
+     * Procesar datos para Lead Time Objetivo +
+     * Muestra órdenes FUERA DE TIEMPO agrupadas por días de atraso y semana del mes.
+     */
+    private function processObjetivoMasData(int $year): array
+    {
+        $categorias = ['NOX', 'TD', 'DEVABLUE', 'BLANCO', 'COLOREADO'];
+
+        $spreadsheetId = config('google.lead_time_spreadsheet_id');
+        $rawData = $this->sheetsService->getSheetDataFromSpreadsheet($spreadsheetId, 'Historico');
+
+        if (empty($rawData)) {
+            return $this->emptyObjetivoMasResponse($categorias);
+        }
+
+        $headers = array_shift($rawData);
+        $records = [];
+        foreach ($rawData as $row) {
+            $rec = [];
+            foreach ($headers as $idx => $header) {
+                $rec[trim($header)] = $row[$idx] ?? '';
+            }
+            $records[] = $rec;
+        }
+
+        // Solo FUERA DE TIEMPO para el año completo (hasta hoy)
+        $today = Carbon::today();
+        $filtered = array_values(array_filter($records, function ($rec) use ($year, $today) {
+            $conclusion = strtoupper(trim($rec['CONCLUSION'] ?? ''));
+            if ($conclusion !== 'FUERA DE TIEMPO') return false;
+            $time = $rec['TIME'] ?? '';
+            if (empty($time)) return false;
+            try {
+                $d = Carbon::parse($time);
+                return $d->year == $year && $d->lte($today);
+            } catch (\Exception $e) {
+                return false;
+            }
+        }));
+
+        if (empty($filtered)) {
+            return $this->emptyObjetivoMasResponse($categorias);
+        }
+
+        // ── Construir semanas ISO que aparecen en los datos ────────
+        // En lugar de iterar días del año, usamos las semanas reales de los registros
+        $semanasMap = [];
+
+        foreach ($filtered as $rec) {
+            $time = $rec['TIME'] ?? '';
+            if (empty($time)) continue;
+            try {
+                $d      = Carbon::parse($time);
+                $semNum = (int) $d->format('W');
+
+                if (!isset($semanasMap[$semNum])) {
+                    $lunes   = Carbon::now()->setISODate($year, $semNum, 1);
+                    $domingo = Carbon::now()->setISODate($year, $semNum, 7);
+                    $semanasMap[$semNum] = [
+                        'num'   => $semNum,
+                        'label' => "Semana $semNum",
+                        'rango' => $lunes->format('d/m') . ' – ' . $domingo->format('d/m'),
+                    ];
+                }
+            } catch (\Exception $e) {
+                continue;
+            }
+        }
+
+        ksort($semanasMap);
+        $semNums   = array_keys($semanasMap);
+        $maxAtraso = 10;
+
+        // Closure que construye la tabla para un conjunto de registros
+        $buildTable = function (array $recs) use ($semanasMap, $semNums, $maxAtraso) {
+            $data       = [];
+            $weekTotals = array_fill_keys($semNums, 0);
+
+            for ($a = 1; $a <= $maxAtraso; $a++) {
+                $data[$a] = array_fill_keys($semNums, 0);
+            }
+            $data['mas'] = array_fill_keys($semNums, 0);
+
+            foreach ($recs as $rec) {
+                $atraso = abs((int) ($rec['ATRASO'] ?? 0));
+                if ($atraso === 0) $atraso = 1;
+
+                try {
+                    $d      = Carbon::parse($rec['TIME'] ?? '');
+                    $semNum = (int) $d->format('W');
+                } catch (\Exception $e) {
+                    continue;
+                }
+
+                if (!isset($semanasMap[$semNum])) continue;
+
+                $key = $atraso <= $maxAtraso ? $atraso : 'mas';
+                $data[$key][$semNum]++;
+                $weekTotals[$semNum]++;
+            }
+
+            $grandTotal = array_sum($weekTotals);
+
+            // Filas -1 a -10
+            $filas = [];
+            for ($a = 1; $a <= $maxAtraso; $a++) {
+                $acumCant = 0;
+                $semRow   = [];
+                foreach ($semNums as $w) {
+                    $cant = $data[$a][$w];
+                    $pct  = $weekTotals[$w] > 0 ? round($cant / $weekTotals[$w] * 100) : 0;
+                    $semRow[$w] = ['cant' => $cant, 'pct' => $pct];
+                    $acumCant  += $cant;
+                }
+                $acumPct = $grandTotal > 0 ? round($acumCant / $grandTotal * 100) : 0;
+                $filas[] = [
+                    'label'   => "-$a",
+                    'atraso'  => $a,
+                    'semanas' => $semRow,
+                    'acum'    => ['cant' => $acumCant, 'pct' => $acumPct],
+                ];
+            }
+
+            // Fila >10
+            $masCant = array_sum($data['mas']);
+            if ($masCant > 0) {
+                $acumCant = 0;
+                $semRow   = [];
+                foreach ($semNums as $w) {
+                    $cant = $data['mas'][$w];
+                    $pct  = $weekTotals[$w] > 0 ? round($cant / $weekTotals[$w] * 100) : 0;
+                    $semRow[$w] = ['cant' => $cant, 'pct' => $pct];
+                    $acumCant  += $cant;
+                }
+                $acumPct = $grandTotal > 0 ? round($acumCant / $grandTotal * 100) : 0;
+                $filas[] = [
+                    'label'   => '>10',
+                    'atraso'  => 11,
+                    'semanas' => $semRow,
+                    'acum'    => ['cant' => $acumCant, 'pct' => $acumPct],
+                ];
+            }
+
+            // Totales por semana
+            $totalRow = [];
+            foreach ($semNums as $w) {
+                $totalRow[$w] = ['cant' => $weekTotals[$w], 'pct' => 100];
+            }
+
+            return [
+                'filas'   => $filas,
+                'totales' => [
+                    'semanas' => $totalRow,
+                    'acum'    => ['cant' => $grandTotal, 'pct' => 100],
+                ],
+            ];
+        };
+
+        // General
+        $general = $buildTable($filtered);
+
+        // Por categoría
+        $cats = [];
+        $nombresDisplay = [
+            'NOX'       => 'NOX',
+            'TD'        => 'TRIDUREX',
+            'DEVABLUE'  => 'DEVABLUE',
+            'BLANCO'    => 'BLANCOS',
+            'COLOREADO' => 'COLOREADO',
+        ];
+        foreach ($categorias as $cat) {
+            $catRecs = array_values(array_filter($filtered, function ($r) use ($cat) {
+                $tipo = strtoupper(trim($r['TIPO_DE_TRABAJO'] ?? ''));
+                if ($cat === 'BLANCO') return $tipo === 'BLANCO' || $tipo === 'BLANCOS';
+                return $tipo === $cat;
+            }));
+            $cats[$cat] = array_merge($buildTable($catRecs), ['nombre' => $nombresDisplay[$cat]]);
+        }
+
+        return [
+            'semanas'    => array_values($semanasMap),
+            'general'    => $general,
+            'categorias' => $cats,
+        ];
+    }
+    /**
+     * Respuesta vacía para Lead Time Objetivo +
+     */
+    private function emptyObjetivoMasResponse(array $categorias): array
+    {
+        $empty = ['filas' => [], 'totales' => ['semanas' => [], 'acum' => ['cant' => 0, 'pct' => 0]]];
+        return [
+            'semanas'    => [],
+            'general'    => $empty,
+            'categorias' => array_fill_keys($categorias, array_merge($empty, ['nombre' => ''])),
+        ];
+    }
+
+    /**
      * Respuesta vacía
      */
     private function emptyResponse()
@@ -706,6 +941,7 @@ class LeadTimeController extends Controller
             for ($y = 2024; $y <= 2027; $y++) {
                 Cache::forget("lead_time_data_{$y}_{$m}");
                 Cache::forget("lead_time_semanal_{$y}_{$m}");
+                Cache::forget("lead_time_objetivo_mas_{$y}_{$m}");
             }
         }
         Cache::forget("lead_time_available_years");

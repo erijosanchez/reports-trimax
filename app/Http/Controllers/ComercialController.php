@@ -105,7 +105,7 @@ class ComercialController extends Controller
                 ->where('anio', $anio)
                 ->orderBy('sede')
                 ->orderBy('fecha')
-                ->get(['sede', 'fecha', 'cant', 'facturadas']);
+                ->get(['sede', 'fecha', 'cant', 'facturadas', 'prod']);
 
             if ($rows->isEmpty()) {
                 return response()->json([
@@ -127,6 +127,7 @@ class ComercialController extends Controller
                 $agrupado[$sede][$fechaKey] = [
                     'cant'       => $row->cant,
                     'facturadas' => $row->facturadas,
+                    'prod'       => $row->prod ?? 0,
                     'pct'        => $row->cant > 0
                         ? (int) round(($row->facturadas / $row->cant) * 100)
                         : null,
@@ -146,6 +147,7 @@ class ComercialController extends Controller
             $totalesPorFecha = [];
             $totalGenCant    = 0;
             $totalGenFact    = 0;
+            $totalGenProd    = 0;
 
             foreach ($sedesOrdenadas as $sede) {
                 $fila = [
@@ -153,6 +155,7 @@ class ComercialController extends Controller
                     'dias'             => [],
                     'total_cant'       => 0,
                     'total_facturadas' => 0,
+                    'total_prod'       => 0,
                     'total_pct'        => null,
                 ];
 
@@ -160,34 +163,41 @@ class ComercialController extends Controller
                     $dia  = $agrupado[$sede][$f] ?? null;
                     $cant = $dia['cant']       ?? 0;
                     $fact = $dia['facturadas'] ?? 0;
+                    $prod = $dia['prod']       ?? 0;
                     $pct  = $cant > 0 ? (int) round(($fact / $cant) * 100) : null;
+                    $pctProd = $cant > 0 ? (int) round(($prod / $cant) * 100) : null;
 
-                    $fila['dias'][$f]         = ['cant' => $cant, 'pct' => $pct];
+                    $fila['dias'][$f]         = ['cant' => $cant, 'pct' => $pct, 'prod' => $prod, 'pct_prod' => $pctProd];
                     $fila['total_cant']       += $cant;
                     $fila['total_facturadas'] += $fact;
+                    $fila['total_prod']       += $prod;
 
                     $totalesPorFecha[$f]['cant']       = ($totalesPorFecha[$f]['cant']       ?? 0) + $cant;
                     $totalesPorFecha[$f]['facturadas'] = ($totalesPorFecha[$f]['facturadas'] ?? 0) + $fact;
+                    $totalesPorFecha[$f]['prod']       = ($totalesPorFecha[$f]['prod']       ?? 0) + $prod;
                 }
 
                 if ($fila['total_cant'] > 0) {
-                    $fila['total_pct'] = (int) round(
-                        ($fila['total_facturadas'] / $fila['total_cant']) * 100
-                    );
+                    $fila['total_pct']      = (int) round(($fila['total_facturadas'] / $fila['total_cant']) * 100);
+                    $fila['total_pct_prod'] = (int) round(($fila['total_prod']       / $fila['total_cant']) * 100);
                 }
 
                 $totalGenCant += $fila['total_cant'];
                 $totalGenFact += $fila['total_facturadas'];
+                $totalGenProd  = ($totalGenProd ?? 0) + $fila['total_prod'];
                 $tabla[]       = $fila;
             }
 
             $totalesConPct = [];
             foreach ($fechasOrdenadas as $f) {
-                $c  = $totalesPorFecha[$f]['cant']       ?? 0;
-                $ff = $totalesPorFecha[$f]['facturadas'] ?? 0;
+                $c    = $totalesPorFecha[$f]['cant']       ?? 0;
+                $ff   = $totalesPorFecha[$f]['facturadas'] ?? 0;
+                $prod = $totalesPorFecha[$f]['prod']       ?? 0;
                 $totalesConPct[$f] = [
-                    'cant' => $c,
-                    'pct'  => $c > 0 ? (int) round(($ff / $c) * 100) : null,
+                    'cant'     => $c,
+                    'pct'      => $c > 0 ? (int) round(($ff   / $c) * 100) : null,
+                    'prod'     => $prod,
+                    'pct_prod' => $c > 0 ? (int) round(($prod / $c) * 100) : null,
                 ];
             }
 
@@ -197,10 +207,10 @@ class ComercialController extends Controller
                     'fechas'     => $fechasOrdenadas,
                     'tabla'      => $tabla,
                     'totales'    => $totalesConPct,
-                    'total_cant' => $totalGenCant,
-                    'total_pct'  => $totalGenCant > 0
-                        ? (int) round(($totalGenFact / $totalGenCant) * 100)
-                        : null,
+                    'total_cant'     => $totalGenCant,
+                    'total_pct'      => $totalGenCant > 0 ? (int) round(($totalGenFact / $totalGenCant) * 100) : null,
+                    'total_prod'     => $totalGenProd,
+                    'total_pct_prod' => $totalGenCant > 0 ? (int) round(($totalGenProd / $totalGenCant) * 100) : null,
                 ],
             ]);
         } catch (\Exception $e) {

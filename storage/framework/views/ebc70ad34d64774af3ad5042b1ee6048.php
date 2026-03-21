@@ -183,11 +183,11 @@
                 let th = '<tr><th rowspan="2" class="th-sede">Sede</th>';
                 fechas.forEach(f => {
                     const p = f.split('/');
-                    th += `<th colspan="2" class="th-fecha">${p[0]}/${p[1]}</th>`;
+                    th += `<th colspan="4" class="th-fecha">${p[0]}/${p[1]}</th>`;
                 });
-                th += '<th colspan="2" class="th-total">Total</th></tr><tr>';
-                for (let i = 0; i < fechas.length + 1; i++) th +=
-                    '<th class="th-sub">Cant</th><th class="th-sub">%</th>';
+                th += '<th colspan="4" class="th-total">Total</th></tr><tr>';
+                for (let i = 0; i < fechas.length + 1; i++)
+                    th += '<th class="th-sub">Cant</th><th class="th-sub">%</th><th class="th-sub th-prod">Prod</th><th class="th-sub th-prod">% Prod</th>';
                 th += '</tr>';
                 $('#tablaThead').html(th);
 
@@ -197,13 +197,18 @@
                     fechas.forEach(f => {
                         const dia = fila.dias[f],
                             cant = dia ? dia.cant : 0,
-                            pct = (dia && cant > 0) ? dia.pct : null;
-                        rows += cant === 0 ?
-                            '<td class="td-zero">-</td><td class="td-zero">-</td>' :
-                            `<td class="td-cant">${cant}</td>${semaforo(pct)}`;
+                            pct = (dia && cant > 0) ? dia.pct : null,
+                            prod = dia ? dia.prod : 0,
+                            pctProd = (dia && cant > 0) ? dia.pct_prod : null;
+                        if (cant === 0) {
+                            rows += '<td class="td-zero">-</td><td class="td-zero">-</td><td class="td-zero">-</td><td class="td-zero">-</td>';
+                        } else {
+                            rows += `<td class="td-cant">${cant}</td>${semaforo(pct)}<td class="td-prod">${prod}</td>${semaforoProd(pctProd)}`;
+                        }
                     });
-                    rows +=
-                        `<td class="td-total-cant">${fila.total_cant||'-'}</td>${semaforoTotal(fila.total_pct)}</tr>`;
+                    const tprod = fila.total_prod || 0;
+                    const tpctprod = fila.total_pct_prod != null ? fila.total_pct_prod : null;
+                    rows += `<td class="td-total-cant">${fila.total_cant||'-'}</td>${semaforoTotal(fila.total_pct)}<td class="td-prod td-total-cant">${tprod||'-'}</td>${semaforoTotalProd(tpctprod)}</tr>`;
                 });
 
                 // Fila total
@@ -211,12 +216,16 @@
                 fechas.forEach(f => {
                     const t = totales[f],
                         c = t ? t.cant : 0,
-                        p = t ? t.pct : null;
-                    rows += c === 0 ? '<td class="td-zero-dark">-</td><td class="td-zero-dark">-</td>' :
-                        `<td class="td-total-cant">${c}</td><td class="${pctClass(p)}">${p!==null?p+'%':'-'}</td>`;
+                        p = t ? t.pct : null,
+                        prod = t ? t.prod : 0,
+                        pctProd = t ? t.pct_prod : null;
+                    if (c === 0) {
+                        rows += '<td class="td-zero-dark">-</td><td class="td-zero-dark">-</td><td class="td-zero-dark">-</td><td class="td-zero-dark">-</td>';
+                    } else {
+                        rows += `<td class="td-total-cant">${c}</td><td class="${pctClass(p)}">${p!==null?p+'%':'-'}</td><td class="td-total-cant">${prod}</td><td class="td-pct td-prod-pct">${pctProd!==null?pctProd+'%':'-'}</td>`;
+                    }
                 });
-                rows +=
-                    `<td class="td-gran-total">${data.total_cant||'-'}</td><td class="td-gran-pct">${data.total_pct!==null?data.total_pct+'%':'-'}</td></tr>`;
+                rows += `<td class="td-gran-total">${data.total_cant||'-'}</td><td class="td-gran-pct">${data.total_pct!==null?data.total_pct+'%':'-'}</td><td class="td-gran-total">${data.total_prod||'-'}</td><td class="td-gran-pct-prod">${data.total_pct_prod!==null?data.total_pct_prod+'%':'-'}</td></tr>`;
                 $('#tablaTbody').html(rows);
             }
 
@@ -235,6 +244,16 @@
             function semaforoTotal(pct) {
                 if (pct === null || pct === undefined) return '<td class="td-total-pct">-</td>';
                 return `<td class="td-total-pct ${pct>=90?'td-verde':pct>=75?'td-naranja':'td-rojo'}">${pct}%</td>`;
+            }
+
+            function semaforoProd(pct) {
+                if (pct === null || pct === undefined) return '<td class="td-zero">-</td>';
+                return `<td class="td-pct td-prod-pct">${pct}%</td>`;
+            }
+
+            function semaforoTotalProd(pct) {
+                if (pct === null || pct === undefined) return '<td class="td-total-pct">-</td>';
+                return `<td class="td-total-pct td-prod-pct">${pct}%</td>`;
             }
 
             function mostrarError(msg) {
@@ -283,7 +302,12 @@
         }
 
         .th-fecha {
-            min-width: 90px
+            min-width: 180px
+        }
+
+        .th-prod {
+            background: #1b3a2d !important;
+            color: #a5d6a7 !important
         }
 
         .th-total {
@@ -415,6 +439,33 @@
 
         .td-gran-pct {
             background: #1b5e20;
+            color: #fff !important;
+            font-weight: 800;
+            font-size: 13px;
+            border: 1px solid #1a237e !important
+        }
+
+        /* Prod */
+        .td-prod {
+            background: #e8f5e9;
+            color: #1b5e20 !important;
+            font-weight: 700
+        }
+
+        .td-prod-pct {
+            background: #f1f8e9;
+            color: #33691e !important;
+            font-weight: 700
+        }
+
+        .tr-total .td-prod-pct {
+            background: #2e7d32;
+            color: #fff !important;
+            border: 1px solid #1a237e !important
+        }
+
+        .td-gran-pct-prod {
+            background: #2e7d32;
             color: #fff !important;
             font-weight: 800;
             font-size: 13px;

@@ -166,6 +166,7 @@ class SyncOrdenesSede extends Command
                         'anio'       => $anio,
                         'cant'       => 0,
                         'facturadas' => 0,
+                        'prod'       => 0,
                     ];
                 }
 
@@ -173,6 +174,20 @@ class SyncOrdenesSede extends Command
 
                 if (strtoupper($estado) === 'FACTURADO') {
                     $conteosSede[$key]['facturadas']++;
+                }
+
+                $ubicacionUpper = strtoupper(trim($ubicacion));
+                $noEsProduccion = in_array($ubicacionUpper, [
+                    'EN SEDE',
+                    'EN TRANSITO',
+                    'FACTURADO Y ENTREGADO',
+                    'EN DESPACHO',
+                    'OBSERVADO',
+                    'DESPACHO',
+                    'ANULAR ORDEN',
+                ]);
+                if (!$noEsProduccion) {
+                    $conteosSede[$key]['prod']++;
                 }
             }
 
@@ -194,7 +209,7 @@ class SyncOrdenesSede extends Command
                     DB::table('ordenes_sede_stats')->upsert(
                         $lote,
                         ['sede', 'fecha'],
-                        ['cant', 'facturadas', 'mes', 'anio', 'updated_at']
+                        ['cant', 'facturadas', 'prod', 'mes', 'anio', 'updated_at']
                     );
                     $totalStats += count($lote);
                 }
