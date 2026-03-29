@@ -181,11 +181,11 @@
                 let th = '<tr><th rowspan="2" class="th-sede">Sede</th>';
                 fechas.forEach(f => {
                     const p = f.split('/');
-                    th += `<th colspan="4" class="th-fecha">${p[0]}/${p[1]}</th>`;
+                    th += `<th colspan="2" class="th-fecha">${p[0]}/${p[1]}</th>`;
                 });
-                th += '<th colspan="4" class="th-total">Total</th></tr><tr>';
+                th += '<th colspan="2" class="th-total">Total</th></tr><tr>';
                 for (let i = 0; i < fechas.length + 1; i++)
-                    th += '<th class="th-sub">Cant</th><th class="th-sub">%</th><th class="th-sub th-prod">Prod</th><th class="th-sub th-prod">% Prod</th>';
+                    th += '<th class="th-sub">Cant</th><th class="th-sub">%</th>';
                 th += '</tr>';
                 $('#tablaThead').html(th);
 
@@ -199,14 +199,14 @@
                             prod = dia ? dia.prod : 0,
                             pctProd = (dia && cant > 0) ? dia.pct_prod : null;
                         if (cant === 0) {
-                            rows += '<td class="td-zero">-</td><td class="td-zero">-</td><td class="td-zero">-</td><td class="td-zero">-</td>';
+                            rows += '<td class="td-zero">-</td><td class="td-zero">-</td>';
                         } else {
-                            rows += `<td class="td-cant">${cant}</td>${semaforo(pct)}<td class="td-prod">${prod}</td>${semaforoProd(pctProd)}`;
+                            rows += `<td class="td-cant">${cant}</td>${semaforo(pct)}`;
                         }
                     });
                     const tprod = fila.total_prod || 0;
                     const tpctprod = fila.total_pct_prod != null ? fila.total_pct_prod : null;
-                    rows += `<td class="td-total-cant">${fila.total_cant||'-'}</td>${semaforoTotal(fila.total_pct)}<td class="td-prod td-total-cant">${tprod||'-'}</td>${semaforoTotalProd(tpctprod)}</tr>`;
+                    rows += `<td class="td-total-cant">${fila.total_cant||'-'}</td>${semaforoTotal(fila.total_pct)}</tr>`;
                 });
 
                 // Fila total
@@ -218,12 +218,12 @@
                         prod = t ? t.prod : 0,
                         pctProd = t ? t.pct_prod : null;
                     if (c === 0) {
-                        rows += '<td class="td-zero-dark">-</td><td class="td-zero-dark">-</td><td class="td-zero-dark">-</td><td class="td-zero-dark">-</td>';
+                        rows += '<td class="td-zero-dark">-</td><td class="td-zero-dark">-</td>';
                     } else {
-                        rows += `<td class="td-total-cant">${c}</td><td class="${pctClass(p)}">${p!==null?p+'%':'-'}</td><td class="td-total-cant">${prod}</td><td class="td-pct td-prod-pct">${pctProd!==null?pctProd+'%':'-'}</td>`;
+                        rows += `<td class="td-total-cant">${c}</td><td class="${pctClass(p)}">${p!==null?p+'%':'-'}</td>`;
                     }
                 });
-                rows += `<td class="td-gran-total">${data.total_cant||'-'}</td><td class="td-gran-pct">${data.total_pct!==null?data.total_pct+'%':'-'}</td><td class="td-gran-total">${data.total_prod||'-'}</td><td class="td-gran-pct-prod">${data.total_pct_prod!==null?data.total_pct_prod+'%':'-'}</td></tr>`;
+                rows += `<td class="td-gran-total">${data.total_cant||'-'}</td><td class="td-gran-pct">${data.total_pct!==null?data.total_pct+'%':'-'}</td></tr>`;
                 $('#tablaTbody').html(rows);
             }
 
@@ -296,7 +296,10 @@
 
         .th-sede {
             min-width: 155px !important;
-            text-align: left !important
+            text-align: left !important;
+            position: sticky;
+            left: 0;
+            z-index: 11
         }
 
         .th-fecha {
@@ -331,7 +334,10 @@
             background: #1a237e !important;
             color:#fff !important;
             min-width: 155px;
-            white-space: normal
+            white-space: normal;
+            position: sticky;
+            left: 0;
+            z-index: 1
         }
 
         /* Cant */
@@ -392,7 +398,10 @@
             font-weight: 700;
             font-size: 11px;
             text-align: left !important;
-            border: 1px solid #283593 !important
+            border: 1px solid #283593 !important;
+            position: sticky;
+            left: 0;
+            z-index: 1
         }
 
         .tr-total .td-total-cant {
