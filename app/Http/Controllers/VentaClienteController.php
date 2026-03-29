@@ -69,7 +69,7 @@ class VentaClienteController extends Controller
     public function getEvolutivoMesData(Request $request)
     {
         if (!auth()->user()->puedeVerVentaClientes()) {
-            return response()->json(['error' => 'No autorizado'], 403);www
+            return response()->json(['error' => 'No autorizado'], 403);
         }
 
         try {
