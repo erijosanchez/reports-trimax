@@ -153,7 +153,7 @@ class LeadTimeController extends Controller
     {
         $categorias = ['NOX', 'TD', 'DEVABLUE', 'BLANCO', 'COLOREADO'];
 
-        // ── 1. Leer hoja ────────────────────────────────────────
+        // Leer hoja de Google Sheets
         $spreadsheetId = config('google.lead_time_spreadsheet_id');
         $rawData = $this->sheetsService->getSheetDataFromSpreadsheet($spreadsheetId, 'Historico');
 
@@ -171,72 +171,121 @@ class LeadTimeController extends Controller
             $records[] = $rec;
         }
 
-        // ── 2. Filtrar: solo registros hasta el mes indicado ────
-        // Para semanas necesitamos todo el año hasta ese mes
-        $filtered = array_values(array_filter($records, function ($rec) use ($year, $month) {
-            $time = $rec['TIME'] ?? '';
-            if (empty($time)) return false;
-            try {
-                $d = Carbon::parse($time);
-                return $d->year == $year && $d->month <= $month;
-            } catch (\Exception $e) {
-                return false;
-            }
-        }));
-
-        if (empty($filtered)) {
-            return $this->emptySemanalResponse($year, $month, $categorias);
-        }
-
-        // ── 3. Construir catálogo de semanas ISO del año ────────
-        // Semana 1 = primera semana con al menos 4 días en enero (ISO 8601)
-        // Pero para consistencia usamos semanas del año calendario simple:
-        // sem_num = número de semana del año (1-53) con Carbon::weekOfYear
-        $semanasMap = [];   // sem_num => ['inicio', 'fin', 'registros']
-        $mesesMap   = [];   // mes_num  => ['registros']
-        // ── 4b. Construir datos diarios del mes seleccionado ────
-        $diasMap = [];
+        // Inicializar todos los dias del mes seleccionado aunque no tengan datos
         $daysInMonth = Carbon::createFromDate($year, $month, 1)->daysInMonth;
-
-        // Inicializar todos los días del mes (aunque no tengan datos)
+        $diasMap = [];
         for ($d = 1; $d <= $daysInMonth; $d++) {
             $fecha = Carbon::createFromDate($year, $month, $d)->format('Y-m-d');
             $diasMap[$fecha] = [
-                'label'   => $d,         // número del día
+                'label'   => $d,
                 'fecha'   => $fecha,
                 'records' => [],
             ];
         }
 
-        // Agrupar registros del mes seleccionado por día
-        foreach ($filtered as $rec) {
-            $time = $rec['TIME'] ?? '';
-            if (empty($time)) continue;
+        // Inicializar mapa de vencidos por dia (ordenes cuyo LEAD_TIME cayo ese dia y no se entregaron a tiempo)
+        $diasVencidosMap = array_fill_keys(array_keys($diasMap), 0);
+
+        // --- PASO 1: Filtrar registros entregados (TIME es fecha valida, no "PENDIENTE") ---
+        // Solo se incluyen los del mes seleccionado segun TIME
+        // La logica del KPI no se toca: sigue usando CONCLUSION para calcular cumplimiento
+        $filtered = [];
+        foreach ($records as $rec) {
+            $time = trim($rec['TIME'] ?? '');
+
+            // Ignorar registros sin TIME o con TIME = PENDIENTE
+            if (empty($time) || strtoupper($time) === 'PENDIENTE') continue;
+
             try {
                 $d = Carbon::parse($time);
             } catch (\Exception $e) {
                 continue;
             }
-            if ((int)$d->month !== $month) continue;
 
-            $fechaDia = $d->format('Y-m-d');
-            if (isset($diasMap[$fechaDia])) {
-                $diasMap[$fechaDia]['records'][] = $rec;
+            // Solo registros cuyo TIME cae dentro del anno y mes seleccionado
+            if ($d->year != $year || $d->month > $month) continue;
+
+            $filtered[] = $rec;
+
+            // Agrupar por dia (solo los del mes exacto para el grafico diario)
+            if ($d->month == $month) {
+                $fechaDia = $d->format('Y-m-d');
+                if (isset($diasMap[$fechaDia])) {
+                    $diasMap[$fechaDia]['records'][] = $rec;
+                }
             }
         }
 
-        // Calcular KPI diario
-        $dayKpi  = [];
-        $dayData = array_fill_keys($categorias, []);
+        if (empty($filtered)) {
+            return $this->emptySemanalResponse($year, $month, $categorias);
+        }
+
+        // --- PASO 2: Contar ordenes NO entregadas a tiempo por dia de LEAD_TIME ---
+        // Una orden cuenta como "no entregada a tiempo" en su fecha de LEAD_TIME cuando:
+        //   a) TIME = "PENDIENTE" (aun no se entrega)
+        //   b) TIME es una fecha posterior a LEAD_TIME (se entrego tarde)
+        // Esta logica es independiente del KPI: no modifica calcularKpiYCats()
+        foreach ($records as $rec) {
+            $leadTime = trim($rec['LEAD_TIME'] ?? '');
+            if (empty($leadTime)) continue;
+
+            try {
+                $fechaLead = Carbon::parse($leadTime);
+            } catch (\Exception $e) {
+                continue;
+            }
+
+            // Solo si el LEAD_TIME cae dentro del mes seleccionado
+            if ($fechaLead->year != $year || $fechaLead->month != $month) continue;
+
+            $fechaDia = $fechaLead->format('Y-m-d');
+            if (!isset($diasVencidosMap[$fechaDia])) continue;
+
+            $timeVal   = trim($rec['TIME'] ?? '');
+            $isPending = empty($timeVal) || strtoupper($timeVal) === 'PENDIENTE';
+
+            if ($isPending) {
+                // Orden aun no entregada: vencida en su LEAD_TIME
+                $diasVencidosMap[$fechaDia]++;
+                continue;
+            }
+
+            // Orden ya entregada: verificar si fue tarde (TIME > LEAD_TIME)
+            try {
+                $fechaTime = Carbon::parse($timeVal);
+                if ($fechaTime->gt($fechaLead)) {
+                    // Se entrego despues de la fecha prevista: igual cuenta como vencida en LEAD_TIME
+                    // Nota: esta orden TAMBIEN aparece en su dia TIME como "entregada" en dayOrders
+                    // Ambos conteos coexisten sin pisarse
+                    $diasVencidosMap[$fechaDia]++;
+                }
+            } catch (\Exception $e) {
+                // ignorar fechas invalidas
+            }
+        }
+
+        // --- PASO 3: Calcular KPI diario, dayOrders y dayVencidos ---
+        $dayKpi     = [];
+        $dayOrders  = []; // total de ordenes entregadas (TIME) ese dia
+        $dayVencidos = []; // total de ordenes cuyo LEAD_TIME vencio ese dia sin entrega a tiempo
+        $dayData    = array_fill_keys($categorias, []);
 
         foreach (array_values($diasMap) as $i => $diaInfo) {
             $recs = $diaInfo['records'];
+
+            // Cantidad de ordenes entregadas ese dia (TIME = fecha del dia)
+            $dayOrders[$i] = count($recs);
+
+            // Cantidad de ordenes vencidas ese dia (LEAD_TIME = fecha del dia, entregadas tarde o pendientes)
+            $dayVencidos[$i] = $diasVencidosMap[$diaInfo['fecha']] ?? 0;
+
             if (empty($recs)) {
                 $dayKpi[$i] = null;
                 foreach ($categorias as $cat) {
                     $dayData[$cat][$i] = null;
                 }
             } else {
+                // KPI se calcula igual que siempre usando CONCLUSION — no se toca esta logica
                 [$kpi, $porCat] = $this->calcularKpiYCats($recs, $categorias);
                 $dayKpi[$i] = $kpi;
                 foreach ($categorias as $cat) {
@@ -250,6 +299,10 @@ class LeadTimeController extends Controller
             'fecha' => $d['fecha'],
         ], array_values($diasMap));
 
+        // --- PASO 4: Construir semanas ISO y meses (igual que antes) ---
+        $semanasMap = [];
+        $mesesMap   = [];
+
         foreach ($filtered as $rec) {
             $time = $rec['TIME'] ?? '';
             if (empty($time)) continue;
@@ -259,31 +312,27 @@ class LeadTimeController extends Controller
                 continue;
             }
 
-            // Semana del año (1-53)
-            $semNum = (int) $d->format('W');  // ISO week
+            $semNum = (int) $d->format('W');
             $mesNum = (int) $d->month;
 
-            // Registrar semana
             if (!isset($semanasMap[$semNum])) {
-                // Calcular lunes y domingo de esa semana ISO
                 $lunes   = Carbon::now()->setISODate($year, $semNum, 1)->format('Y-m-d');
                 $domingo = Carbon::now()->setISODate($year, $semNum, 7)->format('Y-m-d');
                 $semanasMap[$semNum] = [
-                    'num'    => $semNum,
-                    'label'  => "Sem $semNum",
-                    'inicio' => $lunes,
-                    'fin'    => $domingo,
+                    'num'     => $semNum,
+                    'label'   => "Sem $semNum",
+                    'inicio'  => $lunes,
+                    'fin'     => $domingo,
                     'records' => [],
                 ];
             }
             $semanasMap[$semNum]['records'][] = $rec;
 
-            // Registrar mes
             if (!isset($mesesMap[$mesNum])) {
                 $mesesMap[$mesNum] = [
-                    'num'    => $mesNum,
-                    'label'  => Carbon::createFromDate($year, $mesNum, 1)->locale('es')->isoFormat('MMM'),
-                    'year'   => $year,
+                    'num'     => $mesNum,
+                    'label'   => Carbon::createFromDate($year, $mesNum, 1)->locale('es')->isoFormat('MMM'),
+                    'year'    => $year,
                     'records' => [],
                 ];
             }
@@ -293,35 +342,31 @@ class LeadTimeController extends Controller
         ksort($semanasMap);
         ksort($mesesMap);
 
-        // ── 4. Calcular KPI por semana ──────────────────────────
-        $semanasIndex = array_values($semanasMap);   // índice 0,1,2…
+        $semanasIndex = array_values($semanasMap);
         $mesesIndex   = array_values($mesesMap);
 
+        // KPI semanal — logica intacta
         $weekKpi  = [];
         $weekData = array_fill_keys($categorias, []);
-
         foreach ($semanasIndex as $i => $semInfo) {
-            $recs = $semInfo['records'];
-            [$kpi, $porCat] = $this->calcularKpiYCats($recs, $categorias);
+            [$kpi, $porCat] = $this->calcularKpiYCats($semInfo['records'], $categorias);
             $weekKpi[$i] = $kpi;
             foreach ($categorias as $cat) {
                 $weekData[$cat][$i] = $porCat[$cat];
             }
         }
 
+        // KPI mensual — logica intacta
         $monthKpi  = [];
         $monthData = array_fill_keys($categorias, []);
-
         foreach ($mesesIndex as $i => $mesInfo) {
-            $recs = $mesInfo['records'];
-            [$kpi, $porCat] = $this->calcularKpiYCats($recs, $categorias);
+            [$kpi, $porCat] = $this->calcularKpiYCats($mesInfo['records'], $categorias);
             $monthKpi[$i] = $kpi;
             foreach ($categorias as $cat) {
                 $monthData[$cat][$i] = $porCat[$cat];
             }
         }
 
-        // ── 5. Limpiar 'records' de la respuesta (no necesarios en JSON) ──
         $semanas = array_map(fn($s) => [
             'num'    => $s['num'],
             'label'  => $s['label'],
@@ -336,16 +381,18 @@ class LeadTimeController extends Controller
         ], $mesesIndex);
 
         return [
-            'semanas'   => $semanas,
-            'meses'     => $meses,
-            'weekKpi'   => $weekKpi,
-            'monthKpi'  => $monthKpi,
-            'weekData'  => $weekData,
-            'monthData' => $monthData,
-            'cats'      => $categorias,
-            'dias'      => $dias,
-            'dayKpi'   => $dayKpi,
-            'dayData'  => $dayData,
+            'semanas'    => $semanas,
+            'meses'      => $meses,
+            'weekKpi'    => $weekKpi,
+            'monthKpi'   => $monthKpi,
+            'weekData'   => $weekData,
+            'monthData'  => $monthData,
+            'cats'       => $categorias,
+            'dias'       => $dias,
+            'dayKpi'     => $dayKpi,
+            'dayData'    => $dayData,
+            'dayOrders'  => $dayOrders,   // nuevo: entregadas por dia (segun TIME)
+            'dayVencidos' => $dayVencidos, // nuevo: vencidas por dia (segun LEAD_TIME)
         ];
     }
 
@@ -415,7 +462,8 @@ class LeadTimeController extends Controller
             'monthData' => array_fill_keys($categorias, []),
             'dayData'  => array_fill_keys($categorias, []),
             'cats'      => $categorias,
-
+            'dayOrders' => [], // nuevo: entregadas por dia
+            'dayVencidos' => [], // nuevo: vencidas por dia 
         ];
     }
 

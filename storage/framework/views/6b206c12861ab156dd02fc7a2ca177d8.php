@@ -1,13 +1,11 @@
-@extends('layouts.app')
+<?php $__env->startSection('title', 'KPI Semanal'); ?>
 
-@section('title', 'KPI Semanal')
-
-@section('content')
+<?php $__env->startSection('content'); ?>
     <div class="content-wrapper kw-wrapper">
         <div class="row">
             <div class="col-sm-12">
 
-                {{-- PAGE HEADER --}}
+                
                 <div class="kw-page-header">
                     <div class="kw-page-header-left">
                         <h1 class="kw-page-title">KPI: On-Time Production</h1>
@@ -22,7 +20,7 @@
                     </div>
                 </div>
 
-                {{-- FILTER PANEL --}}
+                
                 <div class="kw-filter-panel">
                     <div class="kw-filter-group">
                         <div class="kw-filter-item">
@@ -85,7 +83,7 @@
                     </div>
                 </div>
 
-                {{-- MAIN CONTENT --}}
+                
                 <div id="kwMainContent">
                     <div class="kw-loading-state">
                         <div class="kw-spinner"></div>
@@ -1085,9 +1083,9 @@
             }
         }
     </style>
-@endsection
+<?php $__env->stopSection(); ?>
 
-@section('scripts')
+<?php $__env->startSection('scripts'); ?>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
@@ -1117,7 +1115,7 @@
 
             // Poblar años
             $.ajax({
-                url: "{{ route('produccion.lead-time.years') }}",
+                url: "<?php echo route('produccion.lead-time.years'); ?>",
                 method: 'GET',
                 success({
                     success,
@@ -1152,7 +1150,7 @@
             );
 
             $.ajax({
-                url: "{{ route('produccion.lead-time.semanal-data') }}",
+                url: "<?php echo route('produccion.lead-time.semanal-data'); ?>",
                 method: 'GET',
                 data: {
                     year: kwCurrentYear,
@@ -1772,7 +1770,7 @@
         /* ── CLEAR CACHE ── */
         function kwClearCache() {
             $.ajax({
-                url: "{{ route('produccion.lead-time.clear-cache') }}",
+                url: "<?php echo route('produccion.lead-time.clear-cache'); ?>",
                 method: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -1797,4 +1795,6 @@
             });
         }
     </script>
-@endsection
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH /var/www/resources/views/comercial/lead-time-semanal.blade.php ENDPATH**/ ?>
