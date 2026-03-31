@@ -148,6 +148,7 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
         Route::get('/acuerdos/obtener', [ComercialController::class, 'obtenerAcuerdos'])->name('acuerdos.obtener');
         Route::get('/acuerdos/usuarios', [ComercialController::class, 'obtenerUsuariosCreadores'])->name('acuerdos.usuarios');
         Route::get('/acuerdos/exportar', [ComercialController::class, 'exportarAcuerdos'])->name('acuerdos.exportar');
+        Route::post('/acuerdos/extender-masivo', [ComercialController::class, 'extenderMasivoAcuerdos'])->name('acuerdos.extender-masivo');
         Route::post('/acuerdos/crear', [ComercialController::class, 'crearAcuerdo'])->name('acuerdos.crear');
         Route::post('/acuerdos/{id}/validar', [ComercialController::class, 'validarAcuerdo'])->name('acuerdos.validar');
         Route::post('/acuerdos/{id}/aprobar', [ComercialController::class, 'aprobarAcuerdo'])->name('acuerdos.aprobar');

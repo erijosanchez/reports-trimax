@@ -20,6 +20,7 @@ use carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use App\Exports\AcuerdosComercialesExport;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Notifications\AcuerdosExtendidosMasivo;
 
 
 
@@ -1631,6 +1632,93 @@ class ComercialController extends Controller
         $valor = str_replace(',', '.', $valor);
 
         return floatval($valor);
+    }
+
+    public function extenderMasivoAcuerdos(Request $request)
+    {
+        try {
+            $emailsAutorizados = ['smonopoli@trimaxperu.com', 'planeamiento.comercial@trimaxperu.com'];
+            if (!in_array(Auth::user()->email, $emailsAutorizados)) {
+                return response()->json(['success' => false, 'message' => 'No tienes permisos para extender acuerdos'], 403);
+            }
+
+            $validated = $request->validate([
+                'ids'             => 'required|array|min:1',
+                'ids.*'           => 'integer|exists:acuerdos_comerciales,id',
+                'nueva_fecha_fin' => 'required|date|after_or_equal:today',
+                'motivo'          => 'required|string|min:10',
+            ]);
+
+            $acuerdos = AcuerdoComercial::whereIn('id', $validated['ids'])
+                ->where('habilitado', true)
+                ->get();
+
+            if ($acuerdos->isEmpty()) {
+                return response()->json(['success' => false, 'message' => 'No se encontraron acuerdos habilitados para extender'], 422);
+            }
+
+            AcuerdoComercial::whereIn('id', $acuerdos->pluck('id'))
+                ->update([
+                    'fecha_fin'        => $validated['nueva_fecha_fin'],
+                    'motivo_extension' => $validated['motivo'],
+                    'extendido_at'     => now(),
+                    'extendido_por'    => Auth::id(),
+                ]);
+
+            foreach ($acuerdos as $acuerdo) {
+                $acuerdo->refresh();
+                $acuerdo->actualizarEstado();
+            }
+
+            $total        = $acuerdos->count();
+            $fechaFormato = Carbon::parse($validated['nueva_fecha_fin'])->format('d/m/Y');
+            $extendidoPor = Auth::user()->name;
+
+            // 1. Un correo por cada consultor con sus acuerdos
+            $acuerdos->load('creador');
+            $porCreador = $acuerdos->groupBy('user_id');
+
+            foreach ($porCreador as $userId => $acuerdosCreador) {
+                $creador = $acuerdosCreador->first()->creador;
+                if ($creador) {
+                    try {
+                        $creador->notify(new AcuerdosExtendidosMasivo(
+                            $acuerdosCreador,
+                            $validated['motivo'],
+                            $validated['nueva_fecha_fin'],
+                            $extendidoPor,
+                            false
+                        ));
+                    } catch (\Exception $e) {
+                        \Log::warning("No se pudo notificar al creador ID {$userId}: " . $e->getMessage());
+                    }
+                }
+            }
+
+            // 2. Un correo resumen a los admins con todos los acuerdos
+            $admins = User::whereIn('email', ['smonopoli@trimaxperu.com', 'planeamiento.comercial@trimaxperu.com'])->get();
+            foreach ($admins as $admin) {
+                try {
+                    $admin->notify(new AcuerdosExtendidosMasivo(
+                        $acuerdos,
+                        $validated['motivo'],
+                        $validated['nueva_fecha_fin'],
+                        $extendidoPor,
+                        true
+                    ));
+                } catch (\Exception $e) {
+                    \Log::warning("No se pudo notificar al admin {$admin->email}: " . $e->getMessage());
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => "{$total} acuerdo(s) extendido(s) correctamente hasta el {$fechaFormato}.",
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error en extensión masiva de acuerdos: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Error: ' . $e->getMessage()], 500);
+        }
     }
 
     public function exportarAcuerdos(Request $request)
