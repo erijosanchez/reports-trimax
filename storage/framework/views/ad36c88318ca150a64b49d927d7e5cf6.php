@@ -1,8 +1,6 @@
-@extends('layouts.app')
+<?php $__env->startSection('title', 'Acuerdos Comerciales'); ?>
 
-@section('title', 'Acuerdos Comerciales')
-
-@section('content')
+<?php $__env->startSection('content'); ?>
     <div class="content-wrapper">
         <div class="row">
             <div class="col-sm-12">
@@ -23,7 +21,7 @@
                     <div class="mt-4 tab-content-basic tab-content">
                         <div class="tab-pane fade show active" id="overview" role="tabpanel">
 
-                            {{-- Cards de Estadísticas --}}
+                            
                             <div class="mb-4 row">
                                 <div class="pb-2 col-md-3">
                                     <div class="h-100 card card-stat">
@@ -95,12 +93,12 @@
                                 </div>
                             </div>
 
-                            {{-- Filtros --}}
+                            
                             <div class="row">
                                 <div class="grid-margin col-lg-12 stretch-card">
                                     <div class="shadow-sm card">
                                         <div class="card-body">
-                                            {{-- Sección de Filtros --}}
+                                            
                                             <div class="mb-3 row">
                                                 <div class="col-md-3">
                                                     <label class="form-label"><i class="mdi mdi-account"></i>
@@ -186,7 +184,7 @@
                                                 </div>
                                             </div>
 
-                                            {{-- Loading Spinner --}}
+                                            
                                             <div id="loadingSpinner" class="py-5 text-center">
                                                 <div class="spinner-border text-primary" role="status"
                                                     style="width: 3rem; height: 3rem;">
@@ -195,13 +193,13 @@
                                                 <p class="mt-3 text-muted">Cargando acuerdos comerciales...</p>
                                             </div>
 
-                                            {{-- Error Message --}}
+                                            
                                             <div id="errorMessage" class="alert alert-danger" style="display: none;">
                                                 <i class="mdi mdi-alert-circle"></i>
                                                 <span id="errorText"></span>
                                             </div>
 
-                                            {{-- Tabla de Acuerdos --}}
+                                            
                                             <div id="tablaContainer" style="display: none;">
                                                 <div class="table-responsive"
                                                     style="overflow-x: auto; margin: 0 -1.5rem; padding: 0 1.5rem;">
@@ -236,7 +234,7 @@
                                                             </tr>
                                                         </thead>
                                                         <tbody id="tablaAcuerdosBody">
-                                                            {{-- Los datos se cargan dinámicamente --}}
+                                                            
                                                         </tbody>
                                                     </table>
                                                 </div>
@@ -253,7 +251,7 @@
         </div>
     </div>
 
-    {{-- Modal para Crear/Editar Acuerdo --}}
+    
     <div class="modal fade" id="modalAcuerdo" tabindex="-1" data-bs-backdrop="static">
         <div class="modal-dialog modal-xl">
             <div class="modal-content">
@@ -265,10 +263,10 @@
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <form id="formAcuerdo" enctype="multipart/form-data">
-                    @csrf
+                    <?php echo csrf_field(); ?>
                     <div class="modal-body">
                         <div class="row">
-                            {{-- Columna 1 --}}
+                            
                             <div class="col-md-6">
                                 <h6 class="mb-3 text-primary"><i class="mdi mdi-account-circle"></i> Datos del Cliente
                                 </h6>
@@ -331,7 +329,7 @@
                                 </div>
                             </div>
 
-                            {{-- Columna 2 --}}
+                            
                             <div class="col-md-6">
                                 <h6 class="mb-3 text-primary"><i class="mdi mdi-package-variant"></i> Detalles del Acuerdo
                                 </h6>
@@ -421,7 +419,7 @@
         </div>
     </div>
 
-    {{-- Modal para Ver Detalles --}}
+    
     <div class="modal fade" id="modalDetalles" tabindex="-1">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
@@ -432,13 +430,13 @@
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body" id="detallesAcuerdoContent">
-                    {{-- Contenido dinámico --}}
+                    
                 </div>
             </div>
         </div>
     </div>
 
-    {{-- Modal para Deshabilitar Acuerdo --}}
+    
     <div class="modal fade" id="modalDeshabilitar" tabindex="-1" data-bs-backdrop="static">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -449,7 +447,7 @@
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <form id="formDeshabilitar">
-                    @csrf
+                    <?php echo csrf_field(); ?>
                     <input type="hidden" id="acuerdoIdDeshabilitar">
                     <div class="modal-body">
                         <div class="alert alert-warning">
@@ -477,7 +475,7 @@
         </div>
     </div>
 
-    {{-- Modal para Rehabilitar Acuerdo --}}
+    
     <div class="modal fade" id="modalRehabilitar" tabindex="-1" data-bs-backdrop="static">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -488,7 +486,7 @@
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <form id="formRehabilitar">
-                    @csrf
+                    <?php echo csrf_field(); ?>
                     <input type="hidden" id="acuerdoIdRehabilitar">
                     <div class="modal-body">
                         <div class="alert alert-info">
@@ -516,7 +514,7 @@
         </div>
     </div>
 
-    {{-- Modal para Extender Acuerdo --}}
+    
     <div class="modal fade" id="modalExtender" tabindex="-1" data-bs-backdrop="static">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -527,7 +525,7 @@
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <form id="formExtender">
-                    @csrf
+                    <?php echo csrf_field(); ?>
                     <input type="hidden" id="acuerdoIdExtender">
                     <div class="modal-body">
                         <div class="alert alert-info">
@@ -559,7 +557,7 @@
         </div>
     </div>
 
-    {{-- Estilos --}}
+    
     <style>
         .card-stat {
             border: none;
@@ -682,19 +680,19 @@
             max-width: 1200px;
         }
     </style>
-@endsection
+<?php $__env->stopSection(); ?>
 
-@section('scripts')
+<?php $__env->startSection('scripts'); ?>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         let acuerdosData = [];
-        const userEmail = "{{ Auth::user()->email }}";
+        const userEmail = "<?php echo Auth::user()->email; ?>";
         const canValidate = userEmail === 'planeamiento.comercial@trimaxperu.com';
         const canApprove = userEmail === 'smonopoli@trimaxperu.com';
         const canManageAcuerdos = userEmail === 'smonopoli@trimaxperu.com' || userEmail ===
             'planeamiento.comercial@trimaxperu.com';
-        const isSede = {{ auth()->user()->isSede() ? 'true' : 'false' }};
-        const userSede = "{{ auth()->user()->sede ?? '' }}";
+        const isSede = <?php echo auth()->user()->isSede() ? 'true' : 'false'; ?>;
+        const userSede = "<?php echo auth()->user()->sede ?? ''; ?>";
 
         $(document).ready(function() {
             cargarAcuerdos();
@@ -739,7 +737,7 @@
                 if (estado)  params.append('estado', estado);
                 if (buscar)  params.append('buscar', buscar);
 
-                const url = '{{ route("comercial.acuerdos.exportar") }}' + (params.toString() ? '?' + params.toString() : '');
+                const url = '<?php echo route("comercial.acuerdos.exportar"); ?>' + (params.toString() ? '?' + params.toString() : '');
                 window.location.href = url;
             });
 
@@ -777,7 +775,7 @@
          */
         function cargarUsuarios() {
             $.ajax({
-                url: "{{ route('comercial.acuerdos.usuarios') }}",
+                url: "<?php echo route('comercial.acuerdos.usuarios'); ?>",
                 method: 'GET',
                 success: function(response) {
                     if (response.success) {
@@ -806,7 +804,7 @@
             $('#tablaContainer').hide();
 
             $.ajax({
-                url: "{{ route('comercial.acuerdos.obtener') }}",
+                url: "<?php echo route('comercial.acuerdos.obtener'); ?>",
                 method: 'GET',
                 success: function(response) {
                     if (response.success) {
@@ -947,7 +945,7 @@
 
                     const esDeshabilitado = acuerdo.estado === 'Deshabilitado';
                     const esVigente = acuerdo.estado === 'Vigente';
-                    const esCreador = acuerdo.creador && acuerdo.creador.id == {{ Auth::id() }};
+                    const esCreador = acuerdo.creador && acuerdo.creador.id == <?php echo Auth::id(); ?>;
                     const puedeEditar = esCreador || canManageAcuerdos;
 
                     html += `
@@ -1049,7 +1047,7 @@
             $('#btnGuardarAcuerdo').prop('disabled', true).html('<i class="mdi mdi-loading mdi-spin"></i> Guardando...');
 
             $.ajax({
-                url: "{{ route('comercial.acuerdos.crear') }}",
+                url: "<?php echo route('comercial.acuerdos.crear'); ?>",
                 method: 'POST',
                 data: formData,
                 processData: false,
@@ -1129,7 +1127,7 @@
                 url: `/comercial/acuerdos/${id}/deshabilitar`,
                 method: 'POST',
                 data: {
-                    _token: '{{ csrf_token() }}',
+                    _token: '<?php echo csrf_token(); ?>',
                     motivo: motivo
                 },
                 success: function(response) {
@@ -1211,7 +1209,7 @@
                 url: `/comercial/acuerdos/${id}/extender`,
                 method: 'POST',
                 data: {
-                    _token: '{{ csrf_token() }}',
+                    _token: '<?php echo csrf_token(); ?>',
                     nueva_fecha_fin: nuevaFecha,
                     motivo: motivo
                 },
@@ -1285,7 +1283,7 @@
                 url: `/comercial/acuerdos/${id}/rehabilitar`,
                 method: 'POST',
                 data: {
-                    _token: '{{ csrf_token() }}',
+                    _token: '<?php echo csrf_token(); ?>',
                     motivo: motivo
                 },
                 success: function(response) {
@@ -1334,7 +1332,7 @@
                         url: `/comercial/acuerdos/${id}/validar`,
                         method: 'POST',
                         data: {
-                            _token: '{{ csrf_token() }}',
+                            _token: '<?php echo csrf_token(); ?>',
                             accion: accion
                         },
                         success: function(response) {
@@ -1380,7 +1378,7 @@
                         url: `/comercial/acuerdos/${id}/aprobar`,
                         method: 'POST',
                         data: {
-                            _token: '{{ csrf_token() }}',
+                            _token: '<?php echo csrf_token(); ?>',
                             accion: accion
                         },
                         success: function(response) {
@@ -1590,7 +1588,7 @@
             const acuerdoId = $('#formAcuerdo').attr('data-acuerdo-id');
             const formData = new FormData($('#formAcuerdo')[0]);
 
-            let url = "{{ route('comercial.acuerdos.crear') }}";
+            let url = "<?php echo route('comercial.acuerdos.crear'); ?>";
             let method = 'POST';
 
             // Si es edición
@@ -1681,7 +1679,7 @@
                         url: `/comercial/acuerdos/${id}/cambiar-validacion`,
                         method: 'POST',
                         data: {
-                            _token: '{{ csrf_token() }}',
+                            _token: '<?php echo csrf_token(); ?>',
                             nuevo_estado: result.value
                         },
                         success: function(response) {
@@ -1741,7 +1739,7 @@
                         url: `/comercial/acuerdos/${id}/cambiar-aprobacion`,
                         method: 'POST',
                         data: {
-                            _token: '{{ csrf_token() }}',
+                            _token: '<?php echo csrf_token(); ?>',
                             nuevo_estado: result.value
                         },
                         success: function(response) {
@@ -1796,4 +1794,6 @@
             $('#errorText').text(mensaje);
         }
     </script>
-@endsection
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH /var/www/resources/views/comercial/acuerdos.blade.php ENDPATH**/ ?>

@@ -390,38 +390,34 @@
             animation-delay: .44s;
         }
 
-        @media (max-width: 768px) {
-            .lt-filter-panel {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            .lt-filter-actions {
-                justify-content: flex-end;
-            }
-
-            .om-cats-grid {
-                grid-template-columns: 1fr !important;
-            }
-        }
-
-        /* LAYOUT */
+        /* ── LAYOUT ── */
         .om-section {
             margin-bottom: 2rem;
         }
 
         .om-cats-grid {
             display: grid;
+            /* 2 columnas en pantallas grandes (monitor de escritorio) */
             grid-template-columns: 1fr 1fr;
             gap: 1.5rem;
         }
 
+        /* En laptop y pantallas medianas: 1 columna para que las tablas no se corten */
+        @media (max-width: 1400px) {
+            .om-cats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Evita que los grid items desborden su contenedor */
         .lt-table-card {
             background: var(--lt-white);
             border-radius: var(--lt-radius-lg);
             border: 1px solid var(--lt-gray-200);
             box-shadow: var(--lt-shadow-sm);
             overflow: hidden;
+            min-width: 0;
+            /* fix: evita que el grid item desborde */
             transition: transform .22s, box-shadow .22s, border-color .22s;
         }
 
@@ -525,6 +521,7 @@
             color: #b45309;
         }
 
+        /* Scroll horizontal en la tabla — la card no se rompe */
         .lt-table-wrap {
             overflow-x: auto;
         }
@@ -542,11 +539,13 @@
             border-radius: 10px;
         }
 
-        /* TABLA */
+        /* ── TABLA ── */
         .om-tbl {
             width: 100%;
             border-collapse: collapse;
             font-size: 0.8rem;
+            /* min-width garantiza que la tabla no se aplaste: col label + 4 sem x 2 cols + acum */
+            min-width: 520px;
         }
 
         .om-tbl thead tr {
@@ -697,7 +696,7 @@
             color: var(--lt-blue-900);
         }
 
-        /* HEAT MAP */
+        /* ── HEAT MAP ── */
         .heat-1 {
             background: #ffd5d5 !important;
         }
@@ -728,6 +727,26 @@
         .heat-4.td-om-pct,
         .heat-5.td-om-pct {
             color: rgba(255, 255, 255, .75) !important;
+        }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 768px) {
+            .lt-filter-panel {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .lt-filter-actions {
+                justify-content: flex-end;
+            }
+
+            .om-cats-grid {
+                grid-template-columns: 1fr !important;
+            }
+
+            .lt-page-title {
+                font-size: 1.5rem;
+            }
         }
     </style>
 <?php $__env->stopSection(); ?>
@@ -787,19 +806,19 @@
                     const list = (success && years?.length) ? years : [now.getFullYear()];
                     list.forEach(y => $y.append(
                         `<option value="${y}" ${y == now.getFullYear() ? 'selected' : ''}>${y}</option>`
-                        ));
+                    ));
                     loadData();
                 },
                 error() {
                     $('#filterYear').html(
                         `<option value="${new Date().getFullYear()}" selected>${new Date().getFullYear()}</option>`
-                        );
+                    );
                     loadData();
                 }
             });
         });
 
-        /* ── LOAD DATA — solo year ── */
+        /* ── LOAD DATA ── */
         function loadData() {
             const year = $('#filterYear').val();
             if (!year) return;
@@ -825,7 +844,7 @@
                     $('#btnText').text('Consultar');
                     if (success && data) {
                         omData = data;
-                        // Inicializar offsets al final del año (semanas más recientes)
+                        // Inicializar offsets apuntando a las semanas mas recientes
                         const total = (data.semanas || []).length;
                         const initOffset = Math.max(0, total - WEEKS_PER_VIEW);
                         omOffsets['GENERAL'] = initOffset;
@@ -848,7 +867,7 @@
         function showLoading() {
             $('#mainContent').html(
                 `<div class="lt-loading-state"><div class="lt-spinner"></div><p>Consultando Lead Time Objetivo +...</p></div>`
-                );
+            );
         }
 
         /* ── RENDER DASHBOARD ── */
@@ -874,7 +893,7 @@
                 </div>
             `;
 
-            /* CATEGORÍAS — grid 2 columnas */
+            /* CATEGORIAS — grid responsivo */
             html += `<div class="om-cats-grid">`;
             CAT_ORDER.forEach((cat, i) => {
                 const info = categorias[cat];
@@ -910,7 +929,7 @@
             const canNext = end < maxSem;
 
             const badgeTxt = visSems.length ?
-                `Sem ${visSems[0].num} – Sem ${visSems[visSems.length-1].num}` :
+                `Sem ${visSems[0].num} – Sem ${visSems[visSems.length - 1].num}` :
                 '';
 
             return `
@@ -938,7 +957,7 @@
             `;
         }
 
-        /* ── NAVEGACIÓN ── */
+        /* ── NAVEGACION ── */
         function navTable(key, dir) {
             if (!omData) return;
             const semanas = omData.semanas || [];
@@ -947,7 +966,7 @@
             omOffsets[key] = Math.max(0, Math.min(cur + dir, maxSem - WEEKS_PER_VIEW));
 
             const tableData = key === 'GENERAL' ? omData.general : (omData.categorias?.[key] || {});
-            $('#tbody-' + key).html(buildTableInner(semanas, tableData, key));
+            $(`#tbody-${key}`).html(buildTableInner(semanas, tableData, key));
 
             const offset = omOffsets[key];
             const end = Math.min(offset + WEEKS_PER_VIEW, maxSem);
@@ -956,8 +975,9 @@
             const canNext = end < maxSem;
 
             $(`#badge-${key}`).text(
-                visSems.length ? `Sem ${visSems[0].num} – Sem ${visSems[visSems.length-1].num}` : ''
+                visSems.length ? `Sem ${visSems[0].num} – Sem ${visSems[visSems.length - 1].num}` : ''
             );
+
             const $nav = $(`#section-${key} .lt-table-head .om-nav-group`);
             $nav.find('button').first().prop('disabled', !canPrev);
             $nav.find('button').last().prop('disabled', !canNext);
@@ -979,7 +999,7 @@
                     </svg>Sin órdenes atrasadas en este período</div>`;
             }
 
-            /* Máximo por semana visible → heat map */
+            /* Maximo por semana visible para heat map */
             const maxBySem = {};
             visSems.forEach(s => {
                 maxBySem[s.num] = 0;
@@ -1028,9 +1048,9 @@
                             'heat-2' : 'heat-1';
                     }
                     tbody +=
-                        `<td class="td-om-cant ${cant===0?'is-zero':''} ${heat}">${cant > 0 ? cant.toLocaleString() : '—'}</td>`;
+                        `<td class="td-om-cant ${cant === 0 ? 'is-zero' : ''} ${heat}">${cant > 0 ? cant.toLocaleString() : '—'}</td>`;
                     tbody +=
-                        `<td class="td-om-pct  ${pct===0?'is-zero':''} ${heat}${isLast?' td-sem-sep':''}">${pct > 0 ? pct+'%' : '—'}</td>`;
+                        `<td class="td-om-pct  ${pct  === 0 ? 'is-zero' : ''} ${heat}${isLast ? ' td-sem-sep' : ''}">${pct > 0 ? pct + '%' : '—'}</td>`;
                 });
                 const acum = f.acum ?? {
                     cant: 0,
@@ -1038,7 +1058,7 @@
                 };
                 tbody += `<td class="td-om-acum">
                     <span class="acum-cant">${acum.cant > 0 ? acum.cant.toLocaleString() : '—'}</span>
-                    <span class="acum-pct">${acum.pct > 0 ? acum.pct+'%' : ''}</span>
+                    <span class="acum-pct">${acum.pct > 0 ? acum.pct + '%' : ''}</span>
                 </td></tr>`;
             });
 
@@ -1049,9 +1069,9 @@
                     const cant = totales.semanas?.[s.num]?.cant ?? 0;
                     const isLast = idx === visSems.length - 1;
                     tbody +=
-                        `<td class="td-om-cant ${cant===0?'is-zero':''}">${cant > 0 ? cant.toLocaleString() : '—'}</td>`;
+                        `<td class="td-om-cant ${cant === 0 ? 'is-zero' : ''}">${cant > 0 ? cant.toLocaleString() : '—'}</td>`;
                     tbody +=
-                        `<td class="td-om-pct${isLast?' td-sem-sep':''}" style="color:var(--lt-gray-300)!important;">100%</td>`;
+                        `<td class="td-om-pct${isLast ? ' td-sem-sep' : ''}" style="color:var(--lt-gray-300)!important;">100%</td>`;
                 });
                 const acumT = totales.acum ?? {
                     cant: 0
@@ -1070,7 +1090,7 @@
         function renderEmpty(msg) {
             $('#mainContent').html(
                 `<div class="lt-empty"><div class="lt-empty-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#8892a8" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div><h5>${msg}</h5><p>Selecciona otro año</p></div>`
-                );
+            );
         }
 
         function clearCache() {

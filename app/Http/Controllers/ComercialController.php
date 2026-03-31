@@ -18,6 +18,8 @@ use Google\Client;
 use Google\Service\Sheets;
 use carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use App\Exports\AcuerdosComercialesExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 
 
@@ -1629,5 +1631,16 @@ class ComercialController extends Controller
         $valor = str_replace(',', '.', $valor);
 
         return floatval($valor);
+    }
+
+    public function exportarAcuerdos(Request $request)
+    {
+        if (!auth()->user()->puedeVerAcuerdosComerciales()) {
+            abort(403, 'No tienes permiso para exportar los acuerdos comerciales');
+        }
+
+        $filename = 'acuerdos_comerciales_' . now()->format('Ymd_His') . '.xlsx';
+
+        return Excel::download(new AcuerdosComercialesExport($request), $filename);
     }
 }
