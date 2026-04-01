@@ -23,20 +23,29 @@ class TriMaxAIAssistant
     protected $model;
     protected $googleSheets;
 
+    // Proveedor de fallback (Groq)
+    protected $fallbackApiKey;
+    protected $fallbackApiUrl;
+    protected $fallbackModel;
+
     // Máximo de mensajes de historial a enviar
     protected int $maxHistoryMessages = 10;
 
     public function __construct(GoogleSheetsService $googleSheets)
     {
-        // Usa Gemini si tiene API key configurada, sino cae a Groq
+        // Proveedor principal: Gemini si tiene key, sino Groq
         if (config('services.gemini.api_key')) {
-            $this->apiKey = config('services.gemini.api_key');
-            $this->apiUrl = config('services.gemini.api_url');
-            $this->model = config('services.gemini.model');
+            $this->apiKey    = config('services.gemini.api_key');
+            $this->apiUrl    = config('services.gemini.api_url');
+            $this->model     = config('services.gemini.model');
+            // Fallback: Groq
+            $this->fallbackApiKey   = config('services.groq.api_key');
+            $this->fallbackApiUrl   = config('services.groq.api_url');
+            $this->fallbackModel    = config('services.groq.model');
         } else {
-            $this->apiKey = config('services.groq.api_key');
-            $this->apiUrl = config('services.groq.api_url');
-            $this->model = config('services.groq.model');
+            $this->apiKey    = config('services.groq.api_key');
+            $this->apiUrl    = config('services.groq.api_url');
+            $this->model     = config('services.groq.model');
         }
         $this->googleSheets = $googleSheets;
     }
@@ -102,6 +111,7 @@ class TriMaxAIAssistant
                     $messages[] = [
                         'role' => 'tool',
                         'tool_call_id' => $toolCall['id'],
+                        'name' => $functionName,
                         'content' => json_encode($result, JSON_UNESCAPED_UNICODE),
                     ];
                 }
@@ -1295,31 +1305,195 @@ MÓDULOS DEL SISTEMA:
 
     protected function callAIWithTools(array $messages, $user = null): ?array
     {
+        // Proveedor principal: Gemini nativo (si tiene key)
+        if ($this->apiKey && $this->fallbackApiKey) {
+            $result = $this->callGeminiNative($messages, $user);
+            if ($result !== null) {
+                return $result;
+            }
+            Log::warning('AI: Gemini falló, usando Groq como fallback.');
+        }
+
+        // Groq como primario o fallback (OpenAI-compatible)
+        $apiKey = $this->fallbackApiKey ?? $this->apiKey;
+        $apiUrl = $this->fallbackApiUrl ?? $this->apiUrl;
+        $model  = $this->fallbackModel  ?? $this->model;
+
+        return $this->callGroqProvider($apiKey, $apiUrl, $model, $messages, $user);
+    }
+
+    /**
+     * Llama a la API nativa de Gemini con function calling
+     */
+    protected function callGeminiNative(array $messages, $user = null): ?array
+    {
+        try {
+            $url = "https://generativelanguage.googleapis.com/v1beta/models/{$this->model}:generateContent?key={$this->apiKey}";
+
+            // Separar system message del resto
+            $systemInstruction = null;
+            $contents = [];
+
+            foreach ($messages as $msg) {
+                $role = $msg['role'];
+
+                if ($role === 'system') {
+                    $systemInstruction = ['parts' => [['text' => $msg['content']]]];
+                    continue;
+                }
+
+                if ($role === 'assistant') {
+                    $parts = [];
+                    if (!empty($msg['tool_calls'])) {
+                        foreach ($msg['tool_calls'] as $tc) {
+                            $args = json_decode($tc['function']['arguments'] ?? '{}', true) ?? [];
+                            // Gemini requiere que args no sea array vacío sino objeto vacío
+                            $parts[] = [
+                                'functionCall' => [
+                                    'name' => $tc['function']['name'],
+                                    'args' => empty($args) ? new \stdClass() : $args,
+                                ],
+                            ];
+                        }
+                    } else {
+                        $parts[] = ['text' => $msg['content'] ?? ''];
+                    }
+                    $contents[] = ['role' => 'model', 'parts' => $parts];
+                    continue;
+                }
+
+                if ($role === 'tool') {
+                    // Respuesta de función — Gemini la espera en un mensaje "user"
+                    $result = json_decode($msg['content'] ?? '{}', true) ?? ['result' => $msg['content']];
+                    $toolResponse = [
+                        'functionResponse' => [
+                            'name'     => $msg['name'] ?? 'unknown',
+                            'response' => $result,
+                        ],
+                    ];
+                    // Si el último contenido es también "user" (otra tool), agrupar
+                    if (!empty($contents) && end($contents)['role'] === 'user') {
+                        $lastIdx = count($contents) - 1;
+                        $contents[$lastIdx]['parts'][] = $toolResponse;
+                    } else {
+                        $contents[] = ['role' => 'user', 'parts' => [$toolResponse]];
+                    }
+                    continue;
+                }
+
+                // Mensaje normal del usuario
+                $contents[] = ['role' => 'user', 'parts' => [['text' => $msg['content'] ?? '']]];
+            }
+
+            // Convertir tools de formato OpenAI a Gemini functionDeclarations
+            $tools = $this->getTools($user);
+            $functionDeclarations = array_map(fn($t) => [
+                'name'        => $t['function']['name'],
+                'description' => $t['function']['description'],
+                'parameters'  => $t['function']['parameters'],
+            ], $tools);
+
+            $payload = [
+                'contents'       => $contents,
+                'tools'          => [['functionDeclarations' => $functionDeclarations]],
+                'toolConfig'     => ['functionCallingConfig' => ['mode' => 'AUTO']],
+                'generationConfig' => [
+                    'temperature'    => 0.1,
+                    'maxOutputTokens' => 2000,
+                ],
+            ];
+
+            if ($systemInstruction) {
+                $payload['systemInstruction'] = $systemInstruction;
+            }
+
+            $response = Http::timeout(60)
+                ->withHeaders(['Content-Type' => 'application/json'])
+                ->post($url, $payload);
+
+            if (!$response->successful()) {
+                Log::error('AI [Gemini] Error: ' . $response->status() . ' - ' . substr($response->body(), 0, 500));
+                return null;
+            }
+
+            return $this->convertGeminiToOpenAI($response->json());
+
+        } catch (\Exception $e) {
+            Log::error('AI [Gemini] Exception: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Convierte la respuesta nativa de Gemini al formato OpenAI (que usa el resto del código)
+     */
+    protected function convertGeminiToOpenAI(array $gemini): array
+    {
+        $parts = $gemini['candidates'][0]['content']['parts'] ?? [];
+        $toolCalls = [];
+        $text = '';
+
+        foreach ($parts as $i => $part) {
+            if (isset($part['functionCall'])) {
+                $toolCalls[] = [
+                    'id'       => 'call_' . $i . '_' . substr(md5($part['functionCall']['name'] . $i), 0, 8),
+                    'type'     => 'function',
+                    'function' => [
+                        'name'      => $part['functionCall']['name'],
+                        'arguments' => json_encode($part['functionCall']['args'] ?? []),
+                    ],
+                ];
+            } elseif (isset($part['text'])) {
+                $text .= $part['text'];
+            }
+        }
+
+        $message = ['role' => 'assistant'];
+        if (!empty($toolCalls)) {
+            $message['tool_calls'] = $toolCalls;
+            $message['content']    = null;
+        } else {
+            $message['content'] = $text;
+        }
+
+        return [
+            'choices' => [[
+                'message'       => $message,
+                'finish_reason' => !empty($toolCalls) ? 'tool_calls' : 'stop',
+            ]],
+        ];
+    }
+
+    /**
+     * Llama a Groq (o cualquier proveedor OpenAI-compatible)
+     */
+    protected function callGroqProvider(string $apiKey, string $apiUrl, string $model, array $messages, $user = null): ?array
+    {
         try {
             $payload = [
-                'model' => $this->model,
-                'messages' => $messages,
-                'tools' => $this->getTools($user),
+                'model'       => $model,
+                'messages'    => $messages,
+                'tools'       => $this->getTools($user),
                 'tool_choice' => 'auto',
                 'temperature' => 0.1,
-                'max_tokens' => 2000,
+                'max_tokens'  => 2000,
             ];
 
             $response = Http::timeout(60)
                 ->withHeaders([
-                    'Authorization' => 'Bearer ' . $this->apiKey,
-                    'Content-Type' => 'application/json',
+                    'Authorization' => 'Bearer ' . $apiKey,
+                    'Content-Type'  => 'application/json',
                 ])
-                ->post($this->apiUrl, $payload);
+                ->post($apiUrl, $payload);
 
             if ($response->successful()) {
                 return $response->json();
             }
 
-            Log::error('AI API Error: ' . $response->status() . ' - ' . $response->body());
+            Log::error('AI [Groq] Error: ' . $response->status() . ' - ' . substr($response->body(), 0, 500));
             return null;
         } catch (\Exception $e) {
-            Log::error('AI Exception: ' . $e->getMessage());
+            Log::error('AI [Groq] Exception: ' . $e->getMessage());
             return null;
         }
     }
