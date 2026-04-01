@@ -55,4 +55,10 @@ return [
         'model' => env('GROQ_MODEL', 'llama-3.1-8b-instant'),
     ],
 
+    'gemini' => [
+        'api_key' => env('GEMINI_API_KEY'),
+        'api_url' => 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
+        'model' => env('GEMINI_MODEL', 'gemini-2.0-flash'),
+    ],
+
 ];

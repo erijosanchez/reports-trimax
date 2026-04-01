@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(php:*)"
+      "Bash(php:*)",
+      "Bash(find /c/xampp/htdocs/reports-trimax -type f -name *.env*)",
+      "Bash(xargs grep:*)"
     ]
   }
 }

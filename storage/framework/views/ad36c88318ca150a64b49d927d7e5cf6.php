@@ -201,12 +201,34 @@
 
                                             
                                             <div id="tablaContainer" style="display: none;">
+
+                                                <?php if(in_array(auth()->user()->email, ['smonopoli@trimaxperu.com','planeamiento.comercial@trimaxperu.com'])): ?>
+                                                
+                                                <div id="barraSeleccion" class="d-none alert alert-success d-flex align-items-center justify-content-between mb-3 py-2" style="border-left:4px solid #198754;">
+                                                    <div class="d-flex align-items-center gap-2">
+                                                        <i class="mdi mdi-check-circle fs-5"></i>
+                                                        <strong id="contadorSeleccionados">0</strong>&nbsp;acuerdo(s) seleccionado(s)
+                                                        <button type="button" class="btn btn-sm btn-link text-success p-0 ms-2" id="btnDeseleccionarTodo">Deseleccionar todo</button>
+                                                    </div>
+                                                    <div>
+                                                        <button type="button" class="btn btn-success btn-sm" id="btnExtenderMasivo">
+                                                            <i class="mdi mdi-calendar-clock"></i> Extender seleccionados
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                <?php endif; ?>
+
                                                 <div class="table-responsive"
                                                     style="overflow-x: auto; margin: 0 -1.5rem; padding: 0 1.5rem;">
                                                     <table class="table table-hover align-middle" id="tablaAcuerdos"
                                                         style="min-width: 2500px;">
                                                         <thead class="table-dark">
                                                             <tr>
+                                                                <?php if(in_array(auth()->user()->email, ['smonopoli@trimaxperu.com','planeamiento.comercial@trimaxperu.com'])): ?>
+                                                                <th width="45" class="text-center">
+                                                                    <input type="checkbox" id="checkTodos" class="form-check-input" style="cursor:pointer;width:18px;height:18px;" title="Seleccionar todos">
+                                                                </th>
+                                                                <?php endif; ?>
                                                                 <th width="50">#</th>
                                                                 <th style="min-width: 130px;">N° Acuerdo</th>
                                                                 <th style="min-width: 120px;">Sede</th>
@@ -558,6 +580,51 @@
     </div>
 
     
+    <?php if(in_array(auth()->user()->email, ['smonopoli@trimaxperu.com','planeamiento.comercial@trimaxperu.com'])): ?>
+    <div class="modal fade" id="modalExtenderMasivo" tabindex="-1" data-bs-backdrop="static">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="bg-success text-white modal-header">
+                    <h5 class="modal-title">
+                        <i class="mdi mdi-calendar-clock"></i> Extensión Masiva de Acuerdos
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="formExtenderMasivo">
+                    <?php echo csrf_field(); ?>
+                    <div class="modal-body">
+                        <div class="alert alert-info">
+                            <i class="mdi mdi-information"></i>
+                            Se extenderán <strong id="totalExtenderMasivo">0</strong> acuerdo(s) seleccionado(s).
+                            <br><small class="text-muted">La nueva fecha de fin aplica a todos los acuerdos seleccionados.</small>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Nueva Fecha de Fin <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="nuevaFechaFinMasivo" name="nueva_fecha_fin" required>
+                            <small class="text-muted">Debe ser posterior a hoy.</small>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Motivo de la Extensión <span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="motivoExtenderMasivo" name="motivo" rows="4" required
+                                placeholder="Explique el motivo por el cual se extienden estos acuerdos..."></textarea>
+                            <small class="text-muted">Mínimo 10 caracteres</small>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="mdi mdi-close"></i> Cancelar
+                        </button>
+                        <button type="submit" class="btn btn-success" id="btnConfirmarExtenderMasivo">
+                            <i class="mdi mdi-calendar-check"></i> Extender Acuerdos
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
+
+    
     <style>
         .card-stat {
             border: none;
@@ -724,6 +791,92 @@
             $('#btnRecargar').on('click', function() {
                 cargarAcuerdos();
             });
+
+            // ---- Selección masiva tipo Gmail ----
+            if (canManageAcuerdos) {
+                // Select all
+                $(document).on('change', '#checkTodos', function() {
+                    $('.check-acuerdo:not(:disabled)').prop('checked', $(this).is(':checked'));
+                    actualizarBarraSeleccion();
+                });
+
+                // Checkbox individual
+                $(document).on('change', '.check-acuerdo', function() {
+                    const total = $('.check-acuerdo:not(:disabled)').length;
+                    const seleccionados = $('.check-acuerdo:checked').length;
+                    $('#checkTodos')
+                        .prop('indeterminate', seleccionados > 0 && seleccionados < total)
+                        .prop('checked', seleccionados > 0 && seleccionados === total);
+                    actualizarBarraSeleccion();
+                });
+
+                $('#btnDeseleccionarTodo').on('click', function() {
+                    $('.check-acuerdo, #checkTodos').prop('checked', false).prop('indeterminate', false);
+                    actualizarBarraSeleccion();
+                });
+
+                $('#btnExtenderMasivo').on('click', function() {
+                    const seleccionados = $('.check-acuerdo:checked').length;
+                    if (seleccionados === 0) return;
+                    $('#totalExtenderMasivo').text(seleccionados);
+                    $('#formExtenderMasivo')[0].reset();
+                    const hoy = new Date().toISOString().split('T')[0];
+                    $('#nuevaFechaFinMasivo').attr('min', hoy);
+                    $('#modalExtenderMasivo').modal('show');
+                });
+
+                $('#formExtenderMasivo').on('submit', function(e) {
+                    e.preventDefault();
+                    extenderMasivo();
+                });
+            }
+
+            function actualizarBarraSeleccion() {
+                const seleccionados = $('.check-acuerdo:checked').length;
+                $('#contadorSeleccionados').text(seleccionados);
+                if (seleccionados > 0) {
+                    $('#barraSeleccion').removeClass('d-none').addClass('d-flex');
+                } else {
+                    $('#barraSeleccion').addClass('d-none').removeClass('d-flex');
+                }
+            }
+
+            function extenderMasivo() {
+                const ids = $('.check-acuerdo:checked').map(function() {
+                    return $(this).data('id');
+                }).get();
+
+                if (ids.length === 0) return;
+
+                const nuevaFecha = $('#nuevaFechaFinMasivo').val();
+                const motivo    = $('#motivoExtenderMasivo').val();
+
+                $('#btnConfirmarExtenderMasivo').prop('disabled', true)
+                    .html('<i class="mdi mdi-loading mdi-spin"></i> Procesando...');
+
+                $.ajax({
+                    url: '<?php echo route("comercial.acuerdos.extender-masivo"); ?>',
+                    method: 'POST',
+                    data: { _token: '<?php echo csrf_token(); ?>', ids: ids, nueva_fecha_fin: nuevaFecha, motivo: motivo },
+                    success: function(response) {
+                        if (response.success) {
+                            $('#modalExtenderMasivo').modal('hide');
+                            $('.check-acuerdo, #checkTodos').prop('checked', false).prop('indeterminate', false);
+                            actualizarBarraSeleccion();
+                            Swal.fire({ icon: 'success', title: '¡Éxito!', text: response.message, confirmButtonColor: '#198754' });
+                            cargarAcuerdos();
+                        }
+                    },
+                    error: function(xhr) {
+                        Swal.fire({ icon: 'error', title: 'Error', text: xhr.responseJSON?.message || 'Error al extender acuerdos', confirmButtonColor: '#dc3545' });
+                    },
+                    complete: function() {
+                        $('#btnConfirmarExtenderMasivo').prop('disabled', false)
+                            .html('<i class="mdi mdi-calendar-check"></i> Extender Acuerdos');
+                    }
+                });
+            }
+            // ---- Fin selección masiva ----
 
             $('#btnExportarExcel').on('click', function() {
                 const params = new URLSearchParams();
@@ -926,6 +1079,10 @@
          * Renderizar tabla
          */
         function renderizarTabla() {
+            // Resetear selección al recargar tabla
+            $('#checkTodos').prop('checked', false).prop('indeterminate', false);
+            $('#barraSeleccion').addClass('d-none');
+
             let html = '';
 
             if (acuerdosData.length === 0) {
@@ -950,6 +1107,7 @@
 
                     html += `
                     <tr ${esDeshabilitado ? 'class="table-secondary"' : ''}>
+                        ${canManageAcuerdos ? `<td class="text-center"><input type="checkbox" class="check-acuerdo form-check-input" data-id="${acuerdo.id}" style="cursor:pointer;width:18px;height:18px;" ${esDeshabilitado ? 'disabled title="Deshabilitado"' : ''}></td>` : ''}
                         <td class="text-center">${index + 1}</td>
                         <td><strong class="text-primary">${acuerdo.numero_acuerdo}</strong></td>
                         <td>${acuerdo.sede}</td>

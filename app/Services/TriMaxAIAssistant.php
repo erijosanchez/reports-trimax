@@ -28,9 +28,16 @@ class TriMaxAIAssistant
 
     public function __construct(GoogleSheetsService $googleSheets)
     {
-        $this->apiKey = config('services.groq.api_key');
-        $this->apiUrl = config('services.groq.api_url');
-        $this->model = config('services.groq.model');
+        // Usa Gemini si tiene API key configurada, sino cae a Groq
+        if (config('services.gemini.api_key')) {
+            $this->apiKey = config('services.gemini.api_key');
+            $this->apiUrl = config('services.gemini.api_url');
+            $this->model = config('services.gemini.model');
+        } else {
+            $this->apiKey = config('services.groq.api_key');
+            $this->apiUrl = config('services.groq.api_url');
+            $this->model = config('services.groq.model');
+        }
         $this->googleSheets = $googleSheets;
     }
 
@@ -60,7 +67,7 @@ class TriMaxAIAssistant
         $messages[] = ['role' => 'user', 'content' => $question];
 
         // Primera llamada con tools
-        $response = $this->callGroqWithTools($messages);
+        $response = $this->callAIWithTools($messages, $user);
 
         if (!$response) {
             return $this->errorResponse($question, $context);
@@ -99,7 +106,7 @@ class TriMaxAIAssistant
                     ];
                 }
 
-                $response = $this->callGroqWithTools($messages);
+                $response = $this->callAIWithTools($messages, $user);
                 if (!$response) break;
 
                 $iteration++;
@@ -153,12 +160,35 @@ class TriMaxAIAssistant
         $userName = $user->name ?? 'Usuario';
         $userRole = $systemContext['user_role'] ?? 'guest';
         $userEmail = $user->email ?? '';
-        $userSede = $user->sede ?? 'No asignada';
+        $userSede = $user->sede ? strtoupper($user->sede) : null;
         $module = $systemContext['current_module'] ?? 'general';
-        $actions = implode(', ', $systemContext['available_actions'] ?? []);
         $fechaHoy = Carbon::now()->format('d/m/Y');
         $mesActual = ucfirst(Carbon::now()->locale('es')->translatedFormat('F'));
         $anioActual = Carbon::now()->year;
+
+        // Construir lista de permisos reales del usuario
+        $permisos = [];
+        if ($user->puedeVerVentasConsolidadas()) $permisos[] = 'Ver ventas consolidadas (todas las sedes)';
+        if ($userSede && !$user->puedeVerVentasConsolidadas()) $permisos[] = "Ver ventas de su sede ({$userSede})";
+        if ($user->puedeVerDescuentosEspeciales()) $permisos[] = 'Ver descuentos especiales';
+        if ($user->puedeVerConsultarOrden()) $permisos[] = 'Consultar órdenes';
+        if ($user->puedeVerAcuerdosComerciales()) $permisos[] = 'Ver acuerdos comerciales';
+        if ($user->puedeVerLeadTime()) $permisos[] = 'Ver lead time';
+        if ($user->puedeVerVentaClientes()) $permisos[] = 'Ver ventas por cliente';
+        if ($user->puedeVerOrdenesXSede()) $permisos[] = 'Ver órdenes por sede';
+        if ($user->puedeVerPendienteEntregaMontura()) $permisos[] = 'Ver pendiente entrega montura';
+        if ($user->puedeCrearRequerimientos()) $permisos[] = 'Crear requerimientos de personal';
+        if ($user->puedeVerTodosLosRequerimientos()) $permisos[] = 'Ver todos los requerimientos de personal';
+        if ($user->puedeGestionarRequerimientos()) $permisos[] = 'Gestionar requerimientos de personal';
+        if ($user->isSuperAdmin() || $user->isAdmin()) $permisos[] = 'Administración del sistema';
+
+        $permisosStr = empty($permisos) ? 'Solo información general' : implode("\n  - ", $permisos);
+
+        $sedeInfo = $userSede
+            ? "- Sede asignada: {$userSede} (SOLO puedes ver datos de esta sede salvo que tengas permiso de consolidado)"
+            : '- Sede: Sin restricción de sede';
+
+        $actions = implode(', ', $systemContext['available_actions'] ?? []);
 
         return "Eres el Asistente Trimax, asistente inteligente del CRM de Trimax Perú (Laboratorio Óptico).
 Trimax tiene más de 30 sedes a nivel nacional: Lima (Lince, SJM, SJL, Ate, Los Olivos, Puente Piedra, Comas, Cailloma, Napo, Surquillo, Villa El Salvador, Call Center), Arequipa, Trujillo, Chiclayo, Piura, Cusco, Huancayo, Ica, Iquitos, Cajamarca, Chimbote, Huánuco, Huaraz, Pucallpa, Tacna, Ayacucho, Juliaca, Tarapoto y más.
@@ -169,54 +199,91 @@ USUARIO LOGUEADO:
 - Nombre: {$userName}
 - Email: {$userEmail}
 - Rol: {$userRole}
-- Sede: {$userSede}
+{$sedeInfo}
 - Módulo actual: {$module}
-- Acciones: {$actions}
-- Fecha: {$fechaHoy}
-- Periodo: {$mesActual} {$anioActual}
+- Acciones disponibles: {$actions}
+- Fecha: {$fechaHoy} | Periodo: {$mesActual} {$anioActual}
+
+══════════════════════════════
+PERMISOS REALES DEL USUARIO:
+══════════════════════════════
+  - {$permisosStr}
+
+IMPORTANTE: Solo puedes mostrar información que corresponda a los permisos listados arriba.
+Si el usuario pide algo fuera de sus permisos, indícalo con cortesía.
 
 ══════════════════════════════
 REGLAS CRÍTICAS:
 ══════════════════════════════
 1. NUNCA inventes datos. SIEMPRE usa las funciones para consultar datos reales.
-2. Si preguntan por ventas, descuentos, órdenes, acuerdos → LLAMA a la función correspondiente.
-3. Si NO tienes función para algo, dilo: 'No tengo acceso a esa información.'
+2. Si el usuario no tiene permiso para algo, dilo: 'No tienes acceso a esa información con tu rol actual.'
+3. Si el usuario tiene sede asignada y NO tiene permiso de consolidado, las funciones ya filtran por su sede automáticamente.
 4. Responde en español, natural y conciso. Usa emojis moderadamente.
 5. Dirígete al usuario como {$userName}.
-6. Adapta la información según el rol ({$userRole}).
-7. Respuestas cortas: máximo 3-4 párrafos.
-8. NUNCA digas que una sede no existe sin consultar primero.
-9. Cuando muestres datos numéricos, formatea con separadores de miles y 2 decimales.
-10. Si el usuario pide comparaciones entre sedes/periodos, llama la función múltiples veces si es necesario.
-11. Tienes acceso al historial de conversación de esta sesión. Si el usuario hace referencia a algo anterior, ya tienes el contexto.
-12. Para datos de ventas desde la BD (tabla ventas), usa obtener_ventas_bd. Para ventas desde Google Sheets, usa obtener_ventas_sede.
+6. Respuestas cortas: máximo 3-4 párrafos, salvo que pidan un reporte detallado.
+7. NUNCA digas que una sede no existe sin consultar primero.
+8. Cuando muestres datos numéricos, formatea con separadores de miles y 2 decimales.
+9. Si piden comparaciones entre sedes/periodos, llama la función múltiples veces.
+10. Para ventas granulares (por marca, tipo cliente, zona) usa obtener_ventas_bd. Para cuotas y cumplimiento usa obtener_ventas_sede.
+11. Tienes historial de conversación de esta sesión — úsalo para mantener el contexto.
 
-MÓDULOS:
-- Descuentos Especiales: Solicitudes con flujo de aprobación
-- Convenios Comerciales: Acuerdos corporativos (validación + aprobación)
-- Consulta de Órdenes: Desde Google Sheets
-- Dashboard de Ventas: Métricas por sede
-- Encuestas de Satisfacción: Calificaciones de clientes";
+MÓDULOS DEL SISTEMA:
+- Descuentos Especiales: Solicitudes con flujo de aprobación (Pendiente → Aprobado/Rechazado)
+- Acuerdos Comerciales: Convenios corporativos con validación y aprobación
+- Consulta de Órdenes: Desde Google Sheets (estado, ubicación, importe)
+- Dashboard de Ventas: Métricas por sede (cuota, venta, cumplimiento)
+- Encuestas de Satisfacción: Calificaciones de clientes (1-5 estrellas)
+- Requerimientos de Personal: Solicitudes de contratación con flujo RRHH";
     }
 
     // ================================================================
     // TOOLS - AHORA CON MÁS FUNCIONES
     // ================================================================
 
-    protected function getTools(): array
+    protected function getTools($user = null): array
     {
-        return [
-            $this->toolVentasSede(),
-            $this->toolVentasBD(),
-            $this->toolEstadisticasOrdenes(),
-            $this->toolAcuerdosComerciales(),
-            $this->toolDescuentosEspeciales(),
-            $this->toolBuscarOrden(),
+        // Herramientas disponibles para todos los autenticados
+        $tools = [
             $this->toolInfoUsuario(),
             $this->toolResumenGeneral(),
-            $this->toolEncuestasSatisfaccion(),
-            $this->toolTopSedes(),
         ];
+
+        if (!$user) return $tools;
+
+        // Ventas: consolidado o solo su sede
+        if ($user->puedeVerVentasConsolidadas() || $user->isSede()) {
+            $tools[] = $this->toolVentasSede();
+            $tools[] = $this->toolVentasBD();
+            $tools[] = $this->toolTopSedes();
+        }
+
+        // Órdenes
+        if ($user->puedeVerConsultarOrden() || $user->puedeVerOrdenesXSede()) {
+            $tools[] = $this->toolBuscarOrden();
+            $tools[] = $this->toolEstadisticasOrdenes();
+        }
+
+        // Acuerdos comerciales
+        if ($user->puedeVerAcuerdosComerciales()) {
+            $tools[] = $this->toolAcuerdosComerciales();
+        }
+
+        // Descuentos especiales
+        if ($user->puedeVerDescuentosEspeciales()) {
+            $tools[] = $this->toolDescuentosEspeciales();
+        }
+
+        // Encuestas: admins, marketing y superadmin
+        if ($user->isSuperAdmin() || $user->isAdmin() || $user->isMarketing()) {
+            $tools[] = $this->toolEncuestasSatisfaccion();
+        }
+
+        // Requerimientos de personal: RRHH, SuperAdmin, y quien tenga permiso
+        if ($user->puedeCrearRequerimientos() || $user->puedeVerTodosLosRequerimientos()) {
+            $tools[] = $this->toolRequerimientos();
+        }
+
+        return $tools;
     }
 
     protected function toolVentasSede(): array
@@ -473,6 +540,39 @@ MÓDULOS:
         ];
     }
 
+    protected function toolRequerimientos(): array
+    {
+        return [
+            'type' => 'function',
+            'function' => [
+                'name' => 'obtener_requerimientos_personal',
+                'description' => 'Obtiene requerimientos de contratación de personal con sus estados y KPIs. Solo disponible para RRHH y administradores.',
+                'parameters' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'estado' => [
+                            'type' => 'string',
+                            'description' => 'Filtrar por estado: Pendiente, En Proceso, Contratado, Cancelado',
+                            'enum' => ['Pendiente', 'En Proceso', 'Contratado', 'Cancelado'],
+                        ],
+                        'sede' => [
+                            'type' => 'string',
+                            'description' => 'Filtrar por sede',
+                        ],
+                        'gerencia' => [
+                            'type' => 'string',
+                            'description' => 'Filtrar por gerencia o área',
+                        ],
+                        'sla_vencido' => [
+                            'type' => 'boolean',
+                            'description' => 'true para ver solo requerimientos con SLA vencido (>45 días)',
+                        ],
+                    ],
+                ],
+            ],
+        ];
+    }
+
     // ================================================================
     // EJECUTOR DE FUNCIONES
     // ================================================================
@@ -491,6 +591,7 @@ MÓDULOS:
                 'obtener_resumen_general' => $this->fnObtenerResumenGeneral($user),
                 'obtener_encuestas_satisfaccion' => $this->fnObtenerEncuestas($args, $user),
                 'obtener_ranking_sedes' => $this->fnObtenerRankingSedes($args, $user),
+                'obtener_requerimientos_personal' => $this->fnObtenerRequerimientos($args, $user),
                 default => ['error' => "Función '{$functionName}' no disponible"],
             };
         } catch (\Exception $e) {
@@ -514,6 +615,11 @@ MÓDULOS:
         $mes = $args['mes'] ?? $mesActual;
         $anio = $args['anio'] ?? $anioActual;
         $sedeFilter = isset($args['sede']) ? strtoupper(trim($args['sede'])) : null;
+
+        // Si el usuario es de sede y NO tiene permiso de consolidado, forzar su sede
+        if ($user->isSede() && !$user->puedeVerVentasConsolidadas() && $user->sede) {
+            $sedeFilter = strtoupper($user->sede);
+        }
 
         $mes = ucfirst(strtolower(trim($mes)));
 
@@ -621,6 +727,11 @@ MÓDULOS:
         $marca = $args['marca'] ?? null;
         $tipoCliente = $args['tipo_cliente'] ?? null;
         $agruparPor = $args['agrupar_por'] ?? 'sede';
+
+        // Si el usuario es de sede y NO tiene permiso de consolidado, forzar su sede
+        if ($user->isSede() && !$user->puedeVerVentasConsolidadas() && $user->sede) {
+            $sede = $user->sede;
+        }
 
         try {
             $cacheKey = "ai_ventas_bd_{$anio}_{$mes}_{$agruparPor}_" . md5(json_encode($args));
@@ -733,6 +844,11 @@ MÓDULOS:
     {
         $query = AcuerdoComercial::with(['creador:id,name,email']);
 
+        // Si el usuario es de sede, filtrar por su sede automáticamente
+        if ($user->isSede() && $user->sede) {
+            $query->where('sede', 'LIKE', '%' . $user->sede . '%');
+        }
+
         if (!empty($args['estado'])) {
             $query->where('estado', $args['estado']);
         }
@@ -798,6 +914,11 @@ MÓDULOS:
                 'descuentos_especiales.created_at',
                 'users.name as creado_por'
             );
+
+        // Si el usuario es de sede, filtrar por su sede automáticamente
+        if ($user->isSede() && $user->sede) {
+            $query->where('descuentos_especiales.sede', 'LIKE', '%' . $user->sede . '%');
+        }
 
         if (!empty($args['estado_aplicado'])) {
             $query->where('descuentos_especiales.aplicado', $args['estado_aplicado']);
@@ -1090,23 +1211,101 @@ MÓDULOS:
         ];
     }
 
+    /**
+     * 👥 Requerimientos de personal (solo RRHH y admins)
+     */
+    protected function fnObtenerRequerimientos(array $args, $user): array
+    {
+        if (!$user->puedeCrearRequerimientos() && !$user->puedeVerTodosLosRequerimientos()) {
+            return ['error' => 'No tienes permiso para consultar requerimientos de personal.'];
+        }
+
+        try {
+            $query = \App\Models\RequerimientoPersonal::with([
+                'solicitante:id,name,sede',
+                'responsableRh:id,name',
+            ]);
+
+            // Si no puede ver todos, solo ve los suyos
+            if (!$user->puedeVerTodosLosRequerimientos()) {
+                $query->where('solicitante_id', $user->id);
+            }
+
+            if (!empty($args['estado'])) {
+                $query->where('estado', $args['estado']);
+            }
+            if (!empty($args['sede'])) {
+                $query->where('sede', 'LIKE', '%' . $args['sede'] . '%');
+            }
+            if (!empty($args['gerencia'])) {
+                $query->where('gerencia', 'LIKE', '%' . $args['gerencia'] . '%');
+            }
+            if (!empty($args['sla_vencido']) && $args['sla_vencido']) {
+                $query->slaVencidos();
+            }
+
+            $requerimientos = $query->orderBy('created_at', 'desc')->limit(20)->get();
+
+            $resumen = \App\Models\RequerimientoPersonal::selectRaw("
+                COUNT(*) as total,
+                SUM(CASE WHEN estado = 'Pendiente' THEN 1 ELSE 0 END) as pendientes,
+                SUM(CASE WHEN estado = 'En Proceso' THEN 1 ELSE 0 END) as en_proceso,
+                SUM(CASE WHEN estado = 'Contratado' THEN 1 ELSE 0 END) as contratados,
+                SUM(CASE WHEN estado = 'Cancelado' THEN 1 ELSE 0 END) as cancelados
+            ")->first();
+
+            $slaVencidos = \App\Models\RequerimientoPersonal::slaVencidos()->count();
+
+            return [
+                'requerimientos' => $requerimientos->map(fn($r) => [
+                    'codigo' => $r->codigo,
+                    'puesto' => $r->puesto,
+                    'gerencia' => $r->gerencia,
+                    'sede' => $r->sede,
+                    'tipo' => $r->tipo,
+                    'estado' => $r->estado,
+                    'semaforo' => $r->semaforo,
+                    'dias_transcurridos' => $r->kpi,
+                    'sla_limite' => $r->sla . ' días',
+                    'solicitante' => $r->solicitante->name ?? 'N/A',
+                    'responsable_rh' => $r->responsableRh->name ?? 'Sin asignar',
+                    'fecha_solicitud' => $r->fecha_solicitud?->format('d/m/Y'),
+                    'fecha_cierre' => $r->fecha_cierre?->format('d/m/Y'),
+                ])->toArray(),
+                'total_encontrados' => $requerimientos->count(),
+                'resumen_estados' => [
+                    'total' => $resumen->total ?? 0,
+                    'pendientes' => $resumen->pendientes ?? 0,
+                    'en_proceso' => $resumen->en_proceso ?? 0,
+                    'contratados' => $resumen->contratados ?? 0,
+                    'cancelados' => $resumen->cancelados ?? 0,
+                    'sla_vencidos' => $slaVencidos,
+                ],
+                'filtros_aplicados' => array_filter($args),
+            ];
+        } catch (\Exception $e) {
+            Log::error('Error obteniendo requerimientos: ' . $e->getMessage());
+            return ['error' => 'Error al consultar requerimientos: ' . $e->getMessage()];
+        }
+    }
+
     // ================================================================
-    // LLAMADA A GROQ CON TOOLS
+    // LLAMADA AL PROVEEDOR DE IA CON TOOLS
     // ================================================================
 
-    protected function callGroqWithTools(array $messages): ?array
+    protected function callAIWithTools(array $messages, $user = null): ?array
     {
         try {
             $payload = [
                 'model' => $this->model,
                 'messages' => $messages,
-                'tools' => $this->getTools(),
+                'tools' => $this->getTools($user),
                 'tool_choice' => 'auto',
                 'temperature' => 0.1,
                 'max_tokens' => 2000,
             ];
 
-            $response = Http::timeout(30)
+            $response = Http::timeout(60)
                 ->withHeaders([
                     'Authorization' => 'Bearer ' . $this->apiKey,
                     'Content-Type' => 'application/json',
@@ -1117,10 +1316,10 @@ MÓDULOS:
                 return $response->json();
             }
 
-            Log::error('Groq API Error: ' . $response->status() . ' - ' . $response->body());
+            Log::error('AI API Error: ' . $response->status() . ' - ' . $response->body());
             return null;
         } catch (\Exception $e) {
-            Log::error('Groq Exception: ' . $e->getMessage());
+            Log::error('AI Exception: ' . $e->getMessage());
             return null;
         }
     }
@@ -1245,28 +1444,55 @@ MÓDULOS:
     protected function getAvailableActions($role, $module)
     {
         $actions = [
-            'vendedor' => [
-                'descuentos' => ['Crear solicitud', 'Ver estado', 'Consultar histórico'],
-                'ordenes' => ['Consultar orden', 'Ver detalles'],
-                'convenios' => ['Ver convenios activos'],
-                'dashboard' => ['Ver mis ventas'],
-                'general' => ['Navegar el sistema', 'Consultar información'],
+            'Super Admin' => [
+                'general'    => ['Acceso completo al sistema', 'Gestionar usuarios y permisos', 'Ver todos los reportes'],
+                'descuentos' => ['Ver todos', 'Aprobar', 'Rechazar', 'Gestionar'],
+                'convenios'  => ['Ver todos', 'Crear', 'Aprobar', 'Desactivar'],
+                'ordenes'    => ['Ver todas las órdenes', 'Consultar cualquier sede'],
+                'dashboard'  => ['Ver todas las métricas', 'Exportar reportes'],
+                'encuestas'  => ['Ver todas las encuestas', 'Análisis completo'],
             ],
-            'planeamiento' => [
-                'descuentos' => ['Aprobar', 'Rechazar', 'Ver reportes'],
-                'convenios' => ['Crear', 'Editar', 'Aprobar', 'Desactivar'],
-                'dashboard' => ['Ver todas las métricas', 'Exportar reportes'],
-                'general' => ['Gestionar sistema'],
+            'Admin' => [
+                'general'    => ['Gestionar sistema', 'Ver todos los reportes'],
+                'descuentos' => ['Ver todos', 'Aprobar', 'Rechazar'],
+                'convenios'  => ['Ver todos', 'Crear', 'Aprobar'],
+                'ordenes'    => ['Ver todas las órdenes'],
+                'dashboard'  => ['Ver métricas globales', 'Exportar'],
+                'encuestas'  => ['Ver encuestas', 'Análisis'],
             ],
-            'auditor' => [
-                'descuentos' => ['Auditar', 'Ver histórico completo'],
-                'convenios' => ['Auditar', 'Ver cambios'],
-                'dashboard' => ['Análisis completo'],
-                'general' => ['Auditar operaciones'],
+            'RRHH' => [
+                'general'          => ['Ver información general del sistema'],
+                'requerimientos'   => ['Ver todos los requerimientos', 'Gestionar estados', 'Asignar responsable RH', 'Agregar notas'],
+                'dashboard'        => ['Ver métricas de personal'],
+            ],
+            'Marketing' => [
+                'general'   => ['Ver información general'],
+                'encuestas' => ['Ver encuestas de satisfacción', 'Análisis de clientes'],
+                'dashboard' => ['Ver métricas de ventas'],
+            ],
+            'Consultor' => [
+                'general'    => ['Consultar información'],
+                'descuentos' => ['Crear solicitud', 'Ver mis solicitudes'],
+                'ordenes'    => ['Consultar órdenes'],
+                'convenios'  => ['Ver convenios activos'],
+                'dashboard'  => ['Ver métricas'],
             ],
         ];
 
-        return $actions[$role][$module] ?? ['Ver información general'];
+        // Roles de sede (tienen el prefijo "Sede - ")
+        if (str_starts_with($role, 'Sede')) {
+            return match($module) {
+                'descuentos' => ['Crear solicitud de descuento', 'Ver mis solicitudes', 'Ver estado de aprobación'],
+                'ordenes'    => ['Consultar mis órdenes', 'Ver detalles de orden'],
+                'convenios'  => ['Ver convenios de mi sede'],
+                'dashboard'  => ['Ver ventas de mi sede'],
+                default      => ['Consultar información de mi sede'],
+            };
+        }
+
+        return $actions[$role][$module]
+            ?? $actions[$role]['general']
+            ?? ['Ver información general'];
     }
 
     protected function saveInteraction($question, $answer, $context, $responseType = 'direct_answer', $toolsUsed = [])
