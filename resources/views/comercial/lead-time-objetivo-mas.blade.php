@@ -506,6 +506,10 @@
             gap: 1.5rem;
         }
 
+        .om-cats-grid > * {
+            min-width: 0;
+        }
+
         @media (max-width: 1400px) {
             .om-cats-grid {
                 grid-template-columns: 1fr;
@@ -675,7 +679,9 @@
 
         .om-tbl thead th.th-label {
             text-align: left;
-            min-width: 115px;
+            width: 50px;
+            min-width: 50px;
+            max-width: 50px;
         }
 
         .om-tbl thead tr.om-tr-sub th {
@@ -689,6 +695,9 @@
         .om-tbl tbody td.td-om-acum {
             border-left: 2px solid var(--lt-gray-200) !important;
             background: var(--lt-gray-50) !important;
+            width: 90px;
+            min-width: 90px;
+            max-width: 90px;
         }
 
         .om-tbl tbody tr {
@@ -731,6 +740,9 @@
             font-weight: 700;
             font-size: 0.85rem;
             color: var(--lt-gray-950) !important;
+            width: 50px;
+            min-width: 50px;
+            max-width: 50px;
         }
 
         .td-om-cant.is-zero {
@@ -743,6 +755,9 @@
             font-size: 0.75rem;
             font-weight: 500;
             color: var(--lt-gray-400) !important;
+            width: 50px;
+            min-width: 50px;
+            max-width: 50px;
         }
 
         .td-om-pct.is-zero {
@@ -1010,6 +1025,9 @@
             padding: 2px 8px;
             white-space: nowrap;
             display: inline-block;
+            max-width: 100px;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .td-tipo {
@@ -1066,6 +1084,63 @@
             padding: 3rem 1rem;
             color: var(--lt-gray-400);
             font-size: 0.82rem;
+        }
+
+        /* ── PAGINACIÓN CRÍTICAS ── */
+        .crit-pagination {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.65rem 1rem;
+            border-top: 1px solid var(--lt-gray-100);
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .crit-pag-info {
+            font-size: 0.72rem;
+            color: var(--lt-gray-400);
+            white-space: nowrap;
+        }
+
+        .crit-pag-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.2rem;
+        }
+
+        .crit-pag-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 28px;
+            height: 28px;
+            padding: 0 6px;
+            border-radius: 6px;
+            border: 1px solid var(--lt-gray-200);
+            background: var(--lt-white);
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: var(--lt-gray-600);
+            cursor: pointer;
+            transition: all .15s;
+        }
+
+        .crit-pag-btn:hover:not(:disabled) {
+            background: var(--lt-gray-50);
+            border-color: var(--lt-blue-300);
+            color: var(--lt-blue-700);
+        }
+
+        .crit-pag-btn.active {
+            background: var(--lt-blue-600);
+            border-color: var(--lt-blue-600);
+            color: #fff;
+        }
+
+        .crit-pag-btn:disabled {
+            opacity: 0.35;
+            cursor: default;
         }
 
         /* ── RESPONSIVE ── */
@@ -1150,10 +1225,11 @@
         ══════════════════════════════════════════════════════════ */
         let omData = null;
         let omOffsets = {};
-        let criticasData = null;
-        let currentCritCat = 'GENERAL';
-        let critSearchQuery = '';
-        let currentTab = 'conteo';
+        const CRIT_PAGE_SIZE = 10;
+        let criticasData  = null;
+        let critPages     = {};
+        let critQueries   = {};
+        let currentTab    = 'conteo';
 
         /* ══════════════════════════════════════════════════════════
            INIT
@@ -1474,121 +1550,116 @@
         /* ══════════════════════════════════════════════════════════
            ÓRDENES CRÍTICAS
         ══════════════════════════════════════════════════════════ */
-        const CAT_ORDER_CRIT = ['GENERAL', 'NOX', 'TD', 'DEVABLUE', 'BLANCO', 'COLOREADO'];
 
         function renderCriticas(ordenesCriticas) {
             criticasData = ordenesCriticas;
+
+            // Resetear páginas y búsquedas
+            critPages   = {};
+            critQueries = {};
+            ['GENERAL', ...CAT_ORDER].forEach(k => {
+                critPages[k]   = 0;
+                critQueries[k] = '';
+            });
 
             // Badge en el tab
             const totalGeneral = (ordenesCriticas['GENERAL']?.ordenes || []).length;
             const badge = document.getElementById('tabBadge');
             if (badge) badge.textContent = totalGeneral > 0 ? totalGeneral.toLocaleString() : '0';
 
-            renderCritCard(currentCritCat);
-        }
+            let html = '';
 
-        function renderCritCard(catKey) {
-            currentCritCat = catKey;
-            if (!criticasData) return;
-
-            const data = criticasData[catKey] || {
-                nombre: catKey,
-                ordenes: []
-            };
-            const meta = CAT_META[catKey] || {
-                label: catKey,
-                iconCls: 'om-icon-general',
-                icon: '⊕'
-            };
-            const nombre = data.nombre || meta.label || catKey;
-
-            // Sub-tabs de categoría
-            let tabsHtml = `<div class="crit-cat-tabs">`;
-            CAT_ORDER_CRIT.forEach(c => {
-                const d = criticasData[c] || {
-                    ordenes: []
-                };
-                const count = d.ordenes?.length || 0;
-                const m = CAT_META[c] || {
-                    label: c
-                };
-                const lbl = c === 'GENERAL' ? 'General' : (m.label || c);
-                tabsHtml += `
-                    <button class="crit-cat-tab ${c === catKey ? 'active' : ''}" onclick="renderCritCard('${c}')">
-                        ${lbl}
-                        ${count > 0 ? `<span class="crit-cat-count">${count.toLocaleString()}</span>` : ''}
-                    </button>`;
-            });
-            tabsHtml += `</div>`;
-
-            const ordenes = data.ordenes || [];
-
-            const html = `
-                <div class="lt-table-card lt-fade-up">
-                    ${tabsHtml}
-                    <div class="crit-header">
-                        <div class="lt-table-title">
-                            <div class="om-cat-icon ${meta.iconCls}">${meta.icon}</div>
-                            <div>
-                                <span>${nombre}</span>
-                                <span style="display:block;font-size:.7rem;font-weight:400;color:var(--lt-gray-400);margin-top:1px;">
-                                    Órdenes con atraso ≥ 2 días
-                                </span>
-                            </div>
-                            <span class="lt-table-count" id="critCount">${ordenes.length.toLocaleString()} órdenes</span>
+            // GENERAL — ancho completo
+            const genData = ordenesCriticas['GENERAL'] || { nombre: 'General', ordenes: [] };
+            html += `
+                <div class="om-section lt-fade-up">
+                    <div class="lt-table-card">
+                        ${buildCritCardHead('GENERAL', genData)}
+                        <div id="crit-wrap-GENERAL">
+                            ${buildCritTablePaged(genData.ordenes, '', 'GENERAL')}
                         </div>
-                        <div class="crit-search">
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                            </svg>
-                            <input type="text"
-                                id="critSearchInput"
-                                placeholder="Buscar orden, sede, producto..."
-                                value="${critSearchQuery}"
-                                oninput="onCritSearch(this.value)">
-                        </div>
-                    </div>
-                    <div class="lt-table-wrap" id="critTableWrap">
-                        ${buildCritTable(ordenes)}
                     </div>
                 </div>`;
 
-            document.getElementById('criticasContent').innerHTML = html;
+            // CATEGORÍAS — grid
+            html += `<div class="om-cats-grid">`;
+            CAT_ORDER.forEach((cat, i) => {
+                const catData = ordenesCriticas[cat] || { nombre: cat, ordenes: [] };
+                html += `
+                    <div class="lt-fade-up" style="animation-delay:${0.06 + i * 0.07}s;">
+                        <div class="lt-table-card">
+                            ${buildCritCardHead(cat, catData)}
+                            <div id="crit-wrap-${cat}">
+                                ${buildCritTablePaged(catData.ordenes, '', cat)}
+                            </div>
+                        </div>
+                    </div>`;
+            });
+            html += `</div>`;
 
-            // Restaurar foco si había búsqueda activa
-            if (critSearchQuery) {
-                const inp = document.getElementById('critSearchInput');
-                if (inp) {
-                    inp.focus();
-                    inp.setSelectionRange(inp.value.length, inp.value.length);
-                }
-            }
+            document.getElementById('criticasContent').innerHTML = html;
         }
 
-        function onCritSearch(val) {
-            critSearchQuery = val;
-            const data = criticasData?.[currentCritCat];
-            const ordenes = data?.ordenes || [];
-            document.getElementById('critTableWrap').innerHTML = buildCritTable(ordenes);
-            // Actualizar contador
-            const filtered = filterOrdenes(ordenes);
-            const countEl = document.getElementById('critCount');
+        function buildCritCardHead(key, data) {
+            const meta = CAT_META[key] || { label: key, iconCls: 'om-icon-general', icon: '?' };
+            const nombre = data.nombre || meta.label || key;
+            const total = (data.ordenes || []).length;
+
+            return `
+                <div class="lt-table-head">
+                    <div class="lt-table-title">
+                        <div class="om-cat-icon ${meta.iconCls}">${meta.icon}</div>
+                        <div>
+                            <span>${nombre}</span>
+                            <span style="display:block;font-size:.7rem;font-weight:400;color:var(--lt-gray-400);margin-top:1px;">
+                                Órdenes con atraso ≥ 2 días
+                            </span>
+                        </div>
+                        ${total > 0 ? `<span class="lt-table-count" id="crit-count-${key}">${total.toLocaleString()} órdenes</span>` : ''}
+                    </div>
+                    <div class="crit-search">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+                        <input type="text"
+                            placeholder="Buscar orden, sede, producto..."
+                            oninput="onCritSearchCard('${key}', this.value)">
+                    </div>
+                </div>`;
+        }
+
+        function onCritSearchCard(key, val) {
+            if (!criticasData) return;
+            critQueries[key] = val;
+            critPages[key]   = 0;
+            const ordenes = criticasData[key]?.ordenes || [];
+            const filtered = filterOrdenesQuery(ordenes, val);
+            document.getElementById(`crit-wrap-${key}`).innerHTML = buildCritTablePaged(ordenes, val, key);
+            const countEl = document.getElementById(`crit-count-${key}`);
             if (countEl) countEl.textContent = `${filtered.length.toLocaleString()} órdenes`;
         }
 
-        function filterOrdenes(ordenes) {
-            const q = critSearchQuery.trim().toLowerCase();
-            if (!q) return ordenes;
+        function goToCritPage(key, page) {
+            if (!criticasData) return;
+            critPages[key] = page;
+            const ordenes = criticasData[key]?.ordenes || [];
+            document.getElementById(`crit-wrap-${key}`).innerHTML =
+                buildCritTablePaged(ordenes, critQueries[key] || '', key);
+        }
+
+        function filterOrdenesQuery(ordenes, q) {
+            if (!q?.trim()) return ordenes;
+            const ql = q.trim().toLowerCase();
             return ordenes.filter(o =>
-                (o.numero_orden + '').toLowerCase().includes(q) ||
-                (o.sede + '').toLowerCase().includes(q) ||
-                (o.tipo + '').toLowerCase().includes(q) ||
-                (o.producto + '').toLowerCase().includes(q)
+                (o.numero_orden + '').toLowerCase().includes(ql) ||
+                (o.sede + '').toLowerCase().includes(ql) ||
+                (o.ubicacion_orden + '').toLowerCase().includes(ql) ||
+                (o.producto + '').toLowerCase().includes(ql)
             );
         }
 
-        function buildCritTable(ordenes) {
-            const filtered = filterOrdenes(ordenes);
+        function buildCritTablePaged(ordenes, query, key) {
+            const filtered = filterOrdenesQuery(ordenes, query);
 
             if (!filtered.length) {
                 return `<div class="crit-empty">
@@ -1598,14 +1669,19 @@
                         <line x1="12" y1="8" x2="12" y2="12"/>
                         <line x1="12" y1="16" x2="12.01" y2="16"/>
                     </svg>
-                    ${critSearchQuery
-                        ? `Sin resultados para "<strong>${critSearchQuery}</strong>"`
+                    ${query?.trim()
+                        ? `Sin resultados para "<strong>${query}</strong>"`
                         : 'Sin órdenes críticas en esta categoría'}
                 </div>`;
             }
 
+            const totalPages = Math.ceil(filtered.length / CRIT_PAGE_SIZE);
+            const page = Math.min(critPages[key] ?? 0, totalPages - 1);
+            const start = page * CRIT_PAGE_SIZE;
+            const pageRows = filtered.slice(start, start + CRIT_PAGE_SIZE);
+
             let rows = '';
-            filtered.forEach(o => {
+            pageRows.forEach(o => {
                 const dias = Math.abs(o.atraso);
                 const badgeCls = dias >= 8 ? 'critico' : dias >= 5 ? 'alto' : '';
                 const producto = (o.producto || '').length > 45 ?
@@ -1615,7 +1691,7 @@
                 rows += `<tr>
                     <td class="td-orden">${o.numero_orden || '—'}</td>
                     <td><span class="td-sede-pill">${o.sede || '—'}</span></td>
-                    <td class="td-tipo">${o.tipo || '—'}</td>
+                    <td class="td-tipo">${o.ubicacion_orden || '—'}</td>
                     <td class="td-producto-cell">
                         <span class="td-producto-text" title="${o.producto || ''}">${producto}</span>
                     </td>
@@ -1625,19 +1701,51 @@
                 </tr>`;
             });
 
+            // Paginación
+            let pagBtns = '';
+            if (totalPages > 1) {
+                pagBtns += `<button class="crit-pag-btn" onclick="goToCritPage('${key}',${page - 1})" ${page === 0 ? 'disabled' : ''}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+                </button>`;
+
+                // Mostrar máximo 5 páginas centradas en la actual
+                const maxBtns = 5;
+                let startP = Math.max(0, page - Math.floor(maxBtns / 2));
+                let endP   = Math.min(totalPages, startP + maxBtns);
+                if (endP - startP < maxBtns) startP = Math.max(0, endP - maxBtns);
+                for (let p = startP; p < endP; p++) {
+                    pagBtns += `<button class="crit-pag-btn ${p === page ? 'active' : ''}" onclick="goToCritPage('${key}',${p})">${p + 1}</button>`;
+                }
+
+                pagBtns += `<button class="crit-pag-btn" onclick="goToCritPage('${key}',${page + 1})" ${page >= totalPages - 1 ? 'disabled' : ''}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+                </button>`;
+            }
+
+            const pagination = totalPages > 1 ? `
+                <div class="crit-pagination">
+                    <span class="crit-pag-info">
+                        ${start + 1}–${Math.min(start + CRIT_PAGE_SIZE, filtered.length)} de ${filtered.length.toLocaleString()}
+                    </span>
+                    <div class="crit-pag-controls">${pagBtns}</div>
+                </div>` : '';
+
             return `
-                <table class="crit-tbl">
-                    <thead>
-                        <tr>
-                            <th>N° Orden</th>
-                            <th>Sede</th>
-                            <th>Tipo</th>
-                            <th>Producto</th>
-                            <th style="text-align:center;">Atraso</th>
-                        </tr>
-                    </thead>
-                    <tbody>${rows}</tbody>
-                </table>`;
+                <div class="lt-table-wrap">
+                    <table class="crit-tbl">
+                        <thead>
+                            <tr>
+                                <th>N° Orden</th>
+                                <th style="width:100px;">Sede</th>
+                                <th>Ubicación</th>
+                                <th>Producto</th>
+                                <th style="text-align:center;">Atraso</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rows}</tbody>
+                    </table>
+                </div>
+                ${pagination}`;
         }
 
         /* ══════════════════════════════════════════════════════════

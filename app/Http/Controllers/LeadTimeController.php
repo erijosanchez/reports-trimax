@@ -839,11 +839,11 @@ class LeadTimeController extends Controller
         $ordenesCriticas['GENERAL'] = [
             'nombre'  => 'General',
             'ordenes' => array_map(fn($r) => [
-                'numero_orden' => $r['NUMERO_ORDEN'] ?? '',
-                'sede'         => $r['SEDE'] ?? '',
-                'tipo'         => $r['TIPO'] ?? '',
-                'producto'     => $r['PRODUCTO'] ?? '',
-                'atraso'       => (int)($r['ATRASO'] ?? 0),
+                'numero_orden'   => $r['NUMERO_ORDEN'] ?? '',
+                'sede'           => $r['SEDE'] ?? '',
+                'ubicacion_orden' => $r['ubicacion_orden'] ?? '',
+                'producto'       => $r['PRODUCTO'] ?? '',
+                'atraso'         => (int)($r['ATRASO'] ?? 0),
             ], $generalCriticas),
         ];
 
@@ -864,11 +864,11 @@ class LeadTimeController extends Controller
             $ordenesCriticas[$cat] = [
                 'nombre'  => $nombresDisplay[$cat],
                 'ordenes' => array_map(fn($r) => [
-                    'numero_orden' => $r['NUMERO_ORDEN'] ?? '',
-                    'sede'         => $r['SEDE'] ?? '',
-                    'tipo'         => $r['TIPO'] ?? '',
-                    'producto'     => $r['PRODUCTO'] ?? '',
-                    'atraso'       => (int)($r['ATRASO'] ?? 0),
+                    'numero_orden'   => $r['NUMERO_ORDEN'] ?? '',
+                    'sede'           => $r['SEDE'] ?? '',
+                    'ubicacion_orden' => $r['ubicacion_orden'] ?? '',
+                    'producto'       => $r['PRODUCTO'] ?? '',
+                    'atraso'         => (int)($r['ATRASO'] ?? 0),
                 ], $criticas),
             ];
         }
