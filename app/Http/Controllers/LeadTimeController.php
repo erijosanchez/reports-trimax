@@ -116,8 +116,6 @@ class LeadTimeController extends Controller
 
     /**
      * API: Obtener datos de Lead Time Semanal
-     * 
-     * Devuelve KPI semanal con clasificación de cumplimiento y detalle de órdenes atrasadas, filtrado por año y mes de SOLICITADO
      */
     public function getSemanalData(Request $request)
     {
@@ -148,12 +146,10 @@ class LeadTimeController extends Controller
     /**
      * Procesar datos para Lead Time Semanal
      */
-
     private function processSemanalData(int $year, int $month): array
     {
         $categorias = ['NOX', 'TD', 'DEVABLUE', 'BLANCO', 'COLOREADO'];
 
-        // Leer hoja de Google Sheets
         $spreadsheetId = config('google.lead_time_spreadsheet_id');
         $rawData = $this->sheetsService->getSheetDataFromSpreadsheet($spreadsheetId, 'Historico');
 
@@ -171,7 +167,6 @@ class LeadTimeController extends Controller
             $records[] = $rec;
         }
 
-        // Inicializar todos los dias del mes seleccionado aunque no tengan datos
         $daysInMonth = Carbon::createFromDate($year, $month, 1)->daysInMonth;
         $diasMap = [];
         for ($d = 1; $d <= $daysInMonth; $d++) {
@@ -183,31 +178,19 @@ class LeadTimeController extends Controller
             ];
         }
 
-        // Inicializar mapa de vencidos por dia (ordenes cuyo LEAD_TIME cayo ese dia y no se entregaron a tiempo)
         $diasVencidosMap = array_fill_keys(array_keys($diasMap), 0);
 
-        // --- PASO 1: Filtrar registros entregados (TIME es fecha valida, no "PENDIENTE") ---
-        // Solo se incluyen los del mes seleccionado segun TIME
-        // La logica del KPI no se toca: sigue usando CONCLUSION para calcular cumplimiento
         $filtered = [];
         foreach ($records as $rec) {
             $time = trim($rec['TIME'] ?? '');
-
-            // Ignorar registros sin TIME o con TIME = PENDIENTE
             if (empty($time) || strtoupper($time) === 'PENDIENTE') continue;
-
             try {
                 $d = Carbon::parse($time);
             } catch (\Exception $e) {
                 continue;
             }
-
-            // Solo registros cuyo TIME cae dentro del anno y mes seleccionado
             if ($d->year != $year || $d->month > $month) continue;
-
             $filtered[] = $rec;
-
-            // Agrupar por dia (solo los del mes exacto para el grafico diario)
             if ($d->month == $month) {
                 $fechaDia = $d->format('Y-m-d');
                 if (isset($diasMap[$fechaDia])) {
@@ -220,72 +203,47 @@ class LeadTimeController extends Controller
             return $this->emptySemanalResponse($year, $month, $categorias);
         }
 
-        // --- PASO 2: Contar ordenes NO entregadas a tiempo por dia de LEAD_TIME ---
-        // Una orden cuenta como "no entregada a tiempo" en su fecha de LEAD_TIME cuando:
-        //   a) TIME = "PENDIENTE" (aun no se entrega)
-        //   b) TIME es una fecha posterior a LEAD_TIME (se entrego tarde)
-        // Esta logica es independiente del KPI: no modifica calcularKpiYCats()
         foreach ($records as $rec) {
             $leadTime = trim($rec['LEAD_TIME'] ?? '');
             if (empty($leadTime)) continue;
-
             try {
                 $fechaLead = Carbon::parse($leadTime);
             } catch (\Exception $e) {
                 continue;
             }
-
-            // Solo si el LEAD_TIME cae dentro del mes seleccionado
             if ($fechaLead->year != $year || $fechaLead->month != $month) continue;
-
             $fechaDia = $fechaLead->format('Y-m-d');
             if (!isset($diasVencidosMap[$fechaDia])) continue;
-
             $timeVal   = trim($rec['TIME'] ?? '');
             $isPending = empty($timeVal) || strtoupper($timeVal) === 'PENDIENTE';
-
             if ($isPending) {
-                // Orden aun no entregada: vencida en su LEAD_TIME
                 $diasVencidosMap[$fechaDia]++;
                 continue;
             }
-
-            // Orden ya entregada: verificar si fue tarde (TIME > LEAD_TIME)
             try {
                 $fechaTime = Carbon::parse($timeVal);
                 if ($fechaTime->gt($fechaLead)) {
-                    // Se entrego despues de la fecha prevista: igual cuenta como vencida en LEAD_TIME
-                    // Nota: esta orden TAMBIEN aparece en su dia TIME como "entregada" en dayOrders
-                    // Ambos conteos coexisten sin pisarse
                     $diasVencidosMap[$fechaDia]++;
                 }
             } catch (\Exception $e) {
-                // ignorar fechas invalidas
             }
         }
 
-        // --- PASO 3: Calcular KPI diario, dayOrders y dayVencidos ---
-        $dayKpi     = [];
-        $dayOrders  = []; // total de ordenes entregadas (TIME) ese dia
-        $dayVencidos = []; // total de ordenes cuyo LEAD_TIME vencio ese dia sin entrega a tiempo
-        $dayData    = array_fill_keys($categorias, []);
+        $dayKpi      = [];
+        $dayOrders   = [];
+        $dayVencidos = [];
+        $dayData     = array_fill_keys($categorias, []);
 
         foreach (array_values($diasMap) as $i => $diaInfo) {
             $recs = $diaInfo['records'];
-
-            // Cantidad de ordenes entregadas ese dia (TIME = fecha del dia)
-            $dayOrders[$i] = count($recs);
-
-            // Cantidad de ordenes vencidas ese dia (LEAD_TIME = fecha del dia, entregadas tarde o pendientes)
+            $dayOrders[$i]   = count($recs);
             $dayVencidos[$i] = $diasVencidosMap[$diaInfo['fecha']] ?? 0;
-
             if (empty($recs)) {
                 $dayKpi[$i] = null;
                 foreach ($categorias as $cat) {
                     $dayData[$cat][$i] = null;
                 }
             } else {
-                // KPI se calcula igual que siempre usando CONCLUSION — no se toca esta logica
                 [$kpi, $porCat] = $this->calcularKpiYCats($recs, $categorias);
                 $dayKpi[$i] = $kpi;
                 foreach ($categorias as $cat) {
@@ -299,7 +257,6 @@ class LeadTimeController extends Controller
             'fecha' => $d['fecha'],
         ], array_values($diasMap));
 
-        // --- PASO 4: Construir semanas ISO y meses (igual que antes) ---
         $semanasMap = [];
         $mesesMap   = [];
 
@@ -311,10 +268,8 @@ class LeadTimeController extends Controller
             } catch (\Exception $e) {
                 continue;
             }
-
             $semNum = (int) $d->format('W');
             $mesNum = (int) $d->month;
-
             if (!isset($semanasMap[$semNum])) {
                 $lunes   = Carbon::now()->setISODate($year, $semNum, 1)->format('Y-m-d');
                 $domingo = Carbon::now()->setISODate($year, $semNum, 7)->format('Y-m-d');
@@ -327,7 +282,6 @@ class LeadTimeController extends Controller
                 ];
             }
             $semanasMap[$semNum]['records'][] = $rec;
-
             if (!isset($mesesMap[$mesNum])) {
                 $mesesMap[$mesNum] = [
                     'num'     => $mesNum,
@@ -345,7 +299,6 @@ class LeadTimeController extends Controller
         $semanasIndex = array_values($semanasMap);
         $mesesIndex   = array_values($mesesMap);
 
-        // KPI semanal — logica intacta
         $weekKpi  = [];
         $weekData = array_fill_keys($categorias, []);
         foreach ($semanasIndex as $i => $semInfo) {
@@ -356,7 +309,6 @@ class LeadTimeController extends Controller
             }
         }
 
-        // KPI mensual — logica intacta
         $monthKpi  = [];
         $monthData = array_fill_keys($categorias, []);
         foreach ($mesesIndex as $i => $mesInfo) {
@@ -381,25 +333,21 @@ class LeadTimeController extends Controller
         ], $mesesIndex);
 
         return [
-            'semanas'    => $semanas,
-            'meses'      => $meses,
-            'weekKpi'    => $weekKpi,
-            'monthKpi'   => $monthKpi,
-            'weekData'   => $weekData,
-            'monthData'  => $monthData,
-            'cats'       => $categorias,
-            'dias'       => $dias,
-            'dayKpi'     => $dayKpi,
-            'dayData'    => $dayData,
-            'dayOrders'  => $dayOrders,   // nuevo: entregadas por dia (segun TIME)
-            'dayVencidos' => $dayVencidos, // nuevo: vencidas por dia (segun LEAD_TIME)
+            'semanas'     => $semanas,
+            'meses'       => $meses,
+            'weekKpi'     => $weekKpi,
+            'monthKpi'    => $monthKpi,
+            'weekData'    => $weekData,
+            'monthData'   => $monthData,
+            'cats'        => $categorias,
+            'dias'        => $dias,
+            'dayKpi'      => $dayKpi,
+            'dayData'     => $dayData,
+            'dayOrders'   => $dayOrders,
+            'dayVencidos' => $dayVencidos,
         ];
     }
 
-    /**
-     * Dado un array de registros y las categorías,
-     * devuelve [kpiGeneral, ['NOX'=>val, 'TD'=>val, ...]]
-     */
     /**
      * Dado un array de registros y las categorías,
      * devuelve [kpiGeneral, ['NOX'=>val, 'TD'=>val, ...]]
@@ -408,7 +356,6 @@ class LeadTimeController extends Controller
     {
         $total = count($records);
 
-        // ✅ KPI general directo — cuenta TODOS los en tiempo sin importar categoría
         $enTiempoGeneral = 0;
         foreach ($records as $r) {
             $conclusion = strtoupper(trim($r['CONCLUSION'] ?? ''));
@@ -417,7 +364,6 @@ class LeadTimeController extends Controller
             }
         }
 
-        // KPI por categoría
         $porCat = [];
         foreach ($categorias as $cat) {
             $catRecs = array_filter($records, function ($r) use ($cat) {
@@ -452,18 +398,18 @@ class LeadTimeController extends Controller
     private function emptySemanalResponse(int $year, int $month, array $categorias): array
     {
         return [
-            'semanas'   => [],
-            'meses'     => [],
-            'dias'      => [],
-            'weekKpi'   => [],
-            'monthKpi'  => [],
-            'dayKpi'   => [],
-            'weekData'  => array_fill_keys($categorias, []),
-            'monthData' => array_fill_keys($categorias, []),
-            'dayData'  => array_fill_keys($categorias, []),
-            'cats'      => $categorias,
-            'dayOrders' => [], // nuevo: entregadas por dia
-            'dayVencidos' => [], // nuevo: vencidas por dia 
+            'semanas'     => [],
+            'meses'       => [],
+            'dias'        => [],
+            'weekKpi'     => [],
+            'monthKpi'    => [],
+            'dayKpi'      => [],
+            'weekData'    => array_fill_keys($categorias, []),
+            'monthData'   => array_fill_keys($categorias, []),
+            'dayData'     => array_fill_keys($categorias, []),
+            'cats'        => $categorias,
+            'dayOrders'   => [],
+            'dayVencidos' => [],
         ];
     }
 
@@ -490,7 +436,6 @@ class LeadTimeController extends Controller
             $records[] = $record;
         }
 
-        // ✅ Filtrar por TIME
         $filtered = array_filter($records, function ($record) use ($year, $month) {
             $time = $record['TIME'] ?? '';
             if (empty($time)) return false;
@@ -518,10 +463,9 @@ class LeadTimeController extends Controller
             'COLOREADO' => 'COLOREADO',
         ];
 
-        $resultados  = [];
+        $resultados   = [];
         $totalGeneral = count($filtered);
 
-        // ✅ totalEnTiempo directo sobre todos los filtrados
         $totalEnTiempo = 0;
         foreach ($filtered as $record) {
             $conclusion = strtoupper(trim($record['CONCLUSION'] ?? ''));
@@ -567,10 +511,10 @@ class LeadTimeController extends Controller
                 $porcentaje = round(($count / $totalCat) * 100, 2);
                 $esAtraso   = str_starts_with($label, 'Después');
                 $barras[]   = [
-                    'label'    => $label,
-                    'cantidad' => $count,
+                    'label'      => $label,
+                    'cantidad'   => $count,
                     'porcentaje' => $porcentaje,
-                    'tipo'     => $esAtraso ? 'atraso' : 'cumplimiento',
+                    'tipo'       => $esAtraso ? 'atraso' : 'cumplimiento',
                 ];
             }
 
@@ -615,8 +559,8 @@ class LeadTimeController extends Controller
 
         return [
             'general' => [
-                'total'      => $totalGeneral,
-                'porcentaje' => $porcentajeGeneral,
+                'total'           => $totalGeneral,
+                'porcentaje'      => $porcentajeGeneral,
                 'total_en_tiempo' => $totalEnTiempo,
                 'total_fuera'     => $totalGeneral - $totalEnTiempo,
             ],
@@ -661,7 +605,6 @@ class LeadTimeController extends Controller
             $clasificacion[$label]++;
         }
 
-        // Ordenar según el orden visual del PPT
         $ordenPrioritario = [
             'El mismo día',
             'Al día Siguiente',
@@ -691,32 +634,21 @@ class LeadTimeController extends Controller
     {
         try {
             $solicitado = $record['SOLICITADO'] ?? '';
-            $time = $record['TIME'] ?? '';
-            $meta = intval($record['META'] ?? 0);
+            $time       = $record['TIME'] ?? '';
+            $meta       = intval($record['META'] ?? 0);
 
             if (empty($solicitado) || empty($time)) {
                 return 'En tiempo';
             }
 
             $fechaSolicitado = Carbon::parse($solicitado);
-            $fechaEntrega = Carbon::parse($time);
-            $diasEntrega = $fechaSolicitado->diffInDays($fechaEntrega);
+            $fechaEntrega    = Carbon::parse($time);
+            $diasEntrega     = $fechaSolicitado->diffInDays($fechaEntrega);
 
-            if ($diasEntrega === 0) {
-                return 'El mismo día';
-            }
-
-            if ($meta > 1 && $diasEntrega === 1) {
-                return 'Al día Siguiente';
-            }
-
-            if ($meta > 2 && $diasEntrega <= 2) {
-                return 'En 2 días';
-            }
-
-            if ($meta > 3 && $diasEntrega <= 3) {
-                return 'En 3 días';
-            }
+            if ($diasEntrega === 0) return 'El mismo día';
+            if ($meta > 1 && $diasEntrega === 1) return 'Al día Siguiente';
+            if ($meta > 2 && $diasEntrega <= 2) return 'En 2 días';
+            if ($meta > 3 && $diasEntrega <= 3) return 'En 3 días';
 
             return 'En tiempo';
         } catch (\Exception $e) {
@@ -727,6 +659,7 @@ class LeadTimeController extends Controller
     /**
      * Procesar datos para Lead Time Objetivo +
      * Muestra órdenes FUERA DE TIEMPO agrupadas por días de atraso y semana del mes.
+     * También incluye detalle individual de órdenes críticas (atraso >= 2).
      */
     private function processObjetivoMasData(int $year): array
     {
@@ -750,7 +683,7 @@ class LeadTimeController extends Controller
         }
 
         // Solo FUERA DE TIEMPO para el año completo (hasta hoy)
-        $today = Carbon::today();
+        $today    = Carbon::today();
         $filtered = array_values(array_filter($records, function ($rec) use ($year, $today) {
             $conclusion = strtoupper(trim($rec['CONCLUSION'] ?? ''));
             if ($conclusion !== 'FUERA DE TIEMPO') return false;
@@ -768,17 +701,14 @@ class LeadTimeController extends Controller
             return $this->emptyObjetivoMasResponse($categorias);
         }
 
-        // ── Construir semanas ISO que aparecen en los datos ────────
-        // En lugar de iterar días del año, usamos las semanas reales de los registros
+        // ── Construir semanas ISO ────────────────────────────────────────────
         $semanasMap = [];
-
         foreach ($filtered as $rec) {
             $time = $rec['TIME'] ?? '';
             if (empty($time)) continue;
             try {
                 $d      = Carbon::parse($time);
                 $semNum = (int) $d->format('W');
-
                 if (!isset($semanasMap[$semNum])) {
                     $lunes   = Carbon::now()->setISODate($year, $semNum, 1);
                     $domingo = Carbon::now()->setISODate($year, $semNum, 7);
@@ -797,7 +727,7 @@ class LeadTimeController extends Controller
         $semNums   = array_keys($semanasMap);
         $maxAtraso = 10;
 
-        // Closure que construye la tabla para un conjunto de registros
+        // ── Closure que construye la tabla de conteo ─────────────────────────
         $buildTable = function (array $recs) use ($semanasMap, $semNums, $maxAtraso) {
             $data       = [];
             $weekTotals = array_fill_keys($semNums, 0);
@@ -810,16 +740,13 @@ class LeadTimeController extends Controller
             foreach ($recs as $rec) {
                 $atraso = abs((int) ($rec['ATRASO'] ?? 0));
                 if ($atraso === 0) $atraso = 1;
-
                 try {
                     $d      = Carbon::parse($rec['TIME'] ?? '');
                     $semNum = (int) $d->format('W');
                 } catch (\Exception $e) {
                     continue;
                 }
-
                 if (!isset($semanasMap[$semNum])) continue;
-
                 $key = $atraso <= $maxAtraso ? $atraso : 'mas';
                 $data[$key][$semNum]++;
                 $weekTotals[$semNum]++;
@@ -827,7 +754,6 @@ class LeadTimeController extends Controller
 
             $grandTotal = array_sum($weekTotals);
 
-            // Filas -1 a -10
             $filas = [];
             for ($a = 1; $a <= $maxAtraso; $a++) {
                 $acumCant = 0;
@@ -847,7 +773,6 @@ class LeadTimeController extends Controller
                 ];
             }
 
-            // Fila >10
             $masCant = array_sum($data['mas']);
             if ($masCant > 0) {
                 $acumCant = 0;
@@ -867,7 +792,6 @@ class LeadTimeController extends Controller
                 ];
             }
 
-            // Totales por semana
             $totalRow = [];
             foreach ($semNums as $w) {
                 $totalRow[$w] = ['cant' => $weekTotals[$w], 'pct' => 100];
@@ -882,11 +806,9 @@ class LeadTimeController extends Controller
             ];
         };
 
-        // General
+        // ── Tablas de conteo ─────────────────────────────────────────────────
         $general = $buildTable($filtered);
 
-        // Por categoría
-        $cats = [];
         $nombresDisplay = [
             'NOX'       => 'NOX',
             'TD'        => 'TRIDUREX',
@@ -894,6 +816,8 @@ class LeadTimeController extends Controller
             'BLANCO'    => 'BLANCOS',
             'COLOREADO' => 'COLOREADO',
         ];
+
+        $cats = [];
         foreach ($categorias as $cat) {
             $catRecs = array_values(array_filter($filtered, function ($r) use ($cat) {
                 $tipo = strtoupper(trim($r['TIPO_DE_TRABAJO'] ?? ''));
@@ -903,22 +827,75 @@ class LeadTimeController extends Controller
             $cats[$cat] = array_merge($buildTable($catRecs), ['nombre' => $nombresDisplay[$cat]]);
         }
 
+        // ── Órdenes críticas: atraso >= 2 (detalle individual) ───────────────
+        $ordenesCriticas = [];
+
+        // General (todas las categorías)
+        $generalCriticas = array_values(array_filter($filtered, function ($r) {
+            return abs((int) ($r['ATRASO'] ?? 0)) >= 2;
+        }));
+        usort($generalCriticas, fn($a, $b) => (int)($a['ATRASO'] ?? 0) - (int)($b['ATRASO'] ?? 0));
+
+        $ordenesCriticas['GENERAL'] = [
+            'nombre'  => 'General',
+            'ordenes' => array_map(fn($r) => [
+                'numero_orden' => $r['NUMERO_ORDEN'] ?? '',
+                'sede'         => $r['SEDE'] ?? '',
+                'tipo'         => $r['TIPO'] ?? '',
+                'producto'     => $r['PRODUCTO'] ?? '',
+                'atraso'       => (int)($r['ATRASO'] ?? 0),
+            ], $generalCriticas),
+        ];
+
+        // Por categoría
+        foreach ($categorias as $cat) {
+            $catRecs = array_values(array_filter($filtered, function ($r) use ($cat) {
+                $tipo = strtoupper(trim($r['TIPO_DE_TRABAJO'] ?? ''));
+                if ($cat === 'BLANCO') return $tipo === 'BLANCO' || $tipo === 'BLANCOS';
+                return $tipo === $cat;
+            }));
+
+            $criticas = array_values(array_filter($catRecs, function ($r) {
+                return abs((int) ($r['ATRASO'] ?? 0)) >= 2;
+            }));
+
+            usort($criticas, fn($a, $b) => (int)($a['ATRASO'] ?? 0) - (int)($b['ATRASO'] ?? 0));
+
+            $ordenesCriticas[$cat] = [
+                'nombre'  => $nombresDisplay[$cat],
+                'ordenes' => array_map(fn($r) => [
+                    'numero_orden' => $r['NUMERO_ORDEN'] ?? '',
+                    'sede'         => $r['SEDE'] ?? '',
+                    'tipo'         => $r['TIPO'] ?? '',
+                    'producto'     => $r['PRODUCTO'] ?? '',
+                    'atraso'       => (int)($r['ATRASO'] ?? 0),
+                ], $criticas),
+            ];
+        }
+
         return [
-            'semanas'    => array_values($semanasMap),
-            'general'    => $general,
-            'categorias' => $cats,
+            'semanas'         => array_values($semanasMap),
+            'general'         => $general,
+            'categorias'      => $cats,
+            'ordenesCriticas' => $ordenesCriticas,
         ];
     }
+
     /**
      * Respuesta vacía para Lead Time Objetivo +
      */
     private function emptyObjetivoMasResponse(array $categorias): array
     {
         $empty = ['filas' => [], 'totales' => ['semanas' => [], 'acum' => ['cant' => 0, 'pct' => 0]]];
+        $emptyCriticas = ['nombre' => '', 'ordenes' => []];
         return [
-            'semanas'    => [],
-            'general'    => $empty,
-            'categorias' => array_fill_keys($categorias, array_merge($empty, ['nombre' => ''])),
+            'semanas'         => [],
+            'general'         => $empty,
+            'categorias'      => array_fill_keys($categorias, array_merge($empty, ['nombre' => ''])),
+            'ordenesCriticas' => array_merge(
+                ['GENERAL' => array_merge($emptyCriticas, ['nombre' => 'General'])],
+                array_fill_keys($categorias, $emptyCriticas)
+            ),
         ];
     }
 
@@ -929,10 +906,10 @@ class LeadTimeController extends Controller
     {
         return [
             'general' => [
-                'total' => 0,
+                'total'      => 0,
                 'porcentaje' => 0,
             ],
-            'categorias' => [],
+            'categorias'        => [],
             'ordenes_atrasadas' => [],
         ];
     }
@@ -951,7 +928,7 @@ class LeadTimeController extends Controller
 
                 if (empty($rawData)) return [Carbon::now()->year];
 
-                $headers = array_shift($rawData);
+                $headers      = array_shift($rawData);
                 $solicitadoIdx = array_search('SOLICITADO', $headers);
 
                 if ($solicitadoIdx === false) return [Carbon::now()->year];
@@ -989,7 +966,7 @@ class LeadTimeController extends Controller
             for ($y = 2024; $y <= 2027; $y++) {
                 Cache::forget("lead_time_data_{$y}_{$m}");
                 Cache::forget("lead_time_semanal_{$y}_{$m}");
-                Cache::forget("lead_time_objetivo_mas_{$y}_{$m}");
+                Cache::forget("lead_time_objetivo_mas_{$y}");
             }
         }
         Cache::forget("lead_time_available_years");

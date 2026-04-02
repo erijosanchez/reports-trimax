@@ -51,10 +51,46 @@
                 </div>
 
                 
-                <div id="mainContent">
-                    <div class="lt-loading-state">
-                        <div class="lt-spinner"></div>
-                        <p>Cargando datos...</p>
+                <div class="lt-tab-bar">
+                    <button class="lt-tab active" id="tabConteo" onclick="switchTab('conteo')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <rect x="3" y="3" width="7" height="7" rx="1" />
+                            <rect x="14" y="3" width="7" height="7" rx="1" />
+                            <rect x="14" y="14" width="7" height="7" rx="1" />
+                            <rect x="3" y="14" width="7" height="7" rx="1" />
+                        </svg>
+                        Conteo por semana
+                    </button>
+                    <button class="lt-tab" id="tabCriticas" onclick="switchTab('criticas')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <circle cx="12" cy="12" r="10" />
+                            <line x1="12" y1="8" x2="12" y2="12" />
+                            <line x1="12" y1="16" x2="12.01" y2="16" />
+                        </svg>
+                        Órdenes críticas
+                        <span class="lt-tab-badge" id="tabBadge">—</span>
+                    </button>
+                </div>
+
+                
+                <div id="panelConteo">
+                    <div id="mainContent">
+                        <div class="lt-loading-state">
+                            <div class="lt-spinner"></div>
+                            <p>Cargando datos...</p>
+                        </div>
+                    </div>
+                </div>
+
+                
+                <div id="panelCriticas" style="display:none;">
+                    <div id="criticasContent">
+                        <div class="lt-loading-state">
+                            <div class="lt-spinner"></div>
+                            <p>Cargando órdenes críticas...</p>
+                        </div>
                     </div>
                 </div>
 
@@ -88,6 +124,7 @@
             --lt-gray-800: #1e2130;
             --lt-gray-600: #4b5573;
             --lt-gray-400: #8892a8;
+            --lt-gray-300: #c8cedb;
             --lt-gray-200: #e4e8f0;
             --lt-gray-100: #f2f4f8;
             --lt-gray-50: #f8f9fc;
@@ -111,6 +148,7 @@
             font-family: 'DM Sans', sans-serif;
         }
 
+        /* ── PAGE HEADER ── */
         .lt-page-header {
             display: flex;
             align-items: flex-start;
@@ -135,6 +173,7 @@
             margin: 0;
         }
 
+        /* ── FILTER PANEL ── */
         .lt-filter-panel {
             display: flex;
             align-items: flex-end;
@@ -144,7 +183,7 @@
             border: 1px solid var(--lt-gray-200);
             border-radius: var(--lt-radius-lg);
             padding: 1.25rem 1.5rem;
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
             box-shadow: var(--lt-shadow-sm);
             flex-wrap: wrap;
         }
@@ -205,6 +244,7 @@
             align-items: center;
         }
 
+        /* ── BUTTONS ── */
         .lt-btn {
             display: inline-flex;
             align-items: center;
@@ -275,6 +315,67 @@
             }
         }
 
+        /* ── TAB BAR ── */
+        .lt-tab-bar {
+            display: flex;
+            gap: 0.35rem;
+            background: var(--lt-white);
+            border: 1px solid var(--lt-gray-200);
+            border-radius: var(--lt-radius-lg);
+            padding: 0.35rem;
+            margin-bottom: 1.5rem;
+            box-shadow: var(--lt-shadow-sm);
+            width: fit-content;
+        }
+
+        .lt-tab {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 0.5rem 1.1rem;
+            border-radius: var(--lt-radius-sm);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--lt-gray-400);
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            transition: all .18s;
+            white-space: nowrap;
+        }
+
+        .lt-tab:hover {
+            color: var(--lt-gray-950);
+            background: var(--lt-gray-50);
+        }
+
+        .lt-tab.active {
+            background: var(--lt-blue-700);
+            color: #fff;
+            box-shadow: var(--lt-shadow-blue);
+        }
+
+        .lt-tab-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, .2);
+            color: inherit;
+            font-size: 0.65rem;
+            font-weight: 800;
+            font-family: 'DM Mono', monospace;
+            padding: 1px 7px;
+            border-radius: 20px;
+            min-width: 24px;
+        }
+
+        .lt-tab:not(.active) .lt-tab-badge {
+            background: var(--lt-red-lt);
+            color: var(--lt-red);
+        }
+
+        /* ── NAV BUTTONS ── */
         .om-btn-nav {
             display: inline-flex;
             align-items: center;
@@ -300,6 +401,7 @@
             cursor: not-allowed;
         }
 
+        /* ── LOADING / EMPTY ── */
         .lt-loading-state {
             display: flex;
             flex-direction: column;
@@ -349,6 +451,7 @@
             margin: 0;
         }
 
+        /* ── ANIMATIONS ── */
         .lt-fade-up {
             opacity: 0;
             transform: translateY(18px);
@@ -390,26 +493,24 @@
             animation-delay: .44s;
         }
 
-        /* ── LAYOUT ── */
+        /* ── LAYOUT CONTEO ── */
         .om-section {
             margin-bottom: 2rem;
         }
 
         .om-cats-grid {
             display: grid;
-            /* 2 columnas en pantallas grandes (monitor de escritorio) */
             grid-template-columns: 1fr 1fr;
             gap: 1.5rem;
         }
 
-        /* En laptop y pantallas medianas: 1 columna para que las tablas no se corten */
         @media (max-width: 1400px) {
             .om-cats-grid {
                 grid-template-columns: 1fr;
             }
         }
 
-        /* Evita que los grid items desborden su contenedor */
+        /* ── TABLE CARD ── */
         .lt-table-card {
             background: var(--lt-white);
             border-radius: var(--lt-radius-lg);
@@ -417,7 +518,6 @@
             box-shadow: var(--lt-shadow-sm);
             overflow: hidden;
             min-width: 0;
-            /* fix: evita que el grid item desborde */
             transition: transform .22s, box-shadow .22s, border-color .22s;
         }
 
@@ -521,7 +621,7 @@
             color: #b45309;
         }
 
-        /* Scroll horizontal en la tabla — la card no se rompe */
+        /* ── TABLA CONTEO ── */
         .lt-table-wrap {
             overflow-x: auto;
         }
@@ -539,12 +639,10 @@
             border-radius: 10px;
         }
 
-        /* ── TABLA ── */
         .om-tbl {
             width: 100%;
             border-collapse: collapse;
             font-size: 0.8rem;
-            /* min-width garantiza que la tabla no se aplaste: col label + 4 sem x 2 cols + acum */
             min-width: 520px;
         }
 
@@ -729,6 +827,245 @@
             color: rgba(255, 255, 255, .75) !important;
         }
 
+        /* ── ÓRDENES CRÍTICAS ── */
+        .crit-cat-tabs {
+            display: flex;
+            gap: 0.25rem;
+            padding: 0.75rem 1rem 0;
+            border-bottom: 1px solid var(--lt-gray-100);
+            overflow-x: auto;
+        }
+
+        .crit-cat-tabs::-webkit-scrollbar {
+            height: 3px;
+        }
+
+        .crit-cat-tabs::-webkit-scrollbar-thumb {
+            background: var(--lt-gray-200);
+            border-radius: 10px;
+        }
+
+        .crit-cat-tab {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 0.38rem 0.9rem;
+            border-radius: 7px 7px 0 0;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--lt-gray-400);
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            transition: all .15s;
+            white-space: nowrap;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -1px;
+        }
+
+        .crit-cat-tab:hover {
+            color: var(--lt-gray-950);
+            background: var(--lt-gray-50);
+        }
+
+        .crit-cat-tab.active {
+            color: var(--lt-blue-700);
+            border-bottom-color: var(--lt-blue-600);
+            background: var(--lt-white);
+        }
+
+        .crit-cat-count {
+            font-family: 'DM Mono', monospace;
+            font-size: 0.6rem;
+            font-weight: 800;
+            background: var(--lt-red-lt);
+            color: var(--lt-red);
+            padding: 1px 5px;
+            border-radius: 10px;
+        }
+
+        .crit-cat-tab.active .crit-cat-count {
+            background: var(--lt-blue-100);
+            color: var(--lt-blue-700);
+        }
+
+        .crit-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.9rem 1.3rem;
+            border-bottom: 1px solid var(--lt-gray-100);
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .crit-search {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--lt-gray-50);
+            border: 1.5px solid var(--lt-gray-200);
+            border-radius: var(--lt-radius-sm);
+            padding: 0.4rem 0.75rem;
+            min-width: 240px;
+            transition: border-color .2s;
+        }
+
+        .crit-search:focus-within {
+            border-color: var(--lt-blue-400);
+            background: var(--lt-white);
+        }
+
+        .crit-search svg {
+            flex-shrink: 0;
+            color: var(--lt-gray-400);
+        }
+
+        .crit-search input {
+            border: none;
+            background: transparent;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.8rem;
+            color: var(--lt-gray-950);
+            width: 100%;
+            outline: none;
+        }
+
+        .crit-search input::placeholder {
+            color: var(--lt-gray-400);
+        }
+
+        /* tabla críticas */
+        .crit-tbl {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+            min-width: 520px;
+        }
+
+        .crit-tbl thead tr {
+            background: var(--lt-gray-50);
+        }
+
+        .crit-tbl thead th {
+            padding: 0.55rem 0.85rem;
+            text-align: left;
+            font-size: 0.62rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            color: var(--lt-gray-400);
+            white-space: nowrap;
+            border-bottom: 1px solid var(--lt-gray-200);
+            border-right: 1px solid var(--lt-gray-200);
+        }
+
+        .crit-tbl thead th:last-child {
+            border-right: none;
+            text-align: center;
+        }
+
+        .crit-tbl tbody tr {
+            border-bottom: 1px solid var(--lt-gray-100);
+            transition: background .13s;
+        }
+
+        .crit-tbl tbody tr:last-child {
+            border-bottom: none;
+        }
+
+        .crit-tbl tbody tr:hover {
+            background: var(--lt-blue-50);
+        }
+
+        .crit-tbl tbody td {
+            padding: 0.52rem 0.85rem;
+            vertical-align: middle;
+            color: var(--lt-gray-600);
+            border-right: 1px solid var(--lt-gray-100);
+        }
+
+        .crit-tbl tbody td:last-child {
+            border-right: none;
+        }
+
+        .td-orden {
+            font-family: 'DM Mono', monospace;
+            font-weight: 700;
+            font-size: 0.82rem;
+            color: var(--lt-blue-600) !important;
+        }
+
+        .td-sede-pill {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+            color: var(--lt-blue-700);
+            background: var(--lt-blue-50);
+            border: 1px solid var(--lt-blue-100);
+            border-radius: 5px;
+            padding: 2px 8px;
+            white-space: nowrap;
+            display: inline-block;
+        }
+
+        .td-tipo {
+            font-size: 0.75rem;
+            color: var(--lt-gray-600) !important;
+        }
+
+        .td-producto-cell {
+            max-width: 220px;
+        }
+
+        .td-producto-text {
+            font-size: 0.78rem;
+            color: var(--lt-gray-600);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            display: block;
+            max-width: 220px;
+        }
+
+        .td-atraso-cell {
+            text-align: center !important;
+        }
+
+        .td-atraso-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'DM Mono', monospace;
+            font-weight: 800;
+            font-size: 0.82rem;
+            min-width: 42px;
+            padding: 3px 8px;
+            border-radius: 6px;
+            background: var(--lt-red-lt);
+            color: var(--lt-red);
+        }
+
+        .td-atraso-badge.alto {
+            background: #fecaca;
+            color: #b91c1c;
+            font-size: 0.88rem;
+        }
+
+        .td-atraso-badge.critico {
+            background: #b91c1c;
+            color: #fff;
+            font-size: 0.92rem;
+        }
+
+        .crit-empty {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: var(--lt-gray-400);
+            font-size: 0.82rem;
+        }
+
         /* ── RESPONSIVE ── */
         @media (max-width: 768px) {
             .lt-filter-panel {
@@ -747,6 +1084,19 @@
             .lt-page-title {
                 font-size: 1.5rem;
             }
+
+            .lt-tab-bar {
+                width: 100%;
+            }
+
+            .crit-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .crit-search {
+                min-width: unset;
+            }
         }
     </style>
 <?php $__env->stopSection(); ?>
@@ -754,6 +1104,9 @@
 <?php $__env->startSection('scripts'); ?>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
+        /* ══════════════════════════════════════════════════════════
+               CONSTANTES Y META
+            ══════════════════════════════════════════════════════════ */
         const CAT_ORDER = ['NOX', 'TD', 'DEVABLUE', 'BLANCO', 'COLOREADO'];
         const CAT_META = {
             GENERAL: {
@@ -789,10 +1142,20 @@
         };
 
         const WEEKS_PER_VIEW = 4;
+
+        /* ══════════════════════════════════════════════════════════
+           ESTADO GLOBAL
+        ══════════════════════════════════════════════════════════ */
         let omData = null;
         let omOffsets = {};
+        let criticasData = null;
+        let currentCritCat = 'GENERAL';
+        let critSearchQuery = '';
+        let currentTab = 'conteo';
 
-        /* ── INIT ── */
+        /* ══════════════════════════════════════════════════════════
+           INIT
+        ══════════════════════════════════════════════════════════ */
         $(document).ready(() => {
             $.ajax({
                 url: "<?php echo route('produccion.lead-time.years'); ?>",
@@ -812,13 +1175,26 @@
                 error() {
                     $('#filterYear').html(
                         `<option value="${new Date().getFullYear()}" selected>${new Date().getFullYear()}</option>`
-                    );
+                        );
                     loadData();
                 }
             });
         });
 
-        /* ── LOAD DATA ── */
+        /* ══════════════════════════════════════════════════════════
+           TABS
+        ══════════════════════════════════════════════════════════ */
+        function switchTab(tab) {
+            currentTab = tab;
+            document.getElementById('tabConteo').classList.toggle('active', tab === 'conteo');
+            document.getElementById('tabCriticas').classList.toggle('active', tab === 'criticas');
+            document.getElementById('panelConteo').style.display = tab === 'conteo' ? '' : 'none';
+            document.getElementById('panelCriticas').style.display = tab === 'criticas' ? '' : 'none';
+        }
+
+        /* ══════════════════════════════════════════════════════════
+           LOAD DATA
+        ══════════════════════════════════════════════════════════ */
         function loadData() {
             const year = $('#filterYear').val();
             if (!year) return;
@@ -842,16 +1218,24 @@
                 }) {
                     $btn.removeClass('lt-btn-loading').prop('disabled', false);
                     $('#btnText').text('Consultar');
+
                     if (success && data) {
                         omData = data;
-                        // Inicializar offsets apuntando a las semanas mas recientes
+
+                        // Inicializar offsets en semanas más recientes
                         const total = (data.semanas || []).length;
                         const initOffset = Math.max(0, total - WEEKS_PER_VIEW);
                         omOffsets['GENERAL'] = initOffset;
                         CAT_ORDER.forEach(c => {
                             omOffsets[c] = initOffset;
                         });
+
                         renderDashboard(data, filters);
+
+                        // Críticas
+                        if (data.ordenesCriticas) {
+                            renderCriticas(data.ordenesCriticas);
+                        }
                     } else {
                         renderEmpty('Sin datos para este año');
                     }
@@ -868,9 +1252,14 @@
             $('#mainContent').html(
                 `<div class="lt-loading-state"><div class="lt-spinner"></div><p>Consultando Lead Time Objetivo +...</p></div>`
             );
+            $('#criticasContent').html(
+                `<div class="lt-loading-state"><div class="lt-spinner"></div><p>Cargando órdenes críticas...</p></div>`
+            );
         }
 
-        /* ── RENDER DASHBOARD ── */
+        /* ══════════════════════════════════════════════════════════
+           RENDER DASHBOARD (CONTEO)
+        ══════════════════════════════════════════════════════════ */
         function renderDashboard(data, filters) {
             const semanas = data.semanas || [];
             const general = data.general || {};
@@ -883,17 +1272,16 @@
 
             let html = '';
 
-            /* GENERAL — ancho completo */
+            // GENERAL — ancho completo
             html += `
                 <div class="om-section lt-fade-up" id="section-GENERAL">
                     <div class="lt-table-card">
                         ${buildTableHead('GENERAL', filters.year, general.totales, null, semanas)}
                         <div id="tbody-GENERAL">${buildTableInner(semanas, general, 'GENERAL')}</div>
                     </div>
-                </div>
-            `;
+                </div>`;
 
-            /* CATEGORIAS — grid responsivo */
+            // CATEGORÍAS — grid
             html += `<div class="om-cats-grid">`;
             CAT_ORDER.forEach((cat, i) => {
                 const info = categorias[cat];
@@ -904,15 +1292,14 @@
                             ${buildTableHead(cat, filters.year, info.totales, info.nombre, semanas)}
                             <div id="tbody-${cat}">${buildTableInner(semanas, info, cat)}</div>
                         </div>
-                    </div>
-                `;
+                    </div>`;
             });
             html += `</div>`;
 
             $('#mainContent').html(html);
         }
 
-        /* ── CARD HEADER ── */
+        /* ── Card Header ── */
         function buildTableHead(key, year, totales, nombreDisplay, semanas) {
             const meta = CAT_META[key] || {
                 label: key,
@@ -927,7 +1314,6 @@
             const visSems = semanas.slice(offset, end);
             const canPrev = offset > 0;
             const canNext = end < maxSem;
-
             const badgeTxt = visSems.length ?
                 `Sem ${visSems[0].num} – Sem ${visSems[visSems.length - 1].num}` :
                 '';
@@ -953,11 +1339,10 @@
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
                         </button>
                     </div>
-                </div>
-            `;
+                </div>`;
         }
 
-        /* ── NAVEGACION ── */
+        /* ── Navegación ── */
         function navTable(key, dir) {
             if (!omData) return;
             const semanas = omData.semanas || [];
@@ -974,16 +1359,14 @@
             const canPrev = offset > 0;
             const canNext = end < maxSem;
 
-            $(`#badge-${key}`).text(
-                visSems.length ? `Sem ${visSems[0].num} – Sem ${visSems[visSems.length - 1].num}` : ''
-            );
+            $(`#badge-${key}`).text(visSems.length ? `Sem ${visSems[0].num} – Sem ${visSems[visSems.length - 1].num}` : '');
 
             const $nav = $(`#section-${key} .lt-table-head .om-nav-group`);
             $nav.find('button').first().prop('disabled', !canPrev);
             $nav.find('button').last().prop('disabled', !canNext);
         }
 
-        /* ── TABLE INNER ── */
+        /* ── Table Inner ── */
         function buildTableInner(semanas, tableData, key) {
             const filas = tableData.filas || [];
             const totales = tableData.totales || {};
@@ -994,12 +1377,12 @@
             if (!filas.length) {
                 return `<div style="padding:2.5rem;text-align:center;color:var(--lt-gray-400);font-size:.83rem;">
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
-                         style="display:block;margin:0 auto .6rem;opacity:.35;">
+                        style="display:block;margin:0 auto .6rem;opacity:.35;">
                         <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
                     </svg>Sin órdenes atrasadas en este período</div>`;
             }
 
-            /* Maximo por semana visible para heat map */
+            // Máximo por semana para heat map
             const maxBySem = {};
             visSems.forEach(s => {
                 maxBySem[s.num] = 0;
@@ -1011,7 +1394,7 @@
                 });
             });
 
-            /* THEAD */
+            // THEAD
             let thead = `<thead><tr>`;
             thead += `<th class="th-label" rowspan="2">Días de<br>Atraso</th>`;
             visSems.forEach(s => {
@@ -1029,7 +1412,7 @@
             });
             thead += `</tr></thead>`;
 
-            /* TBODY */
+            // TBODY
             let tbody = `<tbody>`;
             filas.forEach(f => {
                 tbody += `<tr><td class="td-om-label">${f.label}</td>`;
@@ -1062,7 +1445,7 @@
                 </td></tr>`;
             });
 
-            /* Fila TOTAL */
+            // Fila TOTAL
             if (totales?.semanas) {
                 tbody += `<tr class="tr-om-total"><td class="td-om-label">TOTAL</td>`;
                 visSems.forEach((s, idx) => {
@@ -1086,10 +1469,202 @@
             return `<div class="lt-table-wrap"><table class="om-tbl">${thead}${tbody}</table></div>`;
         }
 
-        /* ── EMPTY / CACHE ── */
+        /* ══════════════════════════════════════════════════════════
+           ÓRDENES CRÍTICAS
+        ══════════════════════════════════════════════════════════ */
+        const CAT_ORDER_CRIT = ['GENERAL', 'NOX', 'TD', 'DEVABLUE', 'BLANCO', 'COLOREADO'];
+
+        function renderCriticas(ordenesCriticas) {
+            criticasData = ordenesCriticas;
+
+            // Badge en el tab
+            const totalGeneral = (ordenesCriticas['GENERAL']?.ordenes || []).length;
+            const badge = document.getElementById('tabBadge');
+            if (badge) badge.textContent = totalGeneral > 0 ? totalGeneral.toLocaleString() : '0';
+
+            renderCritCard(currentCritCat);
+        }
+
+        function renderCritCard(catKey) {
+            currentCritCat = catKey;
+            if (!criticasData) return;
+
+            const data = criticasData[catKey] || {
+                nombre: catKey,
+                ordenes: []
+            };
+            const meta = CAT_META[catKey] || {
+                label: catKey,
+                iconCls: 'om-icon-general',
+                icon: '⊕'
+            };
+            const nombre = data.nombre || meta.label || catKey;
+
+            // Sub-tabs de categoría
+            let tabsHtml = `<div class="crit-cat-tabs">`;
+            CAT_ORDER_CRIT.forEach(c => {
+                const d = criticasData[c] || {
+                    ordenes: []
+                };
+                const count = d.ordenes?.length || 0;
+                const m = CAT_META[c] || {
+                    label: c
+                };
+                const lbl = c === 'GENERAL' ? 'General' : (m.label || c);
+                tabsHtml += `
+                    <button class="crit-cat-tab ${c === catKey ? 'active' : ''}" onclick="renderCritCard('${c}')">
+                        ${lbl}
+                        ${count > 0 ? `<span class="crit-cat-count">${count.toLocaleString()}</span>` : ''}
+                    </button>`;
+            });
+            tabsHtml += `</div>`;
+
+            const ordenes = data.ordenes || [];
+
+            const html = `
+                <div class="lt-table-card lt-fade-up">
+                    ${tabsHtml}
+                    <div class="crit-header">
+                        <div class="lt-table-title">
+                            <div class="om-cat-icon ${meta.iconCls}">${meta.icon}</div>
+                            <div>
+                                <span>${nombre}</span>
+                                <span style="display:block;font-size:.7rem;font-weight:400;color:var(--lt-gray-400);margin-top:1px;">
+                                    Órdenes con atraso ≥ 2 días
+                                </span>
+                            </div>
+                            <span class="lt-table-count" id="critCount">${ordenes.length.toLocaleString()} órdenes</span>
+                        </div>
+                        <div class="crit-search">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                            </svg>
+                            <input type="text"
+                                id="critSearchInput"
+                                placeholder="Buscar orden, sede, producto..."
+                                value="${critSearchQuery}"
+                                oninput="onCritSearch(this.value)">
+                        </div>
+                    </div>
+                    <div class="lt-table-wrap" id="critTableWrap">
+                        ${buildCritTable(ordenes)}
+                    </div>
+                </div>`;
+
+            document.getElementById('criticasContent').innerHTML = html;
+
+            // Restaurar foco si había búsqueda activa
+            if (critSearchQuery) {
+                const inp = document.getElementById('critSearchInput');
+                if (inp) {
+                    inp.focus();
+                    inp.setSelectionRange(inp.value.length, inp.value.length);
+                }
+            }
+        }
+
+        function onCritSearch(val) {
+            critSearchQuery = val;
+            const data = criticasData?.[currentCritCat];
+            const ordenes = data?.ordenes || [];
+            document.getElementById('critTableWrap').innerHTML = buildCritTable(ordenes);
+            // Actualizar contador
+            const filtered = filterOrdenes(ordenes);
+            const countEl = document.getElementById('critCount');
+            if (countEl) countEl.textContent = `${filtered.length.toLocaleString()} órdenes`;
+        }
+
+        function filterOrdenes(ordenes) {
+            const q = critSearchQuery.trim().toLowerCase();
+            if (!q) return ordenes;
+            return ordenes.filter(o =>
+                (o.numero_orden + '').toLowerCase().includes(q) ||
+                (o.sede + '').toLowerCase().includes(q) ||
+                (o.tipo + '').toLowerCase().includes(q) ||
+                (o.producto + '').toLowerCase().includes(q)
+            );
+        }
+
+        function buildCritTable(ordenes) {
+            const filtered = filterOrdenes(ordenes);
+
+            if (!filtered.length) {
+                return `<div class="crit-empty">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+                        style="display:block;margin:0 auto .6rem;opacity:.35;">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="8" x2="12" y2="12"/>
+                        <line x1="12" y1="16" x2="12.01" y2="16"/>
+                    </svg>
+                    ${critSearchQuery
+                        ? `Sin resultados para "<strong>${critSearchQuery}</strong>"`
+                        : 'Sin órdenes críticas en esta categoría'}
+                </div>`;
+            }
+
+            let rows = '';
+            filtered.forEach(o => {
+                const dias = Math.abs(o.atraso);
+                const badgeCls = dias >= 8 ? 'critico' : dias >= 5 ? 'alto' : '';
+                const producto = (o.producto || '').length > 45 ?
+                    (o.producto || '').substring(0, 45) + '…' :
+                    (o.producto || '—');
+
+                rows += `<tr>
+                    <td class="td-orden">${o.numero_orden || '—'}</td>
+                    <td><span class="td-sede-pill">${o.sede || '—'}</span></td>
+                    <td class="td-tipo">${o.tipo || '—'}</td>
+                    <td class="td-producto-cell">
+                        <span class="td-producto-text" title="${o.producto || ''}">${producto}</span>
+                    </td>
+                    <td class="td-atraso-cell">
+                        <span class="td-atraso-badge ${badgeCls}">-${dias}</span>
+                    </td>
+                </tr>`;
+            });
+
+            return `
+                <table class="crit-tbl">
+                    <thead>
+                        <tr>
+                            <th>N° Orden</th>
+                            <th>Sede</th>
+                            <th>Tipo</th>
+                            <th>Producto</th>
+                            <th style="text-align:center;">Atraso</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>`;
+        }
+
+        /* ══════════════════════════════════════════════════════════
+           EMPTY / CACHE
+        ══════════════════════════════════════════════════════════ */
         function renderEmpty(msg) {
             $('#mainContent').html(
-                `<div class="lt-empty"><div class="lt-empty-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#8892a8" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div><h5>${msg}</h5><p>Selecciona otro año</p></div>`
+                `<div class="lt-empty">
+                    <div class="lt-empty-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#8892a8" stroke-width="1.5">
+                            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+                    </div>
+                    <h5>${msg}</h5>
+                    <p>Selecciona otro año</p>
+                </div>`
+            );
+            $('#criticasContent').html(
+                `<div class="lt-empty">
+                    <div class="lt-empty-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#8892a8" stroke-width="1.5">
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="12" y1="8" x2="12" y2="12"/>
+                            <line x1="12" y1="16" x2="12.01" y2="16"/>
+                        </svg>
+                    </div>
+                    <h5>Sin datos disponibles</h5>
+                    <p>Selecciona otro año</p>
+                </div>`
             );
         }
 
