@@ -269,6 +269,7 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
     // Admin Routes (Admin + Super Admin only)
     Route::middleware('role:super_admin|admin')->prefix('admin')->name('admin.')->group(function () {
         Route::get('/dashboard/sistema', [AdminController::class, 'dashboard'])->name('dashboard');
+        Route::get('/api/online-status', [AdminController::class, 'onlineStatusApi'])->name('api.online-status');
         Route::get('/users', [AdminController::class, 'users'])->name('users');
         Route::get('/activity-logs', [AdminController::class, 'activityLogs'])->name('activity-logs');
         Route::get('/security', [AdminController::class, 'security'])->name('security');

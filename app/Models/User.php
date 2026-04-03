@@ -256,8 +256,43 @@ class User extends Authenticatable
     public function isOnline(): bool
     {
         return $this->activeSessions()
-            ->where('last_activity', '>=', now()->subMinutes(5))
+            ->where('last_activity', '>=', now()->subMinutes(10))
             ->exists();
+    }
+
+    public function lastActivityAt(): ?\Illuminate\Support\Carbon
+    {
+        $session = $this->sessions()
+            ->whereNotNull('last_activity')
+            ->orderByDesc('last_activity')
+            ->first();
+
+        return $session?->last_activity;
+    }
+
+    public function lastSeenText(): string
+    {
+        if ($this->isOnline()) {
+            return 'En línea';
+        }
+
+        $lastActivity = $this->lastActivityAt();
+
+        if (! $lastActivity) {
+            return $this->last_login_at
+                ? 'Última vez ' . $this->last_login_at->diffForHumans()
+                : 'Sin actividad';
+        }
+
+        if ($lastActivity->isToday()) {
+            return 'Última vez hoy a las ' . $lastActivity->format('H:i');
+        } elseif ($lastActivity->isYesterday()) {
+            return 'Última vez ayer a las ' . $lastActivity->format('H:i');
+        } elseif ($lastActivity->diffInDays(now()) < 7) {
+            return 'Última vez ' . $lastActivity->diffForHumans();
+        }
+
+        return 'Última vez el ' . $lastActivity->format('d/m/Y');
     }
 
     public function hasTwoFactorEnabled(): bool
@@ -285,7 +320,7 @@ class User extends Authenticatable
     public function scopeOnline($query)
     {
         return $query->whereHas('activeSessions', function ($q) {
-            $q->where('last_activity', '>=', now()->subMinutes(5));
+            $q->where('last_activity', '>=', now()->subMinutes(10));
         });
     }
 }

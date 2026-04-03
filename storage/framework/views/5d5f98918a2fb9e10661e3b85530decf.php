@@ -220,6 +220,24 @@
         <?php endif; ?>
 
         
+        <li class="nav-item nav-category">PRODUCTIVIDAD DE SEDES</li>
+        <li class="nav-item">
+            <a class="nav-link <?php echo request()->routeIs('marketing.index') ? 'active' : ''; ?>"
+                href="<?php echo route('marketing.index'); ?>">
+                <i class="mdi-grid menu-icon mdi"></i>
+                <span class="menu-title">Ordenes x Usuario</span>
+            </a>
+        </li>
+
+        <li class="nav-item">
+            <a class="nav-link <?php echo request()->routeIs('marketing.users.index') ? 'active' : ''; ?>"
+                href="<?php echo route('marketing.users.index'); ?>">
+                <i class="mdi mdi-account-multiple menu-icon"></i>
+                <span class="menu-title">Envios</span>
+            </a>
+        </li>
+
+        
         <?php if(auth()->user()->isMarketing() || auth()->user()->isSuperAdmin()): ?>
             <li class="nav-item nav-category">MARKETING</li>
             <li class="nav-item">

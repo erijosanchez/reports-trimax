@@ -27,28 +27,72 @@ class AdminController extends Controller
             ->with('activeSessions')
             ->get();
 
+        // All users with their latest session for "last seen" info
+        $allUsersStatus = User::with(['sessions' => function ($q) {
+            $q->orderByDesc('last_activity')->limit(1);
+        }])->get()->map(function ($user) {
+            return [
+                'id'           => $user->id,
+                'name'         => $user->name,
+                'is_online'    => $user->isOnline(),
+                'last_seen'    => $user->lastSeenText(),
+                'last_activity'=> $user->lastActivityAt()?->toISOString(),
+            ];
+        })->sortByDesc('is_online')->values();
+
         $recentActivity = UserActivityLog::with('user')
             ->latest()
             ->limit(10)
             ->get();
 
-        return view('admin.dashboard', compact('stats', 'usersOnline', 'recentActivity'));
+        return view('admin.dashboard', compact('stats', 'usersOnline', 'allUsersStatus', 'recentActivity'));
+    }
+
+    public function onlineStatusApi()
+    {
+        $users = User::with(['sessions' => function ($q) {
+            $q->orderByDesc('last_activity')->limit(1);
+        }])->get();
+
+        $mapped = $users->map(function ($user) {
+            return [
+                'id'            => $user->id,
+                'name'          => $user->name,
+                'is_online'     => $user->isOnline(),
+                'last_seen'     => $user->lastSeenText(),
+                'last_activity' => $user->lastActivityAt()?->toISOString(),
+            ];
+        })->sortByDesc('is_online')->values();
+
+        return response()->json([
+            'users'        => $mapped,
+            'online_count' => $users->filter(fn($u) => $u->isOnline())->count(),
+            'updated_at'   => now()->format('H:i:s'),
+        ]);
     }
 
     public function users()
     {
-
         $users = User::with('roles')
             ->withCount('sessions')
             ->paginate(10);
 
-        $usersOnline = User::online()
-            ->with(['activeSessions' => function ($query) {
-                $query->latest('last_activity');
-            }])
-            ->get();
+        // Collect online IDs for quick lookup in view
+        $onlineIds = User::online()->pluck('id')->flip();
 
-        return view('admin.users', compact('users', 'usersOnline'));
+        // All users with last seen info for sidebar panel
+        $allUsersStatus = User::with(['sessions' => function ($q) {
+            $q->orderByDesc('last_activity')->limit(1);
+        }])->get()->map(function ($user) {
+            return [
+                'id'        => $user->id,
+                'name'      => $user->name,
+                'is_online' => $user->isOnline(),
+                'last_seen' => $user->lastSeenText(),
+            ];
+        })->sortByDesc('is_online')->values();
+
+        return view('admin.users', compact('users', 'onlineIds', 'allUsersStatus'));
     }
 
     public function activityLogs()

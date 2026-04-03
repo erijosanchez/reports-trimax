@@ -1,8 +1,6 @@
-@extends('layouts.app')
+<?php $__env->startSection('title', 'Panel Admin'); ?>
 
-@section('title', 'Panel Admin')
-
-@section('content')
+<?php $__env->startSection('content'); ?>
     <div class="content-wrapper">
         <div class="row">
             <div class="col-sm-12">
@@ -38,7 +36,7 @@
                                             <div class="d-flex align-items-center justify-content-between">
                                                 <div>
                                                     <p class="statistics-title">Usuarios Totales</p>
-                                                    <h3 class="rate-percentage">{{ $stats['total_users'] }}</h3>
+                                                    <h3 class="rate-percentage"><?php echo $stats['total_users']; ?></h3>
                                                     <p class="text-success d-flex align-items-center">
                                                         <i class="mdi mdi-menu-up"></i>
                                                         <span class="ms-1">Registrados</span>
@@ -58,7 +56,7 @@
                                             <div class="d-flex align-items-center justify-content-between">
                                                 <div>
                                                     <p class="statistics-title">Usuarios Online</p>
-                                                    <h3 class="rate-percentage">{{ $stats['users_online'] }}</h3>
+                                                    <h3 class="rate-percentage"><?php echo $stats['users_online']; ?></h3>
                                                     <p class="text-success d-flex align-items-center">
                                                         <i class="mdi mdi-circle text-success pulse-dot me-1"></i>
                                                         <span>Activos ahora</span>
@@ -78,10 +76,10 @@
                                             <div class="d-flex align-items-center justify-content-between">
                                                 <div>
                                                     <p class="statistics-title">Sesiones Hoy</p>
-                                                    <h3 class="rate-percentage">{{ $stats['total_sessions_today'] }}</h3>
+                                                    <h3 class="rate-percentage"><?php echo $stats['total_sessions_today']; ?></h3>
                                                     <p class="text-warning d-flex align-items-center">
                                                         <i class="mdi mdi-calendar-today"></i>
-                                                        <span class="ms-1">{{ date('d/m/Y') }}</span>
+                                                        <span class="ms-1"><?php echo date('d/m/Y'); ?></span>
                                                     </p>
                                                 </div>
                                                 <div class="icon-wrapper bg-warning-subtle rounded">
@@ -98,7 +96,7 @@
                                             <div class="d-flex align-items-center justify-content-between">
                                                 <div>
                                                     <p class="statistics-title">IPs Bloqueadas</p>
-                                                    <h3 class="rate-percentage">{{ $stats['blocked_ips'] }}</h3>
+                                                    <h3 class="rate-percentage"><?php echo $stats['blocked_ips']; ?></h3>
                                                     <p class="text-danger d-flex align-items-center">
                                                         <i class="mdi mdi-shield-alert"></i>
                                                         <span class="ms-1">Seguridad</span>
@@ -141,38 +139,40 @@
                                                 </h4>
                                                 <div class="d-flex align-items-center gap-2">
                                                     <span class="badge badge-success" id="onlineCount">
-                                                        {{ $stats['users_online'] }} en línea
+                                                        <?php echo $stats['users_online']; ?> en línea
                                                     </span>
                                                     <small class="text-muted" id="statusUpdatedAt" title="Última actualización"></small>
                                                 </div>
                                             </div>
 
                                             <div id="usersStatusList" style="max-height: 350px; overflow-y: auto;">
-                                                @forelse ($allUsersStatus as $u)
+                                                <?php $__empty_1 = true; $__currentLoopData = $allUsersStatus; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $u): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                                                     <div class="presence-item d-flex align-items-center border-bottom py-2"
-                                                         data-user-id="{{ $u['id'] }}">
+                                                         data-user-id="<?php echo $u['id']; ?>">
                                                         <div class="position-relative me-3 flex-shrink-0">
                                                             <img class="rounded-circle"
                                                                 style="width:36px;height:36px;object-fit:cover;"
-                                                                src="https://ui-avatars.com/api/?name={{ urlencode($u['name']) }}&background={{ $u['is_online'] ? '25D366' : 'adb5bd' }}&color=fff"
-                                                                alt="{{ $u['name'] }}">
-                                                            <span class="presence-dot {{ $u['is_online'] ? 'dot-online pulse' : 'dot-offline' }}"></span>
+                                                                src="https://ui-avatars.com/api/?name=<?php echo urlencode($u['name']); ?>&background=<?php echo $u['is_online'] ? '25D366' : 'adb5bd'; ?>&color=fff"
+                                                                alt="<?php echo $u['name']; ?>">
+                                                            <span class="presence-dot <?php echo $u['is_online'] ? 'dot-online pulse' : 'dot-offline'; ?>"></span>
                                                         </div>
                                                         <div class="flex-grow-1 overflow-hidden">
                                                             <p class="mb-0 fw-semibold text-truncate" style="font-size:0.875rem;">
-                                                                {{ $u['name'] }}
+                                                                <?php echo $u['name']; ?>
+
                                                             </p>
-                                                            <small class="presence-label {{ $u['is_online'] ? 'text-success' : 'text-muted' }}">
-                                                                {{ $u['last_seen'] }}
+                                                            <small class="presence-label <?php echo $u['is_online'] ? 'text-success' : 'text-muted'; ?>">
+                                                                <?php echo $u['last_seen']; ?>
+
                                                             </small>
                                                         </div>
                                                     </div>
-                                                @empty
+                                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                                                     <div class="text-center py-4">
                                                         <i class="mdi mdi-account-off-outline mdi-48px text-muted d-block mb-2"></i>
                                                         <p class="text-muted mb-0">Sin usuarios registrados</p>
                                                     </div>
-                                                @endforelse
+                                                <?php endif; ?>
                                             </div>
 
                                             <div class="mt-2 text-end">
@@ -206,45 +206,47 @@
                                                         </tr>
                                                     </thead>
                                                     <tbody>
-                                                        @foreach ($recentActivity as $log)
+                                                        <?php $__currentLoopData = $recentActivity; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $log): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                                             <tr>
                                                                 <td>
                                                                     <div class="d-flex align-items-center">
                                                                         <img class="img-xs rounded-circle me-2"
-                                                                            src="https://ui-avatars.com/api/?name={{ urlencode($log->user->name) }}&background=6366f1&color=fff"
+                                                                            src="https://ui-avatars.com/api/?name=<?php echo urlencode($log->user->name); ?>&background=6366f1&color=fff"
                                                                             alt="profile">
-                                                                        <span>{{ $log->user->name }}</span>
+                                                                        <span><?php echo $log->user->name; ?></span>
                                                                     </div>
                                                                 </td>
                                                                 <td>
                                                                     <span
                                                                         class="badge 
-                                                                    @if (str_contains(strtolower($log->action), 'login')) badge-success
-                                                                    @elseif(str_contains(strtolower($log->action), 'logout')) badge-secondary
-                                                                    @elseif(str_contains(strtolower($log->action), 'create')) badge-primary
-                                                                    @elseif(str_contains(strtolower($log->action), 'delete')) badge-danger
-                                                                    @elseif(str_contains(strtolower($log->action), 'update')) badge-info
-                                                                    @else badge-dark @endif">
-                                                                        {{ $log->action }}
+                                                                    <?php if(str_contains(strtolower($log->action), 'login')): ?> badge-success
+                                                                    <?php elseif(str_contains(strtolower($log->action), 'logout')): ?> badge-secondary
+                                                                    <?php elseif(str_contains(strtolower($log->action), 'create')): ?> badge-primary
+                                                                    <?php elseif(str_contains(strtolower($log->action), 'delete')): ?> badge-danger
+                                                                    <?php elseif(str_contains(strtolower($log->action), 'update')): ?> badge-info
+                                                                    <?php else: ?> badge-dark <?php endif; ?>">
+                                                                        <?php echo $log->action; ?>
+
                                                                     </span>
                                                                 </td>
                                                                 <td>
                                                                     <small
-                                                                        class="text-muted">{{ Str::limit($log->description, 50) }}</small>
+                                                                        class="text-muted"><?php echo Str::limit($log->description, 50); ?></small>
                                                                 </td>
                                                                 <td>
                                                                     <small class="text-muted">
                                                                         <i class="mdi mdi-clock-outline me-1"></i>
-                                                                        {{ $log->created_at->diffForHumans() }}
+                                                                        <?php echo $log->created_at->diffForHumans(); ?>
+
                                                                     </small>
                                                                 </td>
                                                             </tr>
-                                                        @endforeach
+                                                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                                     </tbody>
                                                 </table>
                                             </div>
                                             <div class="mt-3 text-center">
-                                                <a href="{{ route('admin.activity-logs') }}"
+                                                <a href="<?php echo route('admin.activity-logs'); ?>"
                                                     class="btn btn-sm btn-outline-info">
                                                     <i class="mdi mdi-format-list-bulleted me-1"></i>Ver Todos los Logs
                                                 </a>
@@ -262,7 +264,7 @@
                                                 Acciones Rápidas
                                             </h4>
 
-                                            <a href="{{ route('admin.users') }}"
+                                            <a href="<?php echo route('admin.users'); ?>"
                                                 class="btn btn-outline-primary w-100 mb-3 d-flex align-items-center justify-content-between">
                                                 <span>
                                                     <i class="mdi mdi-account-cog me-2"></i>Gestionar Usuarios
@@ -270,7 +272,7 @@
                                                 <i class="mdi mdi-arrow-right"></i>
                                             </a>
 
-                                            <a href="{{ route('admin.activity-logs') }}"
+                                            <a href="<?php echo route('admin.activity-logs'); ?>"
                                                 class="btn btn-outline-info w-100 mb-3 d-flex align-items-center justify-content-between">
                                                 <span>
                                                     <i class="mdi mdi-format-list-bulleted me-2"></i>Logs de Actividad
@@ -278,14 +280,14 @@
                                                 <i class="mdi mdi-arrow-right"></i>
                                             </a>
 
-                                            <a href="{{ route('admin.security') }}"
+                                            <a href="<?php echo route('admin.security'); ?>"
                                                 class="btn btn-outline-danger w-100 mb-3 d-flex align-items-center justify-content-between">
                                                 <span>
                                                     <i class="mdi mdi-shield-alert me-2"></i>Seguridad
                                                 </span>
-                                                @if ($stats['blocked_ips'] > 0)
-                                                    <span class="badge badge-danger">{{ $stats['blocked_ips'] }}</span>
-                                                @endif
+                                                <?php if($stats['blocked_ips'] > 0): ?>
+                                                    <span class="badge badge-danger"><?php echo $stats['blocked_ips']; ?></span>
+                                                <?php endif; ?>
                                             </a>
 
                                             <div class="border-top pt-3 mt-3">
@@ -294,11 +296,11 @@
                                                     <div class="d-flex justify-content-between mb-1">
                                                         <small class="text-muted">Capacidad de Usuarios</small>
                                                         <small
-                                                            class="text-muted">{{ round(($stats['users_online'] / max($stats['total_users'], 1)) * 100) }}%</small>
+                                                            class="text-muted"><?php echo round(($stats['users_online'] / max($stats['total_users'], 1)) * 100); ?>%</small>
                                                     </div>
                                                     <div class="progress" style="height: 6px;">
                                                         <div class="progress-bar bg-success" role="progressbar"
-                                                            style="width: {{ round(($stats['users_online'] / max($stats['total_users'], 1)) * 100) }}%">
+                                                            style="width: <?php echo round(($stats['users_online'] / max($stats['total_users'], 1)) * 100); ?>%">
                                                         </div>
                                                     </div>
                                                 </div>
@@ -306,12 +308,13 @@
                                                 <div class="mb-3">
                                                     <div class="d-flex justify-content-between mb-1">
                                                         <small class="text-muted">Actividad del Día</small>
-                                                        <small class="text-muted">{{ $stats['total_sessions_today'] }}
+                                                        <small class="text-muted"><?php echo $stats['total_sessions_today']; ?>
+
                                                             sesiones</small>
                                                     </div>
                                                     <div class="progress" style="height: 6px;">
                                                         <div class="progress-bar bg-warning" role="progressbar"
-                                                            style="width: {{ min(100, $stats['total_sessions_today'] * 10) }}%">
+                                                            style="width: <?php echo min(100, $stats['total_sessions_today'] * 10); ?>%">
                                                         </div>
                                                     </div>
                                                 </div>
@@ -319,7 +322,7 @@
                                                 <div class="alert alert-light border d-flex align-items-center mb-0"
                                                     role="alert">
                                                     <i class="mdi mdi-information-outline text-primary me-2"></i>
-                                                    <small>Última actualización: {{ now()->format('H:i') }}</small>
+                                                    <small>Última actualización: <?php echo now()->format('H:i'); ?></small>
                                                 </div>
                                             </div>
                                         </div>
@@ -458,14 +461,14 @@
                         ],
                         datasets: [{
                             label: 'Sesiones',
-                            data: [45, 52, 38, 65, 59, 80, {{ $stats['total_sessions_today'] }}],
+                            data: [45, 52, 38, 65, 59, 80, <?php echo $stats['total_sessions_today']; ?>],
                             borderColor: '#6366f1',
                             backgroundColor: 'rgba(99, 102, 241, 0.1)',
                             tension: 0.4,
                             fill: true
                         }, {
                             label: 'Usuarios Únicos',
-                            data: [28, 35, 25, 42, 38, 55, {{ $stats['users_online'] }}],
+                            data: [28, 35, 25, 42, 38, 55, <?php echo $stats['users_online']; ?>],
                             borderColor: '#10b981',
                             backgroundColor: 'rgba(16, 185, 129, 0.1)',
                             tension: 0.4,
@@ -505,7 +508,7 @@
             });
 
             // ── Live presence polling ────────────────────────────────────────
-            const onlineStatusUrl = '{{ route("admin.api.online-status") }}';
+            const onlineStatusUrl = '<?php echo route("admin.api.online-status"); ?>';
 
             function getInitials(name) {
                 return name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
@@ -584,4 +587,6 @@
             setTimeout(refreshPresence, 5000);
         });
     </script>
-@endsection
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH /var/www/resources/views/admin/dashboard.blade.php ENDPATH**/ ?>

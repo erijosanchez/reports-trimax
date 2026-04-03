@@ -61,6 +61,6 @@ class UserSession extends Model
     public function scopeActive($query)
     {
         return $query->where('is_online', true)
-            ->where('last_activity', '>=', now()->subMinutes(5));
+            ->where('last_activity', '>=', now()->subMinutes(10));
     }
 }

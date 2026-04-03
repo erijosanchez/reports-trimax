@@ -1,8 +1,6 @@
-@extends('layouts.app')
+<?php $__env->startSection('title', 'Gestionar Usuarios'); ?>
 
-@section('title', 'Gestionar Usuarios')
-
-@section('content')
+<?php $__env->startSection('content'); ?>
     <div class="content-wrapper">
         <div class="row">
             <div class="col-sm-12">
@@ -22,7 +20,7 @@
                                             <p class="text-muted mt-1">Administra los usuarios del sistema</p>
                                         </div>
                                         <div>
-                                            <a class="btn btn-success text-white" href="{{ route('admin.users.create') }}">
+                                            <a class="btn btn-success text-white" href="<?php echo route('admin.users.create'); ?>">
                                                 <i class="mdi mdi-account-plus me-1"></i>Nuevo Usuario
                                             </a>
                                         </div>
@@ -39,7 +37,7 @@
                                                 <h4 class="card-title mb-0">
                                                     <i class="mdi mdi-format-list-bulleted text-primary me-2"></i>
                                                     Listado de Usuarios
-                                                    <span class="badge badge-primary ms-2">{{ $users->total() }}</span>
+                                                    <span class="badge badge-primary ms-2"><?php echo $users->total(); ?></span>
                                                 </h4>
                                             </div>
 
@@ -58,96 +56,101 @@
                                                         </tr>
                                                     </thead>
                                                     <tbody>
-                                                        @foreach ($users as $user)
+                                                        <?php $__currentLoopData = $users; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $user): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                                             <tr>
                                                                 <td>
                                                                     <div class="d-flex align-items-center">
                                                                         <div class="position-relative me-2">
                                                                             <img class="img-xs rounded-circle"
-                                                                                src="https://ui-avatars.com/api/?name={{ urlencode($user->name) }}&background=6366f1&color=fff"
+                                                                                src="https://ui-avatars.com/api/?name=<?php echo urlencode($user->name); ?>&background=6366f1&color=fff"
                                                                                 alt="profile">
-                                                                            @if (isset($onlineIds[$user->id]))
+                                                                            <?php if(isset($onlineIds[$user->id])): ?>
                                                                                 <span class="online-indicator pulse"></span>
-                                                                            @endif
+                                                                            <?php endif; ?>
                                                                         </div>
-                                                                        <strong>{{ $user->name }}</strong>
+                                                                        <strong><?php echo $user->name; ?></strong>
                                                                     </div>
                                                                 </td>
                                                                 <td>
-                                                                    <small class="text-muted">{{ $user->email }}</small>
+                                                                    <small class="text-muted"><?php echo $user->email; ?></small>
                                                                 </td>
                                                                 <td>
-                                                                    @foreach ($user->roles as $role)
+                                                                    <?php $__currentLoopData = $user->roles; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $role): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                                                         <span class="badge badge-primary">
-                                                                            {{ $role->name }}
+                                                                            <?php echo $role->name; ?>
+
                                                                         </span>
-                                                                    @endforeach
+                                                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                                                 </td>
                                                                 <td>
-                                                                    @if ($user->is_active)
+                                                                    <?php if($user->is_active): ?>
                                                                         <span class="badge badge-success">
                                                                             <i class="mdi mdi-check-circle"></i> Activo
                                                                         </span>
-                                                                    @else
+                                                                    <?php else: ?>
                                                                         <span class="badge badge-danger">
                                                                             <i class="mdi mdi-close-circle"></i> Inactivo
                                                                         </span>
-                                                                    @endif
+                                                                    <?php endif; ?>
                                                                 </td>
                                                                 <td>
                                                                     <span class="badge badge-info">
-                                                                        {{ $user->sessions_count }}
+                                                                        <?php echo $user->sessions_count; ?>
+
                                                                     </span>
                                                                 </td>
                                                                 <td>
                                                                     <small class="text-muted">
-                                                                        {{ $user->last_login_at ? $user->last_login_at->diffForHumans() : 'Nunca' }}
+                                                                        <?php echo $user->last_login_at ? $user->last_login_at->diffForHumans() : 'Nunca'; ?>
+
                                                                     </small>
                                                                 </td>
                                                                 <td>
                                                                     <div class="d-flex gap-1">
-                                                                        <a href="{{ route('admin.users.edit', $user->id) }}"
+                                                                        <a href="<?php echo route('admin.users.edit', $user->id); ?>"
                                                                             class="btn btn-sm btn-warning"
                                                                             data-bs-toggle="tooltip" title="Editar">
                                                                             <i class="mdi mdi-pencil"></i>
                                                                         </a>
-                                                                        @if ($user->id !== auth()->id())
+                                                                        <?php if($user->id !== auth()->id()): ?>
                                                                             <form method="POST"
-                                                                                action="{{ route('admin.users.destroy', $user->id) }}"
+                                                                                action="<?php echo route('admin.users.destroy', $user->id); ?>"
                                                                                 class="d-inline">
-                                                                                @csrf
-                                                                                @method('DELETE')
+                                                                                <?php echo csrf_field(); ?>
+                                                                                <?php echo method_field('DELETE'); ?>
                                                                                 <button type="submit"
-                                                                                    onclick="return confirm('¿Eliminar usuario {{ $user->name }}?')"
+                                                                                    onclick="return confirm('¿Eliminar usuario <?php echo $user->name; ?>?')"
                                                                                     class="btn btn-sm btn-danger"
                                                                                     data-bs-toggle="tooltip"
                                                                                     title="Eliminar">
                                                                                     <i class="mdi mdi-delete"></i>
                                                                                 </button>
                                                                             </form>
-                                                                        @endif
+                                                                        <?php endif; ?>
                                                                     </div>
                                                                 </td>
                                                             </tr>
-                                                        @endforeach
+                                                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                                     </tbody>
                                                 </table>
                                             </div>
 
                                             <!-- Paginación -->
-                                            @if ($users->hasPages())
+                                            <?php if($users->hasPages()): ?>
                                                 <div class="d-flex justify-content-between align-items-center mt-4">
                                                     <div>
                                                         <small class="text-muted">
-                                                            Mostrando {{ $users->firstItem() }} - {{ $users->lastItem() }}
-                                                            de {{ $users->total() }} usuarios
+                                                            Mostrando <?php echo $users->firstItem(); ?> - <?php echo $users->lastItem(); ?>
+
+                                                            de <?php echo $users->total(); ?> usuarios
                                                         </small>
                                                     </div>
                                                     <div class="d-flex justify-content-end">
-                                                        {{ $users->onEachSide(1)->links('pagination::bootstrap-5') }}
+                                                        <?php echo $users->onEachSide(1)->links('pagination::bootstrap-5'); ?>
+
                                                     </div>
                                                 </div>
-                                            @endif
+                                            <?php endif; ?>
                                         </div>
                                     </div>
                                 </div>
@@ -162,7 +165,7 @@
                                                     Estado de Usuarios
                                                 </h4>
                                                 <span class="badge badge-success" id="usersOnlineCount">
-                                                    {{ $allUsersStatus->where('is_online', true)->count() }} en línea
+                                                    <?php echo $allUsersStatus->where('is_online', true)->count(); ?> en línea
                                                 </span>
                                             </div>
                                             <p class="text-muted mb-3" style="font-size:0.78rem;">
@@ -170,31 +173,33 @@
                                             </p>
 
                                             <div id="usersPresenceList" style="max-height: 500px; overflow-y: auto;">
-                                                @forelse ($allUsersStatus as $u)
+                                                <?php $__empty_1 = true; $__currentLoopData = $allUsersStatus; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $u): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                                                     <div class="presence-item d-flex align-items-center border-bottom py-2"
-                                                         data-user-id="{{ $u['id'] }}">
+                                                         data-user-id="<?php echo $u['id']; ?>">
                                                         <div class="position-relative me-3 flex-shrink-0">
                                                             <img class="rounded-circle"
                                                                 style="width:36px;height:36px;object-fit:cover;"
-                                                                src="https://ui-avatars.com/api/?name={{ urlencode($u['name']) }}&background={{ $u['is_online'] ? '25D366' : 'adb5bd' }}&color=fff"
-                                                                alt="{{ $u['name'] }}">
-                                                            <span class="online-indicator {{ $u['is_online'] ? 'dot-online pulse' : 'dot-offline' }}"></span>
+                                                                src="https://ui-avatars.com/api/?name=<?php echo urlencode($u['name']); ?>&background=<?php echo $u['is_online'] ? '25D366' : 'adb5bd'; ?>&color=fff"
+                                                                alt="<?php echo $u['name']; ?>">
+                                                            <span class="online-indicator <?php echo $u['is_online'] ? 'dot-online pulse' : 'dot-offline'; ?>"></span>
                                                         </div>
                                                         <div class="flex-grow-1 overflow-hidden">
                                                             <p class="mb-0 fw-semibold text-truncate" style="font-size:0.875rem;">
-                                                                {{ $u['name'] }}
+                                                                <?php echo $u['name']; ?>
+
                                                             </p>
-                                                            <small class="{{ $u['is_online'] ? 'text-success' : 'text-muted' }}" style="font-size:0.75rem;">
-                                                                {{ $u['last_seen'] }}
+                                                            <small class="<?php echo $u['is_online'] ? 'text-success' : 'text-muted'; ?>" style="font-size:0.75rem;">
+                                                                <?php echo $u['last_seen']; ?>
+
                                                             </small>
                                                         </div>
                                                     </div>
-                                                @empty
+                                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                                                     <div class="text-center py-5">
                                                         <i class="mdi mdi-account-off-outline mdi-48px text-muted mb-3 d-block"></i>
                                                         <p class="text-muted">Sin usuarios registrados</p>
                                                     </div>
-                                                @endforelse
+                                                <?php endif; ?>
                                             </div>
 
                                             <div class="mt-2 text-end">
@@ -300,9 +305,9 @@
             background-color: rgba(99, 102, 241, 0.05);
         }
     </style>
-@endsection
+<?php $__env->stopSection(); ?>
 
-@push('scripts')
+<?php $__env->startPush('scripts'); ?>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Tooltips
@@ -310,7 +315,7 @@
             tooltipTriggerList.map(el => new bootstrap.Tooltip(el));
 
             // ── Live presence polling ───────────────────────────────────────
-            const onlineStatusUrl = '{{ route("admin.api.online-status") }}';
+            const onlineStatusUrl = '<?php echo route("admin.api.online-status"); ?>';
 
             function avatarUrl(name, online) {
                 const bg = online ? '25D366' : 'adb5bd';
@@ -386,4 +391,6 @@
             setTimeout(refreshPresence, 5000);
         });
     </script>
-@endpush
+<?php $__env->stopPush(); ?>
+
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH /var/www/resources/views/admin/users.blade.php ENDPATH**/ ?>
