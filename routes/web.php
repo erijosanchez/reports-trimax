@@ -22,6 +22,7 @@ use App\Http\Controllers\RequerimientoPersonalController;
 use App\Http\Controllers\PendienteEntregaMonturaController;
 use App\Http\Controllers\VentaClienteController;
 use App\Http\Controllers\AsignacionBasesController;
+use App\Http\Controllers\CobranzaSedesController;
 
 // ============================================================
 // RUTAS PARA LARAVEL 11
@@ -263,6 +264,20 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
             Route::patch('/{requerimiento}/estado',      [RequerimientoPersonalController::class, 'actualizarEstado'])->name('estado');
             Route::patch('/{requerimiento}/responsable', [RequerimientoPersonalController::class, 'asignarResponsable'])->name('responsable');
             Route::post('/{requerimiento}/etapa',        [RequerimientoPersonalController::class, 'registrarEtapa'])->name('etapa');
+        });
+    });
+
+    // Productividad Sedes — Cobranza
+    Route::prefix('productividad/cobranza-sedes')->name('productividad.cobranza-sedes.')->group(function () {
+        Route::prefix('cobranza')->name('cobranza.')->group(function () {
+            Route::get('/',                       [CobranzaSedesController::class, 'index'])->name('index');
+            Route::post('/',                      [CobranzaSedesController::class, 'store'])->name('store');
+            Route::put('/{reporte}',              [CobranzaSedesController::class, 'update'])->name('update');
+            Route::get('/{reporte}/show',         [CobranzaSedesController::class, 'show'])->name('show');
+            Route::get('/{reporte}/download/{index}', [CobranzaSedesController::class, 'download'])->name('download');
+            Route::get('/{reporte}/preview/{index}',  [CobranzaSedesController::class, 'preview'])->name('preview');
+            Route::get('/api/historial',          [CobranzaSedesController::class, 'historial'])->name('historial');
+            Route::get('/api/kpi-data',           [CobranzaSedesController::class, 'kpiData'])->name('kpi-data');
         });
     });
 

@@ -4,6 +4,7 @@ use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
 use App\Jobs\AlertaSlaRequerimientosJob;
+use App\Jobs\AlertaCobranzaVencimientoJob;
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
@@ -13,6 +14,13 @@ Schedule::job(new AlertaSlaRequerimientosJob)
     ->dailyAt('08:00')
     ->withoutOverlapping()
     ->onOneServer();
+
+// Alerta de cobranza: sábado a las 11:00 AM (Lima) — 1 hora antes del límite
+Schedule::job(new AlertaCobranzaVencimientoJob)
+    ->weeklyOn(6, '11:00')
+    ->withoutOverlapping()
+    ->onOneServer()
+    ->timezone('America/Lima');
 
 Schedule::command('trimax:sync-ordenes-sede')
     ->everyFifteenMinutes()

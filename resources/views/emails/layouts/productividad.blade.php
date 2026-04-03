@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo $__env->yieldContent('subject', 'Notificación - CRM Trimax'); ?></title>
+    <title>@yield('subject', 'Notificación - CRM Trimax')</title>
     <style>
         * {
             margin: 0;
@@ -34,6 +34,7 @@
             box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
         }
 
+        /* ── HEADER ──────────────────────────────────────────── */
         .email-header {
             background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
             padding: 28px 32px;
@@ -72,6 +73,7 @@
             letter-spacing: 0.5px;
         }
 
+        /* ── ALERT BANNER (tipo de notificación) ─────────────── */
         .email-alert {
             padding: 16px 32px;
             font-size: 14px;
@@ -111,6 +113,7 @@
             border-left: 4px solid #7c3aed;
         }
 
+        /* ── BODY ────────────────────────────────────────────── */
         .email-body {
             padding: 28px 32px;
         }
@@ -129,6 +132,7 @@
             margin-bottom: 24px;
         }
 
+        /* ── DATA CARD ───────────────────────────────────────── */
         .data-card {
             background: #f8fafc;
             border: 1px solid #e2e8f0;
@@ -185,6 +189,7 @@
             color: #2563eb;
         }
 
+        /* ── BADGE ESTADO ────────────────────────────────────── */
         .badge-estado {
             display: inline-block;
             padding: 3px 10px;
@@ -223,6 +228,7 @@
             color: #475569;
         }
 
+        /* ── NOTA / MENSAJE DESTACADO ─────────────────────────── */
         .highlight-box {
             background: #f0f9ff;
             border-left: 4px solid #0891b2;
@@ -234,6 +240,52 @@
             margin-bottom: 20px;
         }
 
+        /* ── SLA ALERTA ──────────────────────────────────────── */
+        .sla-box {
+            background: #fff7ed;
+            border: 1px solid #fed7aa;
+            border-radius: 10px;
+            padding: 16px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .sla-box__days {
+            font-size: 42px;
+            font-weight: 900;
+            line-height: 1;
+            margin-bottom: 4px;
+        }
+
+        .sla-box__label {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .sla-box--warning .sla-box__days {
+            color: #d97706;
+        }
+
+        .sla-box--warning .sla-box__label {
+            color: #92400e;
+        }
+
+        .sla-box--critical {
+            background: #fef2f2;
+            border-color: #fca5a5;
+        }
+
+        .sla-box--critical .sla-box__days {
+            color: #dc2626;
+        }
+
+        .sla-box--critical .sla-box__label {
+            color: #991b1b;
+        }
+
+        /* ── CTA BUTTON ──────────────────────────────────────── */
         .cta-wrapper {
             text-align: center;
             margin: 24px 0;
@@ -251,12 +303,14 @@
             letter-spacing: 0.3px;
         }
 
+        /* ── DIVIDER ─────────────────────────────────────────── */
         .divider {
             border: none;
             border-top: 1px solid #e2e8f0;
             margin: 20px 0;
         }
 
+        /* ── FOOTER ──────────────────────────────────────────── */
         .email-footer {
             background: #1e293b;
             padding: 20px 32px;
@@ -289,26 +343,34 @@
 <body>
     <div class="email-wrapper">
         <div class="email-container">
+
+            {{-- HEADER --}}
             <div class="email-header">
                 <div class="email-header__logo">TRIMAX<span>PERÚ</span></div>
-                <div class="email-header__sub">CRM · Módulo de Marketing</div>
-                <div class="email-header__badge"><?php echo $__env->yieldContent('badge', 'NOTIFICACIÓN'); ?></div>
+                <div class="email-header__sub">CRM · Módulo de Productividad Sedes</div>
+                <div class="email-header__badge">@yield('badge', 'NOTIFICACIÓN')</div>
             </div>
-            <?php echo $__env->yieldContent('alert_banner'); ?>
+
+            {{-- ALERT BANNER --}}
+            @yield('alert_banner')
+
+            {{-- BODY --}}
             <div class="email-body">
-                <?php echo $__env->yieldContent('body'); ?>
+                @yield('body')
             </div>
+
+            {{-- FOOTER --}}
             <div class="email-footer">
-                <div class="email-footer__brand">Global Mega S.A.C.</div>
-                <div class="email-footer__sub">CRM · Módulo Marketing · Trimax</div>
+                <div class="email-footer__brand">Glabal Mega S.A.C.</div>
+                <div class="email-footer__sub">CRM · Módulo Productividad Sedes · Trimax</div>
                 <div class="email-footer__disclaimer">
                     Este es un correo automático, por favor no responder directamente.<br>
                     Para consultas, accede al sistema CRM.
                 </div>
             </div>
+
         </div>
     </div>
 </body>
 
 </html>
-<?php /**PATH /var/www/resources/views/emails/layouts/marketing.blade.php ENDPATH**/ ?>

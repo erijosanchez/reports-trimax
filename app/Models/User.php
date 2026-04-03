@@ -215,6 +215,16 @@ class User extends Authenticatable
     }
 
     /**
+     * Módulo Productividad Sedes — Cobranza:
+     * - Sede puede ver y enviar su propio reporte.
+     * - Admin/Superadmin ven todos.
+     */
+    public function puedeVerCobranzaSedes(): bool
+    {
+        return $this->isSuperAdmin() || $this->isAdmin() || $this->isSede();
+    }
+
+    /**
      * Ver pediente de entrega montura:
      * - Superadmin, admin y consultor pueden ver por defecto
      */

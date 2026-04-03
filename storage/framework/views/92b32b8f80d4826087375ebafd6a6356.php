@@ -347,7 +347,7 @@
             
             <div class="email-header">
                 <div class="email-header__logo">TRIMAX<span>PERÚ</span></div>
-                <div class="email-header__sub">CRM · Módulo Comercial</div>
+                <div class="email-header__sub">CRM · Módulo de Productividad Sedes</div>
                 <div class="email-header__badge"><?php echo $__env->yieldContent('badge', 'NOTIFICACIÓN'); ?></div>
             </div>
 
@@ -362,7 +362,7 @@
             
             <div class="email-footer">
                 <div class="email-footer__brand">Glabal Mega S.A.C.</div>
-                <div class="email-footer__sub">CRM · Módulo Comercial · Trimax</div>
+                <div class="email-footer__sub">CRM · Módulo Productividad Sedes · Trimax</div>
                 <div class="email-footer__disclaimer">
                     Este es un correo automático, por favor no responder directamente.<br>
                     Para consultas, accede al sistema CRM.
@@ -374,4 +374,4 @@
 </body>
 
 </html>
-<?php /**PATH /var/www/resources/views/emails/layouts/comercial.blade.php ENDPATH**/ ?>
+<?php /**PATH /var/www/resources/views/emails/layouts/productividad.blade.php ENDPATH**/ ?>

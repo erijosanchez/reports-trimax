@@ -220,22 +220,38 @@
         <?php endif; ?>
 
         
-        <li class="nav-item nav-category">PRODUCTIVIDAD DE SEDES</li>
-        <li class="nav-item">
-            <a class="nav-link <?php echo request()->routeIs('marketing.index') ? 'active' : ''; ?>"
-                href="<?php echo route('marketing.index'); ?>">
-                <i class="mdi-grid menu-icon mdi"></i>
-                <span class="menu-title">Ordenes x Usuario</span>
-            </a>
-        </li>
+        <?php
+            $tieneAccesoProductividad = $user->puedeVerCobranzaSedes();
+        ?>
 
+        <?php if($tieneAccesoProductividad): ?>
+        <li class="nav-item nav-category">PRODUCTIVIDAD SEDES</li>
+
+        
         <li class="nav-item">
-            <a class="nav-link <?php echo request()->routeIs('marketing.users.index') ? 'active' : ''; ?>"
-                href="<?php echo route('marketing.users.index'); ?>">
-                <i class="mdi mdi-account-multiple menu-icon"></i>
+            <a class="nav-link <?php echo request()->routeIs('productividad.cobranza-sedes.*') ? '' : 'collapsed'; ?>"
+                data-bs-toggle="collapse" href="#cobranza-sedes-menu"
+                aria-expanded="<?php echo request()->routeIs('productividad.cobranza-sedes.*') ? 'true' : 'false'; ?>"
+                aria-controls="cobranza-sedes-menu">
+                <i class="mdi mdi-file-send menu-icon"></i>
                 <span class="menu-title">Envios</span>
+                <i class="menu-arrow"></i>
             </a>
+
+            <div class="collapse <?php echo request()->routeIs('productividad.cobranza-sedes.*') ? 'show' : ''; ?>"
+                id="cobranza-sedes-menu">
+                <ul class="flex-column nav sub-menu">
+                    <li class="nav-item">
+                        <a class="nav-link <?php echo request()->routeIs('productividad.cobranza-sedes.cobranza.index') ? 'active' : ''; ?>"
+                            href="<?php echo route('productividad.cobranza-sedes.cobranza.index'); ?>">
+                            Cobranza
+                        </a>
+                    </li>
+                </ul>
+            </div>
         </li>
+        <?php endif; ?>
+
 
         
         <?php if(auth()->user()->isMarketing() || auth()->user()->isSuperAdmin()): ?>

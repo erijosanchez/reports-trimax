@@ -220,22 +220,38 @@
         @endif
 
         {{-- <<<<<<<<<<<< MODULO PRODUCTIVIDAD DE SEDES >>>>>>>>>>>>>>>>>>>>> --}}
-        <li class="nav-item nav-category">PRODUCTIVIDAD DE SEDES</li>
-        <li class="nav-item">
-            <a class="nav-link {{ request()->routeIs('marketing.index') ? 'active' : '' }}"
-                href="{{ route('marketing.index') }}">
-                <i class="mdi-grid menu-icon mdi"></i>
-                <span class="menu-title">Ordenes x Usuario</span>
-            </a>
-        </li>
+        @php
+            $tieneAccesoProductividad = $user->puedeVerCobranzaSedes();
+        @endphp
 
+        @if ($tieneAccesoProductividad)
+        <li class="nav-item nav-category">PRODUCTIVIDAD SEDES</li>
+
+        {{-- envios --}}
         <li class="nav-item">
-            <a class="nav-link {{ request()->routeIs('marketing.users.index') ? 'active' : '' }}"
-                href="{{ route('marketing.users.index') }}">
-                <i class="mdi mdi-account-multiple menu-icon"></i>
+            <a class="nav-link {{ request()->routeIs('productividad.cobranza-sedes.*') ? '' : 'collapsed' }}"
+                data-bs-toggle="collapse" href="#cobranza-sedes-menu"
+                aria-expanded="{{ request()->routeIs('productividad.cobranza-sedes.*') ? 'true' : 'false' }}"
+                aria-controls="cobranza-sedes-menu">
+                <i class="mdi mdi-file-send menu-icon"></i>
                 <span class="menu-title">Envios</span>
+                <i class="menu-arrow"></i>
             </a>
+
+            <div class="collapse {{ request()->routeIs('productividad.cobranza-sedes.*') ? 'show' : '' }}"
+                id="cobranza-sedes-menu">
+                <ul class="flex-column nav sub-menu">
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('productividad.cobranza-sedes.cobranza.index') ? 'active' : '' }}"
+                            href="{{ route('productividad.cobranza-sedes.cobranza.index') }}">
+                            Cobranza
+                        </a>
+                    </li>
+                </ul>
+            </div>
         </li>
+        @endif
+
 
         {{-- MÓDULO MARKETING (Solo marketing y superadmin) --}}
         @if (auth()->user()->isMarketing() || auth()->user()->isSuperAdmin())
