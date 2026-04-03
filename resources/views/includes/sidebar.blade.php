@@ -253,6 +253,12 @@
                             Caja Chica
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('productividad.cobranza-sedes.comentarios.index') ? 'active' : '' }}"
+                            href="{{ route('productividad.cobranza-sedes.comentarios.index') }}">
+                            Comentarios
+                        </a>
+                    </li>
                 </ul>
             </div>
         </li>

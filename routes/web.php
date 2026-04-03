@@ -24,6 +24,7 @@ use App\Http\Controllers\VentaClienteController;
 use App\Http\Controllers\AsignacionBasesController;
 use App\Http\Controllers\CobranzaSedesController;
 use App\Http\Controllers\CajaChicaSedesController;
+use App\Http\Controllers\ComentariosSedesController;
 
 // ============================================================
 // RUTAS PARA LARAVEL 11
@@ -293,6 +294,20 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
             Route::get('/{reporte}/preview/{index}',  [CajaChicaSedesController::class, 'preview'])->name('preview');
             Route::get('/api/historial',              [CajaChicaSedesController::class, 'historial'])->name('historial');
             Route::get('/api/kpi-data',               [CajaChicaSedesController::class, 'kpiData'])->name('kpi-data');
+        });
+    });
+
+    // Productividad Sedes — Comentarios
+    Route::prefix('productividad/cobranza-sedes')->name('productividad.cobranza-sedes.')->group(function () {
+        Route::prefix('comentarios')->name('comentarios.')->group(function () {
+            Route::get('/',                           [ComentariosSedesController::class, 'index'])->name('index');
+            Route::post('/',                          [ComentariosSedesController::class, 'store'])->name('store');
+            Route::put('/{reporte}',                  [ComentariosSedesController::class, 'update'])->name('update');
+            Route::get('/{reporte}/show',             [ComentariosSedesController::class, 'show'])->name('show');
+            Route::get('/{reporte}/download/{index}', [ComentariosSedesController::class, 'download'])->name('download');
+            Route::get('/{reporte}/preview/{index}',  [ComentariosSedesController::class, 'preview'])->name('preview');
+            Route::get('/api/historial',              [ComentariosSedesController::class, 'historial'])->name('historial');
+            Route::get('/api/kpi-data',               [ComentariosSedesController::class, 'kpiData'])->name('kpi-data');
         });
     });
 

@@ -300,6 +300,33 @@
                                                                 </div>
                                                             </div>
 
+                                                            {{-- MÓDULO PRODUCTIVIDAD SEDES --}}
+                                                            <div class="mb-3 pt-3 border-top">
+                                                                <p class="mb-2 text-muted text-uppercase fw-bold small" style="letter-spacing: 0.5px;">
+                                                                    <i class="me-1 mdi mdi-file-send"></i> Módulo Productividad Sedes
+                                                                </p>
+                                                                <div class="ms-1 row g-2">
+                                                                    <div class="col-md-6">
+                                                                        <div class="form-check form-check-success">
+                                                                            <label class="form-check-label">
+                                                                                <input type="checkbox" name="puede_ver_productividad_sedes" value="1" class="form-check-input"
+                                                                                    {{ old('puede_ver_productividad_sedes', $user->puede_ver_productividad_sedes ?? false) ? 'checked' : '' }}>
+                                                                                Ver Productividad Sedes
+                                                                                <i class="input-helper"></i>
+                                                                            </label>
+                                                                            <div><small class="text-muted">Cobranza, Caja Chica y Comentarios — solo vista, no puede enviar</small></div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="mt-3 mb-0 px-3 py-2 border alert alert-light">
+                                                                    <small class="text-muted">
+                                                                        <i class="me-1 mdi-information-outline mdi"></i>
+                                                                        Los roles <strong>Sede</strong>, <strong>Admin</strong> y <strong>Super Admin</strong> tienen acceso automáticamente.
+                                                                        Usa este permiso para otros roles que necesiten ver los reportes.
+                                                                    </small>
+                                                                </div>
+                                                            </div>
+
                                                         </div>
                                                     </div>
                                                 @endif
@@ -405,6 +432,10 @@
                                                     'puede_gestionar_requerimientos'  => 'Gestionar Reqs.',
                                                     'puede_ver_todos_requerimientos'  => 'Ver Todos',
                                                 ])->filter(fn($label, $campo) => $user->$campo);
+
+                                                $permisosProductividad = collect([
+                                                    'puede_ver_productividad_sedes' => 'Productividad Sedes',
+                                                ])->filter(fn($label, $campo) => $user->$campo);
                                             @endphp
 
                                             @if ($permisosComerciales->isNotEmpty())
@@ -426,6 +457,19 @@
                                                     <div class="d-flex flex-wrap gap-1">
                                                         @foreach ($permisosRrhh as $label)
                                                             <span class="badge badge-primary">
+                                                                <i class="me-1 mdi mdi-check"></i>{{ $label }}
+                                                            </span>
+                                                        @endforeach
+                                                    </div>
+                                                </div>
+                                            @endif
+
+                                            @if ($permisosProductividad->isNotEmpty())
+                                                <div class="mb-3 pb-3 border-bottom">
+                                                    <p class="mb-2 text-muted"><small><i class="me-1 mdi mdi-file-send"></i>Permisos Productividad</small></p>
+                                                    <div class="d-flex flex-wrap gap-1">
+                                                        @foreach ($permisosProductividad as $label)
+                                                            <span class="badge badge-warning">
                                                                 <i class="me-1 mdi mdi-check"></i>{{ $label }}
                                                             </span>
                                                         @endforeach

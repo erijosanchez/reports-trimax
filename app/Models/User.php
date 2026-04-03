@@ -221,7 +221,8 @@ class User extends Authenticatable
      */
     public function puedeVerCobranzaSedes(): bool
     {
-        return $this->isSuperAdmin() || $this->isAdmin() || $this->isSede();
+        return $this->isSuperAdmin() || $this->isAdmin() || $this->isSede()
+            || $this->puede_ver_productividad_sedes;
     }
 
     /**

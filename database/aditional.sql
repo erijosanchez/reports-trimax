@@ -635,3 +635,30 @@ CREATE TABLE `reportes_cobranza` (
     INDEX `idx_sede` (`sede`),
     CONSTRAINT `fk_cajachica_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+/*tabla comentarios de reportes*/
+CREATE TABLE reportes_comentarios (
+      id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,                                                                                                                                                      user_id BIGINT UNSIGNED NOT NULL,
+      sede VARCHAR(255) NOT NULL,                                                                                                                                                                            
+      semana_numero SMALLINT UNSIGNED NOT NULL,
+      anio SMALLINT UNSIGNED NOT NULL,
+      semana_inicio DATE NULL,
+      semana_fin DATE NULL,
+      fecha_limite TIMESTAMP NULL,
+      fecha_envio_original TIMESTAMP NULL,
+      fecha_ultimo_envio TIMESTAMP NULL,
+      archivos JSON NULL,
+      notas TEXT NULL,
+      kpi_porcentaje DECIMAL(5,2) NULL,
+      editado_tarde TINYINT(1) NOT NULL DEFAULT 0,
+      estado VARCHAR(255) NOT NULL DEFAULT 'pendiente',
+      created_at TIMESTAMP NULL,
+      updated_at TIMESTAMP NULL,
+      UNIQUE KEY reportes_comentarios_sede_semana_anio (sede, semana_numero, anio),
+      INDEX idx_semana_anio (semana_numero, anio),
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  );
+
+/*PERMISOS PARSA VER EL MODULO DE PROSUCTIVIDAD */
+ALTER TABLE users
+ADD COLUMN puede_ver_productividad_sedes TINYINT(1) NOT NULL DEFAULT 0;      

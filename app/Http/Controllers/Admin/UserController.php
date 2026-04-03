@@ -65,6 +65,8 @@ class UserController extends Controller
             'puede_crear_requerimientos',
             'puede_gestionar_requerimientos',
             'puede_ver_todos_requerimientos',
+            // Productividad Sedes
+            'puede_ver_productividad_sedes',
         ];
     }
 
