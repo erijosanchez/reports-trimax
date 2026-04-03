@@ -34,7 +34,8 @@ class CobranzaSedesController extends Controller
             abort(403, 'No tienes permiso para acceder al módulo de Cobranza.');
         }
 
-        [$semanaNumero, $anio] = array_slice(ReporteCobranza::datosSemanActual(), 0, 2);
+        [$semanaNumero, $anio, , , $limiteCarbon] = ReporteCobranza::datosSemanActual();
+        $fechaLimiteTs = $limiteCarbon->timestamp * 1000;
 
         // Reporte de la semana actual (solo para sede)
         $reporteSemanaActual = null;
@@ -90,7 +91,8 @@ class CobranzaSedesController extends Controller
             'historial',
             'kpiData',
             'semanaNumero',
-            'anio'
+            'anio',
+            'fechaLimiteTs'
         ));
     }
 

@@ -32,7 +32,8 @@ class CajaChicaSedesController extends Controller
             abort(403);
         }
 
-        [$semanaNumero, $anio] = array_slice(ReporteCajaChica::datosSemanActual(), 0, 2);
+        [$semanaNumero, $anio, , , $limiteCarbon] = ReporteCajaChica::datosSemanActual();
+        $fechaLimiteTs = $limiteCarbon->timestamp * 1000;
 
         $reporteSemanaActual = null;
         if ($user->isSede() && $user->sede) {
@@ -73,7 +74,7 @@ class CajaChicaSedesController extends Controller
         $kpiData   = $this->getKpiChartData(8);
 
         return view('productividad.cobranza-sedes.caja-chica', compact(
-            'reporteSemanaActual', 'resumenSedes', 'historial', 'kpiData', 'semanaNumero', 'anio'
+            'reporteSemanaActual', 'resumenSedes', 'historial', 'kpiData', 'semanaNumero', 'anio', 'fechaLimiteTs'
         ));
     }
 
