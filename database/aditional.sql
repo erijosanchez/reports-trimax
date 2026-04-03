@@ -611,3 +611,27 @@ CREATE TABLE `reportes_cobranza` (
     INDEX `idx_sede` (`sede`),
     CONSTRAINT `fk_cobranza_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+/*tabla de reportes de caja chica */
+ CREATE TABLE `reportes_caja_chica` (                                                                                                                                                                                     
+    `id`                    BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,                                                                                                                                                           `user_id`               BIGINT UNSIGNED NOT NULL,                                                                                                                                                                      
+    `sede`                  VARCHAR(100) NOT NULL,                                                                                                                                                                             `semana_numero`         SMALLINT UNSIGNED NOT NULL,                                                                                                                                                                        `anio`                  SMALLINT UNSIGNED NOT NULL,                                                                                                                                                                    
+    `semana_inicio`         DATE NULL,
+    `semana_fin`            DATE NULL,
+    `fecha_limite`          DATETIME NULL,
+    `fecha_envio_original`  DATETIME NULL,
+    `fecha_ultimo_envio`    DATETIME NULL,
+    `archivos`              JSON NULL,
+    `notas`                 TEXT NULL,
+    `kpi_porcentaje`        DECIMAL(5,2) NULL,
+    `editado_tarde`         TINYINT(1) NOT NULL DEFAULT 0,
+    `estado`                ENUM('pendiente','en_tiempo','con_atraso','no_enviado') NOT NULL DEFAULT 'pendiente',
+    `created_at`            TIMESTAMP NULL,
+    `updated_at`            TIMESTAMP NULL,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `unique_cajachica_sede_semana` (`sede`, `semana_numero`, `anio`),
+    INDEX `idx_anio_semana` (`anio`, `semana_numero`),
+    INDEX `idx_sede` (`sede`),
+    CONSTRAINT `fk_cajachica_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

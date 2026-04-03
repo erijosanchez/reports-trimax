@@ -23,6 +23,7 @@ use App\Http\Controllers\PendienteEntregaMonturaController;
 use App\Http\Controllers\VentaClienteController;
 use App\Http\Controllers\AsignacionBasesController;
 use App\Http\Controllers\CobranzaSedesController;
+use App\Http\Controllers\CajaChicaSedesController;
 
 // ============================================================
 // RUTAS PARA LARAVEL 11
@@ -278,6 +279,20 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
             Route::get('/{reporte}/preview/{index}',  [CobranzaSedesController::class, 'preview'])->name('preview');
             Route::get('/api/historial',          [CobranzaSedesController::class, 'historial'])->name('historial');
             Route::get('/api/kpi-data',           [CobranzaSedesController::class, 'kpiData'])->name('kpi-data');
+        });
+    });
+
+    // Productividad Sedes — Caja Chica
+    Route::prefix('productividad/cobranza-sedes')->name('productividad.cobranza-sedes.')->group(function () {
+        Route::prefix('caja-chica')->name('caja-chica.')->group(function () {
+            Route::get('/',                           [CajaChicaSedesController::class, 'index'])->name('index');
+            Route::post('/',                          [CajaChicaSedesController::class, 'store'])->name('store');
+            Route::put('/{reporte}',                  [CajaChicaSedesController::class, 'update'])->name('update');
+            Route::get('/{reporte}/show',             [CajaChicaSedesController::class, 'show'])->name('show');
+            Route::get('/{reporte}/download/{index}', [CajaChicaSedesController::class, 'download'])->name('download');
+            Route::get('/{reporte}/preview/{index}',  [CajaChicaSedesController::class, 'preview'])->name('preview');
+            Route::get('/api/historial',              [CajaChicaSedesController::class, 'historial'])->name('historial');
+            Route::get('/api/kpi-data',               [CajaChicaSedesController::class, 'kpiData'])->name('kpi-data');
         });
     });
 

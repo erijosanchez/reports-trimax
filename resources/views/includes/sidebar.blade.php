@@ -247,6 +247,12 @@
                             Cobranza
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('productividad.cobranza-sedes.caja-chica.index') ? 'active' : '' }}"
+                            href="{{ route('productividad.cobranza-sedes.caja-chica.index') }}">
+                            Caja Chica
+                        </a>
+                    </li>
                 </ul>
             </div>
         </li>
