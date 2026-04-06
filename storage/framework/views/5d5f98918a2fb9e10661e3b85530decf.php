@@ -229,6 +229,15 @@
 
         
         <li class="nav-item">
+            <a class="nav-link <?php echo request()->routeIs('productividad.ordenes-x-usuario.*') ? 'active' : ''; ?>"
+                href="<?php echo route('productividad.ordenes-x-usuario.index'); ?>">
+                <i class="mdi mdi-account-multiple-outline menu-icon"></i>
+                <span class="menu-title">Ordenes x Usuario</span>
+            </a>
+        </li>
+
+        
+        <li class="nav-item">
             <a class="nav-link <?php echo request()->routeIs('productividad.cobranza-sedes.*') ? '' : 'collapsed'; ?>"
                 data-bs-toggle="collapse" href="#cobranza-sedes-menu"
                 aria-expanded="<?php echo request()->routeIs('productividad.cobranza-sedes.*') ? 'true' : 'false'; ?>"

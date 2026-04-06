@@ -227,6 +227,15 @@
         @if ($tieneAccesoProductividad)
         <li class="nav-item nav-category">PRODUCTIVIDAD SEDES</li>
 
+        {{-- Órdenes x Usuario --}}
+        <li class="nav-item">
+            <a class="nav-link {{ request()->routeIs('productividad.ordenes-x-usuario.*') ? 'active' : '' }}"
+                href="{{ route('productividad.ordenes-x-usuario.index') }}">
+                <i class="mdi mdi-account-multiple-outline menu-icon"></i>
+                <span class="menu-title">Ordenes x Usuario</span>
+            </a>
+        </li>
+
         {{-- envios --}}
         <li class="nav-item">
             <a class="nav-link {{ request()->routeIs('productividad.cobranza-sedes.*') ? '' : 'collapsed' }}"

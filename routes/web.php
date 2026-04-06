@@ -25,6 +25,7 @@ use App\Http\Controllers\AsignacionBasesController;
 use App\Http\Controllers\CobranzaSedesController;
 use App\Http\Controllers\CajaChicaSedesController;
 use App\Http\Controllers\ComentariosSedesController;
+use App\Http\Controllers\OrdenesXUsuarioController;
 
 // ============================================================
 // RUTAS PARA LARAVEL 11
@@ -267,6 +268,13 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
             Route::patch('/{requerimiento}/responsable', [RequerimientoPersonalController::class, 'asignarResponsable'])->name('responsable');
             Route::post('/{requerimiento}/etapa',        [RequerimientoPersonalController::class, 'registrarEtapa'])->name('etapa');
         });
+    });
+
+    // Productividad Sedes — Órdenes x Usuario
+    Route::prefix('productividad/ordenes-x-usuario')->name('productividad.ordenes-x-usuario.')->group(function () {
+        Route::get('/',              [OrdenesXUsuarioController::class, 'index'])->name('index');
+        Route::get('/api/data',      [OrdenesXUsuarioController::class, 'data'])->name('data');
+        Route::get('/api/usuarios',  [OrdenesXUsuarioController::class, 'usuarios'])->name('usuarios');
     });
 
     // Productividad Sedes — Cobranza
