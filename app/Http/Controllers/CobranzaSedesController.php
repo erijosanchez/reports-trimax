@@ -15,9 +15,10 @@ class CobranzaSedesController extends Controller
 {
     // Destinatarios fijos al enviar/editar reporte
     const EMAILS_DESTINO = [
-        'analista.cobranzas@trimaxperu.com',
-        'joseericksanchez7@gmail.com',
+        'arosadio@trimaxperu.com',
+        'supervisor.comercial.1@trimaxperu.com',
         'planeamiento.comercial@trimaxperu.com',
+        'analista.cobranzas@trimaxperu.com'
     ];
 
     // Tipos de archivo permitidos

@@ -14,8 +14,8 @@ use Illuminate\Support\Str;
 class CajaChicaSedesController extends Controller
 {
     const EMAILS_DESTINO = [
-        'analista.cobranzas@trimaxperu.com',
-        'francisco.rivas@trimaxperu.com',
+        'arosadio@trimaxperu.com',
+        'supervisor.comercial.1@trimaxperu.com',
         'planeamiento.comercial@trimaxperu.com',
     ];
 
