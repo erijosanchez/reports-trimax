@@ -38,12 +38,7 @@ class OrdenesXUsuarioController extends Controller
             return response()->json(['error' => 'Sin permiso.'], 403);
         }
 
-        // Fecha específica (por defecto hoy)
-        $fecha = $request->get('fecha', date('Y-m-d'));
-        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha)) {
-            $fecha = date('Y-m-d');
-        }
-
+        $modo          = $request->get('modo', 'dia'); // 'dia' | 'mes'
         $sede          = $request->get('sede');
         $usuarioNombre = $request->get('usuario');
         $page          = max(1, (int) $request->get('page', 1));
@@ -57,8 +52,25 @@ class OrdenesXUsuarioController extends Controller
         // ── Consulta base ──────────────────────────────────────────
         $query = DB::table('ordenes_historico')
             ->whereNotNull('nombre_usuario')
-            ->where('nombre_usuario', '!=', '')
-            ->where('fecha_orden', $fecha);
+            ->where('nombre_usuario', '!=', '');
+
+        // Filtro de período
+        if ($modo === 'mes') {
+            $mes = $request->get('mes', date('Y-m'));
+            if (!preg_match('/^\d{4}-\d{2}$/', $mes)) {
+                $mes = date('Y-m');
+            }
+            [$year, $month] = explode('-', $mes);
+            $query->whereYear('fecha_orden', $year)->whereMonth('fecha_orden', $month);
+            $periodoLabel = $mes;
+        } else {
+            $fecha = $request->get('fecha', date('Y-m-d'));
+            if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha)) {
+                $fecha = date('Y-m-d');
+            }
+            $query->where('fecha_orden', $fecha);
+            $periodoLabel = $fecha;
+        }
 
         if ($sede) {
             $query->where('descripcion_sede', $sede);
@@ -69,8 +81,6 @@ class OrdenesXUsuarioController extends Controller
         }
 
         // ── Órdenes por hora por usuario ───────────────────────────
-        // Usamos SUBSTRING_INDEX para extraer solo la parte entera de la hora
-        // independientemente del formato: "9:30", "09:30", "10:30:00", "9:05 a. m.", etc.
         $porHora = (clone $query)
             ->selectRaw("
                 nombre_usuario,
@@ -84,6 +94,22 @@ class OrdenesXUsuarioController extends Controller
             ->where('hora_orden', '!=', '')
             ->whereRaw("TRIM(hora_orden) REGEXP '^[0-9]'")
             ->groupBy('nombre_usuario', 'hora')
+            ->orderBy('hora')
+            ->get();
+
+        // ── Órdenes totales por hora (sin usuario) ─────────────────
+        $porHoraTotal = (clone $query)
+            ->selectRaw("
+                LPAD(
+                    CAST(SUBSTRING_INDEX(TRIM(hora_orden), ':', 1) AS UNSIGNED),
+                    2, '0'
+                ) as hora,
+                COUNT(*) as total
+            ")
+            ->whereNotNull('hora_orden')
+            ->where('hora_orden', '!=', '')
+            ->whereRaw("TRIM(hora_orden) REGEXP '^[0-9]'")
+            ->groupBy('hora')
             ->orderBy('hora')
             ->get();
 
@@ -109,6 +135,7 @@ class OrdenesXUsuarioController extends Controller
 
         // Rango de horas real en los datos (mínimo 07-19)
         $horasNumericas = $porHora->pluck('hora')
+            ->merge($porHoraTotal->pluck('hora'))
             ->map(fn($h) => (int) $h)
             ->filter(fn($h) => $h >= 0 && $h <= 23)
             ->sort()->values();
@@ -142,10 +169,20 @@ class OrdenesXUsuarioController extends Controller
             ];
         }
 
+        // ── Dataset chart por hora total ───────────────────────────
+        $dataTotalHora = array_map(function ($h) use ($porHoraTotal) {
+            $found = $porHoraTotal->first(fn($r) => $r->hora === $h);
+            return $found ? (int) $found->total : 0;
+        }, $horas);
+
         return response()->json([
             'porHora' => [
                 'labels'   => array_map(fn($h) => "{$h}:00", $horas),
                 'datasets' => $datasetsHora,
+            ],
+            'porHoraTotal' => [
+                'labels' => array_map(fn($h) => "{$h}:00", $horas),
+                'data'   => $dataTotalHora,
             ],
             'porUsuario' => [
                 'labels' => $porUsuario->pluck('nombre_usuario')->toArray(),
@@ -161,7 +198,8 @@ class OrdenesXUsuarioController extends Controller
             'totales'    => [
                 'ordenes'  => $porUsuario->sum('total'),
                 'usuarios' => $porUsuario->count(),
-                'fecha'    => $fecha,
+                'periodo'  => $periodoLabel,
+                'modo'     => $modo,
             ],
         ]);
     }
@@ -177,7 +215,9 @@ class OrdenesXUsuarioController extends Controller
         }
 
         $sede  = $request->get('sede');
+        $modo  = $request->get('modo', 'dia');
         $fecha = $request->get('fecha');
+        $mes   = $request->get('mes');
 
         if ($user->isSede() && !$user->isAdmin() && !$user->isSuperAdmin()) {
             $sede = $user->sede;
@@ -192,7 +232,10 @@ class OrdenesXUsuarioController extends Controller
             $query->where('descripcion_sede', $sede);
         }
 
-        if ($fecha && preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha)) {
+        if ($modo === 'mes' && $mes && preg_match('/^\d{4}-\d{2}$/', $mes)) {
+            [$year, $month] = explode('-', $mes);
+            $query->whereYear('fecha_orden', $year)->whereMonth('fecha_orden', $month);
+        } elseif ($fecha && preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha)) {
             $query->where('fecha_orden', $fecha);
         }
 

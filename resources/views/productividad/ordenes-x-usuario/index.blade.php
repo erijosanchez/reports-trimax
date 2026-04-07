@@ -14,7 +14,7 @@
                         <h4 class="mb-0 fw-bold">
                             <i class="mdi mdi-account-multiple-outline me-2 text-primary"></i>Órdenes x Usuario
                         </h4>
-                        <p class="mb-0 text-muted small">Análisis diario de órdenes registradas por usuario y hora</p>
+                        <p class="mb-0 text-muted small">Análisis de órdenes registradas por usuario y hora — por día o por mes</p>
                     </div>
                     <span class="badge bg-primary fs-6" id="badge-fecha-actual">{{ now()->format('d/m/Y') }}</span>
                 </div>
@@ -29,8 +29,23 @@
                 <div class="card-body py-3">
                     <div class="row g-2 align-items-end">
 
-                        {{-- Navegación de fecha --}}
-                        <div class="col-md-4 col-sm-12">
+                        {{-- Toggle modo día / mes --}}
+                        <div class="col-auto">
+                            <label class="form-label small fw-bold mb-1">Modo</label>
+                            <div class="btn-group btn-group-sm d-flex" role="group">
+                                <input type="radio" class="btn-check" name="modo-vista" id="modo-dia" value="dia" autocomplete="off" checked>
+                                <label class="btn btn-outline-primary" for="modo-dia">
+                                    <i class="mdi mdi-calendar-today me-1"></i>Día
+                                </label>
+                                <input type="radio" class="btn-check" name="modo-vista" id="modo-mes" value="mes" autocomplete="off">
+                                <label class="btn btn-outline-primary" for="modo-mes">
+                                    <i class="mdi mdi-calendar-month me-1"></i>Mes
+                                </label>
+                            </div>
+                        </div>
+
+                        {{-- Navegación de fecha (modo día) --}}
+                        <div id="filtro-dia-wrap" class="col-md-4 col-sm-12">
                             <label class="form-label small fw-bold mb-1">Fecha</label>
                             <div class="input-group input-group-sm">
                                 <button class="btn btn-outline-secondary" id="btn-dia-anterior" title="Día anterior">
@@ -41,9 +56,23 @@
                                 <button class="btn btn-outline-secondary" id="btn-dia-siguiente" title="Día siguiente">
                                     <i class="mdi mdi-chevron-right"></i>
                                 </button>
-                                <button class="btn btn-outline-primary" id="btn-hoy" title="Ir a hoy">
-                                    Hoy
+                                <button class="btn btn-outline-primary" id="btn-hoy" title="Ir a hoy">Hoy</button>
+                            </div>
+                        </div>
+
+                        {{-- Navegación de mes (modo mes) --}}
+                        <div id="filtro-mes-wrap" class="col-md-4 col-sm-12 d-none">
+                            <label class="form-label small fw-bold mb-1">Mes</label>
+                            <div class="input-group input-group-sm">
+                                <button class="btn btn-outline-secondary" id="btn-mes-anterior" title="Mes anterior">
+                                    <i class="mdi mdi-chevron-left"></i>
                                 </button>
+                                <input type="month" id="filtro-mes" class="form-control text-center"
+                                    value="{{ date('Y-m') }}" max="{{ date('Y-m') }}">
+                                <button class="btn btn-outline-secondary" id="btn-mes-siguiente" title="Mes siguiente">
+                                    <i class="mdi mdi-chevron-right"></i>
+                                </button>
+                                <button class="btn btn-outline-primary" id="btn-mes-actual">Actual</button>
                             </div>
                         </div>
 
@@ -63,16 +92,16 @@
                         @endif
 
                         {{-- Usuario --}}
-                        <div class="col-md-3 col-sm-6">
+                        <div class="col-md-2 col-sm-6">
                             <label class="form-label small fw-bold mb-1">Usuario</label>
                             <select id="filtro-usuario" class="form-select form-select-sm">
-                                <option value="">Todos los usuarios</option>
+                                <option value="">Todos</option>
                             </select>
                         </div>
 
                         {{-- Botón --}}
-                        <div class="col-md-2 col-sm-12">
-                            <button id="btn-filtrar" class="btn btn-primary btn-sm w-100">
+                        <div class="col-auto">
+                            <button id="btn-filtrar" class="btn btn-primary btn-sm">
                                 <i class="mdi mdi-magnify me-1"></i>Filtrar
                             </button>
                         </div>
@@ -135,6 +164,27 @@
                         <div style="overflow-x:auto; overflow-y:hidden;">
                             <div id="chart-hora-wrap" style="position:relative; height:320px; min-width:600px;">
                                 <canvas id="chart-por-hora"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- Gráfico: total de órdenes por hora (sin desglose de usuario) --}}
+        <div class="row mb-3">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white border-bottom d-flex align-items-center justify-content-between py-3">
+                        <h6 class="mb-0 fw-bold">
+                            <i class="mdi mdi-chart-timeline-variant me-2 text-warning"></i>Total de Órdenes por Hora
+                        </h6>
+                        <span class="text-muted small">Todas las órdenes sin desglose por usuario</span>
+                    </div>
+                    <div class="card-body p-2">
+                        <div style="overflow-x:auto; overflow-y:hidden;">
+                            <div id="chart-hora-total-wrap" style="position:relative; height:220px; min-width:500px;">
+                                <canvas id="chart-por-hora-total"></canvas>
                             </div>
                         </div>
                     </div>
@@ -264,13 +314,14 @@
     const API_DATA     = @json(route('productividad.ordenes-x-usuario.data'));
     const API_USUARIOS = @json(route('productividad.ordenes-x-usuario.usuarios'));
 
-    let chartHora    = null;
-    let chartUsuario = null;
+    let chartHora      = null;
+    let chartUsuario   = null;
+    let chartHoraTotal = null;
 
     // Estado de paginación
-    let pagActual   = 1;
-    let pagTotal    = 1;
-    let totalFilas  = 0;
+    let pagActual  = 1;
+    let pagTotal   = 1;
+    let totalFilas = 0;
 
     const COLORES = [
         '#2563eb','#10b981','#f59e0b','#ef4444','#8b5cf6',
@@ -278,27 +329,50 @@
         '#14b8a6','#f43f5e','#a855f7','#0ea5e9','#22c55e',
     ];
 
+    const MESES_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
+                      'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
     // ── Init ──────────────────────────────────────────────────────
     document.addEventListener('DOMContentLoaded', function () {
         cargarUsuarios();
         cargarDatos(1);
 
-        // Botones fecha
+        // Toggle modo día/mes
+        document.querySelectorAll('input[name="modo-vista"]').forEach(radio => {
+            radio.addEventListener('change', function () {
+                const esMes = this.value === 'mes';
+                document.getElementById('filtro-dia-wrap').classList.toggle('d-none', esMes);
+                document.getElementById('filtro-mes-wrap').classList.toggle('d-none', !esMes);
+                recargarTodo();
+            });
+        });
+
+        // Botones fecha (modo día)
         document.getElementById('btn-dia-anterior').addEventListener('click', () => moverFecha(-1));
         document.getElementById('btn-dia-siguiente').addEventListener('click', () => moverFecha(1));
         document.getElementById('btn-hoy').addEventListener('click', () => {
             document.getElementById('filtro-fecha').value = hoy();
             recargarTodo();
         });
-
-        // Filtros
-        document.getElementById('btn-filtrar').addEventListener('click', () => cargarDatos(1));
         document.getElementById('filtro-fecha').addEventListener('change', recargarTodo);
 
+        // Botones mes (modo mes)
+        document.getElementById('btn-mes-anterior').addEventListener('click', () => moverMes(-1));
+        document.getElementById('btn-mes-siguiente').addEventListener('click', () => moverMes(1));
+        document.getElementById('btn-mes-actual').addEventListener('click', () => {
+            document.getElementById('filtro-mes').value = mesActual();
+            recargarTodo();
+        });
+        document.getElementById('filtro-mes').addEventListener('change', recargarTodo);
+
+        // Sede
         const filtroSede = document.getElementById('filtro-sede');
         if (filtroSede && filtroSede.tagName === 'SELECT') {
             filtroSede.addEventListener('change', recargarTodo);
         }
+
+        // Botón filtrar
+        document.getElementById('btn-filtrar').addEventListener('click', () => cargarDatos(1));
 
         // Paginación
         document.getElementById('btn-pag-primera').addEventListener('click',   () => cargarPagina(1));
@@ -312,7 +386,13 @@
         cargarDatos(1);
     }
 
-    // ── Fecha ─────────────────────────────────────────────────────
+    // ── Modo activo ───────────────────────────────────────────────
+    function getModo() {
+        const r = document.querySelector('input[name="modo-vista"]:checked');
+        return r ? r.value : 'dia';
+    }
+
+    // ── Fecha (modo día) ──────────────────────────────────────────
     function hoy() {
         return new Date().toISOString().slice(0, 10);
     }
@@ -322,26 +402,56 @@
         const d = new Date(input.value + 'T12:00:00');
         d.setDate(d.getDate() + dias);
         const nueva = d.toISOString().slice(0, 10);
-        const hoyStr = hoy();
-        if (nueva > hoyStr) return; // no avanzar más allá de hoy
+        if (nueva > hoy()) return;
         input.value = nueva;
         recargarTodo();
+    }
+
+    // ── Mes (modo mes) ────────────────────────────────────────────
+    function mesActual() {
+        return new Date().toISOString().slice(0, 7);
+    }
+
+    function moverMes(delta) {
+        const input = document.getElementById('filtro-mes');
+        const [y, m] = input.value.split('-').map(Number);
+        const d = new Date(y, m - 1 + delta, 1);
+        const nuevo = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+        if (nuevo > mesActual()) return;
+        input.value = nuevo;
+        recargarTodo();
+    }
+
+    function formatPeriodo(t) {
+        if (t.modo === 'mes') {
+            const [y, m] = t.periodo.split('-');
+            return MESES_ES[parseInt(m) - 1] + ' ' + y;
+        }
+        const parts = t.periodo.split('-');
+        return parts[2] + '/' + parts[1] + '/' + parts[0];
     }
 
     // ── Usuarios filtro ───────────────────────────────────────────
     function cargarUsuarios() {
         const params = new URLSearchParams();
         const sede   = getVal('filtro-sede');
-        const fecha  = getVal('filtro-fecha');
-        if (sede)  params.set('sede', sede);
-        if (fecha) params.set('fecha', fecha);
+        const modo   = getModo();
+        params.set('modo', modo);
+        if (sede) params.set('sede', sede);
+        if (modo === 'mes') {
+            const mes = getVal('filtro-mes') || mesActual();
+            params.set('mes', mes);
+        } else {
+            const fecha = getVal('filtro-fecha') || hoy();
+            params.set('fecha', fecha);
+        }
 
         fetch(API_USUARIOS + '?' + params.toString())
             .then(r => r.json())
             .then(lista => {
                 const sel = document.getElementById('filtro-usuario');
                 const cur = sel.value;
-                sel.innerHTML = '<option value="">Todos los usuarios</option>';
+                sel.innerHTML = '<option value="">Todos</option>';
                 lista.forEach(u => {
                     const o = document.createElement('option');
                     o.value = u; o.textContent = u;
@@ -357,9 +467,7 @@
         mostrarEstado('loading');
         pagActual = page;
 
-        const params = buildParams(page);
-
-        fetch(API_DATA + '?' + params.toString())
+        fetch(API_DATA + '?' + buildParams(page).toString())
             .then(r => r.json())
             .then(resp => {
                 if (resp.error || !resp.totales || resp.totales.ordenes === 0) {
@@ -367,43 +475,37 @@
                     return;
                 }
 
-                // Actualizar estado paginación
                 const pag = resp.paginacion;
-                pagActual = pag.page;
-                pagTotal  = pag.total_pages;
+                pagActual  = pag.page;
+                pagTotal   = pag.total_pages;
                 totalFilas = pag.total;
 
                 renderKpis(resp.totales);
                 renderChartHora(resp.porHora);
+                renderChartHoraTotal(resp.porHoraTotal);
                 renderChartUsuario(resp.porUsuario);
                 renderTablaUsuarios(resp.porUsuario);
                 renderTablaDetalle(resp.tabla, pag);
                 actualizarBotonesPaginacion();
 
-                // Actualizar header
-                const f = resp.totales.fecha;
-                const parts = f.split('-');
-                const fFmt = parts[2] + '/' + parts[1] + '/' + parts[0];
-                document.getElementById('badge-fecha-actual').textContent = fFmt;
-                document.getElementById('lbl-fecha-grafico').textContent  = fFmt;
+                const periodoFmt = formatPeriodo(resp.totales);
+                document.getElementById('badge-fecha-actual').textContent = periodoFmt;
+                document.getElementById('lbl-fecha-grafico').textContent  = periodoFmt;
 
                 mostrarEstado('content');
             })
             .catch(() => mostrarEstado('empty'));
     }
 
-    // Solo recarga la tabla (para paginación sin re-renderizar charts)
+    // Solo recarga la tabla (paginación sin re-renderizar charts)
     function cargarPagina(page) {
         if (page < 1 || page > pagTotal) return;
         pagActual = page;
 
-        const params = buildParams(page);
-
-        // Deshabilitar botones momentáneamente
         ['btn-pag-primera','btn-pag-anterior','btn-pag-siguiente','btn-pag-ultima']
             .forEach(id => document.getElementById(id).disabled = true);
 
-        fetch(API_DATA + '?' + params.toString())
+        fetch(API_DATA + '?' + buildParams(page).toString())
             .then(r => r.json())
             .then(resp => {
                 if (!resp.tabla) return;
@@ -419,12 +521,19 @@
     }
 
     function buildParams(page) {
-        return new URLSearchParams({
-            fecha:   getVal('filtro-fecha') || hoy(),
+        const modo = getModo();
+        const p = new URLSearchParams({
+            modo:    modo,
             sede:    getVal('filtro-sede'),
             usuario: getVal('filtro-usuario'),
             page:    page,
         });
+        if (modo === 'mes') {
+            p.set('mes', getVal('filtro-mes') || mesActual());
+        } else {
+            p.set('fecha', getVal('filtro-fecha') || hoy());
+        }
+        return p;
     }
 
     // ── KPIs ──────────────────────────────────────────────────────
@@ -435,18 +544,16 @@
         document.getElementById('kpi-promedio').textContent = prom.toLocaleString('es-PE');
     }
 
-    // ── Chart: por hora ────────────────────────────────────────────
+    // ── Chart: por hora por usuario ────────────────────────────────
     function renderChartHora(data) {
         const canvas = document.getElementById('chart-por-hora');
         const wrap   = document.getElementById('chart-hora-wrap');
         if (chartHora) chartHora.destroy();
 
-        // Ancho dinámico: cada hora necesita espacio según número de datasets
         const numHoras    = data.labels.length;
         const numUsuarios = data.datasets.length;
-        const barWidth    = Math.max(28, 18 * numUsuarios); // px por hora
-        const minWidth    = Math.max(600, numHoras * barWidth + 80);
-        wrap.style.minWidth = minWidth + 'px';
+        const barWidth    = Math.max(28, 18 * numUsuarios);
+        wrap.style.minWidth = Math.max(600, numHoras * barWidth + 80) + 'px';
 
         chartHora = new Chart(canvas.getContext('2d'), {
             type: 'bar',
@@ -458,15 +565,48 @@
                     legend: { position: 'top', labels: { font: { size: 11 }, boxWidth: 14 } },
                 },
                 scales: {
-                    x: {
-                        title: { display: true, text: 'Hora del día' },
-                        ticks: { font: { size: 11 } },
-                    },
-                    y: {
-                        beginAtZero: true,
-                        title: { display: true, text: 'N° de Órdenes' },
-                        ticks: { precision: 0 },
+                    x: { title: { display: true, text: 'Hora del día' }, ticks: { font: { size: 11 } } },
+                    y: { beginAtZero: true, title: { display: true, text: 'N° de Órdenes' }, ticks: { precision: 0 } }
+                }
+            }
+        });
+    }
+
+    // ── Chart: total órdenes por hora (sin usuario) ────────────────
+    function renderChartHoraTotal(data) {
+        const canvas = document.getElementById('chart-por-hora-total');
+        const wrap   = document.getElementById('chart-hora-total-wrap');
+        if (chartHoraTotal) chartHoraTotal.destroy();
+
+        wrap.style.minWidth = Math.max(500, data.labels.length * 42 + 60) + 'px';
+
+        chartHoraTotal = new Chart(canvas.getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: data.labels,
+                datasets: [{
+                    label: 'Total órdenes',
+                    data: data.data,
+                    backgroundColor: '#f59e0b99',
+                    borderColor: '#f59e0b',
+                    borderWidth: 1,
+                    borderRadius: 4,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => ' ' + ctx.parsed.y.toLocaleString('es-PE') + ' órdenes'
+                        }
                     }
+                },
+                scales: {
+                    x: { title: { display: true, text: 'Hora del día' }, ticks: { font: { size: 11 } } },
+                    y: { beginAtZero: true, title: { display: true, text: 'N° de Órdenes' }, ticks: { precision: 0 } }
                 }
             }
         });
@@ -476,8 +616,7 @@
     function renderChartUsuario(data) {
         const wrap  = document.getElementById('chart-por-usuario-wrap');
         const ctx   = document.getElementById('chart-por-usuario').getContext('2d');
-        const count = data.labels.length;
-        wrap.style.minHeight = Math.max(200, count * 32 + 60) + 'px';
+        wrap.style.minHeight = Math.max(200, data.labels.length * 32 + 60) + 'px';
 
         if (chartUsuario) chartUsuario.destroy();
 
@@ -518,8 +657,8 @@
         }
 
         tbody.innerHTML = data.labels.map((u, i) => {
-            const cant = data.data[i];
-            const pct  = total > 0 ? ((cant / total) * 100).toFixed(1) : 0;
+            const cant  = data.data[i];
+            const pct   = total > 0 ? ((cant / total) * 100).toFixed(1) : 0;
             const color = COLORES[i % COLORES.length];
             return `<tr>
                 <td class="text-muted">${i + 1}</td>
@@ -564,8 +703,8 @@
 
     // ── Paginación ─────────────────────────────────────────────────
     function actualizarBotonesPaginacion() {
-        document.getElementById('btn-pag-primera').disabled  = pagActual <= 1;
-        document.getElementById('btn-pag-anterior').disabled = pagActual <= 1;
+        document.getElementById('btn-pag-primera').disabled   = pagActual <= 1;
+        document.getElementById('btn-pag-anterior').disabled  = pagActual <= 1;
         document.getElementById('btn-pag-siguiente').disabled = pagActual >= pagTotal;
         document.getElementById('btn-pag-ultima').disabled    = pagActual >= pagTotal;
         document.getElementById('lbl-pag-actual').textContent = `Pág. ${pagActual} de ${pagTotal}`;
