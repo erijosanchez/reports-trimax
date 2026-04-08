@@ -14,9 +14,12 @@ class User extends Authenticatable
 
     protected $fillable = [
         'name',
+        'cargo',
         'email',
         'password',
         'sede',
+        'firma_imagen',
+        'es_gerente_general',
         'puede_ver_ventas_consolidadas',
         'puede_ver_descuentos_especiales',
         'puede_ver_consultar_orden',
@@ -55,6 +58,7 @@ class User extends Authenticatable
         'puede_ver_ordenes_x_sede' => 'boolean',
         'puede_ver_asignacion_bases' => 'boolean',
         'puede_crear_requerimientos' => 'boolean',
+        'es_gerente_general' => 'boolean',
         'last_login_at' => 'datetime',
         'two_factor_confirmed_at' => 'datetime',
     ];
@@ -212,6 +216,16 @@ class User extends Authenticatable
     public function puedeGestionarRequerimientos(): bool
     {
         return $this->isSuperAdmin() || $this->isRrhh();
+    }
+
+    public function esGerenteGeneral(): bool
+    {
+        return (bool) $this->es_gerente_general;
+    }
+
+    public function tieneFirmaRegistrada(): bool
+    {
+        return !empty($this->firma_imagen);
     }
 
     /**

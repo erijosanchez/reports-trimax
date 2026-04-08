@@ -62,6 +62,20 @@
                                                     @enderror
                                                 </div>
 
+                                                <!-- Cargo -->
+                                                <div class="mb-4">
+                                                    <label class="form-label">Cargo / Puesto</label>
+                                                    <div class="input-group">
+                                                        <span class="input-group-text"><i class="mdi mdi-briefcase-account"></i></span>
+                                                        <input type="text" name="cargo"
+                                                            class="form-control @error('cargo') is-invalid @enderror"
+                                                            value="{{ old('cargo') }}"
+                                                            placeholder="Ej: Gerente General, Responsable Comercial...">
+                                                    </div>
+                                                    <small class="text-muted">Aparece en documentos de requerimiento de personal.</small>
+                                                    @error('cargo')<div class="mt-1 text-danger"><small>{{ $message }}</small></div>@enderror
+                                                </div>
+
                                                 <!-- Email -->
                                                 <div class="mb-4">
                                                     <label class="form-label">
@@ -407,6 +421,21 @@
                                                                         El rol <strong>RRHH</strong> tiene los 3 permisos
                                                                         automáticamente. Usa estos checkboxes para otros
                                                                         roles que necesiten acceso parcial.
+                                                                    </small>
+                                                                </div>
+
+                                                                {{-- Gerente General --}}
+                                                                <div class="mt-3 px-3 py-2 border rounded" style="border-color:#ffc107 !important; background:#fffdf0;">
+                                                                    <div class="form-check form-check-success">
+                                                                        <label class="form-check-label fw-semibold">
+                                                                            <input type="checkbox" name="es_gerente_general" value="1" class="form-check-input"
+                                                                                {{ old('es_gerente_general') ? 'checked' : '' }}>
+                                                                            <i class="mdi mdi-star text-warning"></i> Es Gerente General
+                                                                            <i class="input-helper"></i>
+                                                                        </label>
+                                                                    </div>
+                                                                    <small class="text-muted d-block mt-1">
+                                                                        Activa esto para el usuario que firma como Gerente General en formatos de RRHH. <strong>Solo debe haber uno activo.</strong>
                                                                     </small>
                                                                 </div>
                                                             </div>

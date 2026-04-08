@@ -267,7 +267,18 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
             Route::patch('/{requerimiento}/estado',      [RequerimientoPersonalController::class, 'actualizarEstado'])->name('estado');
             Route::patch('/{requerimiento}/responsable', [RequerimientoPersonalController::class, 'asignarResponsable'])->name('responsable');
             Route::post('/{requerimiento}/etapa',        [RequerimientoPersonalController::class, 'registrarEtapa'])->name('etapa');
+            Route::patch('/{requerimiento}/candidatos',  [RequerimientoPersonalController::class, 'actualizarCandidatosHerramientas'])->name('candidatos');
+            Route::patch('/{requerimiento}/info-rrhh',   [RequerimientoPersonalController::class, 'actualizarInfoRrhh'])->name('info-rrhh');
+            Route::post('/{requerimiento}/firmar',       [RequerimientoPersonalController::class, 'firmar'])->name('firmar');
+            Route::get('/{requerimiento}/pdf',           [RequerimientoPersonalController::class, 'generarPdf'])->name('pdf');
         });
+    });
+
+    // Firma de usuario
+    Route::prefix('mi-firma')->name('firma.')->group(function () {
+        Route::get('/',      [\App\Http\Controllers\FirmaUsuarioController::class, 'index'])->name('index');
+        Route::post('/',     [\App\Http\Controllers\FirmaUsuarioController::class, 'store'])->name('store');
+        Route::delete('/',   [\App\Http\Controllers\FirmaUsuarioController::class, 'destroy'])->name('destroy');
     });
 
     // Productividad Sedes — Órdenes x Usuario

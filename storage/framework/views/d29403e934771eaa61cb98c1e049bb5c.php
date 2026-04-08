@@ -44,6 +44,14 @@
                         <p class="mb-1 mt-3 font-weight-semibold"><?php echo auth()->user()->name; ?></p>
                         <p class="fw-light text-muted mb-0"><?php echo auth()->user()->email; ?></p>
                     </div>
+                    <a class="dropdown-item" href="<?php echo route('firma.index'); ?>">
+                        <i class="dropdown-item-icon mdi mdi-draw text-primary me-2"></i>
+                        Mi Firma Digital
+                        <?php if(!auth()->user()->tieneFirmaRegistrada()): ?>
+                            <span class="badge bg-warning text-dark ms-1" style="font-size:9px;">Pendiente</span>
+                        <?php endif; ?>
+                    </a>
+                    <div class="dropdown-divider"></div>
                     <form action="<?php echo route('logout'); ?>" method="POST" style="display:inline;margin:0;">
                         <?php echo csrf_field(); ?>
                         <button type="submit"

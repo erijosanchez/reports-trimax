@@ -661,4 +661,88 @@ CREATE TABLE reportes_comentarios (
 
 /*PERMISOS PARSA VER EL MODULO DE PROSUCTIVIDAD */
 ALTER TABLE users
-ADD COLUMN puede_ver_productividad_sedes TINYINT(1) NOT NULL DEFAULT 0;      
+ADD COLUMN puede_ver_productividad_sedes TINYINT(1) NOT NULL DEFAULT 0;
+
+
+/* ── RRHH FORMULARIO: campos para llenado automático del PDF RH-PR-03-FO-01 ── */
+
+-- Nuevos campos en requerimientos_personal (sección 1 + 2 del formulario + RRHH + firmas)
+ALTER TABLE requerimientos_personal
+  ADD COLUMN supervisa_a           VARCHAR(255) NULL AFTER jefe_directo,
+  ADD COLUMN num_vacantes          TINYINT UNSIGNED NOT NULL DEFAULT 1 AFTER supervisa_a,
+  ADD COLUMN info_confidencial     TINYINT(1) NOT NULL DEFAULT 0 AFTER num_vacantes,
+  ADD COLUMN tipo_vacante          ENUM('vacante','reemplazo','posicion_nueva') NULL AFTER tipo,
+  ADD COLUMN permanencia           ENUM('temporal','permanente') NULL AFTER tipo_vacante,
+  ADD COLUMN disponibilidad_viaje  TINYINT(1) NOT NULL DEFAULT 0 AFTER permanencia,
+  ADD COLUMN jornada               ENUM('tiempo_parcial','tiempo_completo') NULL AFTER disponibilidad_viaje,
+  ADD COLUMN motivo                TEXT NULL AFTER comentarios,
+  ADD COLUMN candidatos            JSON NULL AFTER motivo,
+  ADD COLUMN herramientas          JSON NULL AFTER candidatos,
+  -- Sección 3 (RRHH llena)
+  ADD COLUMN fecha_estimada_contratacion DATE NULL AFTER herramientas,
+  ADD COLUMN tipo_contrato         VARCHAR(255) NULL AFTER fecha_estimada_contratacion,
+  ADD COLUMN duracion_contrato     VARCHAR(255) NULL AFTER tipo_contrato,
+  ADD COLUMN remuneracion_prevista DECIMAL(10,2) NULL AFTER duracion_contrato,
+  ADD COLUMN horario_trabajo       VARCHAR(255) NULL AFTER remuneracion_prevista,
+  ADD COLUMN beneficios            TEXT NULL AFTER horario_trabajo,
+  -- Firmas digitales (base64 capturadas al momento de firmar)
+  ADD COLUMN firma_solicitante_data   MEDIUMTEXT NULL AFTER beneficios,
+  ADD COLUMN firma_solicitante_at     DATETIME NULL AFTER firma_solicitante_data,
+  ADD COLUMN firma_solicitante_nombre VARCHAR(255) NULL AFTER firma_solicitante_at,
+  ADD COLUMN firma_rrhh_data          MEDIUMTEXT NULL AFTER firma_solicitante_nombre,
+  ADD COLUMN firma_rrhh_at            DATETIME NULL AFTER firma_rrhh_data,
+  ADD COLUMN firma_rrhh_nombre        VARCHAR(255) NULL AFTER firma_rrhh_at,
+  ADD COLUMN firma_gerente_data       MEDIUMTEXT NULL AFTER firma_rrhh_nombre,
+  ADD COLUMN firma_gerente_at         DATETIME NULL AFTER firma_gerente_data,
+  ADD COLUMN firma_gerente_nombre     VARCHAR(255) NULL AFTER firma_gerente_at;
+
+-- Campos en users: cargo para PDF, firma personal, flag gerente general
+ALTER TABLE users
+  ADD COLUMN cargo              VARCHAR(255) NULL AFTER name,
+  ADD COLUMN firma_imagen       MEDIUMTEXT NULL AFTER cargo,
+  ADD COLUMN es_gerente_general TINYINT(1) NOT NULL DEFAULT 0 AFTER firma_imagen;
+
+-- Para marcar al Gerente General (ejecutar una sola vez con el ID correcto):
+-- UPDATE users SET es_gerente_general = 1 WHERE id = ?;
+
+/* ── FIN RRHH FORMULARIO ── */
+
+
+/*modificaciones a las tablas de rrhh*/
+ALTER TABLE requerimientos_personal                                                                       -- Sección 1 (solicitante)
+    ADD COLUMN supervisa_a           VARCHAR(255) NULL AFTER jefe_directo,                                  ADD COLUMN num_vacantes          TINYINT UNSIGNED NOT NULL DEFAULT 1 AFTER supervisa_a,             
+    ADD COLUMN info_confidencial     TINYINT(1) NOT NULL DEFAULT 0 AFTER num_vacantes,
+    -- Sección 2 (solicitante)
+    ADD COLUMN tipo_vacante          ENUM('vacante','reemplazo','posicion_nueva') NULL AFTER tipo,      
+    ADD COLUMN permanencia           ENUM('temporal','permanente') NULL AFTER tipo_vacante,
+    ADD COLUMN disponibilidad_viaje  TINYINT(1) NOT NULL DEFAULT 0 AFTER permanencia,
+    ADD COLUMN jornada               ENUM('tiempo_parcial','tiempo_completo') NULL AFTER
+  disponibilidad_viaje,
+    ADD COLUMN motivo                TEXT NULL AFTER comentarios,
+    ADD COLUMN candidatos            JSON NULL AFTER motivo,
+    ADD COLUMN herramientas          JSON NULL AFTER candidatos,
+    -- Sección 3 (RRHH llena)
+    ADD COLUMN fecha_estimada_contratacion DATE NULL AFTER herramientas,
+    ADD COLUMN tipo_contrato         VARCHAR(255) NULL AFTER fecha_estimada_contratacion,
+    ADD COLUMN duracion_contrato     VARCHAR(255) NULL AFTER tipo_contrato,
+    ADD COLUMN remuneracion_prevista DECIMAL(10,2) NULL AFTER duracion_contrato,
+    ADD COLUMN horario_trabajo       VARCHAR(255) NULL AFTER remuneracion_prevista,
+    ADD COLUMN beneficios            TEXT NULL AFTER horario_trabajo,
+    -- Firmas
+    ADD COLUMN firma_solicitante_data   MEDIUMTEXT NULL AFTER beneficios,
+    ADD COLUMN firma_solicitante_at     DATETIME NULL AFTER firma_solicitante_data,
+    ADD COLUMN firma_solicitante_nombre VARCHAR(255) NULL AFTER firma_solicitante_at,
+    ADD COLUMN firma_rrhh_data          MEDIUMTEXT NULL AFTER firma_solicitante_nombre,
+    ADD COLUMN firma_rrhh_at            DATETIME NULL AFTER firma_rrhh_data,
+    ADD COLUMN firma_rrhh_nombre        VARCHAR(255) NULL AFTER firma_rrhh_at,
+    ADD COLUMN firma_gerente_data       MEDIUMTEXT NULL AFTER firma_rrhh_nombre,
+    ADD COLUMN firma_gerente_at         DATETIME NULL AFTER firma_gerente_data,
+    ADD COLUMN firma_gerente_nombre     VARCHAR(255) NULL AFTER firma_gerente_at;
+/*end modificaciones a las tablas de rrhh*/
+
+/*campos adicionales para ver el cargo dentro de la empresa */
+ALTER TABLE users
+    ADD COLUMN cargo              VARCHAR(255) NULL AFTER name,
+    ADD COLUMN firma_imagen       MEDIUMTEXT NULL AFTER cargo,
+    ADD COLUMN es_gerente_general TINYINT(1) NOT NULL DEFAULT 0 AFTER firma_imagen;
+

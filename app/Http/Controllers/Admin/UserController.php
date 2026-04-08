@@ -98,11 +98,13 @@ class UserController extends Controller
             ->toArray();
 
         $user = User::create(array_merge([
-            'name'      => $request->name,
-            'email'     => $request->email,
-            'password'  => Hash::make($request->password),
-            'sede'      => $request->role === 'sede' ? strtoupper($request->sede) : null,
-            'is_active' => true,
+            'name'               => $request->name,
+            'cargo'              => $request->cargo ?: null,
+            'email'              => $request->email,
+            'password'           => Hash::make($request->password),
+            'sede'               => $request->role === 'sede' ? strtoupper($request->sede) : null,
+            'is_active'          => true,
+            'es_gerente_general' => $request->boolean('es_gerente_general'),
         ], $permisos));
 
         $user->assignRole($request->role);
@@ -143,10 +145,12 @@ class UserController extends Controller
             ->toArray();
 
         $user->update(array_merge([
-            'name'      => $request->name,
-            'email'     => $request->email,
-            'sede'      => $request->role === 'sede' ? strtoupper($request->sede) : null,
-            'is_active' => $request->boolean('is_active'),
+            'name'             => $request->name,
+            'cargo'            => $request->cargo ?: null,
+            'email'            => $request->email,
+            'sede'             => $request->role === 'sede' ? strtoupper($request->sede) : null,
+            'is_active'        => $request->boolean('is_active'),
+            'es_gerente_general' => $request->boolean('es_gerente_general'),
         ], $permisos));
 
         if ($request->filled('password')) {
