@@ -1,6 +1,5 @@
 
 
-
 <?php $__env->startSection('title', 'Nuevo Requerimiento de Personal'); ?>
 
 <?php $__env->startSection('content'); ?>
@@ -90,7 +89,7 @@ unset($__errorArgs, $__bag); ?>
                                                 TIPO DE REQUERIMIENTO <span class="text-danger">*</span>
                                             </label>
                                             <div class="d-flex gap-3 mt-1">
-                                                <div class="form-check">
+                                                <div class="form-check" style="margin-left: 40px">
                                                     <input class="form-check-input" type="radio" name="tipo"
                                                         id="tipoRegular" value="Regular"
                                                         <?php echo old('tipo', 'Regular') === 'Regular' ? 'checked' : ''; ?>>
@@ -98,7 +97,7 @@ unset($__errorArgs, $__bag); ?>
                                                         <i class="mdi-clock-outline text-secondary mdi"></i> Regular
                                                     </label>
                                                 </div>
-                                                <div class="form-check">
+                                                <div class="form-check" style="margin-left: 40px">
                                                     <input class="form-check-input" type="radio" name="tipo"
                                                         id="tipoUrgente" value="Urgente"
                                                         <?php echo old('tipo') === 'Urgente' ? 'checked' : ''; ?>>
@@ -236,9 +235,9 @@ endif;
 unset($__errorArgs, $__bag); ?>"
                                                 value="<?php echo old('num_vacantes', 1); ?>" min="1" max="99">
                                         </div>
-                                        <div class="mb-3 col-md-4 d-flex align-items-end">
-                                            <div class="form-check mb-2">
-                                                <input class="form-check-input" type="checkbox" name="info_confidencial"
+                                        <div class="d-flex align-items-end mb-3 col-md-4">
+                                            <div class="mb-2 form-check" style="margin-left: 35px">
+                                                <input class="form-check-input" style="margin-right: -30px" type="checkbox" name="info_confidencial"
                                                     id="infoConf" value="1" <?php echo old('info_confidencial') ? 'checked' : ''; ?>>
                                                 <label class="form-check-label fw-semibold" for="infoConf">
                                                     Maneja información confidencial
@@ -264,7 +263,7 @@ unset($__errorArgs, $__bag); ?>"
                                             <label class="form-label fw-semibold">TIPO DE VACANTE</label>
                                             <div class="d-flex flex-column gap-1 mt-1">
                                                 <?php $__currentLoopData = ['vacante' => 'Vacante', 'reemplazo' => 'Reemplazo', 'posicion_nueva' => 'Posición nueva']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $val => $label): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                                    <div class="form-check">
+                                                    <div class="form-check" style="margin-left: 35px">
                                                         <input class="form-check-input" type="radio" name="tipo_vacante"
                                                             id="tv_<?php echo $val; ?>" value="<?php echo $val; ?>"
                                                             <?php echo old('tipo_vacante') === $val ? 'checked' : ''; ?>>
@@ -276,13 +275,13 @@ unset($__errorArgs, $__bag); ?>"
                                         <div class="mb-3 col-md-4">
                                             <label class="form-label fw-semibold">PERMANENCIA</label>
                                             <div class="d-flex flex-column gap-1 mt-1">
-                                                <div class="form-check">
+                                                <div class="form-check" style="margin-left: 35px">
                                                     <input class="form-check-input" type="radio" name="permanencia"
                                                         id="perm_temp" value="temporal"
                                                         <?php echo old('permanencia') === 'temporal' ? 'checked' : ''; ?>>
                                                     <label class="form-check-label" for="perm_temp">Temporal</label>
                                                 </div>
-                                                <div class="form-check">
+                                                <div class="form-check" style="margin-left: 35px">
                                                     <input class="form-check-input" type="radio" name="permanencia"
                                                         id="perm_perm" value="permanente"
                                                         <?php echo old('permanencia') === 'permanente' ? 'checked' : ''; ?>>
@@ -293,13 +292,13 @@ unset($__errorArgs, $__bag); ?>"
                                         <div class="mb-3 col-md-4">
                                             <label class="form-label fw-semibold">JORNADA</label>
                                             <div class="d-flex flex-column gap-1 mt-1">
-                                                <div class="form-check">
+                                                <div class="form-check" style="margin-left: 35px">
                                                     <input class="form-check-input" type="radio" name="jornada"
                                                         id="jorn_parcial" value="tiempo_parcial"
                                                         <?php echo old('jornada') === 'tiempo_parcial' ? 'checked' : ''; ?>>
                                                     <label class="form-check-label" for="jorn_parcial">Tiempo Parcial</label>
                                                 </div>
-                                                <div class="form-check">
+                                                <div class="form-check" style="margin-left: 35px">
                                                     <input class="form-check-input" type="radio" name="jornada"
                                                         id="jorn_completo" value="tiempo_completo"
                                                         <?php echo old('jornada') === 'tiempo_completo' ? 'checked' : ''; ?>>
@@ -307,8 +306,8 @@ unset($__errorArgs, $__bag); ?>"
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="mb-3 col-md-4 d-flex align-items-center pt-2">
-                                            <div class="form-check">
+                                        <div class="d-flex align-items-center mb-3 pt-2 col-md-4">
+                                            <div class="form-check" style="margin-left: 35px">
                                                 <input class="form-check-input" type="checkbox" name="disponibilidad_viaje"
                                                     id="dispViaje" value="1" <?php echo old('disponibilidad_viaje') ? 'checked' : ''; ?>>
                                                 <label class="form-check-label fw-semibold" for="dispViaje">
@@ -345,7 +344,7 @@ unset($__errorArgs, $__bag); ?>"
                                         <i class="mdi-account-multiple-outline mdi"></i> Candidatos a considerar <small class="text-muted fw-normal">(opcional, máx. 3)</small>
                                     </h6>
                                     <?php $__currentLoopData = ['a','b','c']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $i => $letra): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                        <div class="row mb-2">
+                                        <div class="mb-2 row">
                                             <div class="col-md-7">
                                                 <div class="input-group">
                                                     <span class="input-group-text"><?php echo strtoupper($letra); ?>.</span>

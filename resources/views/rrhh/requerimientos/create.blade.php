@@ -1,4 +1,3 @@
-{{-- resources/views/rrhh/requerimientos/create.blade.php --}}
 @extends('layouts.app')
 
 @section('title', 'Nuevo Requerimiento de Personal')
@@ -75,7 +74,7 @@
                                                 TIPO DE REQUERIMIENTO <span class="text-danger">*</span>
                                             </label>
                                             <div class="d-flex gap-3 mt-1">
-                                                <div class="form-check">
+                                                <div class="form-check" style="margin-left: 40px">
                                                     <input class="form-check-input" type="radio" name="tipo"
                                                         id="tipoRegular" value="Regular"
                                                         {{ old('tipo', 'Regular') === 'Regular' ? 'checked' : '' }}>
@@ -83,7 +82,7 @@
                                                         <i class="mdi-clock-outline text-secondary mdi"></i> Regular
                                                     </label>
                                                 </div>
-                                                <div class="form-check">
+                                                <div class="form-check" style="margin-left: 40px">
                                                     <input class="form-check-input" type="radio" name="tipo"
                                                         id="tipoUrgente" value="Urgente"
                                                         {{ old('tipo') === 'Urgente' ? 'checked' : '' }}>
@@ -163,9 +162,9 @@
                                                 class="form-control @error('num_vacantes') is-invalid @enderror"
                                                 value="{{ old('num_vacantes', 1) }}" min="1" max="99">
                                         </div>
-                                        <div class="mb-3 col-md-4 d-flex align-items-end">
-                                            <div class="form-check mb-2">
-                                                <input class="form-check-input" type="checkbox" name="info_confidencial"
+                                        <div class="d-flex align-items-end mb-3 col-md-4">
+                                            <div class="mb-2 form-check" style="margin-left: 35px">
+                                                <input class="form-check-input" style="margin-right: -30px" type="checkbox" name="info_confidencial"
                                                     id="infoConf" value="1" {{ old('info_confidencial') ? 'checked' : '' }}>
                                                 <label class="form-check-label fw-semibold" for="infoConf">
                                                     Maneja información confidencial
@@ -191,7 +190,7 @@
                                             <label class="form-label fw-semibold">TIPO DE VACANTE</label>
                                             <div class="d-flex flex-column gap-1 mt-1">
                                                 @foreach(['vacante' => 'Vacante', 'reemplazo' => 'Reemplazo', 'posicion_nueva' => 'Posición nueva'] as $val => $label)
-                                                    <div class="form-check">
+                                                    <div class="form-check" style="margin-left: 35px">
                                                         <input class="form-check-input" type="radio" name="tipo_vacante"
                                                             id="tv_{{ $val }}" value="{{ $val }}"
                                                             {{ old('tipo_vacante') === $val ? 'checked' : '' }}>
@@ -203,13 +202,13 @@
                                         <div class="mb-3 col-md-4">
                                             <label class="form-label fw-semibold">PERMANENCIA</label>
                                             <div class="d-flex flex-column gap-1 mt-1">
-                                                <div class="form-check">
+                                                <div class="form-check" style="margin-left: 35px">
                                                     <input class="form-check-input" type="radio" name="permanencia"
                                                         id="perm_temp" value="temporal"
                                                         {{ old('permanencia') === 'temporal' ? 'checked' : '' }}>
                                                     <label class="form-check-label" for="perm_temp">Temporal</label>
                                                 </div>
-                                                <div class="form-check">
+                                                <div class="form-check" style="margin-left: 35px">
                                                     <input class="form-check-input" type="radio" name="permanencia"
                                                         id="perm_perm" value="permanente"
                                                         {{ old('permanencia') === 'permanente' ? 'checked' : '' }}>
@@ -220,13 +219,13 @@
                                         <div class="mb-3 col-md-4">
                                             <label class="form-label fw-semibold">JORNADA</label>
                                             <div class="d-flex flex-column gap-1 mt-1">
-                                                <div class="form-check">
+                                                <div class="form-check" style="margin-left: 35px">
                                                     <input class="form-check-input" type="radio" name="jornada"
                                                         id="jorn_parcial" value="tiempo_parcial"
                                                         {{ old('jornada') === 'tiempo_parcial' ? 'checked' : '' }}>
                                                     <label class="form-check-label" for="jorn_parcial">Tiempo Parcial</label>
                                                 </div>
-                                                <div class="form-check">
+                                                <div class="form-check" style="margin-left: 35px">
                                                     <input class="form-check-input" type="radio" name="jornada"
                                                         id="jorn_completo" value="tiempo_completo"
                                                         {{ old('jornada') === 'tiempo_completo' ? 'checked' : '' }}>
@@ -234,8 +233,8 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="mb-3 col-md-4 d-flex align-items-center pt-2">
-                                            <div class="form-check">
+                                        <div class="d-flex align-items-center mb-3 pt-2 col-md-4">
+                                            <div class="form-check" style="margin-left: 35px">
                                                 <input class="form-check-input" type="checkbox" name="disponibilidad_viaje"
                                                     id="dispViaje" value="1" {{ old('disponibilidad_viaje') ? 'checked' : '' }}>
                                                 <label class="form-check-label fw-semibold" for="dispViaje">
@@ -265,7 +264,7 @@
                                         <i class="mdi-account-multiple-outline mdi"></i> Candidatos a considerar <small class="text-muted fw-normal">(opcional, máx. 3)</small>
                                     </h6>
                                     @foreach(['a','b','c'] as $i => $letra)
-                                        <div class="row mb-2">
+                                        <div class="mb-2 row">
                                             <div class="col-md-7">
                                                 <div class="input-group">
                                                     <span class="input-group-text">{{ strtoupper($letra) }}.</span>
