@@ -20,8 +20,24 @@
                         </div>
                     </div>
 
-                    <div class="mt-4 tab-content-basic tab-content">
-                        <div class="tab-pane fade show active" id="overview" role="tabpanel">
+                    {{-- Navegación de Tabs --}}
+                    <div class="pt-3">
+                        <ul class="nav nav-tabs" id="acuerdosTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <a class="nav-link active" data-bs-toggle="tab" href="#tabAcuerdos" role="tab">
+                                    <i class="mdi mdi-table"></i> Acuerdos
+                                </a>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <a class="nav-link" id="tabEstadisticasLink" data-bs-toggle="tab" href="#tabEstadisticas" role="tab">
+                                    <i class="mdi mdi-chart-bar"></i> Estadísticas
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="mt-3 tab-content">
+                        <div class="tab-pane fade show active" id="tabAcuerdos" role="tabpanel">
 
                             {{-- Cards de Estadísticas --}}
                             <div class="mb-4 row">
@@ -271,6 +287,103 @@
                                 </div>
                             </div>
                         </div>
+
+                        {{-- ===== TAB ESTADÍSTICAS ===== --}}
+                        <div class="tab-pane fade" id="tabEstadisticas" role="tabpanel">
+                            <div class="mt-3 row">
+
+                                {{-- Fila 1: Ranking usuarios | Total por mes --}}
+                                <div class="mb-4 col-md-6">
+                                    <div class="shadow-sm card h-100">
+                                        <div class="card-body">
+                                            <h6 class="mb-3 text-primary">
+                                                <i class="mdi mdi-account-star"></i> Ranking de Acuerdos por Consultor
+                                            </h6>
+                                            <div style="position:relative; height:320px;">
+                                                <canvas id="chartUsuarios"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mb-4 col-md-6">
+                                    <div class="shadow-sm card h-100">
+                                        <div class="card-body">
+                                            <h6 class="mb-3 text-primary">
+                                                <i class="mdi mdi-chart-line"></i> Total de Acuerdos por Mes
+                                            </h6>
+                                            <div style="position:relative; height:320px;">
+                                                <canvas id="chartPorMes"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {{-- Fila 2: Total por sede | Sede por mes --}}
+                                <div class="mb-4 col-md-6">
+                                    <div class="shadow-sm card h-100">
+                                        <div class="card-body">
+                                            <h6 class="mb-3 text-primary">
+                                                <i class="mdi mdi-office-building"></i> Total de Acuerdos por Sede
+                                            </h6>
+                                            <div style="position:relative; height:340px;">
+                                                <canvas id="chartPorSede"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mb-4 col-md-6">
+                                    <div class="shadow-sm card h-100">
+                                        <div class="card-body">
+                                            <h6 class="mb-3 text-primary">
+                                                <i class="mdi mdi-chart-bar-stacked"></i> Acuerdos por Sede y Mes
+                                                <small class="text-muted">(Top 8 sedes)</small>
+                                            </h6>
+                                            <div style="position:relative; height:340px;">
+                                                <canvas id="chartSedePorMes"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {{-- Fila 3: Por consultor por mes (con filtro) --}}
+                                <div class="mb-4 col-md-12">
+                                    <div class="shadow-sm card">
+                                        <div class="card-body">
+                                            <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+                                                <h6 class="mb-0 text-primary">
+                                                    <i class="mdi mdi-account-clock"></i> Acuerdos por Mes de un Consultor
+                                                </h6>
+                                                <select id="filtroConsultorGrafico" class="form-select form-select-sm" style="width:220px;">
+                                                    <option value="">— Todos los consultores —</option>
+                                                </select>
+                                            </div>
+                                            <div style="position:relative; height:260px;">
+                                                <canvas id="chartConsultorMes"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {{-- Fila 4: Top acuerdos comerciales --}}
+                                <div class="mb-4 col-md-12">
+                                    <div class="shadow-sm card">
+                                        <div class="card-body">
+                                            <h6 class="mb-3 text-primary">
+                                                <i class="mdi mdi-trophy"></i> Top 15 — Tipos de Acuerdo Comercial más Frecuentes
+                                            </h6>
+                                            <div style="position:relative; height:360px;">
+                                                <canvas id="chartTopAcuerdos"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                        {{-- ===== FIN TAB ESTADÍSTICAS ===== --}}
+
                     </div>
                 </div>
             </div>
@@ -2039,5 +2152,244 @@
             $('#errorMessage').show();
             $('#errorText').text(mensaje);
         }
+
+        /* =====================================================
+         *  GRÁFICOS — Chart.js
+         * ===================================================== */
+        const COLORES = [
+            '#3B82F6','#10B981','#F59E0B','#EF4444','#8B5CF6',
+            '#06B6D4','#EC4899','#F97316','#14B8A6','#6366F1',
+            '#84CC16','#F43F5E','#A855F7','#0EA5E9','#D946EF'
+        ];
+
+        let chartsInicializados = false;
+        let chartConsultorMesInst = null;
+
+        // Helpers
+        function labelMes(ym) {
+            if (!ym) return '?';
+            const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+            const [y, m] = ym.split('-');
+            return `${meses[parseInt(m,10)-1]} ${y}`;
+        }
+
+        function crearGrafico(id, config) {
+            const canvas = document.getElementById(id);
+            if (!canvas) return null;
+            return new Chart(canvas.getContext('2d'), config);
+        }
+
+        function inicializarGraficos() {
+            if (chartsInicializados) return;
+            chartsInicializados = true;
+
+            const data = acuerdosData;
+
+            /* ---- 1. Ranking usuarios ---- */
+            const porUsuario = {};
+            data.forEach(a => {
+                const n = a.creador ? a.creador.name : 'Sin asignar';
+                porUsuario[n] = (porUsuario[n] || 0) + 1;
+            });
+            const usuariosSort = Object.entries(porUsuario).sort((a,b) => b[1]-a[1]);
+            crearGrafico('chartUsuarios', {
+                type: 'bar',
+                data: {
+                    labels: usuariosSort.map(e => e[0]),
+                    datasets: [{
+                        label: 'Acuerdos',
+                        data: usuariosSort.map(e => e[1]),
+                        backgroundColor: usuariosSort.map((_,i) => COLORES[i % COLORES.length]),
+                        borderRadius: 5
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { beginAtZero: true, ticks: { stepSize: 1 } },
+                        y: { ticks: { font: { size: 11 } } }
+                    }
+                }
+            });
+
+            /* ---- 2. Total por mes ---- */
+            const porMes = {};
+            data.forEach(a => {
+                const ym = a.created_at ? a.created_at.substring(0,7) : null;
+                if (ym) porMes[ym] = (porMes[ym] || 0) + 1;
+            });
+            const mesesSort = Object.keys(porMes).sort();
+            crearGrafico('chartPorMes', {
+                type: 'line',
+                data: {
+                    labels: mesesSort.map(labelMes),
+                    datasets: [{
+                        label: 'Acuerdos creados',
+                        data: mesesSort.map(m => porMes[m]),
+                        borderColor: '#3B82F6',
+                        backgroundColor: 'rgba(59,130,246,0.12)',
+                        pointBackgroundColor: '#3B82F6',
+                        pointRadius: 5,
+                        tension: 0.35,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+                }
+            });
+
+            /* ---- 3. Total por sede ---- */
+            const porSede = {};
+            data.forEach(a => {
+                if (a.sede) porSede[a.sede] = (porSede[a.sede] || 0) + 1;
+            });
+            const sedesSort = Object.entries(porSede).sort((a,b) => b[1]-a[1]);
+            crearGrafico('chartPorSede', {
+                type: 'bar',
+                data: {
+                    labels: sedesSort.map(e => e[0]),
+                    datasets: [{
+                        label: 'Acuerdos',
+                        data: sedesSort.map(e => e[1]),
+                        backgroundColor: sedesSort.map((_,i) => COLORES[i % COLORES.length]),
+                        borderRadius: 5
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { beginAtZero: true, ticks: { stepSize: 1 } },
+                        y: { ticks: { font: { size: 10 } } }
+                    }
+                }
+            });
+
+            /* ---- 4. Por sede por mes (stacked, top 8 sedes) ---- */
+            const top8Sedes = sedesSort.slice(0,8).map(e => e[0]);
+            const todosMeses = [...new Set(
+                data.map(a => a.created_at ? a.created_at.substring(0,7) : null).filter(Boolean)
+            )].sort();
+            crearGrafico('chartSedePorMes', {
+                type: 'bar',
+                data: {
+                    labels: todosMeses.map(labelMes),
+                    datasets: top8Sedes.map((sede, i) => ({
+                        label: sede,
+                        data: todosMeses.map(mes =>
+                            data.filter(a => a.sede === sede && a.created_at && a.created_at.startsWith(mes)).length
+                        ),
+                        backgroundColor: COLORES[i % COLORES.length],
+                        borderRadius: 3
+                    }))
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { font: { size: 10 }, boxWidth: 12 } }
+                    },
+                    scales: {
+                        x: { stacked: true },
+                        y: { stacked: true, beginAtZero: true, ticks: { stepSize: 1 } }
+                    }
+                }
+            });
+
+            /* ---- 5. Por consultor por mes (con filtro) ---- */
+            const consultoresUnicos = [...new Set(data.map(a => a.consultor).filter(Boolean))].sort();
+            const selectConsultor = document.getElementById('filtroConsultorGrafico');
+            consultoresUnicos.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c;
+                opt.textContent = c;
+                selectConsultor.appendChild(opt);
+            });
+
+            function calcDataConsultor(consultor) {
+                const filtrado = consultor ? data.filter(a => a.consultor === consultor) : data;
+                const mMap = {};
+                filtrado.forEach(a => {
+                    const ym = a.created_at ? a.created_at.substring(0,7) : null;
+                    if (ym) mMap[ym] = (mMap[ym] || 0) + 1;
+                });
+                const meses = Object.keys(mMap).sort();
+                return { labels: meses.map(labelMes), data: meses.map(m => mMap[m]) };
+            }
+
+            const initConsultor = calcDataConsultor('');
+            chartConsultorMesInst = crearGrafico('chartConsultorMes', {
+                type: 'bar',
+                data: {
+                    labels: initConsultor.labels,
+                    datasets: [{
+                        label: 'Acuerdos',
+                        data: initConsultor.data,
+                        backgroundColor: 'rgba(99,102,241,0.75)',
+                        borderColor: '#6366F1',
+                        borderWidth: 1,
+                        borderRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+                }
+            });
+
+            $('#filtroConsultorGrafico').on('change', function() {
+                const d = calcDataConsultor(this.value);
+                chartConsultorMesInst.data.labels = d.labels;
+                chartConsultorMesInst.data.datasets[0].data = d.data;
+                chartConsultorMesInst.data.datasets[0].label = this.value || 'Todos los consultores';
+                chartConsultorMesInst.update();
+            });
+
+            /* ---- 6. Top 15 tipos de acuerdo comercial ---- */
+            const porTipoAcuerdo = {};
+            data.forEach(a => {
+                const k = a.acuerdo_comercial ? a.acuerdo_comercial.trim().substring(0,60) : 'Sin definir';
+                porTipoAcuerdo[k] = (porTipoAcuerdo[k] || 0) + 1;
+            });
+            const top15 = Object.entries(porTipoAcuerdo).sort((a,b) => b[1]-a[1]).slice(0,15);
+            crearGrafico('chartTopAcuerdos', {
+                type: 'bar',
+                data: {
+                    labels: top15.map(e => e[0].length > 55 ? e[0].substring(0,55)+'…' : e[0]),
+                    datasets: [{
+                        label: 'Cantidad',
+                        data: top15.map(e => e[1]),
+                        backgroundColor: top15.map((_,i) => COLORES[i % COLORES.length]),
+                        borderRadius: 5
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { beginAtZero: true, ticks: { stepSize: 1 } },
+                        y: { ticks: { font: { size: 10 } } }
+                    }
+                }
+            });
+        }
+
+        // Inicializar gráficos al cambiar al tab de Estadísticas
+        document.getElementById('tabEstadisticasLink')?.addEventListener('shown.bs.tab', function () {
+            inicializarGraficos();
+        });
     </script>
 @endsection
