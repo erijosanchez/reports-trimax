@@ -42,8 +42,12 @@
                         <?php else: ?>
                             <span class="bg-primary px-3 py-2 badge fs-6">Regular</span>
                         <?php endif; ?>
+                        <a href="<?php echo route('rrhh.requerimientos.pdf', $requerimiento->id); ?>?inline=1"
+                            target="_blank" class="btn btn-sm btn-outline-secondary ms-1">
+                            <i class="mdi mdi-eye-outline"></i> Vista previa
+                        </a>
                         <a href="<?php echo route('rrhh.requerimientos.pdf', $requerimiento->id); ?>"
-                            target="_blank" class="btn btn-sm btn-outline-danger ms-1">
+                            class="btn btn-sm btn-outline-danger ms-1">
                             <i class="mdi mdi-file-pdf-box"></i> Descargar PDF
                         </a>
                     </div>

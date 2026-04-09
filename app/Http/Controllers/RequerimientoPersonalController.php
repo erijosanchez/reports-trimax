@@ -498,7 +498,9 @@ class RequerimientoPersonalController extends Controller
 
         $nombre = 'RH-PR-03-FO-01_' . $requerimiento->codigo . '.pdf';
 
-        return $pdf->download($nombre);
+        return request()->boolean('inline')
+            ? $pdf->stream($nombre)
+            : $pdf->download($nombre);
     }
 
     // ─── EXPORT EXCEL ─────────────────────────────────────────
@@ -581,11 +583,15 @@ class RequerimientoPersonalController extends Controller
 
     private function notificarDestinatarios(RequerimientoPersonal $req, $notification): void
     {
-        $destinatarios = User::where(function ($q) use ($req) {
-            $q->whereIn('email', self::EMAILS_NOTIFICACION)
-                ->orWhere('id', $req->solicitante_id);
-        })->get();
-        Notification::send($destinatarios, $notification);
+        try {
+            $destinatarios = User::where(function ($q) use ($req) {
+                $q->whereIn('email', self::EMAILS_NOTIFICACION)
+                    ->orWhere('id', $req->solicitante_id);
+            })->get();
+            Notification::send($destinatarios, $notification);
+        } catch (\Exception $e) {
+            \Log::warning('No se pudo enviar notificación de requerimiento: ' . $e->getMessage());
+        }
     }
 
     private function getSedes(): array
