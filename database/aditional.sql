@@ -746,3 +746,9 @@ ALTER TABLE users
     ADD COLUMN firma_imagen       MEDIUMTEXT NULL AFTER cargo,
     ADD COLUMN es_gerente_general TINYINT(1) NOT NULL DEFAULT 0 AFTER firma_imagen;
 
+/* Eliminar unique key de asignacion_bases
+   El sheet tiene filas legítimas con mismo (orden, ojo, fecha, catalogo) pero
+   distinto estado (N=nueva, R=reemplazada). La estrategia TRUNCATE+INSERT no
+   necesita unique key. */
+ALTER TABLE asignacion_bases DROP INDEX uq_asignacion_bases;
+

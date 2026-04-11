@@ -56,9 +56,13 @@ class SyncAsignacionBases extends Command
 
             $this->info('📊 Filas obtenidas: ' . count($rows));
 
+            // ── Limpiar tabla antes de reinsertar ────────────────────────────────
+            $this->info('🗑️  Limpiando tabla asignacion_bases...');
+            DB::table('asignacion_bases')->truncate();
+
             // ── Variables ────────────────────────────────────────────────────────
             $registros  = [];
-            $batchSize  = 500;
+            $batchSize  = 200;
             $total      = 0;
             $omitidas   = 0;
             $razonesOmision = [
@@ -133,7 +137,7 @@ class SyncAsignacionBases extends Command
 
                 // Flush por lotes
                 if (count($registros) >= $batchSize) {
-                    $this->upsertBases($registros);
+                    $this->insertBases($registros);
                     $total     += count($registros);
                     $registros  = [];
                     $this->output->write('.');
@@ -142,7 +146,7 @@ class SyncAsignacionBases extends Command
 
             // Flush último lote
             if (!empty($registros)) {
-                $this->upsertBases($registros);
+                $this->insertBases($registros);
                 $total += count($registros);
             }
 
@@ -175,24 +179,21 @@ class SyncAsignacionBases extends Command
 
     // ──────────────────────────────────────────────────────────────────────────
 
-    private function upsertBases(array $lote): void
+    private function insertBases(array $lote, int $intentos = 3): void
     {
-        DB::table('asignacion_bases')->upsert(
-            $lote,
-            ['numero_orden', 'ojo', 'fecha_asignacion', 'id_catalogo_base'], // unique key
-            [
-                'codigo_pt',
-                'producto_pt',
-                'descripcion_base',
-                'cantidad',
-                'estado_asignacion',
-                'descripcion_art',
-                'precio',
-                'mes',
-                'anio',
-                'updated_at',
-            ]
-        );
+        for ($i = 1; $i <= $intentos; $i++) {
+            try {
+                DB::table('asignacion_bases')->insert($lote);
+                return;
+            } catch (\Illuminate\Database\QueryException $e) {
+                // 1213 = deadlock, reintentamos
+                if ($e->getCode() === '40001' && $i < $intentos) {
+                    usleep(200000 * $i);
+                    continue;
+                }
+                throw $e;
+            }
+        }
     }
 
     private function parsearFecha(string $fechaStr): ?Carbon
