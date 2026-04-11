@@ -61,6 +61,11 @@ class SyncAsignacionBases extends Command
             $batchSize  = 500;
             $total      = 0;
             $omitidas   = 0;
+            $razonesOmision = [
+                'sin_orden_o_fecha' => 0,
+                'fecha_invalida'    => 0,
+                'estado_invalido'   => 0,
+            ];
 
             // ── Loop principal ───────────────────────────────────────────────────
             foreach ($rows as $row) {
@@ -79,6 +84,7 @@ class SyncAsignacionBases extends Command
                 // Saltar filas sin datos clave
                 if (!$numOrden || !$fechaRaw) {
                     $omitidas++;
+                    $razonesOmision['sin_orden_o_fecha']++;
                     continue;
                 }
 
@@ -86,12 +92,14 @@ class SyncAsignacionBases extends Command
                 $fecha = $this->parsearFecha($fechaRaw);
                 if (!$fecha) {
                     $omitidas++;
+                    $razonesOmision['fecha_invalida']++;
                     continue;
                 }
 
                 // Solo R y N válidos
                 if (!in_array($estado, ['R', 'N'])) {
                     $omitidas++;
+                    $razonesOmision['estado_invalido']++;
                     continue;
                 }
 
@@ -144,6 +152,11 @@ class SyncAsignacionBases extends Command
 
             $this->info("✅ asignacion_bases: {$total} registros procesados");
             $this->info("⏭️  Filas omitidas: {$omitidas}");
+            if ($omitidas > 0) {
+                $this->info("   ├─ Sin número orden o fecha: {$razonesOmision['sin_orden_o_fecha']}");
+                $this->info("   ├─ Fecha con formato inválido: {$razonesOmision['fecha_invalida']}");
+                $this->info("   └─ Estado inválido (no R/N): {$razonesOmision['estado_invalido']}");
+            }
 
             // ── Limpiar caché del módulo ─────────────────────────────────────────
             $this->limpiarCache();

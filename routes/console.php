@@ -32,10 +32,10 @@ Schedule::job(new AlertaCajaChicaVencimientoJob)
 
 Schedule::command('trimax:sync-ordenes-sede')
     ->everyFifteenMinutes()
-    ->withoutOverlapping()
+    ->withoutOverlapping(20)
     ->runInBackground();
 
 Schedule::command('trimax:sync-asignacion-bases')
     ->everyFifteenMinutes()
-    ->withoutOverlapping()
+    ->withoutOverlapping(20)
     ->runInBackground();
