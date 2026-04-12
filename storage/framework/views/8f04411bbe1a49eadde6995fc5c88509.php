@@ -191,23 +191,56 @@
         </div>
 
         
-        <div class="row mb-3 g-3">
-            <div class="col-lg-6">
-                <div class="card border-0 shadow-sm h-100">
-                    <div class="card-header bg-white border-bottom py-3">
+        <div class="row mb-3">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white border-bottom d-flex align-items-center justify-content-between py-3">
                         <h6 class="mb-0 fw-bold">
-                            <i class="mdi mdi-chart-bar-stacked me-2 text-success"></i>Total por Usuario
+                            <i class="mdi mdi-chart-bar me-2 text-primary"></i>Total de Órdenes por Usuario — Antes / Después de 5pm
                         </h6>
+                        <div class="d-flex gap-3 small">
+                            <span><span class="d-inline-block me-1" style="width:12px;height:12px;border-radius:2px;background:#2563eb;"></span>Antes de 5pm</span>
+                            <span><span class="d-inline-block me-1" style="width:12px;height:12px;border-radius:2px;background:#ef4444;"></span>Después de 5pm</span>
+                        </div>
                     </div>
-                    <div class="card-body">
-                        <div id="chart-por-usuario-wrap" style="position:relative; min-height:200px;">
-                            <canvas id="chart-por-usuario"></canvas>
+                    <div class="card-body p-2">
+                        <div style="overflow-x:auto; overflow-y:hidden;">
+                            <div id="chart-usuario-turno-wrap" style="position:relative; height:340px; min-width:600px;">
+                                <canvas id="chart-usuario-turno"></canvas>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <div class="col-lg-6">
+        
+        <div class="row mb-3">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white border-bottom d-flex align-items-center justify-content-between py-3">
+                        <h6 class="mb-0 fw-bold">
+                            <i class="mdi mdi-chart-bar me-2 text-success"></i>Total de Órdenes por Semana — Antes / Después de 5pm
+                        </h6>
+                        <div class="d-flex gap-3 small">
+                            <span><span class="d-inline-block me-1" style="width:12px;height:12px;border-radius:2px;background:#2563eb;"></span>Antes de 5pm</span>
+                            <span><span class="d-inline-block me-1" style="width:12px;height:12px;border-radius:2px;background:#ef4444;"></span>Después de 5pm</span>
+                        </div>
+                    </div>
+                    <div class="card-body p-2">
+                        <div style="overflow-x:auto; overflow-y:hidden;">
+                            <div id="chart-semana-turno-wrap" style="position:relative; height:300px; min-width:400px;">
+                                <canvas id="chart-semana-turno"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        
+        <div class="row mb-3 g-3">
+            <div class="col-lg-12">
                 <div class="card border-0 shadow-sm h-100">
                     <div class="card-header bg-white border-bottom py-3">
                         <h6 class="mb-0 fw-bold">
@@ -312,9 +345,10 @@
     const API_DATA     = <?php echo json_encode(route('productividad.ordenes-x-usuario.data'), 15, 512) ?>;
     const API_USUARIOS = <?php echo json_encode(route('productividad.ordenes-x-usuario.usuarios'), 15, 512) ?>;
 
-    let chartHora      = null;
-    let chartUsuario   = null;
-    let chartHoraTotal = null;
+    let chartHora         = null;
+    let chartHoraTotal    = null;
+    let chartUsuarioTurno = null;
+    let chartSemanaTurno  = null;
 
     // Estado de paginación
     let pagActual  = 1;
@@ -481,7 +515,8 @@
                 renderKpis(resp.totales);
                 renderChartHora(resp.porHora);
                 renderChartHoraTotal(resp.porHoraTotal);
-                renderChartUsuario(resp.porUsuario);
+                renderChartUsuarioTurno(resp.porUsuarioTurno);
+                renderChartSemanaTurno(resp.porSemanaTurno);
                 renderTablaUsuarios(resp.porUsuario);
                 renderTablaDetalle(resp.tabla, pag);
                 actualizarBotonesPaginacion();
@@ -610,35 +645,151 @@
         });
     }
 
-    // ── Chart: por usuario (horizontal) ────────────────────────────
-    function renderChartUsuario(data) {
-        const wrap  = document.getElementById('chart-por-usuario-wrap');
-        const ctx   = document.getElementById('chart-por-usuario').getContext('2d');
-        wrap.style.minHeight = Math.max(200, data.labels.length * 32 + 60) + 'px';
+    // ── Chart: total por usuario antes/después 5pm (apilado) ───────
+    function renderChartUsuarioTurno(data) {
+        const canvas = document.getElementById('chart-usuario-turno');
+        const wrap   = document.getElementById('chart-usuario-turno-wrap');
+        if (chartUsuarioTurno) chartUsuarioTurno.destroy();
 
-        if (chartUsuario) chartUsuario.destroy();
+        const numUsuarios = data.labels.length;
+        wrap.style.minWidth = Math.max(600, numUsuarios * 48 + 80) + 'px';
 
-        chartUsuario = new Chart(ctx, {
+        chartUsuarioTurno = new Chart(canvas.getContext('2d'), {
             type: 'bar',
             data: {
                 labels: data.labels,
-                datasets: [{
-                    label: 'Órdenes',
-                    data: data.data,
-                    backgroundColor: data.labels.map((_, i) => COLORES[i % COLORES.length] + 'cc'),
-                    borderColor:     data.labels.map((_, i) => COLORES[i % COLORES.length]),
-                    borderWidth: 1,
-                    borderRadius: 4,
-                }]
+                datasets: [
+                    {
+                        label: 'Antes de 5pm',
+                        data: data.antes_5pm,
+                        backgroundColor: '#2563ebcc',
+                        borderColor: '#2563eb',
+                        borderWidth: 1,
+                        borderRadius: 0,
+                    },
+                    {
+                        label: 'Después de 5pm',
+                        data: data.despues_5pm,
+                        backgroundColor: '#ef4444cc',
+                        borderColor: '#ef4444',
+                        borderWidth: 1,
+                        borderRadius: 0,
+                    },
+                ]
             },
             options: {
-                indexAxis: 'y',
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            afterBody: function(items) {
+                                const idx   = items[0].dataIndex;
+                                const antes  = data.antes_5pm[idx]   || 0;
+                                const despues = data.despues_5pm[idx] || 0;
+                                const total  = antes + despues;
+                                return ['─────────────', 'Total: ' + total.toLocaleString('es-PE')];
+                            }
+                        }
+                    }
+                },
                 scales: {
-                    x: { beginAtZero: true, ticks: { precision: 0 } },
-                    y: { ticks: { font: { size: 11 } } }
+                    x: {
+                        stacked: true,
+                        ticks: { font: { size: 10 }, maxRotation: 35, minRotation: 25 }
+                    },
+                    y: {
+                        stacked: true,
+                        beginAtZero: true,
+                        title: { display: true, text: 'N° de Órdenes' },
+                        ticks: { precision: 0 }
+                    }
+                }
+            }
+        });
+    }
+
+    // ── Chart: total por semana antes/después 5pm (apilado) ────────
+    function renderChartSemanaTurno(data) {
+        const canvas = document.getElementById('chart-semana-turno');
+        const wrap   = document.getElementById('chart-semana-turno-wrap');
+        if (chartSemanaTurno) chartSemanaTurno.destroy();
+
+        wrap.style.minWidth = Math.max(400, data.labels.length * 72 + 80) + 'px';
+
+        // Plugin para mostrar el total encima de cada barra apilada
+        const totalEncima = {
+            id: 'totalEncimaSemana',
+            afterDatasetsDraw(chart) {
+                const { ctx, scales: { x, y } } = chart;
+                ctx.save();
+                ctx.font = 'bold 11px sans-serif';
+                ctx.fillStyle = '#111827';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'bottom';
+                data.labels.forEach((_, i) => {
+                    const total = data.totales[i] || 0;
+                    if (!total) return;
+                    const xPos = x.getPixelForValue(i);
+                    const yPos = y.getPixelForValue(total);
+                    ctx.fillText(total.toLocaleString('es-PE'), xPos, yPos - 4);
+                });
+                ctx.restore();
+            }
+        };
+
+        chartSemanaTurno = new Chart(canvas.getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: data.labels,
+                datasets: [
+                    {
+                        label: 'Antes de 5pm',
+                        data: data.antes_5pm,
+                        backgroundColor: '#2563ebcc',
+                        borderColor: '#2563eb',
+                        borderWidth: 1,
+                        borderRadius: 0,
+                    },
+                    {
+                        label: 'Después de 5pm',
+                        data: data.despues_5pm,
+                        backgroundColor: '#ef4444cc',
+                        borderColor: '#ef4444',
+                        borderWidth: 1,
+                        borderRadius: 0,
+                    },
+                ]
+            },
+            plugins: [totalEncima],
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                layout: { padding: { top: 22 } },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            afterBody: function(items) {
+                                const idx   = items[0].dataIndex;
+                                const total = data.totales[idx] || 0;
+                                return ['─────────────', 'Total semana: ' + total.toLocaleString('es-PE')];
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        stacked: true,
+                        ticks: { font: { size: 10 }, maxRotation: 30, minRotation: 20 }
+                    },
+                    y: {
+                        stacked: true,
+                        beginAtZero: true,
+                        title: { display: true, text: 'N° de Órdenes' },
+                        ticks: { precision: 0 }
+                    }
                 }
             }
         });

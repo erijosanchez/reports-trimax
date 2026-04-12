@@ -8,6 +8,14 @@ use Illuminate\Support\Facades\DB;
 
 class OrdenesXUsuarioController extends Controller
 {
+    /** Usuarios de prueba excluidos de todos los reportes */
+    private const USUARIOS_EXCLUIDOS = [
+        'JAIME RL AREQUIPA', 'JAIME RL ATE', 'JAIME RL CAILLOMA', 'JAIME RL COMAS',
+        'JAIME RL HUANUCO', 'JAIME RL LINCE', 'JAIME RL NAPO', 'JAIME RL SJM',
+        'Juan Loayza Pacheco', 'Juan  Loayza Pacheco',
+        'Rafael Mendez', 'Rafael ML', 'RUTH', 'VASQUEZ ALCÁNTARA',
+    ];
+
     public function index()
     {
         $user = auth()->user();
@@ -52,7 +60,8 @@ class OrdenesXUsuarioController extends Controller
         // ── Consulta base ──────────────────────────────────────────
         $query = DB::table('ordenes_historico')
             ->whereNotNull('nombre_usuario')
-            ->where('nombre_usuario', '!=', '');
+            ->where('nombre_usuario', '!=', '')
+            ->whereNotIn('nombre_usuario', self::USUARIOS_EXCLUIDOS);
 
         // Filtro de período
         if ($modo === 'mes') {
@@ -130,6 +139,58 @@ class OrdenesXUsuarioController extends Controller
         $tabla      = $tablaQuery->offset(($page - 1) * $perPage)->limit($perPage)->get();
         $totalPages = (int) ceil($totalFilas / $perPage);
 
+        // ── Órdenes por semana (todas hasta hoy, sin filtro de fecha)
+        $querySemana = DB::table('ordenes_historico')
+            ->whereNotNull('nombre_usuario')
+            ->where('nombre_usuario', '!=', '')
+            ->whereNotIn('nombre_usuario', self::USUARIOS_EXCLUIDOS)
+            ->where('fecha_orden', '<=', date('Y-m-d'));
+
+        if ($sede) {
+            $querySemana->where('descripcion_sede', $sede);
+        }
+        if ($usuarioNombre) {
+            $querySemana->where('nombre_usuario', $usuarioNombre);
+        }
+
+        $porSemanaTurnoRaw = $querySemana
+            ->selectRaw("
+                YEARWEEK(fecha_orden, 1) as yearweek,
+                SUM(CASE WHEN CAST(SUBSTRING_INDEX(TRIM(COALESCE(hora_orden,'')), ':', 1) AS UNSIGNED) < 17 THEN 1 ELSE 0 END) as antes_5pm,
+                SUM(CASE WHEN CAST(SUBSTRING_INDEX(TRIM(COALESCE(hora_orden,'')), ':', 1) AS UNSIGNED) >= 17 THEN 1 ELSE 0 END) as despues_5pm,
+                COUNT(*) as total
+            ")
+            ->groupBy('yearweek')
+            ->orderBy('yearweek')
+            ->get();
+
+        $porSemanaTurno = $porSemanaTurnoRaw->map(function ($row) {
+            $yw     = str_pad((string) $row->yearweek, 6, '0', STR_PAD_LEFT);
+            $year   = (int) substr($yw, 0, 4);
+            $week   = (int) substr($yw, 4);
+            $monday = new \DateTime();
+            $monday->setISODate($year, $week, 1);
+            $sunday = (clone $monday)->modify('+6 days');
+            return [
+                'label'      => 'Sem. ' . $monday->format('d/m') . '–' . $sunday->format('d/m'),
+                'antes_5pm'  => (int) $row->antes_5pm,
+                'despues_5pm'=> (int) $row->despues_5pm,
+                'total'      => (int) $row->total,
+            ];
+        });
+
+        // ── Órdenes por usuario divididas antes/después de 5pm ────
+        $porUsuarioTurno = (clone $query)
+            ->selectRaw("
+                nombre_usuario,
+                SUM(CASE WHEN CAST(SUBSTRING_INDEX(TRIM(COALESCE(hora_orden,'')), ':', 1) AS UNSIGNED) < 17 THEN 1 ELSE 0 END) as antes_5pm,
+                SUM(CASE WHEN CAST(SUBSTRING_INDEX(TRIM(COALESCE(hora_orden,'')), ':', 1) AS UNSIGNED) >= 17 THEN 1 ELSE 0 END) as despues_5pm,
+                COUNT(*) as total
+            ")
+            ->groupBy('nombre_usuario')
+            ->orderByDesc('total')
+            ->get();
+
         // ── Construir datasets chart por hora ──────────────────────
         $usuarios = $porHora->pluck('nombre_usuario')->unique()->values();
 
@@ -188,6 +249,17 @@ class OrdenesXUsuarioController extends Controller
                 'labels' => $porUsuario->pluck('nombre_usuario')->toArray(),
                 'data'   => $porUsuario->pluck('total')->map(fn($v) => (int) $v)->toArray(),
             ],
+            'porUsuarioTurno' => [
+                'labels'      => $porUsuarioTurno->pluck('nombre_usuario')->toArray(),
+                'antes_5pm'   => $porUsuarioTurno->pluck('antes_5pm')->map(fn($v) => (int) $v)->toArray(),
+                'despues_5pm' => $porUsuarioTurno->pluck('despues_5pm')->map(fn($v) => (int) $v)->toArray(),
+            ],
+            'porSemanaTurno' => [
+                'labels'      => $porSemanaTurno->pluck('label')->toArray(),
+                'antes_5pm'   => $porSemanaTurno->pluck('antes_5pm')->toArray(),
+                'despues_5pm' => $porSemanaTurno->pluck('despues_5pm')->toArray(),
+                'totales'     => $porSemanaTurno->pluck('total')->toArray(),
+            ],
             'tabla'      => $tabla,
             'paginacion' => [
                 'page'       => $page,
@@ -226,7 +298,8 @@ class OrdenesXUsuarioController extends Controller
         $query = DB::table('ordenes_historico')
             ->selectRaw('DISTINCT nombre_usuario')
             ->whereNotNull('nombre_usuario')
-            ->where('nombre_usuario', '!=', '');
+            ->where('nombre_usuario', '!=', '')
+            ->whereNotIn('nombre_usuario', self::USUARIOS_EXCLUIDOS);
 
         if ($sede) {
             $query->where('descripcion_sede', $sede);
