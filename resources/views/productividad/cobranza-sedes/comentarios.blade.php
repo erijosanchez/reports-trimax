@@ -13,7 +13,7 @@
                             <h4 class="mb-0 fw-bold">
                                 <i class="me-2 text-primary mdi mdi-comment-text-multiple"></i>Comentarios Sedes
                             </h4>
-                            <p class="mb-0 text-muted small">Reporte semanal — límite: jueves 2:00 PM</p>
+                            <p class="mb-0 text-muted small">Reporte semanal — límite: jueves 11:59 PM</p>
                         </div>
                         <div class="text-end">
                             <span class="bg-primary badge fs-6">Semana {{ $semanaNumero }}/{{ $anio }}</span>
@@ -39,7 +39,7 @@
                         <div id="countdown-display" class="mb-1 fw-bold" style="font-size:2rem;font-family:'Courier New',monospace;letter-spacing:2px;">--:--:--</div>
                         <div id="countdown-subtitle" class="text-muted small">Cargando...</div>
                         <hr class="my-3">
-                        <div class="text-muted small">Límite: <strong>Jueves 2:00 PM</strong></div>
+                        <div class="text-muted small">Límite: <strong>Jueves 11:59 PM</strong></div>
                     </div>
                 </div>
             </div>
@@ -135,13 +135,13 @@
                             Estado Sedes — Semana {{ $semanaNumero }}/{{ $anio }}
                         </h5>
                         <div class="d-flex align-items-center gap-2 text-muted small">
-                            <span class="bg-success badge">Enviado</span>
-                            <span class="bg-danger badge">Pendiente</span>
+                            <span class="bg-success badge filtro-estado" data-filtro="enviado">Enviado</span>
+                            <span class="bg-danger badge filtro-estado" data-filtro="pendiente">Pendiente</span>
                         </div>
                     </div>
                     <div class="p-0 card-body">
                         <div class="table-responsive">
-                            <table class="table table-hover mb-0">
+                            <table class="table table-hover mb-0" id="tabla-estado-sedes">
                                 <thead class="table-light">
                                     <tr>
                                         <th>Sede</th>
@@ -154,7 +154,7 @@
                                 </thead>
                                 <tbody>
                                     @foreach ($resumenSedes as $fila)
-                                    <tr class="{{ $fila['enviado'] ? '' : 'table-danger bg-opacity-25' }}">
+                                    <tr class="{{ $fila['enviado'] ? '' : 'table-danger bg-opacity-25' }}" data-estado="{{ $fila['enviado'] ? 'enviado' : 'pendiente' }}">
                                         <td><strong>{{ $fila['sede'] }}</strong></td>
                                         <td class="text-muted small">{{ $fila['usuario'] }}</td>
                                         <td class="text-center">
@@ -331,12 +331,12 @@
         @endif
         @endauth
 
-        {{-- ── FILA 4: Gráfico KPI ─────────────────────────────────── --}}
+        {{-- ── FILA 4: Gráfico KPI por semana ────────────────────────── --}}
         <div class="mb-4 row">
             <div class="col-12">
                 <div class="shadow-sm border-0 card">
                     <div class="d-flex align-items-center justify-content-between bg-white border-bottom card-header">
-                        <h5 class="mb-0 fw-bold"><i class="me-2 text-primary mdi mdi-chart-line"></i>KPI por Sede</h5>
+                        <h5 class="mb-0 fw-bold"><i class="me-2 text-primary mdi mdi-chart-line"></i>KPI Semanal por Sede</h5>
                         <div class="d-flex align-items-center gap-2">
                             <label class="me-1 mb-0 text-muted small">Semanas:</label>
                             <select id="filtro-semanas" class="form-select-sm form-select" style="width:80px;">
@@ -355,6 +355,35 @@
                 </div>
             </div>
         </div>
+
+        {{-- ── FILA 4b: Cumplimiento mensual (solo admin) ──────────── --}}
+        @if (auth()->user()->isSuperAdmin() || auth()->user()->isAdmin())
+        <div class="mb-4 row">
+            <div class="col-12">
+                <div class="shadow-sm border-0 card">
+                    <div class="d-flex align-items-center justify-content-between bg-white border-bottom card-header">
+                        <h5 class="mb-0 fw-bold">
+                            <i class="me-2 text-success mdi mdi-chart-bar"></i>Cumplimiento Mensual por Sede
+                        </h5>
+                        <div class="d-flex align-items-center gap-2">
+                            <label class="me-1 mb-0 text-muted small">Meses:</label>
+                            <select id="filtro-meses-mensual" class="form-select-sm form-select" style="width:80px;">
+                                <option value="2">2</option>
+                                <option value="3" selected>3</option>
+                                <option value="6">6</option>
+                                <option value="12">12</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div style="position:relative;height:320px;">
+                            <canvas id="kpi-chart-mensual"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @endif
 
         {{-- ── FILA 5: Historial ───────────────────────────────────── --}}
         <div class="row">
@@ -447,6 +476,8 @@
 .preview-thumb img { width:100%;height:80px;object-fit:cover; }
 .preview-thumb .preview-remove { position:absolute;top:4px;right:4px;width:22px;height:22px;background:#ef4444;border:none;border-radius:50%;color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;cursor:pointer; }
 .preview-thumb .preview-name { font-size:10px;padding:2px 4px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+.filtro-estado { cursor:pointer;user-select:none;transition:opacity .2s,text-decoration .2s; }
+.filtro-estado.inactivo { opacity:.35;text-decoration:line-through; }
 </style>
 @endpush
 
@@ -501,46 +532,68 @@ function actualizarCountdown() {
     display.textContent = `${h}:${m}:${s}`;
     if (diffMs <= 3600000) { display.style.color='#dc2626'; icon.className='mdi mdi-timer-alert-outline text-danger'; card.classList.add('border-danger'); sub.textContent='Menos de 1 hora — ¡envía ahora!'; }
     else if (diffMs <= 7200000) { display.style.color='#d97706'; icon.className='mdi mdi-timer-outline text-warning'; sub.textContent='Menos de 2 horas'; }
-    else { display.style.color='#2563eb'; icon.className='mdi mdi-timer-outline text-primary'; sub.textContent='Jueves, 2:00 PM hora Lima'; }
+    else { display.style.color='#2563eb'; icon.className='mdi mdi-timer-outline text-primary'; sub.textContent='Jueves, 11:59 PM hora Lima'; }
 }
 actualizarCountdown();
 setInterval(actualizarCountdown, 1000);
 
-// ── Drop zones ─────────────────────────────────────────────────────
+// ── Drop zones (acumulador para preservar archivos entre selecciones) ──
+const _acumulados = {};
+
 function setupDropZone(zoneId, inputId, previewId) {
-    const zone = document.getElementById(zoneId);
-    const input = document.getElementById(inputId);
+    const zone    = document.getElementById(zoneId);
+    const input   = document.getElementById(inputId);
+    const preview = document.getElementById(previewId);
     if (!zone || !input) return;
+
+    _acumulados[inputId] = new DataTransfer();
+
     zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
     zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
-    zone.addEventListener('drop', e => { e.preventDefault(); zone.classList.remove('dragover'); agregarArchivos(e.dataTransfer.files, input, document.getElementById(previewId)); });
-    input.addEventListener('change', () => agregarArchivos(input.files, input, document.getElementById(previewId)));
+    zone.addEventListener('drop', e => {
+        e.preventDefault();
+        zone.classList.remove('dragover');
+        agregarArchivos(e.dataTransfer.files, inputId, preview);
+    });
+    input.addEventListener('change', () => {
+        agregarArchivos(input.files, inputId, preview);
+        input.value = ''; // permite re-seleccionar el mismo archivo
+    });
 }
-function agregarArchivos(files, input, preview) {
-    const dt = new DataTransfer();
-    if (input.files) for (const f of input.files) dt.items.add(f);
-    for (const f of files) dt.items.add(f);
-    input.files = dt.files;
-    renderPreview(input.files, preview, input);
+
+function agregarArchivos(newFiles, inputId, preview) {
+    const dt = _acumulados[inputId];
+    for (const f of newFiles) dt.items.add(f);
+    renderPreview(dt.files, preview, inputId);
 }
-function renderPreview(files, preview, input) {
+
+function renderPreview(files, preview, inputId) {
     preview.innerHTML = '';
     for (let i = 0; i < files.length; i++) {
-        const f = files[i]; const col = document.createElement('div'); col.className = 'col-6 col-md-3 col-lg-2';
+        const f   = files[i];
+        const col = document.createElement('div');
+        col.className = 'col-6 col-md-3 col-lg-2';
         const isImg = f.type.startsWith('image/');
-        col.innerHTML = `<div class="p-1 preview-thumb">${isImg ? `<img src="${URL.createObjectURL(f)}" alt="">` : `<div class="d-flex align-items-center justify-content-center" style="height:80px;font-size:2rem;"><i class="text-primary mdi mdi-file-excel"></i></div>`}<button type="button" class="preview-remove" onclick="quitarArchivo(${i},this)">×</button><div class="text-muted preview-name">${f.name}</div></div>`;
+        col.innerHTML = `<div class="p-1 preview-thumb">${isImg ? `<img src="${URL.createObjectURL(f)}" alt="${f.name}">` : `<div class="d-flex align-items-center justify-content-center" style="height:80px;font-size:2rem;"><i class="text-primary mdi mdi-file-excel"></i></div>`}<button type="button" class="preview-remove" onclick="quitarArchivo(${i}, '${inputId}')">×</button><div class="text-muted preview-name">${f.name}</div></div>`;
         preview.appendChild(col);
     }
 }
-function quitarArchivo(idx, btn) {
-    const preview = btn.closest('[id^="preview"]');
-    const input   = document.getElementById(preview.id.replace('preview','archivos'));
-    const dt = new DataTransfer();
-    for (let i = 0; i < input.files.length; i++) if (i !== idx) dt.items.add(input.files[i]);
-    input.files = dt.files; renderPreview(input.files, preview, input);
+
+function quitarArchivo(idx, inputId) {
+    const input   = document.getElementById(inputId);
+    const preview = document.getElementById(inputId.replace('archivos', 'preview'));
+    const dt      = new DataTransfer();
+    const current = _acumulados[inputId].files;
+    for (let i = 0; i < current.length; i++) {
+        if (i !== idx) dt.items.add(current[i]);
+    }
+    _acumulados[inputId] = dt;
+    input.files = dt.files;
+    renderPreview(dt.files, preview, inputId);
 }
-setupDropZone('drop-zone-nuevo','archivos-nuevo','preview-nuevo');
-setupDropZone('drop-zone-edit','archivos-edit','preview-edit');
+
+setupDropZone('drop-zone-nuevo', 'archivos-nuevo', 'preview-nuevo');
+setupDropZone('drop-zone-edit',  'archivos-edit',  'preview-edit');
 
 function marcarEliminar(idx, btn) {
     const hidden = document.getElementById('eliminar-' + idx);
@@ -558,6 +611,7 @@ if (formEnviar) {
         const msg = document.getElementById('msg-enviar');
         btn.disabled=true; btn.innerHTML='<span class="me-1 spinner-border spinner-border-sm"></span>Enviando...'; msg.innerHTML='';
         try {
+            document.getElementById('archivos-nuevo').files = _acumulados['archivos-nuevo'].files;
             const data = await apiFetch(ROUTES.store, { method:'POST', body: new FormData(this) });
             msg.innerHTML = `<div class="py-2 alert alert-success">${data.message}</div>`;
             setTimeout(() => location.reload(), 1500);
@@ -576,6 +630,7 @@ if (formEditar) {
         const reporteId = this.querySelector('[name="reporte_id"]').value;
         btn.disabled=true; btn.innerHTML='<span class="me-1 spinner-border spinner-border-sm"></span>Guardando...'; msg.innerHTML='';
         try {
+            document.getElementById('archivos-edit').files = _acumulados['archivos-edit'].files;
             const data = await apiFetch(urlUpdate(reporteId), { method:'POST', body: new FormData(this) });
             msg.innerHTML=`<div class="alert alert-${data.tardio?'warning':'success'} py-2">${data.message}</div>`;
             setTimeout(()=>location.reload(),1800);
@@ -586,7 +641,7 @@ if (formEditar) {
 
 // ── Historial ──────────────────────────────────────────────────────
 function badgeEstado(estado) {
-    const colorMap = { en_tiempo:'success', con_atraso:'danger', pendiente:'secondary', no_enviado:'danger' };
+    const colorMap = { en_tiempo:'success', con_atraso:'danger', pendiente:'warning', no_enviado:'danger' };
     const labelMap = { en_tiempo:'En tiempo', con_atraso:'Con atraso', pendiente:'Pendiente', no_enviado:'No enviado' };
     return `<span class="badge bg-${colorMap[estado] ?? 'secondary'}">${labelMap[estado] ?? estado}</span>`;
 }
@@ -652,17 +707,46 @@ async function verReporte(id) {
 }
 
 // ── Gráfico KPI ────────────────────────────────────────────────────
+function opcionesChart(tooltipExtra = '') {
+    return {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        scales: {
+            y: { min: 0, max: 100, ticks: { callback: v => v + '%', stepSize: 25 }, grid: { color: '#f1f5f9' } },
+            x: { grid: { display: false } },
+        },
+        plugins: {
+            legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } },
+            tooltip: { callbacks: { label: c => `${c.dataset.label}: ${c.parsed.y !== null ? c.parsed.y + '%' : 'Sin dato'}` + tooltipExtra } },
+        },
+    };
+}
+
 let kpiChart = null;
-async function cargarKpiChart(semanas=8) {
+async function cargarKpiChart(semanas = 8) {
     try {
-        const data = await apiFetch(`${ROUTES.kpiData}?semanas=${semanas}`);
+        const data = await apiFetch(`${ROUTES.kpiData}?tipo=semanas&semanas=${semanas}`);
         const ctx  = document.getElementById('kpi-chart').getContext('2d');
         if (kpiChart) kpiChart.destroy();
-        kpiChart = new Chart(ctx, { type:'line', data, options:{ responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false}, scales:{ y:{min:0,max:100,ticks:{callback:v=>v+'%',stepSize:25},grid:{color:'#f1f5f9'}}, x:{grid:{display:false}} }, plugins:{ legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}}, tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.parsed.y!==null?c.parsed.y+'%':'Sin dato'}`}} } } });
+        kpiChart = new Chart(ctx, { type: 'line', data, options: opcionesChart() });
     } catch(e) { console.error(e); }
 }
 cargarKpiChart(8);
-document.getElementById('filtro-semanas')?.addEventListener('change', function(){ cargarKpiChart(parseInt(this.value)); });
+document.getElementById('filtro-semanas')?.addEventListener('change', function () { cargarKpiChart(parseInt(this.value)); });
+
+@if (auth()->user()->isSuperAdmin() || auth()->user()->isAdmin())
+let kpiChartMensual = null;
+async function cargarKpiChartMensual(meses = 3) {
+    try {
+        const data = await apiFetch(`${ROUTES.kpiData}?tipo=mensual&meses=${meses}`);
+        const ctx  = document.getElementById('kpi-chart-mensual').getContext('2d');
+        if (kpiChartMensual) kpiChartMensual.destroy();
+        kpiChartMensual = new Chart(ctx, { type: 'line', data, options: opcionesChart(' (prom.)') });
+    } catch(e) { console.error(e); }
+}
+cargarKpiChartMensual(3);
+document.getElementById('filtro-meses-mensual')?.addEventListener('change', function () { cargarKpiChartMensual(parseInt(this.value)); });
+@endif
 
 // ── Cámara ─────────────────────────────────────────────────────────
 let _streamActivo=null,_camaraInputId=null,_camaraPreviewId=null,_fotoBlob=null,_modalCamaraInst=null;
@@ -686,10 +770,30 @@ function capturarFoto() {
 function retomarFoto() { _fotoBlob=null; _streamActivo?.getTracks().forEach(t=>t.enabled=true); document.getElementById('camara-preview-wrap').classList.add('d-none'); document.getElementById('camara-video').classList.remove('d-none'); document.getElementById('btn-capturar').classList.remove('d-none'); document.getElementById('btn-retomar').classList.add('d-none'); document.getElementById('btn-usar-foto').classList.add('d-none'); }
 function usarFoto() {
     if (!_fotoBlob) return;
-    const file=new File([_fotoBlob],`foto-${new Date().toISOString().replace(/[:.]/g,'-')}.jpg`,{type:'image/jpeg'});
-    const input=document.getElementById(_camaraInputId), preview=document.getElementById(_camaraPreviewId);
-    const dt=new DataTransfer(); if(input.files) for(const f of input.files) dt.items.add(f); dt.items.add(file); input.files=dt.files; renderPreview(input.files,preview,input); cerrarCamara();
+    const ts   = new Date().toISOString().replace(/[:.]/g, '-');
+    const file = new File([_fotoBlob], `foto-${ts}.jpg`, { type: 'image/jpeg' });
+    const preview = document.getElementById(_camaraPreviewId);
+    agregarArchivos([file], _camaraInputId, preview);
+    cerrarCamara();
 }
 function cerrarCamara() { _streamActivo?.getTracks().forEach(t=>t.stop()); _streamActivo=null; _modalCamaraInst?.hide(); }
+
+// ── Filtros tabla Estado Sedes ────────────────────────────────────
+(function () {
+    const activos = new Set(['enviado', 'pendiente']);
+    function aplicar() {
+        document.querySelectorAll('#tabla-estado-sedes tbody tr[data-estado]').forEach(tr => {
+            tr.style.display = activos.has(tr.dataset.estado) ? '' : 'none';
+        });
+    }
+    document.querySelectorAll('.filtro-estado').forEach(badge => {
+        badge.addEventListener('click', function () {
+            const key = this.dataset.filtro;
+            if (activos.has(key)) { activos.delete(key); this.classList.add('inactivo'); }
+            else { activos.add(key); this.classList.remove('inactivo'); }
+            aplicar();
+        });
+    });
+})();
 </script>
 @endpush

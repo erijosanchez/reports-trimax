@@ -18,7 +18,7 @@ class ComentariosAlertaVencimiento extends Notification
     public function toMail($notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject("⏰ ALERTA — Tu reporte de Comentarios vence en 1 hora | Semana {$this->reporte->semana_numero}/{$this->reporte->anio}")
+            ->subject("⏰ ALERTA — Tu reporte de Comentarios vence HOY a las 11:59 PM | Semana {$this->reporte->semana_numero}/{$this->reporte->anio}")
             ->view('emails.productividad.comentarios_alerta', [
                 'reporte'    => $this->reporte,
                 'notifiable' => $notifiable,

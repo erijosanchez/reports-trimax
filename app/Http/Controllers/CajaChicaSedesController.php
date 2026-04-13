@@ -277,9 +277,19 @@ class CajaChicaSedesController extends Controller
 
     public function kpiData(Request $request)
     {
-        if (!auth()->user()->puedeVerCobranzaSedes()) return response()->json(['error' => 'Sin permiso.'], 403);
+        $user = auth()->user();
+        if (!$user->puedeVerCobranzaSedes()) return response()->json(['error' => 'Sin permiso.'], 403);
+
+        $sedeFiltro = ($user->isSede() && !$user->isSuperAdmin() && !$user->isAdmin()) ? $user->sede : null;
+        $tipo = $request->get('tipo', 'semanas');
+
+        if ($tipo === 'mensual') {
+            $meses = max(1, min((int) $request->get('meses', 3), 12));
+            return response()->json($this->getKpiMensualData($meses, $sedeFiltro));
+        }
+
         $semanas = max(1, min((int) $request->get('semanas', 8), 26));
-        return response()->json($this->getKpiChartData($semanas));
+        return response()->json($this->getKpiChartData($semanas, $sedeFiltro));
     }
 
     // ── privados ──────────────────────────────────────────────────
@@ -303,7 +313,7 @@ class CajaChicaSedesController extends Controller
         }
     }
 
-    private function getKpiChartData(int $semanas): array
+    private function getKpiChartData(int $semanas, ?string $sede = null): array
     {
         $now         = Carbon::now('America/Lima');
         $semanasData = [];
@@ -312,19 +322,56 @@ class CajaChicaSedesController extends Controller
             $semanasData[] = ['semana' => (int)$f->isoWeek(), 'anio' => (int)$f->isoWeekYear(), 'label' => 'S'.$f->isoWeek().'/'.$f->isoWeekYear()];
         }
 
-        $reportes = ReporteCajaChica::whereIn('semana_numero', array_column($semanasData, 'semana'))
-            ->whereIn('anio', array_unique(array_column($semanasData, 'anio')))
-            ->get()->groupBy('sede');
+        $query = ReporteCajaChica::whereIn('semana_numero', array_column($semanasData, 'semana'))
+            ->whereIn('anio', array_unique(array_column($semanasData, 'anio')));
+        if ($sede) $query->where('sede', $sede);
+        $reportes = $query->get()->groupBy('sede');
 
         $colores  = ['#2563eb','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#ec4899','#84cc16','#f97316','#6366f1'];
         $datasets = [];
 
-        foreach ($reportes->keys()->sort()->values() as $idx => $sede) {
-            $kpis = array_map(fn($s) => ($r = $reportes[$sede]->first(fn($r) => $r->semana_numero === $s['semana'] && $r->anio === $s['anio'])) ? (float)$r->kpi_porcentaje : null, $semanasData);
+        foreach ($reportes->keys()->sort()->values() as $idx => $s) {
+            $kpis = array_map(fn($sw) => ($r = $reportes[$s]->first(fn($r) => $r->semana_numero === $sw['semana'] && $r->anio === $sw['anio'])) ? (float)$r->kpi_porcentaje : null, $semanasData);
             $c = $colores[$idx % count($colores)];
-            $datasets[] = ['label' => $sede, 'data' => $kpis, 'backgroundColor' => $c.'33', 'borderColor' => $c, 'borderWidth' => 2, 'spanGaps' => true, 'tension' => 0.3, 'pointRadius' => 4];
+            $datasets[] = ['label' => $s, 'data' => $kpis, 'backgroundColor' => $c.'33', 'borderColor' => $c, 'borderWidth' => 2, 'spanGaps' => true, 'tension' => 0.3, 'pointRadius' => 4];
         }
 
         return ['labels' => array_column($semanasData, 'label'), 'datasets' => $datasets];
+    }
+
+    private function getKpiMensualData(int $meses, ?string $sede = null): array
+    {
+        $now     = Carbon::now('America/Lima');
+        $nombMes = ['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+
+        $mesesData = [];
+        for ($i = $meses - 1; $i >= 0; $i--) {
+            $f = $now->copy()->subMonths($i);
+            $mesesData[] = ['anio' => (int)$f->year, 'mes' => (int)$f->month, 'label' => $nombMes[$f->month].' '.$f->year];
+        }
+
+        $query = ReporteCajaChica::whereNotNull('semana_inicio')
+            ->where(function ($q) use ($mesesData) {
+                foreach ($mesesData as $m) {
+                    $q->orWhere(fn($q2) => $q2->whereYear('semana_inicio', $m['anio'])->whereMonth('semana_inicio', $m['mes']));
+                }
+            });
+        if ($sede) $query->where('sede', $sede);
+        $reportes = $query->get()->groupBy('sede');
+
+        $colores  = ['#2563eb','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#ec4899','#84cc16','#f97316','#6366f1'];
+        $datasets = [];
+
+        foreach ($reportes->keys()->sort()->values() as $idx => $s) {
+            $kpis = [];
+            foreach ($mesesData as $m) {
+                $rm = $reportes[$s]->filter(fn($r) => optional($r->semana_inicio)->year === $m['anio'] && optional($r->semana_inicio)->month === $m['mes'] && !is_null($r->kpi_porcentaje));
+                $kpis[] = $rm->count() ? round((float)$rm->avg('kpi_porcentaje'), 1) : null;
+            }
+            $c = $colores[$idx % count($colores)];
+            $datasets[] = ['label' => $s, 'data' => $kpis, 'backgroundColor' => $c.'33', 'borderColor' => $c, 'borderWidth' => 2, 'spanGaps' => true, 'tension' => 0.3, 'pointRadius' => 4];
+        }
+
+        return ['labels' => array_column($mesesData, 'label'), 'datasets' => $datasets];
     }
 }

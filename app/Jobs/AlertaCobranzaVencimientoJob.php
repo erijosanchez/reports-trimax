@@ -14,8 +14,8 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Notification;
 
 /**
- * Se ejecuta cada sábado a las 11:00 AM (Lima) — 1 hora antes del límite.
- * Envía alerta a todos los usuarios con rol 'sede' que aún no han enviado su reporte.
+ * Se ejecuta lunes–sábado a las 11:00 AM (Lima) — 1 hora antes del límite diario (12:00 PM).
+ * Solo envía correo a usuarios sede que AÚN NO enviaron el reporte de HOY (anti-spam por check interno).
  */
 class AlertaCobranzaVencimientoJob implements ShouldQueue
 {

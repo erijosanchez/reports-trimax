@@ -13,7 +13,7 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Notification;
 
 /**
- * Ejecuta cada sábado a la 1:00 PM (Lima) — 1 hora antes del límite (2:00 PM).
+ * Ejecuta cada sábado a las 7:00 PM (Lima) — dentro del horario laboral, 5h antes del límite (11:59 PM).
  * Alerta a los usuarios sede que aún no enviaron su reporte de Caja Chica.
  */
 class AlertaCajaChicaVencimientoJob implements ShouldQueue

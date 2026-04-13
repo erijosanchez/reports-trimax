@@ -105,14 +105,14 @@ class ReporteComentarios extends Model
     }
 
     /**
-     * Deadline: jueves 2:00 PM hora Lima.
+     * Deadline: jueves 11:59 PM hora Lima (abierto todo el día).
      */
     public static function datosSemanActual(): array
     {
         $hoy    = Carbon::now('America/Lima');
         $lunes  = $hoy->copy()->startOfWeek(Carbon::MONDAY);
         $jueves = $lunes->copy()->addDays(3);
-        $limite = $jueves->copy()->setTime(14, 0, 0);
+        $limite = $jueves->copy()->setTime(23, 59, 59); // 11:59 PM
 
         return [
             (int) $hoy->isoWeek(),

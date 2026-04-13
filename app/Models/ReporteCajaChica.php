@@ -49,19 +49,28 @@ class ReporteCajaChica extends Model
 
     /**
      * KPI de Caja Chica:
-     *  Enviado el mismo sábado de la semana → 100%
-     *  Cualquier otro día (antes o después) → 0%
+     *  Enviado el sábado (mismo día del vencimiento) → 100%
+     *  Enviado 1 día después (domingo)               → 75%
+     *  Enviado 2 días después (lunes)                → 50%
+     *  Enviado 3+ días después o no enviado          → 0%
      */
     public static function calcularKpi(Carbon $fechaEnvio, Carbon $fechaLimite): float
     {
-        $sabadoSemana = $fechaLimite->copy()->startOfDay();
+        $sabado = $fechaLimite->copy()->startOfDay();
+        $envio  = $fechaEnvio->copy()->startOfDay();
 
-        return $fechaEnvio->isSameDay($sabadoSemana) ? 100.0 : 0.0;
+        if ($envio->lte($sabado)) return 100.0;
+
+        $diasAtraso = (int) $sabado->diffInDays($envio);
+
+        if ($diasAtraso === 1) return 75.0;
+        if ($diasAtraso === 2) return 50.0;
+        return 0.0;
     }
 
     public function recalcularKpi(): void
     {
-        if (!$this->fecha_ultimo_envio) {
+        if (!$this->fecha_envio_original) {
             $this->kpi_porcentaje = 0;
             $this->estado         = 'no_enviado';
             $this->save();
@@ -98,14 +107,14 @@ class ReporteCajaChica extends Model
     }
 
     /**
-     * Deadline: sábado 2:00 PM hora Lima.
+     * Deadline: sábado 11:59 PM hora Lima (abierto todo el día).
      */
     public static function datosSemanActual(): array
     {
         $hoy    = Carbon::now('America/Lima');
         $lunes  = $hoy->copy()->startOfWeek(Carbon::MONDAY);
         $sabado = $lunes->copy()->addDays(5);
-        $limite = $sabado->copy()->setTime(14, 0, 0); // 2:00 PM
+        $limite = $sabado->copy()->setTime(23, 59, 59); // 11:59 PM
 
         return [
             (int) $hoy->isoWeek(),
@@ -124,7 +133,11 @@ class ReporteCajaChica extends Model
 
     public function kpiColor(): string
     {
-        return ((float) $this->kpi_porcentaje) >= 100 ? 'success' : 'danger';
+        $kpi = (float) $this->kpi_porcentaje;
+        if ($kpi >= 100) return 'success';
+        if ($kpi >= 75)  return 'info';
+        if ($kpi >= 50)  return 'warning';
+        return 'danger';
     }
 
     public function estaVencido(): bool

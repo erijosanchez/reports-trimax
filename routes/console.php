@@ -6,6 +6,8 @@ use Illuminate\Support\Facades\Schedule;
 use App\Jobs\AlertaSlaRequerimientosJob;
 use App\Jobs\AlertaCobranzaVencimientoJob;
 use App\Jobs\AlertaCajaChicaVencimientoJob;
+use App\Jobs\AlertaComentariosVencimientoJob;
+use Illuminate\Console\Scheduling\Schedule;
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
@@ -16,16 +18,25 @@ Schedule::job(new AlertaSlaRequerimientosJob)
     ->withoutOverlapping()
     ->onOneServer();
 
-// Alerta de cobranza: sábado a las 11:00 AM (Lima) — 1 hora antes del límite
+// Alerta Depósito de Efectivo: lunes–sábado 11:00 AM (Lima) — 1h antes del límite diario (12:00 PM).
+// Solo dispara correo si el usuario aún no envió el reporte de HOY (anti-spam por check interno).
 Schedule::job(new AlertaCobranzaVencimientoJob)
-    ->weeklyOn(6, '11:00')
+    ->dailyAt('11:00')
+    ->days([Schedule::MONDAY, Schedule::TUESDAY, Schedule::WEDNESDAY, Schedule::THURSDAY, Schedule::FRIDAY, Schedule::SATURDAY])
     ->withoutOverlapping()
     ->onOneServer()
     ->timezone('America/Lima');
 
-// Alerta Caja Chica: sábado 1:00 PM (Lima) — 1 hora antes del límite (2:00 PM)
+// Alerta Caja Chica: sábado 7:00 PM (Lima) — dentro del horario laboral, 5h antes del límite (11:59 PM).
 Schedule::job(new AlertaCajaChicaVencimientoJob)
-    ->weeklyOn(6, '13:00')
+    ->weeklyOn(6, '19:00')
+    ->withoutOverlapping()
+    ->onOneServer()
+    ->timezone('America/Lima');
+
+// Alerta Comentarios: jueves 7:00 PM (Lima) — dentro del horario laboral, 5h antes del límite (11:59 PM).
+Schedule::job(new AlertaComentariosVencimientoJob)
+    ->weeklyOn(4, '19:00')
     ->withoutOverlapping()
     ->onOneServer()
     ->timezone('America/Lima');

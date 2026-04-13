@@ -21,7 +21,7 @@ class CobranzaAlertaVencimiento extends Notification
     public function toMail($notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject("⏰ ALERTA — Tu reporte de cobranza vence en 1 hora | Semana {$this->reporte->semana_numero}/{$this->reporte->anio}")
+            ->subject("⏰ RECORDATORIO — Envía tu reporte de Depósito de Efectivo de HOY antes de las 12:00 PM")
             ->view('emails.productividad.cobranza_alerta', [
                 'reporte'    => $this->reporte,
                 'notifiable' => $notifiable,
