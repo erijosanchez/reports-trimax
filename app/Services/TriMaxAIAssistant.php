@@ -18,35 +18,34 @@ use Carbon\Carbon;
 
 class TriMaxAIAssistant
 {
-    protected $apiKey;
-    protected $apiUrl;
-    protected $model;
     protected $googleSheets;
 
-    // Proveedor de fallback (Groq)
-    protected $fallbackApiKey;
-    protected $fallbackApiUrl;
-    protected $fallbackModel;
+    // Proveedor principal: Groq
+    protected $groqApiKey;
+    protected $groqApiUrl;
+    protected $groqModel;
+    protected $groqFallbackModel;
+
+    // Proveedor de último recurso: OpenRouter
+    protected $openrouterApiKey;
+    protected $openrouterApiUrl;
+    protected $openrouterModel;
+    protected $openrouterFallbackModel;
 
     // Máximo de mensajes de historial a enviar
     protected int $maxHistoryMessages = 10;
 
     public function __construct(GoogleSheetsService $googleSheets)
     {
-        // Proveedor principal: Gemini si tiene key, sino Groq
-        if (config('services.gemini.api_key')) {
-            $this->apiKey    = config('services.gemini.api_key');
-            $this->apiUrl    = config('services.gemini.api_url');
-            $this->model     = config('services.gemini.model');
-            // Fallback: Groq
-            $this->fallbackApiKey   = config('services.groq.api_key');
-            $this->fallbackApiUrl   = config('services.groq.api_url');
-            $this->fallbackModel    = config('services.groq.model');
-        } else {
-            $this->apiKey    = config('services.groq.api_key');
-            $this->apiUrl    = config('services.groq.api_url');
-            $this->model     = config('services.groq.model');
-        }
+        $this->groqApiKey       = config('services.groq.api_key');
+        $this->groqApiUrl       = config('services.groq.api_url');
+        $this->groqModel        = config('services.groq.model');
+        $this->groqFallbackModel = config('services.groq.fallback_model', 'llama-3.1-8b-instant');
+
+        $this->openrouterApiKey           = config('services.openrouter.api_key');
+        $this->openrouterApiUrl           = config('services.openrouter.api_url');
+        $this->openrouterModel            = config('services.openrouter.model');
+        $this->openrouterFallbackModel    = config('services.openrouter.fallback_model', 'meta-llama/llama-3.3-70b-instruct:free');
         $this->googleSheets = $googleSheets;
     }
 
@@ -651,6 +650,10 @@ MÓDULOS DEL SISTEMA:
                 $client->setScopes([Sheets::SPREADSHEETS_READONLY]);
                 $client->setAuthConfig(storage_path('app/google/service-account.json'));
                 $client->setAccessType('offline');
+                $client->setHttpClient(new \GuzzleHttp\Client([
+                    'timeout'         => 15,
+                    'connect_timeout' => 8,
+                ]));
 
                 $service = new Sheets($client);
                 $range = 'Historico!A:G';
@@ -1305,169 +1308,53 @@ MÓDULOS DEL SISTEMA:
 
     protected function callAIWithTools(array $messages, $user = null): ?array
     {
-        // Proveedor principal: Gemini nativo (si tiene key)
-        if ($this->apiKey && $this->fallbackApiKey) {
-            $result = $this->callGeminiNative($messages, $user);
+        // 1. Groq modelo principal (con un reintento si el rate limit es corto)
+        [$result, $status] = $this->callGroqProvider($this->groqApiKey, $this->groqApiUrl, $this->groqModel, $messages, $user);
+        if ($result !== null) {
+            return $result;
+        }
+
+        // Si fue 429 con retry corto (<= 5s), esperar y reintentar una vez
+        if ($status === 429) {
+            sleep(4);
+            [$result] = $this->callGroqProvider($this->groqApiKey, $this->groqApiUrl, $this->groqModel, $messages, $user);
             if ($result !== null) {
                 return $result;
             }
-            Log::warning('AI: Gemini falló, usando Groq como fallback.');
         }
 
-        // Groq como primario o fallback (OpenAI-compatible)
-        $apiKey = $this->fallbackApiKey ?? $this->apiKey;
-        $apiUrl = $this->fallbackApiUrl ?? $this->apiUrl;
-        $model  = $this->fallbackModel  ?? $this->model;
+        // 2. Groq modelo ligero — solo si el request cabe (413 = demasiado grande, saltar)
+        if ($this->groqFallbackModel !== $this->groqModel && $status !== 413) {
+            Log::warning("AI: Groq [{$this->groqModel}] falló, reintentando con [{$this->groqFallbackModel}].");
+            [$result, $lightStatus] = $this->callGroqProvider($this->groqApiKey, $this->groqApiUrl, $this->groqFallbackModel, $messages, $user);
+            if ($result !== null) {
+                return $result;
+            }
+        }
 
-        return $this->callGroqProvider($apiKey, $apiUrl, $model, $messages, $user);
+        // 3. OpenRouter modelo principal
+        if ($this->openrouterApiKey) {
+            Log::warning("AI: Groq agotado, usando OpenRouter [{$this->openrouterModel}].");
+            $result = $this->callOpenRouterProvider($this->openrouterModel, $messages, $user);
+            if ($result !== null) {
+                return $result;
+            }
+
+            // 4. OpenRouter modelo secundario
+            if ($this->openrouterFallbackModel !== $this->openrouterModel) {
+                Log::warning("AI: OpenRouter [{$this->openrouterModel}] falló, reintentando con [{$this->openrouterFallbackModel}].");
+                return $this->callOpenRouterProvider($this->openrouterFallbackModel, $messages, $user);
+            }
+        }
+
+        return null;
     }
 
     /**
-     * Llama a la API nativa de Gemini con function calling
+     * Llama a Groq (o cualquier proveedor OpenAI-compatible).
+     * Retorna [responseArray|null, httpStatus|null]
      */
-    protected function callGeminiNative(array $messages, $user = null): ?array
-    {
-        try {
-            $url = "https://generativelanguage.googleapis.com/v1beta/models/{$this->model}:generateContent?key={$this->apiKey}";
-
-            // Separar system message del resto
-            $systemInstruction = null;
-            $contents = [];
-
-            foreach ($messages as $msg) {
-                $role = $msg['role'];
-
-                if ($role === 'system') {
-                    $systemInstruction = ['parts' => [['text' => $msg['content']]]];
-                    continue;
-                }
-
-                if ($role === 'assistant') {
-                    $parts = [];
-                    if (!empty($msg['tool_calls'])) {
-                        foreach ($msg['tool_calls'] as $tc) {
-                            $args = json_decode($tc['function']['arguments'] ?? '{}', true) ?? [];
-                            // Gemini requiere que args no sea array vacío sino objeto vacío
-                            $parts[] = [
-                                'functionCall' => [
-                                    'name' => $tc['function']['name'],
-                                    'args' => empty($args) ? new \stdClass() : $args,
-                                ],
-                            ];
-                        }
-                    } else {
-                        $parts[] = ['text' => $msg['content'] ?? ''];
-                    }
-                    $contents[] = ['role' => 'model', 'parts' => $parts];
-                    continue;
-                }
-
-                if ($role === 'tool') {
-                    // Respuesta de función — Gemini la espera en un mensaje "user"
-                    $result = json_decode($msg['content'] ?? '{}', true) ?? ['result' => $msg['content']];
-                    $toolResponse = [
-                        'functionResponse' => [
-                            'name'     => $msg['name'] ?? 'unknown',
-                            'response' => $result,
-                        ],
-                    ];
-                    // Si el último contenido es también "user" (otra tool), agrupar
-                    if (!empty($contents) && end($contents)['role'] === 'user') {
-                        $lastIdx = count($contents) - 1;
-                        $contents[$lastIdx]['parts'][] = $toolResponse;
-                    } else {
-                        $contents[] = ['role' => 'user', 'parts' => [$toolResponse]];
-                    }
-                    continue;
-                }
-
-                // Mensaje normal del usuario
-                $contents[] = ['role' => 'user', 'parts' => [['text' => $msg['content'] ?? '']]];
-            }
-
-            // Convertir tools de formato OpenAI a Gemini functionDeclarations
-            $tools = $this->getTools($user);
-            $functionDeclarations = array_map(fn($t) => [
-                'name'        => $t['function']['name'],
-                'description' => $t['function']['description'],
-                'parameters'  => $t['function']['parameters'],
-            ], $tools);
-
-            $payload = [
-                'contents'       => $contents,
-                'tools'          => [['functionDeclarations' => $functionDeclarations]],
-                'toolConfig'     => ['functionCallingConfig' => ['mode' => 'AUTO']],
-                'generationConfig' => [
-                    'temperature'    => 0.1,
-                    'maxOutputTokens' => 2000,
-                ],
-            ];
-
-            if ($systemInstruction) {
-                $payload['systemInstruction'] = $systemInstruction;
-            }
-
-            $response = Http::timeout(60)
-                ->withHeaders(['Content-Type' => 'application/json'])
-                ->post($url, $payload);
-
-            if (!$response->successful()) {
-                Log::error('AI [Gemini] Error: ' . $response->status() . ' - ' . substr($response->body(), 0, 500));
-                return null;
-            }
-
-            return $this->convertGeminiToOpenAI($response->json());
-
-        } catch (\Exception $e) {
-            Log::error('AI [Gemini] Exception: ' . $e->getMessage());
-            return null;
-        }
-    }
-
-    /**
-     * Convierte la respuesta nativa de Gemini al formato OpenAI (que usa el resto del código)
-     */
-    protected function convertGeminiToOpenAI(array $gemini): array
-    {
-        $parts = $gemini['candidates'][0]['content']['parts'] ?? [];
-        $toolCalls = [];
-        $text = '';
-
-        foreach ($parts as $i => $part) {
-            if (isset($part['functionCall'])) {
-                $toolCalls[] = [
-                    'id'       => 'call_' . $i . '_' . substr(md5($part['functionCall']['name'] . $i), 0, 8),
-                    'type'     => 'function',
-                    'function' => [
-                        'name'      => $part['functionCall']['name'],
-                        'arguments' => json_encode($part['functionCall']['args'] ?? []),
-                    ],
-                ];
-            } elseif (isset($part['text'])) {
-                $text .= $part['text'];
-            }
-        }
-
-        $message = ['role' => 'assistant'];
-        if (!empty($toolCalls)) {
-            $message['tool_calls'] = $toolCalls;
-            $message['content']    = null;
-        } else {
-            $message['content'] = $text;
-        }
-
-        return [
-            'choices' => [[
-                'message'       => $message,
-                'finish_reason' => !empty($toolCalls) ? 'tool_calls' : 'stop',
-            ]],
-        ];
-    }
-
-    /**
-     * Llama a Groq (o cualquier proveedor OpenAI-compatible)
-     */
-    protected function callGroqProvider(string $apiKey, string $apiUrl, string $model, array $messages, $user = null): ?array
+    protected function callGroqProvider(string $apiKey, string $apiUrl, string $model, array $messages, $user = null): array
     {
         try {
             $payload = [
@@ -1487,13 +1374,62 @@ MÓDULOS DEL SISTEMA:
                 ->post($apiUrl, $payload);
 
             if ($response->successful()) {
+                return [$response->json(), 200];
+            }
+
+            $status = $response->status();
+            $label = "AI [Groq/{$model}]";
+            if ($status === 429) {
+                Log::warning("{$label} Rate limit (429): " . substr($response->body(), 0, 300));
+            } elseif ($status === 413) {
+                Log::warning("{$label} Payload demasiado grande (413), saltando este modelo.");
+            } else {
+                Log::error("{$label} Error: {$status} - " . substr($response->body(), 0, 500));
+            }
+            return [null, $status];
+        } catch (\Exception $e) {
+            Log::error("AI [Groq/{$model}] Exception: " . $e->getMessage());
+            return [null, null];
+        }
+    }
+
+    /**
+     * Llama a OpenRouter (OpenAI-compatible)
+     */
+    protected function callOpenRouterProvider(string $model, array $messages, $user = null): ?array
+    {
+        try {
+            $payload = [
+                'model'       => $model,
+                'messages'    => $messages,
+                'tools'       => $this->getTools($user),
+                'tool_choice' => 'auto',
+                'temperature' => 0.1,
+                'max_tokens'  => 2000,
+            ];
+
+            $response = Http::timeout(60)
+                ->withHeaders([
+                    'Authorization' => 'Bearer ' . $this->openrouterApiKey,
+                    'Content-Type'  => 'application/json',
+                    'HTTP-Referer'  => config('app.url', 'https://trimax.pe'),
+                    'X-Title'       => 'Trimax AI Assistant',
+                ])
+                ->post($this->openrouterApiUrl, $payload);
+
+            if ($response->successful()) {
                 return $response->json();
             }
 
-            Log::error('AI [Groq] Error: ' . $response->status() . ' - ' . substr($response->body(), 0, 500));
+            $status = $response->status();
+            if ($status === 429) {
+                Log::warning("AI [OpenRouter/{$model}] Rate limit (429): " . substr($response->body(), 0, 300));
+            } else {
+                Log::error("AI [OpenRouter/{$model}] Error: {$status} - " . substr($response->body(), 0, 500));
+            }
             return null;
         } catch (\Exception $e) {
-            Log::error('AI [Groq] Exception: ' . $e->getMessage());
+            Log::error("AI [OpenRouter/{$model}] Exception: " . $e->getMessage());
             return null;
         }
     }

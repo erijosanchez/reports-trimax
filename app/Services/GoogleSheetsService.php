@@ -24,6 +24,10 @@ class GoogleSheetsService
         $this->client->setApplicationName(config('google.application_name'));
         $this->client->setScopes([Sheets::SPREADSHEETS_READONLY]);
         $this->client->setAuthConfig(config('google.service_account_file'));
+        $this->client->setHttpClient(new \GuzzleHttp\Client([
+            'timeout'         => 15,
+            'connect_timeout' => 8,
+        ]));
         $this->service = new Sheets($this->client);
     }
 

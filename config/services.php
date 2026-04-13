@@ -53,12 +53,14 @@ return [
         'api_key' => env('GROQ_API_KEY'),
         'api_url' => 'https://api.groq.com/openai/v1/chat/completions',
         'model' => env('GROQ_MODEL', 'llama-3.3-70b-versatile'),
+        'fallback_model' => env('GROQ_FALLBACK_MODEL', 'llama-3.1-8b-instant'),
     ],
 
-    'gemini' => [
-        'api_key' => env('GEMINI_API_KEY'),
-        'api_url' => 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
-        'model' => env('GEMINI_MODEL', 'gemini-2.0-flash'),
+    'openrouter' => [
+        'api_key' => env('OPENROUTER_API_KEY'),
+        'api_url' => 'https://openrouter.ai/api/v1/chat/completions',
+        'model' => env('OPENROUTER_MODEL', 'openai/gpt-oss-120b:free'),
+        'fallback_model' => env('OPENROUTER_FALLBACK_MODEL', 'meta-llama/llama-3.3-70b-instruct:free'),
     ],
 
 ];
