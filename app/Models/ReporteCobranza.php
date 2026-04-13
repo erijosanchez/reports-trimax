@@ -99,17 +99,19 @@ class ReporteCobranza extends Model
     // ── Helpers ───────────────────────────────────────────────────
 
     /**
-     * Devuelve (o crea) el reporte de la semana actual para una sede dada.
+     * Devuelve (o crea) el reporte del día actual para una sede dada.
+     * Clave única: (sede, semana_inicio) donde semana_inicio = fecha del día.
      */
     public static function obtenerOCrearSemanaActual(int $userId, string $sede): self
     {
         [$semanaNumero, $anio, $inicio, $fin, $limite] = self::datosSemanActual();
 
         return self::firstOrCreate(
-            ['sede' => $sede, 'semana_numero' => $semanaNumero, 'anio' => $anio],
+            ['sede' => $sede, 'semana_inicio' => $inicio],
             [
                 'user_id'       => $userId,
-                'semana_inicio' => $inicio,
+                'semana_numero' => $semanaNumero,
+                'anio'          => $anio,
                 'semana_fin'    => $fin,
                 'fecha_limite'  => $limite,
                 'estado'        => 'pendiente',
@@ -118,21 +120,19 @@ class ReporteCobranza extends Model
     }
 
     /**
-     * Calcula los datos de la semana actual (Lima UTC-5).
-     * Retorna [semana, anio, inicio(lunes), fin(sábado), límite(sáb 12:00)].
+     * Calcula los datos del día actual (Lima UTC-5).
+     * Retorna [dia_del_anio, anio, fecha_hoy, fecha_hoy, límite(hoy 12:00)].
      */
     public static function datosSemanActual(): array
     {
         $hoy    = Carbon::now('America/Lima');
-        $lunes  = $hoy->copy()->startOfWeek(Carbon::MONDAY);
-        $sabado = $lunes->copy()->addDays(5);
-        $limite = $sabado->copy()->setTime(12, 0, 0);
+        $limite = $hoy->copy()->setTime(12, 0, 0);
 
         return [
-            (int) $hoy->isoWeek(),
-            (int) $hoy->isoWeekYear(),
-            $lunes->toDateString(),
-            $sabado->toDateString(),
+            (int) $hoy->dayOfYear(),
+            (int) $hoy->year,
+            $hoy->toDateString(),
+            $hoy->toDateString(),
             $limite,
         ];
     }

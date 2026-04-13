@@ -587,6 +587,17 @@ CREATE TABLE asignacion_bases (
     INDEX idx_anio_mes_estado (anio, mes, estado_asignacion)
 );
 
+/*
+  CAMBIO A MODO DIARIO — Cobranza sedes
+  El reporte ahora es diario (un envío por sede por día antes de las 12:00 PM).
+  Cambiamos el índice único de (sede, semana_numero, anio) → (sede, semana_inicio)
+  donde semana_inicio almacena la fecha exacta del día (YYYY-MM-DD).
+*/
+ALTER TABLE reportes_cobranza
+    DROP INDEX unique_cobranza_sede_semana,
+    ADD UNIQUE KEY unique_cobranza_sede_dia (sede, semana_inicio);
+/*END CAMBIO A MODO DIARIO*/
+
 /** tabla de reportes de cobranzas|*/
 CREATE TABLE `reportes_cobranza` (                                                                                                                                                                                       
     `id`                    BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,                                                                                                                                                           `user_id`               BIGINT UNSIGNED NOT NULL,

@@ -35,24 +35,24 @@ class CobranzaSedesController extends Controller
             abort(403, 'No tienes permiso para acceder al módulo de Cobranza.');
         }
 
-        [$semanaNumero, $anio, , , $limiteCarbon] = ReporteCobranza::datosSemanActual();
+        $hoy = Carbon::now('America/Lima');
+        [, , , , $limiteCarbon] = ReporteCobranza::datosSemanActual();
         $fechaLimiteTs = $limiteCarbon->timestamp * 1000;
+        $fechaDiaLabel = $hoy->format('d/m/Y');
 
-        // Reporte de la semana actual (solo para sede)
+        // Reporte del día actual (solo para sede)
         $reporteSemanaActual = null;
         if ($user->isSede() && $user->sede) {
             $reporteSemanaActual = ReporteCobranza::obtenerOCrearSemanaActual($user->id, $user->sede);
         }
 
-        // Resumen semana actual por sede (para admin/superadmin)
+        // Resumen del día por sede (para admin/superadmin)
         $resumenSedes = null;
         if ($user->isSuperAdmin() || $user->isAdmin()) {
-            // Todas las sedes que tienen usuarios activos con rol sede
             $usuariosSede = User::role('sede')->where('is_active', true)->whereNotNull('sede')->get();
 
-            // Reportes ya registrados esta semana
-            $reportesSemana = ReporteCobranza::where('semana_numero', $semanaNumero)
-                ->where('anio', $anio)
+            // Reportes ya registrados hoy
+            $reportesSemana = ReporteCobranza::where('semana_inicio', $hoy->toDateString())
                 ->get()
                 ->keyBy('sede');
 
@@ -74,8 +74,8 @@ class CobranzaSedesController extends Controller
 
         // Historial (últimas 60 entradas)
         $historialQuery = ReporteCobranza::with('user')
-            ->orderByDesc('anio')
-            ->orderByDesc('semana_numero');
+            ->orderByDesc('semana_inicio')
+            ->orderByDesc('created_at');
 
         if ($user->isSede() && !$user->isSuperAdmin() && !$user->isAdmin()) {
             $historialQuery->where('sede', $user->sede);
@@ -83,16 +83,16 @@ class CobranzaSedesController extends Controller
 
         $historial = $historialQuery->limit(60)->get();
 
-        // Datos KPI para el gráfico (últimas 8 semanas, todas las sedes)
-        $kpiData = $this->getKpiChartData(8);
+        // Datos KPI para el gráfico (últimos 2 meses; sede filtra su propia sede)
+        $sedeFiltro = ($user->isSede() && !$user->isSuperAdmin() && !$user->isAdmin()) ? $user->sede : null;
+        $kpiData = $this->getKpiChartData(2, $sedeFiltro);
 
         return view('productividad.cobranza-sedes.cobranza', compact(
             'reporteSemanaActual',
             'resumenSedes',
             'historial',
             'kpiData',
-            'semanaNumero',
-            'anio',
+            'fechaDiaLabel',
             'fechaLimiteTs'
         ));
     }
@@ -120,9 +120,9 @@ class CobranzaSedesController extends Controller
         $sede = $user->sede ?? 'Sin asignar';
         $reporte = ReporteCobranza::obtenerOCrearSemanaActual($user->id, $sede);
 
-        // Solo se permite un envío inicial (edición va por update)
+        // Solo se permite un envío inicial por día (edición va por update)
         if ($reporte->fecha_envio_original) {
-            return response()->json(['error' => 'Ya enviaste tu reporte esta semana. Usa la opción de editar.'], 422);
+            return response()->json(['error' => 'Ya enviaste tu reporte hoy. Usa la opción de editar.'], 422);
         }
 
         $archivosGuardados = $this->guardarArchivos($request->file('archivos'), $reporte);
@@ -278,10 +278,19 @@ class CobranzaSedesController extends Controller
             return response()->json(['error' => 'Sin permiso.'], 403);
         }
 
-        $semanas = (int) $request->get('semanas', 8);
-        $semanas = max(1, min($semanas, 26));
+        $sedeFiltro = ($user->isSede() && !$user->isSuperAdmin() && !$user->isAdmin()) ? $user->sede : null;
+        $tipo       = $request->get('tipo', 'diario');
 
-        return response()->json($this->getKpiChartData($semanas));
+        if ($tipo === 'mensual') {
+            $meses = max(1, min((int) $request->get('meses', 2), 12));
+            return response()->json($this->getKpiChartData($meses, $sedeFiltro));
+        }
+
+        // tipo = diario: datos día a día del mes solicitado
+        $hoy  = Carbon::now('America/Lima');
+        $mes  = max(1, min((int) $request->get('mes',  $hoy->month), 12));
+        $anio = max(2020, min((int) $request->get('anio', $hoy->year), $hoy->year));
+        return response()->json($this->getKpiDiarioData($mes, $anio, $sedeFiltro));
     }
 
     // ── Historial AJAX ────────────────────────────────────────────
@@ -295,8 +304,8 @@ class CobranzaSedesController extends Controller
         }
 
         $query = ReporteCobranza::with('user')
-            ->orderByDesc('anio')
-            ->orderByDesc('semana_numero');
+            ->orderByDesc('semana_inicio')
+            ->orderByDesc('created_at');
 
         if ($user->isSede() && !$user->isSuperAdmin() && !$user->isAdmin()) {
             $query->where('sede', $user->sede);
@@ -310,9 +319,9 @@ class CobranzaSedesController extends Controller
             return [
                 'id'              => $r->id,
                 'sede'            => $r->sede,
-                'semana'          => "S{$r->semana_numero}/{$r->anio}",
+                'semana'          => $r->semana_inicio?->format('d/m/Y'),
                 'semana_inicio'   => $r->semana_inicio?->format('d/m/Y'),
-                'semana_fin'      => $r->semana_fin?->format('d/m/Y'),
+                'semana_fin'      => null,
                 'fecha_limite'    => $r->fecha_limite?->setTimezone('America/Lima')->format('d/m/Y H:i'),
                 'fecha_envio'     => $r->fecha_envio_original?->setTimezone('America/Lima')->format('d/m/Y H:i'),
                 'fecha_edicion'   => $r->editado_tarde ? $r->fecha_ultimo_envio?->setTimezone('America/Lima')->format('d/m/Y H:i') : null,
@@ -353,7 +362,7 @@ class CobranzaSedesController extends Controller
         return response()->json([
             'id'            => $reporte->id,
             'sede'          => $reporte->sede,
-            'semana'        => "S{$reporte->semana_numero}/{$reporte->anio}",
+            'semana'        => $reporte->semana_inicio?->format('d/m/Y'),
             'fecha_limite'  => $reporte->fecha_limite?->setTimezone('America/Lima')->format('d/m/Y H:i'),
             'fecha_envio'   => $reporte->fecha_envio_original?->setTimezone('America/Lima')->format('d/m/Y H:i'),
             'fecha_edicion' => $reporte->editado_tarde ? $reporte->fecha_ultimo_envio?->setTimezone('America/Lima')->format('d/m/Y H:i') : null,
@@ -373,7 +382,7 @@ class CobranzaSedesController extends Controller
     private function guardarArchivos(array $archivos, ReporteCobranza $reporte): array
     {
         $guardados = [];
-        $dir = "cobranza/{$reporte->anio}/semana-{$reporte->semana_numero}/{$reporte->sede}";
+        $dir = "cobranza/{$reporte->anio}/dia-{$reporte->semana_inicio->format('Y-m-d')}/{$reporte->sede}";
 
         foreach ($archivos as $file) {
             $extension = $file->getClientOriginalExtension();
@@ -412,49 +421,57 @@ class CobranzaSedesController extends Controller
         return $user->isSuperAdmin() || $user->isAdmin() || $reporte->user_id === $user->id;
     }
 
-    private function getKpiChartData(int $semanas): array
+    private function getKpiDiarioData(int $mes, int $anio, ?string $sede = null): array
     {
-        $now = Carbon::now('America/Lima');
+        $inicio = Carbon::create($anio, $mes, 1, 0, 0, 0, 'America/Lima');
+        $fin    = $inicio->copy()->endOfMonth();
+        $hoy    = Carbon::now('America/Lima');
 
-        // Generar últimas N semanas
-        $semanasData = [];
-        for ($i = $semanas - 1; $i >= 0; $i--) {
-            $fecha = $now->copy()->subWeeks($i);
-            $semanasData[] = [
-                'semana' => (int) $fecha->isoWeek(),
-                'anio'   => (int) $fecha->isoWeekYear(),
-                'label'  => 'S' . $fecha->isoWeek() . '/' . $fecha->isoWeekYear(),
-            ];
+        if ($fin->greaterThan($hoy)) {
+            $fin = $hoy->copy();
         }
 
-        $semanaNumeros = array_column($semanasData, 'semana');
-        $anios         = array_unique(array_column($semanasData, 'anio'));
+        // Generar días del mes hasta hoy
+        $diasData = [];
+        $cursor   = $inicio->copy();
+        while ($cursor->lte($fin)) {
+            $diasData[] = [
+                'fecha' => $cursor->toDateString(),
+                'label' => $cursor->format('d'),
+            ];
+            $cursor->addDay();
+        }
 
-        // Obtener reportes de esas semanas
-        $reportes = ReporteCobranza::whereIn('semana_numero', $semanaNumeros)
-            ->whereIn('anio', $anios)
-            ->get()
-            ->groupBy('sede');
+        if (empty($diasData)) {
+            return ['labels' => [], 'datasets' => []];
+        }
 
-        // Colores para las sedes
+        $fechas = array_column($diasData, 'fecha');
+        $query  = ReporteCobranza::whereIn('semana_inicio', $fechas);
+        if ($sede) {
+            $query->where('sede', $sede);
+        }
+        $reportes = $query->get()->groupBy('sede');
+
         $colores = [
             '#2563eb', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
             '#06b6d4', '#ec4899', '#84cc16', '#f97316', '#6366f1',
         ];
 
-        $sedes    = $reportes->keys()->sort()->values();
         $datasets = [];
-
-        foreach ($sedes as $idx => $sede) {
+        foreach ($reportes->keys()->sort()->values() as $idx => $sedeNombre) {
             $kpis = [];
-            foreach ($semanasData as $s) {
-                $rep = $reportes[$sede]->first(fn($r) => $r->semana_numero === $s['semana'] && $r->anio === $s['anio']);
-                $kpis[] = $rep ? (float) $rep->kpi_porcentaje : null;
+            foreach ($diasData as $d) {
+                $rep    = $reportes[$sedeNombre]->first(
+                    fn($r) => optional($r->semana_inicio)->toDateString() === $d['fecha']
+                );
+                $kpis[] = ($rep && !is_null($rep->kpi_porcentaje))
+                    ? (float) $rep->kpi_porcentaje
+                    : null;
             }
-
-            $color = $colores[$idx % count($colores)];
+            $color      = $colores[$idx % count($colores)];
             $datasets[] = [
-                'label'           => $sede,
+                'label'           => $sedeNombre,
                 'data'            => $kpis,
                 'backgroundColor' => $color . '33',
                 'borderColor'     => $color,
@@ -466,7 +483,80 @@ class CobranzaSedesController extends Controller
         }
 
         return [
-            'labels'   => array_column($semanasData, 'label'),
+            'labels'   => array_column($diasData, 'label'),
+            'datasets' => $datasets,
+        ];
+    }
+
+    private function getKpiChartData(int $meses, ?string $sede = null): array
+    {
+        $now     = Carbon::now('America/Lima');
+        $nombMes = ['', 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+
+        // Generar últimos N meses
+        $mesesData = [];
+        for ($i = $meses - 1; $i >= 0; $i--) {
+            $fecha = $now->copy()->subMonths($i);
+            $mesesData[] = [
+                'anio'  => (int) $fecha->year,
+                'mes'   => (int) $fecha->month,
+                'label' => $nombMes[$fecha->month] . ' ' . $fecha->year,
+            ];
+        }
+
+        // Obtener reportes de esos meses
+        $query = ReporteCobranza::whereNotNull('semana_inicio')
+            ->where(function ($q) use ($mesesData) {
+                foreach ($mesesData as $m) {
+                    $q->orWhere(function ($q2) use ($m) {
+                        $q2->whereYear('semana_inicio', $m['anio'])
+                           ->whereMonth('semana_inicio', $m['mes']);
+                    });
+                }
+            });
+
+        if ($sede) {
+            $query->where('sede', $sede);
+        }
+
+        $reportes = $query->get()->groupBy('sede');
+
+        $colores = [
+            '#2563eb', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
+            '#06b6d4', '#ec4899', '#84cc16', '#f97316', '#6366f1',
+        ];
+
+        $sedes    = $reportes->keys()->sort()->values();
+        $datasets = [];
+
+        foreach ($sedes as $idx => $nombreSede) {
+            $kpis = [];
+            foreach ($mesesData as $m) {
+                $reportesMes = $reportes[$nombreSede]->filter(
+                    fn($r) => optional($r->semana_inicio)->year  === $m['anio']
+                           && optional($r->semana_inicio)->month === $m['mes']
+                           && !is_null($r->kpi_porcentaje)
+                );
+                $kpis[] = $reportesMes->count()
+                    ? round((float) $reportesMes->avg('kpi_porcentaje'), 1)
+                    : null;
+            }
+
+            $color = $colores[$idx % count($colores)];
+            $datasets[] = [
+                'label'           => $nombreSede,
+                'data'            => $kpis,
+                'backgroundColor' => $color . '33',
+                'borderColor'     => $color,
+                'borderWidth'     => 2,
+                'spanGaps'        => true,
+                'tension'         => 0.3,
+                'pointRadius'     => 4,
+            ];
+        }
+
+        return [
+            'labels'   => array_column($mesesData, 'label'),
             'datasets' => $datasets,
         ];
     }
