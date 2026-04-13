@@ -347,19 +347,18 @@
                                     </div>
                                 </div>
 
-                                {{-- Fila 3: Por consultor por mes (con filtro) --}}
+                                {{-- Fila 3: Acuerdos por Consultor en un Mes --}}
                                 <div class="mb-4 col-md-12">
                                     <div class="shadow-sm card">
                                         <div class="card-body">
                                             <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
                                                 <h6 class="mb-0 text-primary">
-                                                    <i class="mdi mdi-account-clock"></i> Acuerdos por Mes de un Consultor
+                                                    <i class="mdi mdi-account-group"></i> Acuerdos por Consultor en el Mes
                                                 </h6>
-                                                <select id="filtroConsultorGrafico" class="form-select form-select-sm" style="width:220px;">
-                                                    <option value="">— Todos los consultores —</option>
+                                                <select id="filtroMesConsultor" class="form-select form-select-sm" style="width:180px;">
                                                 </select>
                                             </div>
-                                            <div style="position:relative; height:260px;">
+                                            <div style="position:relative; height:300px;">
                                                 <canvas id="chartConsultorMes"></canvas>
                                             </div>
                                         </div>
@@ -2188,7 +2187,7 @@
             /* ---- 1. Ranking usuarios ---- */
             const porUsuario = {};
             data.forEach(a => {
-                const n = a.creador ? a.creador.name : 'Sin asignar';
+                const n = a.consultor ? a.consultor : 'Sin asignar';
                 porUsuario[n] = (porUsuario[n] || 0) + 1;
             });
             const usuariosSort = Object.entries(porUsuario).sort((a,b) => b[1]-a[1]);
@@ -2305,28 +2304,33 @@
                 }
             });
 
-            /* ---- 5. Por consultor por mes (con filtro) ---- */
-            const consultoresUnicos = [...new Set(data.map(a => a.consultor).filter(Boolean))].sort();
-            const selectConsultor = document.getElementById('filtroConsultorGrafico');
-            consultoresUnicos.forEach(c => {
+            /* ---- 5. Acuerdos por consultor en un mes (filtro por mes) ---- */
+            const mesesUnicos = [...new Set(data.map(a => a.created_at ? a.created_at.substring(0,7) : null).filter(Boolean))].sort();
+            const selectMes = document.getElementById('filtroMesConsultor');
+            mesesUnicos.forEach(m => {
                 const opt = document.createElement('option');
-                opt.value = c;
-                opt.textContent = c;
-                selectConsultor.appendChild(opt);
+                opt.value = m;
+                opt.textContent = labelMes(m);
+                selectMes.appendChild(opt);
             });
 
-            function calcDataConsultor(consultor) {
-                const filtrado = consultor ? data.filter(a => a.consultor === consultor) : data;
-                const mMap = {};
+            function calcDataConsultorPorMes(mes) {
+                const filtrado = mes ? data.filter(a => a.created_at && a.created_at.startsWith(mes)) : data;
+                const cMap = {};
                 filtrado.forEach(a => {
-                    const ym = a.created_at ? a.created_at.substring(0,7) : null;
-                    if (ym) mMap[ym] = (mMap[ym] || 0) + 1;
+                    const c = a.consultor ? a.consultor : 'Sin asignar';
+                    cMap[c] = (cMap[c] || 0) + 1;
                 });
-                const meses = Object.keys(mMap).sort();
-                return { labels: meses.map(labelMes), data: meses.map(m => mMap[m]) };
+                const sorted = Object.entries(cMap).sort((a,b) => b[1]-a[1]);
+                return {
+                    labels: sorted.map(e => e[0]),
+                    data: sorted.map(e => e[1])
+                };
             }
 
-            const initConsultor = calcDataConsultor('');
+            const mesActual = new Date().toISOString().substring(0,7);
+            selectMes.value = mesesUnicos.includes(mesActual) ? mesActual : (mesesUnicos[mesesUnicos.length - 1] || '');
+            const initConsultor = calcDataConsultorPorMes(selectMes.value);
             chartConsultorMesInst = crearGrafico('chartConsultorMes', {
                 type: 'bar',
                 data: {
@@ -2334,9 +2338,7 @@
                     datasets: [{
                         label: 'Acuerdos',
                         data: initConsultor.data,
-                        backgroundColor: 'rgba(99,102,241,0.75)',
-                        borderColor: '#6366F1',
-                        borderWidth: 1,
+                        backgroundColor: initConsultor.labels.map((_,i) => COLORES[i % COLORES.length]),
                         borderRadius: 5
                     }]
                 },
@@ -2348,11 +2350,11 @@
                 }
             });
 
-            $('#filtroConsultorGrafico').on('change', function() {
-                const d = calcDataConsultor(this.value);
+            $('#filtroMesConsultor').on('change', function() {
+                const d = calcDataConsultorPorMes(this.value);
                 chartConsultorMesInst.data.labels = d.labels;
                 chartConsultorMesInst.data.datasets[0].data = d.data;
-                chartConsultorMesInst.data.datasets[0].label = this.value || 'Todos los consultores';
+                chartConsultorMesInst.data.datasets[0].backgroundColor = d.labels.map((_,i) => COLORES[i % COLORES.length]);
                 chartConsultorMesInst.update();
             });
 
