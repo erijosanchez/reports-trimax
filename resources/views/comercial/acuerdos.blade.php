@@ -249,6 +249,9 @@
                                                                 @endif
                                                                 <th width="50">#</th>
                                                                 <th style="min-width: 130px;">N° Acuerdo</th>
+                                                                <th style="min-width: 130px;" class="bg-primary text-white">Estado</th>
+                                                                <th style="min-width: 130px;" class="bg-warning text-dark">Validado</th>
+                                                                <th style="min-width: 130px;" class="bg-info text-white">Aprobado</th>
                                                                 <th style="min-width: 120px;">Sede</th>
                                                                 <th style="min-width: 130px;">RUC</th>
                                                                 <th style="min-width: 250px;">Razón Social</th>
@@ -262,12 +265,6 @@
                                                                 <th style="min-width: 130px;">Material</th>
                                                                 <th style="min-width: 110px;">Fecha Inicio</th>
                                                                 <th style="min-width: 110px;">Fecha Fin</th>
-                                                                <th style="min-width: 130px;"
-                                                                    class="bg-primary text-white">Estado</th>
-                                                                <th style="min-width: 130px;"
-                                                                    class="bg-warning text-dark">Validado</th>
-                                                                <th style="min-width: 130px;" class="bg-info text-white">
-                                                                    Aprobado</th>
                                                                 <th style="min-width: 150px;">Creado Por</th>
                                                                 <th style="min-width: 200px;" class="text-center">Acciones
                                                                 </th>
@@ -538,8 +535,8 @@
 
                             <div class="col-md-12">
                                 <div class="mb-3">
-                                    <label class="form-label">Comentarios</label>
-                                    <textarea class="form-control" name="comentarios" rows="3" placeholder="NO APLICA SOBRE PROMOCIONES VIGENTES"></textarea>
+                                    <label class="form-label">Comentarios <span class="text-danger">*</span></label>
+                                    <textarea class="form-control" name="comentarios" rows="3" placeholder="NO APLICA SOBRE PROMOCIONES VIGENTES" required></textarea>
                                 </div>
                             </div>
                         </div>
@@ -1242,19 +1239,6 @@
                         ${canManageAcuerdos ? `<td class="text-center"><input type="checkbox" class="check-acuerdo form-check-input" data-id="${acuerdo.id}" style="cursor:pointer;width:18px;height:18px;" ${esDeshabilitado ? 'disabled title="Deshabilitado"' : ''}></td>` : ''}
                         <td class="text-center">${numFila}</td>
                         <td><strong class="text-primary">${acuerdo.numero_acuerdo}</strong></td>
-                        <td>${acuerdo.sede}</td>
-                        <td>${acuerdo.ruc}</td>
-                        <td title="${acuerdo.razon_social}"><strong>${acuerdo.razon_social}</strong></td>
-                        <td>${acuerdo.consultor}</td>
-                        <td>${acuerdo.ciudad}</td>
-                        <td title="${acuerdo.acuerdo_comercial}">${truncar(acuerdo.acuerdo_comercial, 70)}</td>
-                        <td>${acuerdo.tipo_promocion}</td>
-                        <td>${acuerdo.marca}</td>
-                        <td>${acuerdo.ar}</td>
-                        <td>${acuerdo.disenos}</td>
-                        <td>${acuerdo.material}</td>
-                        <td><small>${formatearFecha(acuerdo.fecha_inicio)}</small></td>
-                        <td><small>${formatearFecha(acuerdo.fecha_fin)}</small></td>
                         <td>${badgeEstado}</td>
                         <td>
                             ${badgeValidado}
@@ -1292,6 +1276,19 @@
                                 </button>
                             ` : ''}
                         </td>
+                        <td>${acuerdo.sede}</td>
+                        <td>${acuerdo.ruc}</td>
+                        <td title="${acuerdo.razon_social}"><strong>${acuerdo.razon_social}</strong></td>
+                        <td>${acuerdo.consultor}</td>
+                        <td>${acuerdo.ciudad}</td>
+                        <td title="${acuerdo.acuerdo_comercial}">${truncar(acuerdo.acuerdo_comercial, 70)}</td>
+                        <td>${acuerdo.tipo_promocion}</td>
+                        <td>${acuerdo.marca}</td>
+                        <td>${acuerdo.ar}</td>
+                        <td>${acuerdo.disenos}</td>
+                        <td>${acuerdo.material}</td>
+                        <td><small>${formatearFecha(acuerdo.fecha_inicio)}</small></td>
+                        <td><small>${formatearFecha(acuerdo.fecha_fin)}</small></td>
                         <td>${acuerdo.creador ? acuerdo.creador.name : '-'}</td>
                         <td class="text-center">
                             <div class="btn-group" role="group">

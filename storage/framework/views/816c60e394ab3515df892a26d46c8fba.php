@@ -543,8 +543,8 @@
 
                             <div class="col-md-12">
                                 <div class="mb-3">
-                                    <label class="form-label">Comentarios</label>
-                                    <textarea class="form-control" name="comentarios" rows="3" placeholder="Observaciones adicionales"></textarea>
+                                    <label class="form-label">Comentarios <span class="text-danger">*</span></label>
+                                    <textarea class="form-control" name="comentarios" rows="3" placeholder="Observaciones adicionales" required></textarea>
                                 </div>
                             </div>
                         </div>

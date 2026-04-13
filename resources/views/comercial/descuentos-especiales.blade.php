@@ -231,6 +231,8 @@
                                                             <tr>
                                                                 <th width="50">#</th>
                                                                 <th style="min-width: 130px;">N° Descuento</th>
+                                                                <th style="min-width: 130px;" class="bg-warning text-dark">Aplicado</th>
+                                                                <th style="min-width: 130px;" class="bg-info text-white">Aprobado</th>
                                                                 <th style="min-width: 130px;">N° Factura</th>
                                                                 <th style="min-width: 130px;">N° Orden</th>
                                                                 <th style="min-width: 120px;">Sede</th>
@@ -245,12 +247,6 @@
                                                                 <th style="min-width: 130px;">Diseños</th>
                                                                 <th style="min-width: 130px;">Material</th>
                                                                 <th style="min-width: 110px;">Fecha Registro</th>
-                                                                <th style="min-width: 130px;"
-                                                                    class="bg-warning text-dark">
-                                                                    Aplicado</th>
-                                                                <th style="min-width: 130px;" class="bg-info text-white">
-                                                                    Aprobado
-                                                                </th>
                                                                 <th style="min-width: 150px;">Creado Por</th>
                                                                 <th style="min-width: 200px;" class="text-center">Acciones
                                                                 </th>
@@ -545,8 +541,8 @@
 
                             <div class="col-md-12">
                                 <div class="mb-3">
-                                    <label class="form-label">Comentarios</label>
-                                    <textarea class="form-control" name="comentarios" rows="3" placeholder="Observaciones adicionales"></textarea>
+                                    <label class="form-label">Comentarios <span class="text-danger">*</span></label>
+                                    <textarea class="form-control" name="comentarios" rows="3" placeholder="Observaciones adicionales" required></textarea>
                                 </div>
                             </div>
                         </div>
@@ -1026,20 +1022,6 @@
                 <tr ${esDeshabilitado ? 'class="table-secondary"' : ''}>
                     <td class="text-center">${numFila}</td>
                     <td><strong class="text-primary">${descuento.numero_descuento}</strong></td>
-                    <td>${descuento.numero_factura || '-'}</td>
-                    <td>${descuento.numero_orden || '-'}</td>
-                    <td>${descuento.sede}</td>
-                    <td>${descuento.ruc}</td>
-                    <td title="${descuento.razon_social}"><strong>${descuento.razon_social}</strong></td>
-                    <td>${descuento.consultor}</td>
-                    <td>${descuento.ciudad}</td>
-                    <td title="${descuento.descuento_especial}">${truncar(descuento.descuento_especial, 70)}</td>
-                    <td><span class="badge bg-secondary">${descuento.tipo}</span></td>
-                    <td>${descuento.marca}</td>
-                    <td>${descuento.ar || '-'}</td>
-                    <td>${descuento.disenos || '-'}</td>
-                    <td>${descuento.material || '-'}</td>
-                    <td><small>${formatearFecha(descuento.created_at)}</small></td>
                     <td>
                         ${badgeAplicado}
                         ${canAplicar && descuento.aplicado === 'Pendiente' && !esDeshabilitado ? `
@@ -1076,6 +1058,20 @@
                             </button>
                         ` : ''}
                     </td>
+                    <td>${descuento.numero_factura || '-'}</td>
+                    <td>${descuento.numero_orden || '-'}</td>
+                    <td>${descuento.sede}</td>
+                    <td>${descuento.ruc}</td>
+                    <td title="${descuento.razon_social}"><strong>${descuento.razon_social}</strong></td>
+                    <td>${descuento.consultor}</td>
+                    <td>${descuento.ciudad}</td>
+                    <td title="${descuento.descuento_especial}">${truncar(descuento.descuento_especial, 70)}</td>
+                    <td><span class="badge bg-secondary">${descuento.tipo}</span></td>
+                    <td>${descuento.marca}</td>
+                    <td>${descuento.ar || '-'}</td>
+                    <td>${descuento.disenos || '-'}</td>
+                    <td>${descuento.material || '-'}</td>
+                    <td><small>${formatearFecha(descuento.created_at)}</small></td>
                     <td>${descuento.creador ? descuento.creador.name : '-'}</td>
                     <td class="text-center">
                         <div class="btn-group" role="group">

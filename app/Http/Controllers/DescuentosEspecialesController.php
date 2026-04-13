@@ -115,7 +115,7 @@ class DescuentosEspecialesController extends Controller
                 'ar' => 'nullable|string',
                 'disenos' => 'nullable|string',
                 'material' => 'nullable|string',
-                'comentarios' => 'nullable|string',
+                'comentarios' => 'required|string|min:1',
                 'archivos.*' => 'nullable|file|max:10240'
             ]);
 

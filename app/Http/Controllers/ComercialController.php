@@ -305,7 +305,7 @@ class ComercialController extends Controller
                 'ar' => 'nullable|string',
                 'disenos' => 'nullable|string',
                 'material' => 'nullable|string',
-                'comentarios' => 'nullable|string',
+                'comentarios' => 'required|string|min:1',
                 'fecha_inicio' => 'required|date',
                 'fecha_fin' => 'required|date|after_or_equal:fecha_inicio',
                 'archivos.*' => 'nullable|file|max:10240'
