@@ -253,7 +253,7 @@
                     <li class="nav-item">
                         <a class="nav-link {{ request()->routeIs('productividad.cobranza-sedes.cobranza.index') ? 'active' : '' }}"
                             href="{{ route('productividad.cobranza-sedes.cobranza.index') }}">
-                            Cobranza
+                            Depósito de Efectivo
                         </a>
                     </li>
                     <li class="nav-item">

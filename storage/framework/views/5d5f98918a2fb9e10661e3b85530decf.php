@@ -253,7 +253,7 @@
                     <li class="nav-item">
                         <a class="nav-link <?php echo request()->routeIs('productividad.cobranza-sedes.cobranza.index') ? 'active' : ''; ?>"
                             href="<?php echo route('productividad.cobranza-sedes.cobranza.index'); ?>">
-                            Cobranza
+                            Depósito de Efectivo
                         </a>
                     </li>
                     <li class="nav-item">

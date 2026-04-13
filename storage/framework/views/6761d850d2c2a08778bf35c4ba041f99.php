@@ -1,4 +1,4 @@
-<?php $__env->startSection('title', 'Cobranza Sedes'); ?>
+<?php $__env->startSection('title', 'Depósito de Efectivo'); ?>
 
 <?php $__env->startSection('content'); ?>
 <div class="content-wrapper">
@@ -9,7 +9,7 @@
                     <div class="d-flex align-items-center justify-content-between px-4 py-3 card-body">
                         <div>
                             <h4 class="mb-0 fw-bold">
-                                <i class="me-2 text-primary mdi mdi-currency-usd"></i>Cobranza Sedes
+                                <i class="me-2 text-primary mdi mdi-currency-usd"></i>Depósito de Efectivo
                             </h4>
                             <p class="mb-0 text-muted small">Reporte semanal — límite: sábado 12:00 PM</p>
                         </div>
@@ -649,34 +649,39 @@ actualizarCountdown();
 setInterval(actualizarCountdown, 1000);
 
 // ── Drop zones ────────────────────────────────────────────────────
+// Acumulador independiente por inputId para evitar duplicados
+const _acumulados = {};
+
 function setupDropZone(zoneId, inputId, previewId) {
     const zone    = document.getElementById(zoneId);
     const input   = document.getElementById(inputId);
     const preview = document.getElementById(previewId);
     if (!zone || !input) return;
 
+    _acumulados[inputId] = new DataTransfer();
+
     zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
     zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
     zone.addEventListener('drop', e => {
         e.preventDefault();
         zone.classList.remove('dragover');
-        agregarArchivos(e.dataTransfer.files, input, preview);
+        agregarArchivos(e.dataTransfer.files, inputId, preview);
     });
-    input.addEventListener('change', () => agregarArchivos(input.files, input, preview));
+    input.addEventListener('change', () => {
+        // input.files ya tiene SOLO la nueva selección del diálogo;
+        // usamos el acumulador para preservar los anteriores sin duplicar.
+        agregarArchivos(input.files, inputId, preview);
+        input.value = ''; // permite re-seleccionar el mismo archivo
+    });
 }
 
-function agregarArchivos(files, input, preview) {
-    const dt = new DataTransfer();
-    // Preservar existentes
-    if (input.files) {
-        for (const f of input.files) dt.items.add(f);
-    }
-    for (const f of files) dt.items.add(f);
-    input.files = dt.files;
-    renderPreview(input.files, preview, input);
+function agregarArchivos(newFiles, inputId, preview) {
+    const dt = _acumulados[inputId];
+    for (const f of newFiles) dt.items.add(f);
+    renderPreview(dt.files, preview, inputId);
 }
 
-function renderPreview(files, preview, input) {
+function renderPreview(files, preview, inputId) {
     preview.innerHTML = '';
     for (let i = 0; i < files.length; i++) {
         const f   = files[i];
@@ -691,23 +696,24 @@ function renderPreview(files, preview, input) {
                             <i class="text-success mdi mdi-file-excel"></i>
                        </div>`
                 }
-                <button type="button" class="preview-remove" onclick="quitarArchivo(${i}, this)">×</button>
+                <button type="button" class="preview-remove" onclick="quitarArchivo(${i}, '${inputId}')">×</button>
                 <div class="text-muted preview-name">${f.name}</div>
             </div>`;
         preview.appendChild(col);
     }
 }
 
-function quitarArchivo(idx, btn) {
-    const preview = btn.closest('[id^="preview"]');
-    const inputId = preview.id.replace('preview', 'archivos');
+function quitarArchivo(idx, inputId) {
     const input   = document.getElementById(inputId);
+    const preview = document.getElementById(inputId.replace('archivos', 'preview'));
     const dt      = new DataTransfer();
-    for (let i = 0; i < input.files.length; i++) {
-        if (i !== idx) dt.items.add(input.files[i]);
+    const current = _acumulados[inputId].files;
+    for (let i = 0; i < current.length; i++) {
+        if (i !== idx) dt.items.add(current[i]);
     }
+    _acumulados[inputId] = dt;
     input.files = dt.files;
-    renderPreview(input.files, preview, input);
+    renderPreview(dt.files, preview, inputId);
 }
 
 setupDropZone('drop-zone-nuevo', 'archivos-nuevo', 'preview-nuevo');
@@ -737,6 +743,8 @@ if (formEnviar) {
         e.preventDefault();
         const btn = document.getElementById('btn-enviar');
         const msg = document.getElementById('msg-enviar');
+        // Sync accumulator → input before FormData reads it
+        document.getElementById('archivos-nuevo').files = _acumulados['archivos-nuevo'].files;
         const fd  = new FormData(this);
 
         btn.disabled  = true;
@@ -765,6 +773,8 @@ if (formEditar) {
         const msg       = document.getElementById('msg-editar');
         const reporteId = this.querySelector('[name="reporte_id"]').value;
 
+        // Sync accumulator → input before FormData reads it
+        document.getElementById('archivos-edit').files = _acumulados['archivos-edit'].files;
         // FormData ya trae _method=PUT del <?php echo method_field('PUT'); ?> en el form
         const fd = new FormData(this);
 
@@ -1034,13 +1044,8 @@ function usarFoto() {
     const ts   = new Date().toISOString().replace(/[:.]/g,'-');
     const file = new File([_fotoBlob], `foto-${ts}.jpg`, { type: 'image/jpeg' });
 
-    const input   = document.getElementById(_camaraInputId);
     const preview = document.getElementById(_camaraPreviewId);
-    const dt      = new DataTransfer();
-    if (input.files) for (const f of input.files) dt.items.add(f);
-    dt.items.add(file);
-    input.files = dt.files;
-    renderPreview(input.files, preview, input);
+    agregarArchivos([file], _camaraInputId, preview);
 
     cerrarCamara();
 }
