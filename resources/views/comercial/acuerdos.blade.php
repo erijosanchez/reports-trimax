@@ -25,7 +25,7 @@
                         <ul class="nav nav-tabs" id="acuerdosTabs" role="tablist">
                             <li class="nav-item" role="presentation">
                                 <a class="nav-link active" data-bs-toggle="tab" href="#tabAcuerdos" role="tab">
-                                    <i class="mdi mdi-table"></i> Acuerdos
+                                    <i class="mdi-table mdi"></i> Acuerdos
                                 </a>
                             </li>
                             <li class="nav-item" role="presentation">
@@ -222,11 +222,11 @@
 
                                                 @if(in_array(auth()->user()->email, ['smonopoli@trimaxperu.com','planeamiento.comercial@trimaxperu.com']))
                                                 {{-- Barra de selección masiva --}}
-                                                <div id="barraSeleccion" class="d-none alert alert-success d-flex align-items-center justify-content-between mb-3 py-2" style="border-left:4px solid #198754;">
+                                                <div id="barraSeleccion" class="d-flex align-items-center justify-content-between mb-3 py-2 d-none alert alert-success" style="border-left:4px solid #198754;">
                                                     <div class="d-flex align-items-center gap-2">
                                                         <i class="mdi mdi-check-circle fs-5"></i>
                                                         <strong id="contadorSeleccionados">0</strong>&nbsp;acuerdo(s) seleccionado(s)
-                                                        <button type="button" class="btn btn-sm btn-link text-success p-0 ms-2" id="btnDeseleccionarTodo">Deseleccionar todo</button>
+                                                        <button type="button" class="ms-2 p-0 text-success btn btn-sm btn-link" id="btnDeseleccionarTodo">Deseleccionar todo</button>
                                                     </div>
                                                     <div>
                                                         <button type="button" class="btn btn-success btn-sm" id="btnExtenderMasivo">
@@ -294,12 +294,12 @@
 
                                 {{-- Fila 1: Ranking usuarios | Total por mes --}}
                                 <div class="mb-4 col-md-6">
-                                    <div class="shadow-sm card h-100">
+                                    <div class="shadow-sm h-100 card">
                                         <div class="card-body">
                                             <h6 class="mb-3 text-primary">
                                                 <i class="mdi mdi-account-star"></i> Ranking de Acuerdos por Consultor
                                             </h6>
-                                            <div style="position:relative; height:320px;">
+                                            <div style="position:relative;" id="chartUsuariosWrap">
                                                 <canvas id="chartUsuarios"></canvas>
                                             </div>
                                         </div>
@@ -307,7 +307,7 @@
                                 </div>
 
                                 <div class="mb-4 col-md-6">
-                                    <div class="shadow-sm card h-100">
+                                    <div class="shadow-sm h-100 card">
                                         <div class="card-body">
                                             <h6 class="mb-3 text-primary">
                                                 <i class="mdi mdi-chart-line"></i> Total de Acuerdos por Mes
@@ -321,7 +321,7 @@
 
                                 {{-- Fila 2: Total por sede | Sede por mes --}}
                                 <div class="mb-4 col-md-6">
-                                    <div class="shadow-sm card h-100">
+                                    <div class="shadow-sm h-100 card">
                                         <div class="card-body">
                                             <h6 class="mb-3 text-primary">
                                                 <i class="mdi mdi-office-building"></i> Total de Acuerdos por Sede
@@ -334,7 +334,7 @@
                                 </div>
 
                                 <div class="mb-4 col-md-6">
-                                    <div class="shadow-sm card h-100">
+                                    <div class="shadow-sm h-100 card">
                                         <div class="card-body">
                                             <h6 class="mb-3 text-primary">
                                                 <i class="mdi mdi-chart-bar-stacked"></i> Acuerdos por Sede y Mes
@@ -351,11 +351,11 @@
                                 <div class="mb-4 col-md-12">
                                     <div class="shadow-sm card">
                                         <div class="card-body">
-                                            <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+                                            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
                                                 <h6 class="mb-0 text-primary">
-                                                    <i class="mdi mdi-account-group"></i> Acuerdos por Consultor en el Mes
+                                                    <i class="mdi-account-group mdi"></i> Acuerdos por Consultor en el Mes
                                                 </h6>
-                                                <select id="filtroMesConsultor" class="form-select form-select-sm" style="width:180px;">
+                                                <select id="filtroMesConsultor" class="form-select-sm form-select" style="width:180px;">
                                                 </select>
                                             </div>
                                             <div style="position:relative; height:300px;">
@@ -1344,14 +1344,14 @@
             const inicio = (currentPage - 1) * PER_PAGE + 1;
             const fin = Math.min(currentPage * PER_PAGE, total);
 
-            let html = `<div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+            let html = `<div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
                 <small class="text-muted">Mostrando <strong>${inicio}–${fin}</strong> de <strong>${total}</strong> acuerdo(s)</small>
-                <nav aria-label="Paginación"><ul class="pagination pagination-sm mb-0">`;
+                <nav aria-label="Paginación"><ul class="mb-0 pagination pagination-sm">`;
 
             // Anterior
             html += `<li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
                 <a class="page-link" href="#" onclick="irAPagina(event,${currentPage - 1})">
-                    <i class="mdi mdi-chevron-left"></i>
+                    <i class="mdi-chevron-left mdi"></i>
                 </a></li>`;
 
             // Páginas visibles (ventana de 5)
@@ -1377,7 +1377,7 @@
             // Siguiente
             html += `<li class="page-item ${currentPage >= totalPaginas ? 'disabled' : ''}">
                 <a class="page-link" href="#" onclick="irAPagina(event,${currentPage + 1})">
-                    <i class="mdi mdi-chevron-right"></i>
+                    <i class="mdi-chevron-right mdi"></i>
                 </a></li>`;
 
             html += `</ul></nav></div>`;
@@ -2191,6 +2191,8 @@
                 porUsuario[n] = (porUsuario[n] || 0) + 1;
             });
             const usuariosSort = Object.entries(porUsuario).sort((a,b) => b[1]-a[1]);
+            const alturaUsuarios = Math.max(320, usuariosSort.length * 20);
+            document.getElementById('chartUsuariosWrap').style.height = alturaUsuarios + 'px';
             crearGrafico('chartUsuarios', {
                 type: 'bar',
                 data: {
@@ -2199,7 +2201,8 @@
                         label: 'Acuerdos',
                         data: usuariosSort.map(e => e[1]),
                         backgroundColor: usuariosSort.map((_,i) => COLORES[i % COLORES.length]),
-                        borderRadius: 5
+                        borderRadius: 5,
+                        barThickness: 10
                     }]
                 },
                 options: {
@@ -2209,7 +2212,7 @@
                     plugins: { legend: { display: false } },
                     scales: {
                         x: { beginAtZero: true, ticks: { stepSize: 1 } },
-                        y: { ticks: { font: { size: 11 } } }
+                        y: { ticks: { font: { size: 11 }, autoSkip: false, padding: 6 } }
                     }
                 }
             });
@@ -2268,7 +2271,7 @@
                     plugins: { legend: { display: false } },
                     scales: {
                         x: { beginAtZero: true, ticks: { stepSize: 1 } },
-                        y: { ticks: { font: { size: 10 } } }
+                        y: { ticks: { font: { size: 10 }, autoSkip: false } }
                     }
                 }
             });
@@ -2361,7 +2364,7 @@
             /* ---- 6. Top 15 tipos de acuerdo comercial ---- */
             const porTipoAcuerdo = {};
             data.forEach(a => {
-                const k = a.acuerdo_comercial ? a.acuerdo_comercial.trim().substring(0,60) : 'Sin definir';
+                const k = a.tipo_promocion ? a.tipo_promocion.trim().substring(0,60) : 'Sin definir';
                 porTipoAcuerdo[k] = (porTipoAcuerdo[k] || 0) + 1;
             });
             const top15 = Object.entries(porTipoAcuerdo).sort((a,b) => b[1]-a[1]).slice(0,15);
@@ -2383,7 +2386,7 @@
                     plugins: { legend: { display: false } },
                     scales: {
                         x: { beginAtZero: true, ticks: { stepSize: 1 } },
-                        y: { ticks: { font: { size: 10 } } }
+                        y: { ticks: { font: { size: 10 }, autoSkip: false } }
                     }
                 }
             });

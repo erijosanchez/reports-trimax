@@ -333,6 +333,24 @@
                                         <div class="card-body">
                                             <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
                                                 <h6 class="mb-0 text-primary">
+                                                    <i class="mdi mdi-account-group"></i> Descuentos por Consultor en el Mes
+                                                </h6>
+                                                <select id="filtroMesConsultorDesc" class="form-select form-select-sm" style="width:180px;">
+                                                </select>
+                                            </div>
+                                            <div style="position:relative; height:300px;">
+                                                <canvas id="chartDescConsultorMes"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                
+                                <div class="mb-4 col-md-12">
+                                    <div class="shadow-sm card">
+                                        <div class="card-body">
+                                            <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+                                                <h6 class="mb-0 text-primary">
                                                     <i class="mdi mdi-account-clock"></i> Descuentos por Mes de un Consultor
                                                 </h6>
                                                 <select id="filtroConsultorGraficoDesc" class="form-select form-select-sm" style="width:220px;">
@@ -340,7 +358,7 @@
                                                 </select>
                                             </div>
                                             <div style="position:relative; height:260px;">
-                                                <canvas id="chartDescConsultorMes"></canvas>
+                                                <canvas id="chartDescMesPorConsultor"></canvas>
                                             </div>
                                         </div>
                                     </div>
@@ -1769,7 +1787,7 @@
             /* ---- 1. Ranking consultores ---- */
             const porConsultor = {};
             data.forEach(d => {
-                const n = d.creador ? d.creador.name : 'Sin asignar';
+                const n = d.consultor ? d.consultor : 'Sin asignar';
                 porConsultor[n] = (porConsultor[n] || 0) + 1;
             });
             const consultoresSort = Object.entries(porConsultor).sort((a,b) => b[1]-a[1]);
@@ -1789,7 +1807,7 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: { legend: { display: false } },
-                    scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } }
+                    scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } }, y: { ticks: { autoSkip: false } } }
                 }
             });
 
@@ -1843,7 +1861,7 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: { legend: { display: false } },
-                    scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } }
+                    scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } }, y: { ticks: { autoSkip: false } } }
                 }
             });
 
@@ -1876,16 +1894,72 @@
                 }
             });
 
-            /* ---- 5. Por consultor por mes (con filtro) ---- */
-            const consultoresUnicos = [...new Set(data.map(d => d.consultor).filter(Boolean))].sort();
-            const selectConsultor = document.getElementById('filtroConsultorGraficoDesc');
-            consultoresUnicos.forEach(c => {
+            /* ---- 5. Descuentos por consultor en un mes (filtro por mes) ---- */
+            const mesesUnicosDesc = [...new Set(data.map(d => d.created_at ? d.created_at.substring(0,7) : null).filter(Boolean))].sort();
+            const selectMesDesc = document.getElementById('filtroMesConsultorDesc');
+            mesesUnicosDesc.forEach(m => {
                 const opt = document.createElement('option');
-                opt.value = c; opt.textContent = c;
-                selectConsultor.appendChild(opt);
+                opt.value = m;
+                opt.textContent = labelMesDesc(m);
+                selectMesDesc.appendChild(opt);
             });
 
-            function calcDataConsultor(consultor) {
+            const mesActualDesc = new Date().toISOString().substring(0,7);
+            selectMesDesc.value = mesesUnicosDesc.includes(mesActualDesc) ? mesActualDesc : (mesesUnicosDesc[mesesUnicosDesc.length - 1] || '');
+
+            function calcDataConsultorPorMesDesc(mes) {
+                const filtrado = mes ? data.filter(d => d.created_at && d.created_at.startsWith(mes)) : data;
+                const cMap = {};
+                filtrado.forEach(d => {
+                    const c = d.consultor ? d.consultor : 'Sin asignar';
+                    cMap[c] = (cMap[c] || 0) + 1;
+                });
+                const sorted = Object.entries(cMap).sort((a,b) => b[1]-a[1]);
+                return {
+                    labels: sorted.map(e => e[0]),
+                    data: sorted.map(e => e[1])
+                };
+            }
+
+            const initData = calcDataConsultorPorMesDesc(selectMesDesc.value);
+            chartDescConsultorMesInst = crearGraficoDesc('chartDescConsultorMes', {
+                type: 'bar',
+                data: {
+                    labels: initData.labels,
+                    datasets: [{
+                        label: 'Descuentos',
+                        data: initData.data,
+                        backgroundColor: initData.labels.map((_,i) => COLORES_DESC[i % COLORES_DESC.length]),
+                        borderRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+                }
+            });
+
+            $('#filtroMesConsultorDesc').on('change', function() {
+                const d = calcDataConsultorPorMesDesc(this.value);
+                chartDescConsultorMesInst.data.labels = d.labels;
+                chartDescConsultorMesInst.data.datasets[0].data = d.data;
+                chartDescConsultorMesInst.data.datasets[0].backgroundColor = d.labels.map((_,i) => COLORES_DESC[i % COLORES_DESC.length]);
+                chartDescConsultorMesInst.update();
+            });
+
+            /* ---- 6. Descuentos por mes de un consultor (filtro por consultor) ---- */
+            let chartDescMesPorConsultorInst = null;
+            const consultoresUnicosDesc = [...new Set(data.map(d => d.consultor).filter(Boolean))].sort();
+            const selectConsultorDesc = document.getElementById('filtroConsultorGraficoDesc');
+            consultoresUnicosDesc.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c; opt.textContent = c;
+                selectConsultorDesc.appendChild(opt);
+            });
+
+            function calcDataMesPorConsultor(consultor) {
                 const filtrado = consultor ? data.filter(d => d.consultor === consultor) : data;
                 const mMap = {};
                 filtrado.forEach(d => {
@@ -1896,14 +1970,14 @@
                 return { labels: meses.map(labelMesDesc), data: meses.map(m => mMap[m]) };
             }
 
-            const initData = calcDataConsultor('');
-            chartDescConsultorMesInst = crearGraficoDesc('chartDescConsultorMes', {
+            const initMesPorConsultor = calcDataMesPorConsultor('');
+            chartDescMesPorConsultorInst = crearGraficoDesc('chartDescMesPorConsultor', {
                 type: 'bar',
                 data: {
-                    labels: initData.labels,
+                    labels: initMesPorConsultor.labels,
                     datasets: [{
-                        label: 'Descuentos',
-                        data: initData.data,
+                        label: 'Todos los consultores',
+                        data: initMesPorConsultor.data,
                         backgroundColor: 'rgba(16,185,129,0.75)',
                         borderColor: '#10B981',
                         borderWidth: 1,
@@ -1919,14 +1993,14 @@
             });
 
             $('#filtroConsultorGraficoDesc').on('change', function() {
-                const d = calcDataConsultor(this.value);
-                chartDescConsultorMesInst.data.labels = d.labels;
-                chartDescConsultorMesInst.data.datasets[0].data = d.data;
-                chartDescConsultorMesInst.data.datasets[0].label = this.value || 'Todos los consultores';
-                chartDescConsultorMesInst.update();
+                const d = calcDataMesPorConsultor(this.value);
+                chartDescMesPorConsultorInst.data.labels = d.labels;
+                chartDescMesPorConsultorInst.data.datasets[0].data = d.data;
+                chartDescMesPorConsultorInst.data.datasets[0].label = this.value || 'Todos los consultores';
+                chartDescMesPorConsultorInst.update();
             });
 
-            /* ---- 6. Top 15 tipos de descuento especial ---- */
+            /* ---- 7. Top 15 tipos de descuento especial ---- */
             const porTipo = {};
             data.forEach(d => {
                 const k = d.descuento_especial ? d.descuento_especial.trim().substring(0,60) : 'Sin definir';
@@ -1949,7 +2023,7 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: { legend: { display: false } },
-                    scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } }
+                    scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } }, y: { ticks: { autoSkip: false } } }
                 }
             });
         }

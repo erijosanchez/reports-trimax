@@ -2207,7 +2207,7 @@
                     plugins: { legend: { display: false } },
                     scales: {
                         x: { beginAtZero: true, ticks: { stepSize: 1 } },
-                        y: { ticks: { font: { size: 11 } } }
+                        y: { ticks: { font: { size: 11 }, autoSkip: false } }
                     }
                 }
             });
@@ -2266,7 +2266,7 @@
                     plugins: { legend: { display: false } },
                     scales: {
                         x: { beginAtZero: true, ticks: { stepSize: 1 } },
-                        y: { ticks: { font: { size: 10 } } }
+                        y: { ticks: { font: { size: 10 }, autoSkip: false } }
                     }
                 }
             });
@@ -2381,7 +2381,7 @@
                     plugins: { legend: { display: false } },
                     scales: {
                         x: { beginAtZero: true, ticks: { stepSize: 1 } },
-                        y: { ticks: { font: { size: 10 } } }
+                        y: { ticks: { font: { size: 10 }, autoSkip: false } }
                     }
                 }
             });
