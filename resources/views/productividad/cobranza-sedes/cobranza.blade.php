@@ -308,14 +308,14 @@
                                         <input type="file" id="archivos-edit" name="archivos[]"
                                                multiple accept=".jpg,.jpeg,.png,.gif,.webp,.xlsx,.xls,.csv,.pdf"
                                                class="d-none">
-                                        <div class="d-flex gap-2 justify-content-center mt-1">
+                                        <div class="d-flex justify-content-center gap-2 mt-1">
                                             <button type="button" class="btn-outline-primary btn btn-sm"
                                                     onclick="document.getElementById('archivos-edit').click()">
-                                                <i class="mdi mdi-paperclip me-1"></i>Seleccionar archivos
+                                                <i class="me-1 mdi mdi-paperclip"></i>Seleccionar archivos
                                             </button>
                                             <button type="button" class="btn-outline-secondary btn btn-sm"
                                                     onclick="abrirCamara('archivos-edit', 'preview-edit')">
-                                                <i class="mdi mdi-camera me-1"></i>Tomar foto
+                                                <i class="me-1 mdi mdi-camera"></i>Tomar foto
                                             </button>
                                         </div>
                                     </div>
@@ -348,14 +348,14 @@
                                         <input type="file" id="archivos-nuevo" name="archivos[]"
                                                multiple accept=".jpg,.jpeg,.png,.gif,.webp,.xlsx,.xls,.csv,.pdf"
                                                class="d-none">
-                                        <div class="d-flex gap-2 justify-content-center">
+                                        <div class="d-flex justify-content-center gap-2">
                                             <button type="button" class="btn-outline-primary btn"
                                                     onclick="document.getElementById('archivos-nuevo').click()">
-                                                <i class="mdi mdi-paperclip me-1"></i>Seleccionar archivos
+                                                <i class="me-1 mdi mdi-paperclip"></i>Seleccionar archivos
                                             </button>
                                             <button type="button" class="btn-outline-secondary btn"
                                                     onclick="abrirCamara('archivos-nuevo', 'preview-nuevo')">
-                                                <i class="mdi mdi-camera me-1"></i>Tomar foto
+                                                <i class="me-1 mdi mdi-camera"></i>Tomar foto
                                             </button>
                                         </div>
                                     </div>
@@ -392,9 +392,9 @@
                             <i class="me-2 text-primary mdi mdi-chart-line"></i>KPI Diario por Sede
                         </h5>
                         <div class="d-flex align-items-center gap-2">
-                            <button id="btn-mes-prev" class="btn btn-sm btn-outline-secondary py-0 px-2">‹</button>
+                            <button id="btn-mes-prev" class="px-2 py-0 btn-outline-secondary btn btn-sm">‹</button>
                             <span id="label-mes-chart" class="fw-semibold small" style="min-width:90px;text-align:center;">—</span>
-                            <button id="btn-mes-next" class="btn btn-sm btn-outline-secondary py-0 px-2">›</button>
+                            <button id="btn-mes-next" class="px-2 py-0 btn-outline-secondary btn btn-sm">›</button>
                         </div>
                     </div>
                     <div class="card-body">
@@ -507,28 +507,28 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title fw-bold">
-                    <i class="mdi mdi-camera me-2 text-primary"></i>Tomar Foto
+                    <i class="me-2 text-primary mdi mdi-camera"></i>Tomar Foto
                 </h5>
                 <button type="button" class="btn-close" onclick="cerrarCamara()"></button>
             </div>
-            <div class="modal-body text-center p-3">
+            <div class="p-3 text-center modal-body">
                 <video id="camara-video" autoplay playsinline
                        style="width:100%;border-radius:10px;background:#000;max-height:380px;object-fit:cover;"></video>
                 <canvas id="camara-canvas" class="d-none"></canvas>
-                <div id="camara-preview-wrap" class="d-none mt-2">
+                <div id="camara-preview-wrap" class="mt-2 d-none">
                     <img id="camara-preview-img" src="" alt="Captura"
                          style="width:100%;border-radius:10px;max-height:300px;object-fit:contain;">
                 </div>
             </div>
-            <div class="modal-footer justify-content-center gap-2">
+            <div class="justify-content-center gap-2 modal-footer">
                 <button id="btn-capturar" class="btn btn-primary" onclick="capturarFoto()">
-                    <i class="mdi mdi-camera me-1"></i>Capturar
+                    <i class="me-1 mdi mdi-camera"></i>Capturar
                 </button>
-                <button id="btn-retomar" class="btn btn-outline-secondary d-none" onclick="retomarFoto()">
-                    <i class="mdi mdi-refresh me-1"></i>Retomar
+                <button id="btn-retomar" class="btn-outline-secondary btn d-none" onclick="retomarFoto()">
+                    <i class="me-1 mdi mdi-refresh"></i>Retomar
                 </button>
                 <button id="btn-usar-foto" class="btn btn-success d-none" onclick="usarFoto()">
-                    <i class="mdi mdi-check me-1"></i>Usar esta foto
+                    <i class="me-1 mdi mdi-check"></i>Usar esta foto
                 </button>
             </div>
         </div>
@@ -612,7 +612,7 @@ const ROUTES = {
     store:    "{{ route('productividad.cobranza-sedes.cobranza.store') }}",
     historial:"{{ route('productividad.cobranza-sedes.cobranza.historial') }}",
     kpiData:  "{{ route('productividad.cobranza-sedes.cobranza.kpi-data') }}",
-    base:     "{{ url('/productividad/cobranza-sedes/cobranza') }}",
+    base:     "{{ url('/productividad/cobranza-sedes/deposito-efectivo') }}",
 };
 const CSRF = document.querySelector('meta[name="csrf-token"]').content;
 
@@ -973,19 +973,19 @@ function buildArchivosHTML(archivos) {
 
     // Grid de imágenes con preview
     if (imagenes.length) {
-        html += `<div class="row g-2 mb-3">`;
+        html += `<div class="mb-3 row g-2">`;
         imagenes.forEach(a => {
             html += `
                 <div class="col-6 col-md-4">
-                    <div class="border rounded overflow-hidden position-relative" style="aspect-ratio:4/3;">
+                    <div class="position-relative border rounded overflow-hidden" style="aspect-ratio:4/3;">
                         <img src="${a.preview_url}" alt="${a.name}"
                              style="width:100%;height:100%;object-fit:cover;cursor:pointer;"
                              onclick="window.open('${a.preview_url}','_blank')"
                              title="Click para ampliar">
-                        <div class="position-absolute bottom-0 start-0 end-0 d-flex justify-content-between align-items-center px-2 py-1"
+                        <div class="bottom-0 position-absolute d-flex align-items-center justify-content-between px-2 py-1 start-0 end-0"
                              style="background:rgba(0,0,0,0.45);">
-                            <span class="text-white small text-truncate" style="max-width:70%;">${a.name}</span>
-                            <a href="${a.download_url}" class="btn btn-sm btn-light py-0 px-1" title="Descargar" download>
+                            <span class="text-white text-truncate small" style="max-width:70%;">${a.name}</span>
+                            <a href="${a.download_url}" class="px-1 py-0 btn btn-sm btn-light" title="Descargar" download>
                                 <i class="mdi mdi-download small"></i>
                             </a>
                         </div>
