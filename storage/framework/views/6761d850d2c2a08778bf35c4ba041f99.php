@@ -11,11 +11,11 @@
                             <h4 class="mb-0 fw-bold">
                                 <i class="me-2 text-primary mdi mdi-currency-usd"></i>Depósito de Efectivo
                             </h4>
-                            <p class="mb-0 text-muted small">Reporte semanal — límite: sábado 12:00 PM</p>
+                            <p class="mb-0 text-muted small">Reporte diario — límite: 12:00 PM</p>
                         </div>
                         <div class="text-end">
                             <span class="bg-primary badge fs-6">
-                                Semana <?php echo $semanaNumero; ?>/<?php echo $anio; ?>
+                                Hoy <?php echo $fechaDiaLabel; ?>
 
                             </span>
                         </div>
@@ -40,7 +40,7 @@
                         <div id="countdown-subtitle" class="text-muted small">Cargando...</div>
                         <hr class="my-3">
                         <div class="text-muted small">
-                            Límite: <strong>Sábado 12:00 PM</strong>
+                            Límite: <strong>Diario 12:00 PM</strong>
                         </div>
                     </div>
                 </div>
@@ -52,7 +52,7 @@
             <div class="mb-3 col-lg-4 col-md-6">
                 <div class="shadow-sm border-0 h-100 card">
                     <div class="py-4 card-body">
-                        <h6 class="mb-3 text-muted text-uppercase fw-bold small">Estado — Semana Actual</h6>
+                        <h6 class="mb-3 text-muted text-uppercase fw-bold small">Estado — Hoy</h6>
                         <?php if($reporteSemanaActual): ?>
                             <?php
                                 $enviado = !is_null($reporteSemanaActual->fecha_envio_original);
@@ -136,30 +136,31 @@
                     <div class="d-flex align-items-center justify-content-between bg-white border-bottom card-header">
                         <h5 class="mb-0 fw-bold">
                             <i class="me-2 mdi-view-dashboard-outline text-primary mdi"></i>
-                            Estado Sedes — Semana <?php echo $semanaNumero; ?>/<?php echo $anio; ?>
+                            Estado Sedes — <?php echo $fechaDiaLabel; ?>
 
                         </h5>
                         <div class="d-flex align-items-center gap-2 text-muted small">
-                            <span class="bg-success badge">Enviado</span>
-                            <span class="bg-danger badge">Pendiente</span>
+                            <span class="bg-success badge filtro-estado" data-filtro="enviado">Enviado</span>
+                            <span class="bg-danger badge filtro-estado" data-filtro="pendiente">Pendiente</span>
                         </div>
                     </div>
                     <div class="p-0 card-body">
                         <div class="table-responsive">
-                            <table class="table table-hover mb-0">
+                            <table class="table table-hover mb-0" id="tabla-estado-sedes">
                                 <thead class="table-light">
                                     <tr>
                                         <th>Sede</th>
                                         <th>Responsable</th>
                                         <th class="text-center">Estado</th>
                                         <th class="text-center">Hora de Envío</th>
-                                        <th class="text-center">KPI Semana</th>
+                                        <th class="text-center">KPI Hoy</th>
                                         <th class="text-center">Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <?php $__currentLoopData = $resumenSedes; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $fila): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                    <tr class="<?php echo $fila['enviado'] ? '' : 'table-danger bg-opacity-25'; ?>">
+                                    <tr class="<?php echo $fila['enviado'] ? '' : 'table-danger bg-opacity-25'; ?>"
+                                        data-estado="<?php echo $fila['enviado'] ? 'enviado' : 'pendiente'; ?>">
                                         <td>
                                             <strong><?php echo $fila['sede']; ?></strong>
                                         </td>
@@ -246,10 +247,10 @@
                         <h5 class="mb-0 fw-bold">
                             <i class="me-2 text-primary mdi mdi-upload"></i>
                             <?php if($reporteSemanaActual->fecha_envio_original): ?>
-                                Editar Reporte — Semana <?php echo $semanaNumero; ?>/<?php echo $anio; ?>
+                                Editar Reporte — <?php echo $fechaDiaLabel; ?>
 
                             <?php else: ?>
-                                Enviar Reporte — Semana <?php echo $semanaNumero; ?>/<?php echo $anio; ?>
+                                Enviar Reporte — <?php echo $fechaDiaLabel; ?>
 
                             <?php endif; ?>
                         </h5>
@@ -385,16 +386,12 @@
                 <div class="shadow-sm border-0 card">
                     <div class="d-flex align-items-center justify-content-between bg-white border-bottom card-header">
                         <h5 class="mb-0 fw-bold">
-                            <i class="me-2 text-primary mdi mdi-chart-line"></i>KPI por Sede
+                            <i class="me-2 text-primary mdi mdi-chart-line"></i>KPI Diario por Sede
                         </h5>
                         <div class="d-flex align-items-center gap-2">
-                            <label class="me-1 mb-0 text-muted small">Semanas:</label>
-                            <select id="filtro-semanas" class="form-select-sm form-select" style="width:80px;">
-                                <option value="4">4</option>
-                                <option value="8" selected>8</option>
-                                <option value="12">12</option>
-                                <option value="20">20</option>
-                            </select>
+                            <button id="btn-mes-prev" class="btn btn-sm btn-outline-secondary py-0 px-2">‹</button>
+                            <span id="label-mes-chart" class="fw-semibold small" style="min-width:90px;text-align:center;">—</span>
+                            <button id="btn-mes-next" class="btn btn-sm btn-outline-secondary py-0 px-2">›</button>
                         </div>
                     </div>
                     <div class="card-body">
@@ -405,6 +402,35 @@
                 </div>
             </div>
         </div>
+
+        
+        <?php if(auth()->user()->isSuperAdmin() || auth()->user()->isAdmin()): ?>
+        <div class="mb-4 row">
+            <div class="col-12">
+                <div class="shadow-sm border-0 card">
+                    <div class="d-flex align-items-center justify-content-between bg-white border-bottom card-header">
+                        <h5 class="mb-0 fw-bold">
+                            <i class="me-2 text-success mdi mdi-chart-bar"></i>Cumplimiento Mensual por Sede
+                        </h5>
+                        <div class="d-flex align-items-center gap-2">
+                            <label class="me-1 mb-0 text-muted small">Meses:</label>
+                            <select id="filtro-meses-mensual" class="form-select-sm form-select" style="width:80px;">
+                                <option value="2" selected>2</option>
+                                <option value="3">3</option>
+                                <option value="6">6</option>
+                                <option value="12">12</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div style="position:relative;height:320px;">
+                            <canvas id="kpi-chart-mensual"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
 
         
         <div class="row">
@@ -422,8 +448,7 @@
                                 <thead class="table-light">
                                     <tr>
                                         <th>Sede</th>
-                                        <th>Semana</th>
-                                        <th>Período</th>
+                                        <th>Fecha</th>
                                         <th>Fecha Límite</th>
                                         <th>Fecha Envío</th>
                                         <th>KPI</th>
@@ -434,7 +459,7 @@
                                 </thead>
                                 <tbody id="historial-body">
                                     <tr>
-                                        <td colspan="9" class="py-4 text-center">
+                                        <td colspan="8" class="py-4 text-center">
                                             <div class="me-2 spinner-border spinner-border-sm text-primary"></div>
                                             Cargando historial...
                                         </td>
@@ -560,6 +585,15 @@
         font-family: 'Courier New', monospace;
         letter-spacing: 2px;
     }
+    .filtro-estado {
+        cursor: pointer;
+        user-select: none;
+        transition: opacity .2s, text-decoration .2s;
+    }
+    .filtro-estado.inactivo {
+        opacity: .35;
+        text-decoration: line-through;
+    }
 </style>
 <?php $__env->stopPush(); ?>
 
@@ -641,7 +675,7 @@ function actualizarCountdown() {
     } else {
         display.style.color = '#2563eb';
         icon.className      = 'mdi mdi-timer-outline text-primary';
-        sub.textContent     = 'Sábado, 12:00 PM hora Lima';
+        sub.textContent     = 'Hoy, 12:00 PM hora Lima';
     }
 }
 
@@ -806,7 +840,7 @@ async function cargarHistorial() {
         const data = await apiFetch(ROUTES.historial);
         renderHistorial(data.data ?? []);
     } catch (err) {
-        tbody.innerHTML = `<tr><td colspan="9" class="py-3 text-danger text-center">${err.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" class="py-3 text-danger text-center">${err.message}</td></tr>`;
     } finally {
         loader.classList.add('d-none');
     }
@@ -822,7 +856,7 @@ function renderHistorial(rows) {
     const tbody = document.getElementById('historial-body');
 
     if (!rows.length) {
-        tbody.innerHTML = `<tr><td colspan="9" class="py-4 text-muted text-center">Sin registros.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" class="py-4 text-muted text-center">Sin registros.</td></tr>`;
         return;
     }
 
@@ -830,7 +864,6 @@ function renderHistorial(rows) {
         <tr>
             <td><strong>${r.sede}</strong></td>
             <td><span class="bg-light border text-dark badge">${r.semana}</span></td>
-            <td class="text-muted small">${r.semana_inicio} — ${r.semana_fin}</td>
             <td class="small">${r.fecha_limite ?? '—'}</td>
             <td class="small">
                 ${r.fecha_envio ?? '<span class="text-muted">—</span>'}
@@ -884,7 +917,7 @@ async function verReporte(id) {
                     <div class="fw-bold">${r.sede}</div>
                 </div>
                 <div class="col-6">
-                    <div class="text-muted text-uppercase small fw-semibold">Semana</div>
+                    <div class="text-muted text-uppercase small fw-semibold">Fecha</div>
                     <div class="fw-bold">${r.semana}</div>
                 </div>
                 <div class="col-6">
@@ -1056,71 +1089,145 @@ function cerrarCamara() {
     _modalCamaraInst?.hide();
 }
 
-// ── Gráfico KPI ───────────────────────────────────────────────────
-let kpiChart = null;
+// ── Gráfico KPI diario (navegador por mes) ────────────────────────
+const MESES_ES = ['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+let kpiChart   = null;
+let mesChart   = new Date().getMonth() + 1;
+let anioChart  = new Date().getFullYear();
 
-async function cargarKpiChart(semanas = 8) {
+function opcionesChart(tooltipExtra = '') {
+    return {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        scales: {
+            y: {
+                min: 0, max: 100,
+                ticks: { callback: v => v + '%', stepSize: 10 },
+                grid: { color: '#f1f5f9' },
+            },
+            x: { grid: { display: false } },
+        },
+        plugins: {
+            legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } },
+            tooltip: {
+                callbacks: {
+                    label: c => `${c.dataset.label}: ${c.parsed.y !== null ? c.parsed.y + '%' : 'Sin dato'}` + tooltipExtra,
+                }
+            },
+            annotation: {
+                annotations: {
+                    linea100: {
+                        type: 'line', yMin: 100, yMax: 100,
+                        borderColor: 'rgba(16,185,129,0.3)',
+                        borderWidth: 1, borderDash: [6, 4],
+                    }
+                }
+            }
+        },
+    };
+}
+
+async function cargarKpiChart(mes = mesChart, anio = anioChart) {
+    mesChart  = mes;
+    anioChart = anio;
+
+    // Actualizar label y estado del botón siguiente
+    document.getElementById('label-mes-chart').textContent = `${MESES_ES[mes]} ${anio}`;
+    const hoy = new Date();
+    document.getElementById('btn-mes-next').disabled =
+        (anio > hoy.getFullYear()) ||
+        (anio === hoy.getFullYear() && mes >= hoy.getMonth() + 1);
+
     try {
-        const res  = await fetch(`${ROUTES.kpiData}?semanas=${semanas}`, { headers:{'Accept':'application/json', 'X-CSRF-TOKEN': CSRF} });
+        const res  = await fetch(
+            `${ROUTES.kpiData}?tipo=diario&mes=${mes}&anio=${anio}`,
+            { headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': CSRF } }
+        );
         const data = await res.json();
-
         const ctx  = document.getElementById('kpi-chart').getContext('2d');
-
         if (kpiChart) kpiChart.destroy();
-
         kpiChart = new Chart(ctx, {
             type: 'line',
-            data: {
-                labels:   data.labels ?? [],
-                datasets: data.datasets ?? [],
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                interaction: { mode: 'index', intersect: false },
-                scales: {
-                    y: {
-                        min: 0,
-                        max: 100,
-                        ticks: {
-                            callback: v => v + '%',
-                            stepSize: 10,
-                        },
-                        grid: { color: '#f1f5f9' },
-                    },
-                    x: { grid: { display: false } },
-                },
-                plugins: {
-                    legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } },
-                    tooltip: {
-                        callbacks: {
-                            label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y !== null ? ctx.parsed.y + '%' : 'Sin dato'}`,
-                        }
-                    },
-                    annotation: {
-                        annotations: {
-                            linea100: {
-                                type: 'line',
-                                yMin: 100, yMax: 100,
-                                borderColor: 'rgba(16,185,129,0.3)',
-                                borderWidth: 1,
-                                borderDash: [6, 4],
-                            }
-                        }
-                    }
-                },
-            }
+            data: { labels: data.labels ?? [], datasets: data.datasets ?? [] },
+            options: opcionesChart(),
         });
     } catch (e) {
-        console.error('Error cargando KPI chart:', e);
+        console.error('Error cargando KPI diario:', e);
     }
 }
 
-cargarKpiChart(8);
-
-document.getElementById('filtro-semanas')?.addEventListener('change', function() {
-    cargarKpiChart(parseInt(this.value));
+document.getElementById('btn-mes-prev').addEventListener('click', () => {
+    let m = mesChart - 1, a = anioChart;
+    if (m < 1) { m = 12; a--; }
+    cargarKpiChart(m, a);
 });
+
+document.getElementById('btn-mes-next').addEventListener('click', () => {
+    const hoy = new Date();
+    const sigMes  = mesChart === 12 ? 1 : mesChart + 1;
+    const sigAnio = mesChart === 12 ? anioChart + 1 : anioChart;
+    if (sigAnio < hoy.getFullYear() || (sigAnio === hoy.getFullYear() && sigMes <= hoy.getMonth() + 1)) {
+        cargarKpiChart(sigMes, sigAnio);
+    }
+});
+
+cargarKpiChart();
+
+// ── Gráfico cumplimiento mensual (solo admin) ─────────────────────
+<?php if(auth()->user()->isSuperAdmin() || auth()->user()->isAdmin()): ?>
+let kpiChartMensual = null;
+
+async function cargarKpiChartMensual(meses = 2) {
+    try {
+        const res  = await fetch(
+            `${ROUTES.kpiData}?tipo=mensual&meses=${meses}`,
+            { headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': CSRF } }
+        );
+        const data = await res.json();
+        const ctx  = document.getElementById('kpi-chart-mensual').getContext('2d');
+        if (kpiChartMensual) kpiChartMensual.destroy();
+        kpiChartMensual = new Chart(ctx, {
+            type: 'line',
+            data: { labels: data.labels ?? [], datasets: data.datasets ?? [] },
+            options: opcionesChart(' (prom.)'),
+        });
+    } catch (e) {
+        console.error('Error cargando KPI mensual:', e);
+    }
+}
+
+cargarKpiChartMensual(2);
+
+document.getElementById('filtro-meses-mensual')?.addEventListener('change', function() {
+    cargarKpiChartMensual(parseInt(this.value));
+});
+<?php endif; ?>
+
+// ── Filtros tabla Estado Sedes ────────────────────────────────────
+(function () {
+    const activos = new Set(['enviado', 'pendiente']);
+
+    function aplicar() {
+        document.querySelectorAll('#tabla-estado-sedes tbody tr[data-estado]').forEach(tr => {
+            tr.style.display = activos.has(tr.dataset.estado) ? '' : 'none';
+        });
+    }
+
+    document.querySelectorAll('.filtro-estado').forEach(badge => {
+        badge.addEventListener('click', function () {
+            const key = this.dataset.filtro;
+            if (activos.has(key)) {
+                activos.delete(key);
+                this.classList.add('inactivo');
+            } else {
+                activos.add(key);
+                this.classList.remove('inactivo');
+            }
+            aplicar();
+        });
+    });
+})();
 </script>
 <?php $__env->stopPush(); ?>
 

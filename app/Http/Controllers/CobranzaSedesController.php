@@ -18,7 +18,8 @@ class CobranzaSedesController extends Controller
         'arosadio@trimaxperu.com',
         'supervisor.comercial.1@trimaxperu.com',
         'planeamiento.comercial@trimaxperu.com',
-        'analista.cobranzas@trimaxperu.com'
+        'analista.cobranzas@trimaxperu.com',
+        'emisionnc@trimaxperu.com',
     ];
 
     // Tipos de archivo permitidos

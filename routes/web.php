@@ -290,7 +290,7 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
 
     // Productividad Sedes — Cobranza
     Route::prefix('productividad/cobranza-sedes')->name('productividad.cobranza-sedes.')->group(function () {
-        Route::prefix('cobranza')->name('cobranza.')->group(function () {
+        Route::prefix('deposito-efectivo')->name('cobranza.')->group(function () {
             Route::get('/',                       [CobranzaSedesController::class, 'index'])->name('index');
             Route::post('/',                      [CobranzaSedesController::class, 'store'])->name('store');
             Route::put('/{reporte}',              [CobranzaSedesController::class, 'update'])->name('update');
