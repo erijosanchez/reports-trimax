@@ -67,7 +67,7 @@ class AdminController extends Controller
         return response()->json([
             'users'        => $mapped,
             'online_count' => $users->filter(fn($u) => $u->isOnline())->count(),
-            'updated_at'   => now()->format('H:i:s'),
+            'updated_at'   => now('America/Lima')->format('H:i:s'),
         ]);
     }
 

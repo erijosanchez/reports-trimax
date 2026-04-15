@@ -292,7 +292,7 @@ class User extends Authenticatable
             ->orderByDesc('last_activity')
             ->first();
 
-        return $session?->last_activity;
+        return $session?->last_activity?->setTimezone('America/Lima');
     }
 
     public function lastSeenText(): string
@@ -305,15 +305,22 @@ class User extends Authenticatable
 
         if (! $lastActivity) {
             return $this->last_login_at
-                ? 'Última vez ' . $this->last_login_at->diffForHumans()
+                ? 'Última vez ' . $this->last_login_at->setTimezone('America/Lima')->diffForHumans()
                 : 'Sin actividad';
+        }
+
+        $nowLima = now('America/Lima');
+
+        // Si por algún desfase del reloj del servidor la hora queda en el futuro, truncamos a ahora
+        if ($lastActivity->gt($nowLima)) {
+            $lastActivity = $nowLima->copy();
         }
 
         if ($lastActivity->isToday()) {
             return 'Última vez hoy a las ' . $lastActivity->format('H:i');
         } elseif ($lastActivity->isYesterday()) {
             return 'Última vez ayer a las ' . $lastActivity->format('H:i');
-        } elseif ($lastActivity->diffInDays(now()) < 7) {
+        } elseif ($lastActivity->diffInDays($nowLima) < 7) {
             return 'Última vez ' . $lastActivity->diffForHumans();
         }
 

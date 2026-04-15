@@ -3,11 +3,11 @@
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
+use Illuminate\Console\Scheduling\Schedule as ScheduleConst;
 use App\Jobs\AlertaSlaRequerimientosJob;
 use App\Jobs\AlertaCobranzaVencimientoJob;
 use App\Jobs\AlertaCajaChicaVencimientoJob;
 use App\Jobs\AlertaComentariosVencimientoJob;
-use Illuminate\Console\Scheduling\Schedule;
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
@@ -22,7 +22,7 @@ Schedule::job(new AlertaSlaRequerimientosJob)
 // Solo dispara correo si el usuario aún no envió el reporte de HOY (anti-spam por check interno).
 Schedule::job(new AlertaCobranzaVencimientoJob)
     ->dailyAt('11:00')
-    ->days([Schedule::MONDAY, Schedule::TUESDAY, Schedule::WEDNESDAY, Schedule::THURSDAY, Schedule::FRIDAY, Schedule::SATURDAY])
+    ->days([ScheduleConst::MONDAY, ScheduleConst::TUESDAY, ScheduleConst::WEDNESDAY, ScheduleConst::THURSDAY, ScheduleConst::FRIDAY, ScheduleConst::SATURDAY])
     ->withoutOverlapping()
     ->onOneServer()
     ->timezone('America/Lima');
