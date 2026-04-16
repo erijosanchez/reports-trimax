@@ -43,7 +43,7 @@ class ComentariosSedesController extends Controller
         }
 
         $resumenSedes = null;
-        if ($user->isSuperAdmin() || $user->isAdmin()) {
+        if ($user->isSuperAdmin() || $user->isAdmin() || $user->puede_ver_productividad_sedes) {
             $usuariosSede   = User::role('sede')->where('is_active', true)->whereNotNull('sede')->get();
             $reportesSemana = ReporteComentarios::where('semana_numero', $semanaNumero)
                 ->where('anio', $anio)->get()->keyBy('sede');

@@ -25,7 +25,7 @@
                         <ul class="nav nav-tabs" id="descuentosTabs" role="tablist">
                             <li class="nav-item" role="presentation">
                                 <a class="nav-link active" data-bs-toggle="tab" href="#tabDescuentos" role="tab">
-                                    <i class="mdi mdi-table"></i> Descuentos
+                                    <i class="mdi-table mdi"></i> Descuentos
                                 </a>
                             </li>
                             <li class="nav-item" role="presentation">
@@ -40,70 +40,70 @@
                         <div class="tab-pane fade show active" id="tabDescuentos" role="tabpanel">
 
                             {{-- Cards de Estadísticas --}}
-                            <div class="row mb-4">
-                                <div class="col-md-3 pb-2">
-                                    <div class="card card-stat h-100">
+                            <div class="mb-4 row">
+                                <div class="pb-2 col-md-3">
+                                    <div class="h-100 card card-stat">
                                         <div class="card-body">
-                                            <div class="d-flex justify-content-between align-items-center">
+                                            <div class="d-flex align-items-center justify-content-between">
                                                 <div>
-                                                    <p class="text-muted mb-1">Total Descuentos</p>
+                                                    <p class="mb-1 text-muted">Total Descuentos</p>
                                                     <h2 class="mb-0 font-weight-bold text-primary" id="totalDescuentos">
                                                         <span class="spinner-border spinner-border-sm"></span>
                                                     </h2>
                                                 </div>
-                                                <div class="icon-stat bg-primary">
+                                                <div class="bg-primary icon-stat">
                                                     <i class="mdi mdi-sale"></i>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-md-3 pb-2">
-                                    <div class="card card-stat h-100">
+                                <div class="pb-2 col-md-3">
+                                    <div class="h-100 card card-stat">
                                         <div class="card-body">
-                                            <div class="d-flex justify-content-between align-items-center">
+                                            <div class="d-flex align-items-center justify-content-between">
                                                 <div>
-                                                    <p class="text-muted mb-1">Aprobados</p>
+                                                    <p class="mb-1 text-muted">Aprobados</p>
                                                     <h2 class="mb-0 font-weight-bold text-success" id="descuentosAprobados">
                                                         <span class="spinner-border spinner-border-sm"></span>
                                                     </h2>
                                                 </div>
-                                                <div class="icon-stat bg-success">
+                                                <div class="bg-success icon-stat">
                                                     <i class="mdi mdi-check-circle"></i>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-md-3 pb-2">
-                                    <div class="card card-stat h-100">
+                                <div class="pb-2 col-md-3">
+                                    <div class="h-100 card card-stat">
                                         <div class="card-body">
-                                            <div class="d-flex justify-content-between align-items-center">
+                                            <div class="d-flex align-items-center justify-content-between">
                                                 <div>
-                                                    <p class="text-muted mb-1">Pendientes</p>
+                                                    <p class="mb-1 text-muted">Pendientes</p>
                                                     <h2 class="mb-0 font-weight-bold text-warning"
                                                         id="descuentosPendientes">
                                                         <span class="spinner-border spinner-border-sm"></span>
                                                     </h2>
                                                 </div>
-                                                <div class="icon-stat bg-warning">
+                                                <div class="bg-warning icon-stat">
                                                     <i class="mdi mdi-clock-alert"></i>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-md-3 pb-2">
-                                    <div class="card card-stat h-100">
+                                <div class="pb-2 col-md-3">
+                                    <div class="h-100 card card-stat">
                                         <div class="card-body">
-                                            <div class="d-flex justify-content-between align-items-center">
+                                            <div class="d-flex align-items-center justify-content-between">
                                                 <div>
-                                                    <p class="text-muted mb-1">Rechazados</p>
+                                                    <p class="mb-1 text-muted">Rechazados</p>
                                                     <h2 class="mb-0 font-weight-bold text-danger" id="descuentosRechazados">
                                                         <span class="spinner-border spinner-border-sm"></span>
                                                     </h2>
                                                 </div>
-                                                <div class="icon-stat bg-danger">
+                                                <div class="bg-danger icon-stat">
                                                     <i class="mdi mdi-alert-circle"></i>
                                                 </div>
                                             </div>
@@ -114,11 +114,11 @@
 
                             {{-- Filtros --}}
                             <div class="row">
-                                <div class="col-lg-12 grid-margin stretch-card">
-                                    <div class="card shadow-sm">
+                                <div class="grid-margin col-lg-12 stretch-card">
+                                    <div class="shadow-sm card">
                                         <div class="card-body">
                                             {{-- Sección de Filtros --}}
-                                            <div class="row mb-3">
+                                            <div class="mb-3 row">
                                                 <div class="col-md-3">
                                                     <label class="form-label"><i class="mdi mdi-account"></i> Consultor
                                                     </label>
@@ -137,7 +137,6 @@
                                                         <option value="CUSCO">CUSCO</option>
                                                         <option value="PIURA">PIURA</option>
                                                         <option value="CHICLAYO">CHICLAYO</option>
-                                                        <option value="JUNIN">JUNIN</option>
                                                         <option value="ICA">ICA</option>
                                                         <option value="HUANCAYO">HUANCAYO</option>
                                                         <option value="CAILLOMA">CAILLOMA</option>
@@ -193,11 +192,11 @@
                                                 </div>
                                             </div>
 
-                                            <div class="row mb-4">
-                                                <div class="col-md-12 d-flex justify-content-between align-items-center">
+                                            <div class="mb-4 row">
+                                                <div class="d-flex align-items-center justify-content-between col-md-12">
                                                     <div>
-                                                        <button class="btn btn-outline-primary" id="btnLimpiarFiltros">
-                                                            <i class="mdi mdi-filter-remove"></i> Limpiar Filtros
+                                                        <button class="btn-outline-primary btn" id="btnLimpiarFiltros">
+                                                            <i class="mdi-filter-remove mdi"></i> Limpiar Filtros
                                                         </button>
                                                         <button class="btn btn-info" id="btnRecargar">
                                                             <i class="mdi mdi-refresh"></i> Recargar
@@ -207,7 +206,7 @@
                                             </div>
 
                                             {{-- Loading Spinner --}}
-                                            <div id="loadingSpinner" class="text-center py-5">
+                                            <div id="loadingSpinner" class="py-5 text-center">
                                                 <div class="spinner-border text-primary" role="status"
                                                     style="width: 3rem; height: 3rem;">
                                                     <span class="visually-hidden">Cargando...</span>
@@ -272,7 +271,7 @@
 
                                 {{-- Fila 1: Ranking consultores | Total por mes --}}
                                 <div class="mb-4 col-md-6">
-                                    <div class="shadow-sm card h-100">
+                                    <div class="shadow-sm h-100 card">
                                         <div class="card-body">
                                             <h6 class="mb-3 text-primary">
                                                 <i class="mdi mdi-account-star"></i> Ranking de Descuentos por Consultor
@@ -285,7 +284,7 @@
                                 </div>
 
                                 <div class="mb-4 col-md-6">
-                                    <div class="shadow-sm card h-100">
+                                    <div class="shadow-sm h-100 card">
                                         <div class="card-body">
                                             <h6 class="mb-3 text-primary">
                                                 <i class="mdi mdi-chart-line"></i> Total de Descuentos por Mes
@@ -299,7 +298,7 @@
 
                                 {{-- Fila 2: Total por sede | Sede por mes --}}
                                 <div class="mb-4 col-md-6">
-                                    <div class="shadow-sm card h-100">
+                                    <div class="shadow-sm h-100 card">
                                         <div class="card-body">
                                             <h6 class="mb-3 text-primary">
                                                 <i class="mdi mdi-office-building"></i> Total de Descuentos por Sede
@@ -312,7 +311,7 @@
                                 </div>
 
                                 <div class="mb-4 col-md-6">
-                                    <div class="shadow-sm card h-100">
+                                    <div class="shadow-sm h-100 card">
                                         <div class="card-body">
                                             <h6 class="mb-3 text-primary">
                                                 <i class="mdi mdi-chart-bar-stacked"></i> Descuentos por Sede y Mes
@@ -329,11 +328,11 @@
                                 <div class="mb-4 col-md-12">
                                     <div class="shadow-sm card">
                                         <div class="card-body">
-                                            <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+                                            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
                                                 <h6 class="mb-0 text-primary">
-                                                    <i class="mdi mdi-account-group"></i> Descuentos por Consultor en el Mes
+                                                    <i class="mdi-account-group mdi"></i> Descuentos por Consultor en el Mes
                                                 </h6>
-                                                <select id="filtroMesConsultorDesc" class="form-select form-select-sm" style="width:180px;">
+                                                <select id="filtroMesConsultorDesc" class="form-select-sm form-select" style="width:180px;">
                                                 </select>
                                             </div>
                                             <div style="position:relative; height:300px;">
@@ -347,11 +346,11 @@
                                 <div class="mb-4 col-md-12">
                                     <div class="shadow-sm card">
                                         <div class="card-body">
-                                            <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+                                            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
                                                 <h6 class="mb-0 text-primary">
                                                     <i class="mdi mdi-account-clock"></i> Descuentos por Mes de un Consultor
                                                 </h6>
-                                                <select id="filtroConsultorGraficoDesc" class="form-select form-select-sm" style="width:220px;">
+                                                <select id="filtroConsultorGraficoDesc" class="form-select-sm form-select" style="width:220px;">
                                                     <option value="">— Todos los consultores —</option>
                                                 </select>
                                             </div>
@@ -390,7 +389,7 @@
     <div class="modal fade" id="modalDescuento" tabindex="-1" data-bs-backdrop="static">
         <div class="modal-dialog modal-xl">
             <div class="modal-content">
-                <div class="modal-header bg-primary text-white">
+                <div class="bg-primary text-white modal-header">
                     <h5 class="modal-title">
                         <i class="mdi mdi-file-document-edit"></i>
                         <span id="modalTitle">Nuevo Descuento Especial</span>
@@ -403,7 +402,7 @@
                         <div class="row">
                             {{-- Columna 1 --}}
                             <div class="col-md-6">
-                                <h6 class="text-primary mb-3"><i class="mdi mdi-account-circle"></i> Datos del Cliente
+                                <h6 class="mb-3 text-primary"><i class="mdi mdi-account-circle"></i> Datos del Cliente
                                 </h6>
 
                                 {{-- 🔥 NUEVOS CAMPOS --}}
@@ -478,7 +477,7 @@
 
                             {{-- Columna 2 --}}
                             <div class="col-md-6">
-                                <h6 class="text-primary mb-3"><i class="mdi mdi-package-variant"></i> Detalles del
+                                <h6 class="mb-3 text-primary"><i class="mdi mdi-package-variant"></i> Detalles del
                                     Descuento
                                 </h6>
 
@@ -524,9 +523,9 @@
                             </div>
                         </div>
 
-                        <div class="row mt-3">
+                        <div class="mt-3 row">
                             <div class="col-md-12">
-                                <h6 class="text-primary mb-3"><i class="mdi mdi-paperclip"></i> Archivos y Comentarios
+                                <h6 class="mb-3 text-primary"><i class="mdi mdi-paperclip"></i> Archivos y Comentarios
                                 </h6>
                             </div>
 
@@ -552,7 +551,7 @@
                             <i class="mdi mdi-close"></i> Cancelar
                         </button>
                         <button type="submit" class="btn btn-primary" id="btnGuardarDescuento">
-                            <i class="mdi mdi-content-save"></i> Guardar Descuento
+                            <i class="mdi-content-save mdi"></i> Guardar Descuento
                         </button>
                     </div>
                 </form>
@@ -564,7 +563,7 @@
     <div class="modal fade" id="modalDetalles" tabindex="-1">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
-                <div class="modal-header bg-info text-white">
+                <div class="bg-info text-white modal-header">
                     <h5 class="modal-title">
                         <i class="mdi mdi-information"></i> Detalles del Descuento
                     </h5>
@@ -581,7 +580,7 @@
     <div class="modal fade" id="modalDeshabilitar" tabindex="-1" data-bs-backdrop="static">
         <div class="modal-dialog">
             <div class="modal-content">
-                <div class="modal-header bg-danger text-white">
+                <div class="bg-danger text-white modal-header">
                     <h5 class="modal-title">
                         <i class="mdi mdi-cancel"></i> Deshabilitar Descuento
                     </h5>
@@ -620,7 +619,7 @@
     <div class="modal fade" id="modalRehabilitar" tabindex="-1" data-bs-backdrop="static">
         <div class="modal-dialog">
             <div class="modal-content">
-                <div class="modal-header bg-success text-white">
+                <div class="bg-success text-white modal-header">
                     <h5 class="modal-title">
                         <i class="mdi mdi-check-circle"></i> Rehabilitar Descuento
                     </h5>
@@ -1002,8 +1001,8 @@
             if (descuentosActuales.length === 0) {
                 html = `
                     <tr>
-                        <td colspan="20" class="text-center py-5">
-                            <i class="mdi mdi-file-document-outline mdi-48px text-muted"></i>
+                        <td colspan="20" class="py-5 text-center">
+                            <i class="mdi-file-document-outline text-muted mdi mdi-48px"></i>
                             <p class="mt-3 text-muted">No se encontraron descuentos especiales</p>
                         </td>
                     </tr>
@@ -1035,7 +1034,7 @@
                             </div>
                         ` : ''}
                         ${canAplicar && (descuento.aplicado === 'Aprobado' || descuento.aplicado === 'Rechazado') && !esDeshabilitado ? `
-                            <button class="btn btn-sm btn-outline-info mt-1" onclick="cambiarAplicacion(${descuento.id})" title="Cambiar aplicación">
+                            <button class="mt-1 btn-outline-info btn btn-sm" onclick="cambiarAplicacion(${descuento.id})" title="Cambiar aplicación">
                                 <i class="mdi mdi-swap-horizontal"></i>
                             </button>
                         ` : ''}
@@ -1053,7 +1052,7 @@
                             </div>
                         ` : ''}
                         ${canApprove && (descuento.aprobado === 'Aprobado' || descuento.aprobado === 'Rechazado') && !esDeshabilitado ? `
-                            <button class="btn btn-sm btn-outline-info mt-1" onclick="cambiarAprobacion(${descuento.id})" title="Cambiar aprobación">
+                            <button class="mt-1 btn-outline-info btn btn-sm" onclick="cambiarAprobacion(${descuento.id})" title="Cambiar aprobación">
                                 <i class="mdi mdi-swap-horizontal"></i>
                             </button>
                         ` : ''}
@@ -1066,7 +1065,7 @@
                     <td>${descuento.consultor}</td>
                     <td>${descuento.ciudad}</td>
                     <td title="${descuento.descuento_especial}">${truncar(descuento.descuento_especial, 70)}</td>
-                    <td><span class="badge bg-secondary">${descuento.tipo}</span></td>
+                    <td><span class="bg-secondary badge">${descuento.tipo}</span></td>
                     <td>${descuento.marca}</td>
                     <td>${descuento.ar || '-'}</td>
                     <td>${descuento.disenos || '-'}</td>
@@ -1116,12 +1115,12 @@
             const inicio = (currentPage - 1) * PER_PAGE + 1;
             const fin = Math.min(currentPage * PER_PAGE, total);
 
-            let html = `<div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+            let html = `<div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
                 <small class="text-muted">Mostrando <strong>${inicio}–${fin}</strong> de <strong>${total}</strong> descuento(s)</small>
-                <nav aria-label="Paginación"><ul class="pagination pagination-sm mb-0">`;
+                <nav aria-label="Paginación"><ul class="mb-0 pagination pagination-sm">`;
 
             html += `<li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
-                <a class="page-link" href="#" onclick="irAPagina(event,${currentPage - 1})"><i class="mdi mdi-chevron-left"></i></a></li>`;
+                <a class="page-link" href="#" onclick="irAPagina(event,${currentPage - 1})"><i class="mdi-chevron-left mdi"></i></a></li>`;
 
             let startP = Math.max(1, currentPage - 2);
             let endP   = Math.min(totalPaginas, startP + 4);
@@ -1141,7 +1140,7 @@
             }
 
             html += `<li class="page-item ${currentPage >= totalPaginas ? 'disabled' : ''}">
-                <a class="page-link" href="#" onclick="irAPagina(event,${currentPage + 1})"><i class="mdi mdi-chevron-right"></i></a></li>`;
+                <a class="page-link" href="#" onclick="irAPagina(event,${currentPage + 1})"><i class="mdi-chevron-right mdi"></i></a></li>`;
             html += `</ul></nav></div>`;
             $('#paginacionContainer').html(html);
         }
@@ -1213,7 +1212,7 @@
                 },
                 complete: function() {
                     $('#btnGuardarDescuento').prop('disabled', false).html(
-                        '<i class="mdi mdi-content-save"></i> Guardar Descuento');
+                        '<i class="mdi-content-save mdi"></i> Guardar Descuento');
                 }
             });
         }
@@ -1468,7 +1467,7 @@
                 archivosHTML = '<ul class="list-group">';
                 descuento.archivos_adjuntos.forEach((archivo, index) => {
                     archivosHTML += `
-                <li class="list-group-item d-flex justify-content-between align-items-center">
+                <li class="list-group-item d-flex align-items-center justify-content-between">
                     <span><i class="mdi mdi-file-document"></i> ${archivo.nombre}</span>
                     <a href="/comercial/descuentos-especiales/${descuento.id}/archivo/${index}" class="btn btn-sm btn-primary" download>
                         <i class="mdi mdi-download"></i> Descargar
@@ -1523,7 +1522,7 @@
                         <h6 class="text-primary"><i class="mdi mdi-package"></i> Detalles del Descuento</h6>
                         <table class="table table-borderless table-sm">
                             <tr><th>Descuento:</th><td style="max-width: 250px; max-height: 80px; overflow-y: auto; overflow-x: hidden; word-wrap: break-word; white-space: normal;">${descuento.descuento_especial}</td></tr>
-                            <tr><th>Tipo:</th><td><span class="badge bg-secondary">${descuento.tipo}</span></td></tr>
+                            <tr><th>Tipo:</th><td><span class="bg-secondary badge">${descuento.tipo}</span></td></tr>
                             <tr><th>Marca:</th><td>${descuento.marca}</td></tr>
                             <tr><th>AR:</th><td>${descuento.ar || '-'}</td></tr>
                             <tr><th>Diseños:</th><td>${descuento.disenos || '-'}</td></tr>
@@ -1531,7 +1530,7 @@
                         </table>
                     </div>
                 </div>
-                <div class="row mt-3">
+                <div class="mt-3 row">
                     <div class="col-md-12">
                         <h6 class="text-primary"><i class="mdi mdi-check-circle"></i> Aprobaciones</h6>
                         <table class="table table-sm">
@@ -1549,20 +1548,20 @@
                     </div>
                 </div>
                 ${historialHTML ? `
-                                    <div class="row mt-3">
+                                    <div class="mt-3 row">
                                         <div class="col-md-12">
                                             <h6 class="text-primary"><i class="mdi mdi-history"></i> Historial</h6>
                                             ${historialHTML}
                                         </div>
                                     </div>
                                 ` : ''}
-                <div class="row mt-3">
+                <div class="mt-3 row">
                     <div class="col-md-12">
                         <h6 class="text-primary"><i class="mdi mdi-comment-text"></i> Comentarios</h6>
                         <p>${descuento.comentarios || 'Sin comentarios'}</p>
                     </div>
                 </div>
-                <div class="row mt-3">
+                <div class="mt-3 row">
                     <div class="col-md-12">
                         <h6 class="text-primary"><i class="mdi mdi-paperclip"></i> Archivos Adjuntos</h6>
                         ${archivosHTML}

@@ -359,8 +359,8 @@
             </div>
         </div>
 
-        {{-- ── FILA 4b: Cumplimiento mensual (solo admin) ──────────── --}}
-        @if (auth()->user()->isSuperAdmin() || auth()->user()->isAdmin())
+        {{-- ── FILA 4b: Cumplimiento mensual (admin y con permiso productividad sedes) --}}
+        @if (auth()->user()->isSuperAdmin() || auth()->user()->isAdmin() || auth()->user()->puede_ver_productividad_sedes)
         <div class="mb-4 row">
             <div class="col-12">
                 <div class="shadow-sm border-0 card">
@@ -737,7 +737,7 @@ async function cargarKpiChart(semanas = 8) {
 cargarKpiChart(8);
 document.getElementById('filtro-semanas')?.addEventListener('change', function () { cargarKpiChart(parseInt(this.value)); });
 
-@if (auth()->user()->isSuperAdmin() || auth()->user()->isAdmin())
+@if (auth()->user()->isSuperAdmin() || auth()->user()->isAdmin() || auth()->user()->puede_ver_productividad_sedes)
 let kpiChartMensual = null;
 async function cargarKpiChartMensual(meses = 3) {
     try {

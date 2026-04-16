@@ -48,9 +48,9 @@ class CobranzaSedesController extends Controller
             $reporteSemanaActual = ReporteCobranza::obtenerOCrearSemanaActual($user->id, $user->sede);
         }
 
-        // Resumen del día por sede (para admin/superadmin)
+        // Resumen del día por sede (para admin/superadmin y usuarios con permiso productividad sedes)
         $resumenSedes = null;
-        if ($user->isSuperAdmin() || $user->isAdmin()) {
+        if ($user->isSuperAdmin() || $user->isAdmin() || $user->puede_ver_productividad_sedes) {
             $usuariosSede = User::role('sede')->where('is_active', true)->whereNotNull('sede')->get();
 
             // Reportes ya registrados hoy

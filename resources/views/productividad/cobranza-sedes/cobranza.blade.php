@@ -409,7 +409,7 @@
         {{-- ══════════════════════════════════════════════
              FILA 3b: Cumplimiento mensual (solo admin)
         ══════════════════════════════════════════════ --}}
-        @if (auth()->user()->isSuperAdmin() || auth()->user()->isAdmin())
+        @if (auth()->user()->isSuperAdmin() || auth()->user()->isAdmin() || auth()->user()->puede_ver_productividad_sedes)
         <div class="mb-4 row">
             <div class="col-12">
                 <div class="shadow-sm border-0 card">
@@ -1181,8 +1181,8 @@ document.getElementById('btn-mes-next').addEventListener('click', () => {
 
 cargarKpiChart();
 
-// ── Gráfico cumplimiento mensual (solo admin) ─────────────────────
-@if (auth()->user()->isSuperAdmin() || auth()->user()->isAdmin())
+// ── Gráfico cumplimiento mensual (admin y con permiso productividad sedes) ─────
+@if (auth()->user()->isSuperAdmin() || auth()->user()->isAdmin() || auth()->user()->puede_ver_productividad_sedes)
 let kpiChartMensual = null;
 
 async function cargarKpiChartMensual(meses = 2) {
