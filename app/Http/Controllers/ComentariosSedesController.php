@@ -17,6 +17,8 @@ class ComentariosSedesController extends Controller
         'arosadio@trimaxperu.com',
         'supervisor.comercial.1@trimaxperu.com',
         'planeamiento.comercial@trimaxperu.com',
+        'cobranzas@trimaxperu.com',
+        'analista.cobranzas@trimaxperu.com',
     ];
 
     const MIMES_PERMITIDOS = 'jpg,jpeg,png,gif,webp,xlsx,xls,csv,pdf';

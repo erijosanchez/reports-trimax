@@ -20,6 +20,7 @@ class CobranzaSedesController extends Controller
         'planeamiento.comercial@trimaxperu.com',
         'analista.cobranzas@trimaxperu.com',
         'emisionnc@trimaxperu.com',
+        'cobranzas@trimaxperu.com'
     ];
 
     // Tipos de archivo permitidos
