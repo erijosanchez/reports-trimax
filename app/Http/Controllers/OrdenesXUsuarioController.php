@@ -13,7 +13,7 @@ class OrdenesXUsuarioController extends Controller
         'JAIME RL AREQUIPA', 'JAIME RL ATE', 'JAIME RL CAILLOMA', 'JAIME RL COMAS',
         'JAIME RL HUANUCO', 'JAIME RL LINCE', 'JAIME RL NAPO', 'JAIME RL SJM',
         'Juan Loayza Pacheco', 'Juan  Loayza Pacheco',
-        'Rafael Mendez', 'Rafael ML', 'RUTH', 'VASQUEZ ALCÁNTARA',
+        'Rafael Mendez', 'Rafael ML', 'RUTH VASQUEZ ALCÁNTARA',
     ];
 
     public function index()

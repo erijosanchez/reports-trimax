@@ -1236,7 +1236,7 @@
                     <tr ${esDeshabilitado ? 'class="table-secondary"' : ''}>
                         ${canManageAcuerdos ? `<td class="text-center"><input type="checkbox" class="check-acuerdo form-check-input" data-id="${acuerdo.id}" style="cursor:pointer;width:18px;height:18px;" ${esDeshabilitado ? 'disabled title="Deshabilitado"' : ''}></td>` : ''}
                         <td class="text-center">${numFila}</td>
-                        <td><strong class="text-primary">${acuerdo.numero_acuerdo}</strong></td>
+                        <td><a href="#" onclick="verDetalles(${acuerdo.id}); return false;" title="Ver detalles" class="text-primary fw-bold">${acuerdo.numero_acuerdo}</a></td>
                         <td>${badgeEstado}</td>
                         <td>
                             ${badgeValidado}
@@ -1290,9 +1290,6 @@
                         <td>${acuerdo.creador ? acuerdo.creador.name : '-'}</td>
                         <td class="text-center">
                             <div class="btn-group" role="group">
-                                <button class="btn btn-sm btn-info" onclick="verDetalles(${acuerdo.id})" title="Ver detalles">
-                                    <i class="mdi mdi-eye"></i>
-                                </button>
                                 ${puedeEditar && !esDeshabilitado ? `
                                     <button class="btn btn-sm btn-warning" onclick="editarAcuerdo(${acuerdo.id})" title="Editar">
                                         <i class="mdi mdi-pencil"></i>

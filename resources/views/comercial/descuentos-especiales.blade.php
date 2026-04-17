@@ -1020,7 +1020,7 @@
                     html += `
                 <tr ${esDeshabilitado ? 'class="table-secondary"' : ''}>
                     <td class="text-center">${numFila}</td>
-                    <td><strong class="text-primary">${descuento.numero_descuento}</strong></td>
+                    <td><a href="#" onclick="verDetalles(${descuento.id}); return false;" title="Ver detalles" class="text-primary fw-bold text-decoration-none">${descuento.numero_descuento}</a></td>
                     <td>
                         ${badgeAplicado}
                         ${canAplicar && descuento.aplicado === 'Pendiente' && !esDeshabilitado ? `
@@ -1065,7 +1065,7 @@
                     <td>${descuento.consultor}</td>
                     <td>${descuento.ciudad}</td>
                     <td title="${descuento.descuento_especial}">${truncar(descuento.descuento_especial, 70)}</td>
-                    <td><span class="bg-secondary badge">${descuento.tipo}</span></td>
+                    <td><span class="bg-primary badge">${descuento.tipo}</span></td>
                     <td>${descuento.marca}</td>
                     <td>${descuento.ar || '-'}</td>
                     <td>${descuento.disenos || '-'}</td>
@@ -1074,9 +1074,6 @@
                     <td>${descuento.creador ? descuento.creador.name : '-'}</td>
                     <td class="text-center">
                         <div class="btn-group" role="group">
-                            <button class="btn btn-sm btn-info" onclick="verDetalles(${descuento.id})" title="Ver detalles">
-                                <i class="mdi mdi-eye"></i>
-                            </button>
                             ${puedeEditar && !esDeshabilitado ? `
                                 <button class="btn btn-sm btn-warning" onclick="editarDescuento(${descuento.id})" title="Editar">
                                     <i class="mdi mdi-pencil"></i>
