@@ -33,8 +33,6 @@ class User extends Authenticatable
         'puede_gestionar_requerimientos',
         'puede_ver_todos_requerimientos',
         'puede_ver_productividad_sedes',
-        'puede_ver_tracking',
-        'puede_gestionar_tracking',
         'is_active',
         'last_login_at',
         'two_factor_secret',
@@ -66,8 +64,6 @@ class User extends Authenticatable
         'puede_gestionar_requerimientos' => 'boolean',
         'puede_ver_todos_requerimientos' => 'boolean',
         'puede_ver_productividad_sedes' => 'boolean',
-        'puede_ver_tracking' => 'boolean',
-        'puede_gestionar_tracking' => 'boolean',
         'es_gerente_general' => 'boolean',
         'last_login_at' => 'datetime',
         'two_factor_confirmed_at' => 'datetime',
@@ -256,16 +252,6 @@ class User extends Authenticatable
     public function puedeVerPendienteEntregaMontura(): bool
     {
         return $this->isSuperAdmin() || $this->isAdmin() || $this->puede_ver_pendiente_entrega_montura;
-    }
-
-    public function puedeVerTracking(): bool
-    {
-        return $this->isSuperAdmin() || $this->isAdmin() || $this->puede_ver_tracking;
-    }
-
-    public function puedeGestionarTracking(): bool
-    {
-        return $this->isSuperAdmin() || $this->isAdmin() || $this->puede_gestionar_tracking;
     }
 
     public function getRoleName()
