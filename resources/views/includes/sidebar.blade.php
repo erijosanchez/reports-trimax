@@ -334,6 +334,40 @@
             </li>
         @endif
 
+        {{-- ══════════════════════════════════════════════════════
+            MÓDULO TRACKING MOTORIZADOS
+        ══════════════════════════════════════════════════════ --}}
+        @if($user->puedeVerTracking())
+        <li class="nav-item nav-category">TRACKING</li>
+
+        <li class="nav-item">
+            <a class="nav-link {{ request()->routeIs('tracking.mapa') ? 'active' : '' }}"
+                href="{{ route('tracking.mapa') }}">
+                <i class="mdi mdi-map-marker-radius menu-icon"></i>
+                <span class="menu-title">Mapa en Vivo</span>
+            </a>
+        </li>
+
+        <li class="nav-item">
+            <a class="nav-link {{ request()->routeIs('tracking.rutas*') ? 'active' : '' }}"
+                href="{{ route('tracking.rutas') }}">
+                <i class="mdi mdi-routes menu-icon"></i>
+                <span class="menu-title">Rutas</span>
+            </a>
+        </li>
+
+        @if($user->puedeGestionarTracking())
+        <li class="nav-item">
+            <a class="nav-link {{ request()->routeIs('tracking.motorizados*') ? 'active' : '' }}"
+                href="{{ route('tracking.motorizados') }}">
+                <i class="mdi mdi-motorbike menu-icon"></i>
+                <span class="menu-title">Motorizados</span>
+            </a>
+        </li>
+        @endif
+
+        @endif
+
         {{-- MÓDULO ADMINISTRADOR (Solo admin y superadmin) --}}
         @if (auth()->user()->isAdmin() || auth()->user()->isSuperAdmin())
             <li class="nav-item nav-category">Administrador</li>

@@ -26,6 +26,7 @@ use App\Http\Controllers\CobranzaSedesController;
 use App\Http\Controllers\CajaChicaSedesController;
 use App\Http\Controllers\ComentariosSedesController;
 use App\Http\Controllers\OrdenesXUsuarioController;
+use App\Http\Controllers\TrackingController;
 
 // ============================================================
 // RUTAS PARA LARAVEL 11
@@ -34,6 +35,9 @@ use App\Http\Controllers\OrdenesXUsuarioController;
 
 // Public Survey Route
 Route::get('/encuesta/{token}', [SurveyController::class, 'show'])->name('survey.show');
+
+// GPS público — GPSLogger (sin auth, token en el body/query)
+Route::post('/api/tracking/gps', [TrackingController::class, 'gpsPublico'])->name('tracking.gps.publico');
 
 // Auth Routes (Guest)
 Route::middleware(['guest'])->group(function () {
@@ -328,6 +332,36 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
             Route::get('/api/historial',              [ComentariosSedesController::class, 'historial'])->name('historial');
             Route::get('/api/kpi-data',               [ComentariosSedesController::class, 'kpiData'])->name('kpi-data');
         });
+    });
+
+    // Tracking Motorizados
+    Route::prefix('tracking')->name('tracking.')->group(function () {
+        // Mapa en vivo
+        Route::get('/mapa', [TrackingController::class, 'mapa'])->name('mapa');
+        Route::get('/api/ubicaciones-vivo', [TrackingController::class, 'ubicacionesEnVivo'])->name('ubicaciones-vivo');
+
+        // CRUD Motorizados
+        Route::get('/motorizados', [TrackingController::class, 'motorizados'])->name('motorizados');
+        Route::get('/motorizados/crear', [TrackingController::class, 'crearMotorizado'])->name('motorizados.create');
+        Route::post('/motorizados', [TrackingController::class, 'guardarMotorizado'])->name('motorizados.store');
+        Route::get('/motorizados/{motorizado}/editar', [TrackingController::class, 'editarMotorizado'])->name('motorizados.edit');
+        Route::put('/motorizados/{motorizado}', [TrackingController::class, 'actualizarMotorizado'])->name('motorizados.update');
+        Route::delete('/motorizados/{motorizado}', [TrackingController::class, 'eliminarMotorizado'])->name('motorizados.destroy');
+
+        // CRUD Rutas
+        Route::get('/rutas', [TrackingController::class, 'rutas'])->name('rutas');
+        Route::get('/rutas/crear', [TrackingController::class, 'crearRuta'])->name('rutas.create');
+        Route::post('/rutas', [TrackingController::class, 'guardarRuta'])->name('rutas.store');
+        Route::get('/rutas/{ruta}', [TrackingController::class, 'verRuta'])->name('rutas.show');
+        Route::post('/rutas/{ruta}/iniciar', [TrackingController::class, 'iniciarRuta'])->name('rutas.iniciar');
+        Route::post('/rutas/{ruta}/completar', [TrackingController::class, 'completarRuta'])->name('rutas.completar');
+        Route::post('/rutas/{ruta}/cancelar', [TrackingController::class, 'cancelarRuta'])->name('rutas.cancelar');
+
+        // Vista móvil del motorizado
+        Route::get('/motorizado/{motorizado}/ruta', [TrackingController::class, 'vistaMotorizado'])->name('motorizado.ruta');
+        Route::post('/motorizado/{motorizado}/ubicacion', [TrackingController::class, 'recibirUbicacion'])->name('motorizado.ubicacion');
+        Route::post('/paradas/{parada}/marcar', [TrackingController::class, 'marcarParada'])->name('paradas.marcar');
+        Route::post('/motorizados/{motorizado}/generar-token', [TrackingController::class, 'generarToken'])->name('motorizados.generar-token');
     });
 
     // Admin Routes (Admin + Super Admin only)

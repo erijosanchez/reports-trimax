@@ -56,6 +56,12 @@ return [
         'fallback_model' => env('GROQ_FALLBACK_MODEL', 'llama-3.1-8b-instant'),
     ],
 
+    'traccar' => [
+        'url'      => env('TRACCAR_URL', ''),
+        'user'     => env('TRACCAR_USER', ''),
+        'password' => env('TRACCAR_PASSWORD', ''),
+    ],
+
     'openrouter' => [
         'api_key' => env('OPENROUTER_API_KEY'),
         'api_url' => 'https://openrouter.ai/api/v1/chat/completions',
