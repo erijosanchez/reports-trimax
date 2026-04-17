@@ -389,9 +389,21 @@
         <div class="row">
             <div class="col-12">
                 <div class="shadow-sm border-0 card">
-                    <div class="d-flex align-items-center justify-content-between bg-white border-bottom card-header">
+                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 bg-white border-bottom card-header">
                         <h5 class="mb-0 fw-bold"><i class="me-2 text-primary mdi mdi-history"></i>Historial de Reportes</h5>
-                        <div id="historial-loader" class="spinner-border spinner-border-sm text-primary d-none"></div>
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <select id="filtro-sede" class="form-select form-select-sm" style="width:auto" onchange="aplicarFiltros()">
+                                <option value="">Todas las sedes</option>
+                            </select>
+                            <select id="filtro-semana" class="form-select form-select-sm" style="width:auto" onchange="aplicarFiltros()">
+                                <option value="">Todas las semanas</option>
+                            </select>
+                            <select id="sort-fecha" class="form-select form-select-sm" style="width:auto" onchange="aplicarFiltros()">
+                                <option value="desc">Más reciente primero</option>
+                                <option value="asc">Más antiguo primero</option>
+                            </select>
+                            <div id="historial-loader" class="spinner-border spinner-border-sm text-primary d-none"></div>
+                        </div>
                     </div>
                     <div class="p-0 card-body">
                         <div class="table-responsive">
@@ -431,6 +443,55 @@
             <div class="modal-body" id="modal-body">
                 <div class="py-4 text-center"><div class="spinner-border text-primary"></div></div>
             </div>
+        </div>
+    </div>
+</div>
+
+{{-- Modal Enviar Reporte Atrasado --}}
+<div class="modal fade" id="modal-enviar-atrasado" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold"><i class="me-2 text-warning mdi mdi-clock-alert-outline"></i>Enviar Reporte Atrasado</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="form-atrasado" enctype="multipart/form-data">
+                @csrf
+                @method('PUT')
+                <input type="hidden" id="atrasado-reporte-id">
+                <div class="modal-body">
+                    <div class="mb-3 py-2 alert alert-warning small">
+                        <i class="me-1 mdi mdi-alert"></i>
+                        El plazo ya venció. Este envío se registrará como <strong>atrasado</strong> y el KPI será penalizado.
+                    </div>
+                    <p class="mb-3 small"><strong>Sede:</strong> <span id="atrasado-sede-label" class="text-primary fw-bold"></span></p>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Archivos <span class="text-danger">*</span></label>
+                        <div class="drop-zone" id="drop-zone-atrasado">
+                            <i class="mdi-cloud-upload-outline mdi" style="font-size:2rem;color:#94a3b8;"></i>
+                            <p class="mt-2 mb-1 text-muted small">Arrastra archivos aquí o selecciona</p>
+                            <input type="file" id="archivos-atrasado" name="archivos[]"
+                                   multiple accept=".jpg,.jpeg,.png,.gif,.webp,.xlsx,.xls,.csv,.pdf" class="d-none">
+                            <button type="button" class="mt-1 btn-outline-primary btn btn-sm"
+                                    onclick="document.getElementById('archivos-atrasado').click()">
+                                <i class="me-1 mdi mdi-paperclip"></i>Seleccionar
+                            </button>
+                        </div>
+                        <div id="preview-atrasado" class="mt-2 row g-2"></div>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label fw-semibold">Notas</label>
+                        <textarea name="notas" rows="2" class="form-control form-control-sm" placeholder="Opcional..."></textarea>
+                    </div>
+                    <div id="msg-atrasado"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary btn btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-warning fw-bold btn-sm" id="btn-enviar-atrasado">
+                        <i class="me-1 mdi mdi-clock-alert-outline"></i>Enviar Atrasado
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -592,8 +653,9 @@ function quitarArchivo(idx, inputId) {
     renderPreview(dt.files, preview, inputId);
 }
 
-setupDropZone('drop-zone-nuevo', 'archivos-nuevo', 'preview-nuevo');
-setupDropZone('drop-zone-edit',  'archivos-edit',  'preview-edit');
+setupDropZone('drop-zone-nuevo',    'archivos-nuevo',    'preview-nuevo');
+setupDropZone('drop-zone-edit',     'archivos-edit',     'preview-edit');
+setupDropZone('drop-zone-atrasado', 'archivos-atrasado', 'preview-atrasado');
 
 function marcarEliminar(idx, btn) {
     const hidden = document.getElementById('eliminar-' + idx);
@@ -640,6 +702,8 @@ if (formEditar) {
 }
 
 // ── Historial ──────────────────────────────────────────────────────
+let _historialData = [];
+
 function badgeEstado(estado) {
     const colorMap = { en_tiempo:'success', con_atraso:'danger', pendiente:'warning', no_enviado:'danger' };
     const labelMap = { en_tiempo:'En tiempo', con_atraso:'Con atraso', pendiente:'Pendiente', no_enviado:'No enviado' };
@@ -651,23 +715,67 @@ async function cargarHistorial() {
     loader.classList.remove('d-none');
     try {
         const data = await apiFetch(ROUTES.historial);
-        const rows = data.data ?? [];
-        if (!rows.length) { document.getElementById('historial-body').innerHTML='<tr><td colspan="9" class="py-4 text-muted text-center">Sin registros.</td></tr>'; return; }
-        document.getElementById('historial-body').innerHTML = rows.map(r => `
-            <tr>
-                <td><strong>${r.sede}</strong></td>
-                <td><span class="bg-light border text-dark badge">${r.semana}</span></td>
-                <td class="text-muted small">${r.semana_inicio} — ${r.semana_fin}</td>
-                <td class="small">${r.fecha_limite ?? '—'}</td>
-                <td class="small">${r.fecha_envio ?? '<span class="text-muted">—</span>'}${r.fecha_edicion ? `<br><span class="text-warning small"><i class="mdi mdi-pencil"></i> ${r.fecha_edicion}</span>` : ''}</td>
-                <td>${r.kpi !== null ? `<span class="badge bg-${r.kpi_color} fs-6">${r.kpi_label}</span>` : '<span class="text-muted">—</span>'}</td>
-                <td>${badgeEstado(r.estado)}</td>
-                <td class="text-center">${r.num_archivos > 0 ? `<span class="bg-info badge">${r.num_archivos}</span>` : '0'}</td>
-                <td><button class="px-2 py-0 btn-outline-primary btn btn-sm" onclick="verReporte(${r.id})"><i class="mdi mdi-eye"></i></button></td>
-            </tr>`).join('');
+        _historialData = data.data ?? [];
+        poblarFiltroSede(_historialData);
+        poblarFiltroSemana(_historialData);
+        aplicarFiltros();
     } catch(err) { document.getElementById('historial-body').innerHTML=`<tr><td colspan="9" class="py-3 text-danger text-center">${err.message}</td></tr>`; }
     finally { loader.classList.add('d-none'); }
 }
+
+function poblarFiltroSede(rows) {
+    const sel = document.getElementById('filtro-sede');
+    if (!sel) return;
+    const sedes = [...new Set(rows.map(r => r.sede))].sort();
+    sedes.forEach(s => { const o = document.createElement('option'); o.value = s; o.textContent = s; sel.appendChild(o); });
+}
+
+function poblarFiltroSemana(rows) {
+    const sel = document.getElementById('filtro-semana');
+    if (!sel) return;
+    const vistas = new Set();
+    [...rows].sort((a, b) => (b.semana_inicio_iso ?? '').localeCompare(a.semana_inicio_iso ?? '')).forEach(r => {
+        if (!r.semana || vistas.has(r.semana)) return;
+        vistas.add(r.semana);
+        const label = r.semana_inicio && r.semana_fin ? `${r.semana} — ${r.semana_inicio} al ${r.semana_fin}` : r.semana;
+        const o = document.createElement('option'); o.value = r.semana; o.textContent = label; sel.appendChild(o);
+    });
+}
+
+function aplicarFiltros() {
+    const sede   = document.getElementById('filtro-sede')?.value ?? '';
+    const semana = document.getElementById('filtro-semana')?.value ?? '';
+    const dir    = document.getElementById('sort-fecha')?.value ?? 'desc';
+    let rows = [..._historialData];
+    if (sede)   rows = rows.filter(r => r.sede === sede);
+    if (semana) rows = rows.filter(r => r.semana === semana);
+    rows.sort((a, b) => {
+        const da = a.semana_inicio_iso ?? '', db = b.semana_inicio_iso ?? '';
+        return dir === 'asc' ? da.localeCompare(db) : db.localeCompare(da);
+    });
+    renderHistorial(rows);
+}
+
+function renderHistorial(rows) {
+    const tbody = document.getElementById('historial-body');
+    if (!rows.length) { tbody.innerHTML='<tr><td colspan="9" class="py-4 text-muted text-center">Sin registros.</td></tr>'; return; }
+    tbody.innerHTML = rows.map(r => `
+        <tr>
+            <td><strong>${r.sede}</strong></td>
+            <td><span class="bg-light border text-dark badge">${r.semana}</span></td>
+            <td class="text-muted small">${r.semana_inicio} — ${r.semana_fin}</td>
+            <td class="small">${r.fecha_limite ?? '—'}</td>
+            <td class="small">${r.fecha_envio ?? '<span class="text-muted">—</span>'}${r.fecha_edicion ? `<br><span class="text-warning small"><i class="mdi mdi-pencil"></i> ${r.fecha_edicion}</span>` : ''}</td>
+            <td>${r.kpi !== null ? `<span class="badge bg-${r.kpi_color} fs-6">${r.kpi_label}</span>` : '<span class="text-muted">—</span>'}</td>
+            <td>${badgeEstado(r.estado)}</td>
+            <td class="text-center">${r.num_archivos > 0 ? `<span class="bg-info badge">${r.num_archivos}</span>` : '0'}</td>
+            <td class="text-nowrap">
+                <button class="px-2 py-0 btn-outline-primary btn btn-sm" onclick="verReporte(${r.id})"><i class="mdi mdi-eye"></i></button>
+                ${r.puede_enviar_atrasado ? `<button class="px-2 py-0 btn-outline-danger btn btn-sm ms-1" onclick="abrirEnviarAtrasado(${r.id},'${r.sede}')" title="Enviar atrasado"><i class="mdi mdi-clock-alert-outline"></i></button>` : ''}
+            </td>
+        </tr>`).join('');
+}
+
 cargarHistorial();
 
 // ── Modal Ver ──────────────────────────────────────────────────────
@@ -795,5 +903,30 @@ function cerrarCamara() { _streamActivo?.getTracks().forEach(t=>t.stop()); _stre
         });
     });
 })();
+
+// ── Envío atrasado ────────────────────────────────────────────────
+function abrirEnviarAtrasado(id, sede) {
+    document.getElementById('atrasado-reporte-id').value = id;
+    document.getElementById('atrasado-sede-label').textContent = sede;
+    document.getElementById('msg-atrasado').innerHTML = '';
+    _acumulados['archivos-atrasado'] = new DataTransfer();
+    document.getElementById('preview-atrasado').innerHTML = '';
+    new bootstrap.Modal(document.getElementById('modal-enviar-atrasado')).show();
+}
+
+document.getElementById('form-atrasado')?.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btn-enviar-atrasado');
+    const msg = document.getElementById('msg-atrasado');
+    const id  = document.getElementById('atrasado-reporte-id').value;
+    btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Enviando...'; msg.innerHTML = '';
+    try {
+        document.getElementById('archivos-atrasado').files = _acumulados['archivos-atrasado'].files;
+        const data = await apiFetch(urlUpdate(id), { method: 'POST', body: new FormData(this) });
+        msg.innerHTML = `<div class="alert alert-warning py-2">${data.message}</div>`;
+        setTimeout(() => location.reload(), 1800);
+    } catch(err) { msg.innerHTML = `<div class="alert alert-danger py-2">${err.message}</div>`; }
+    finally { btn.disabled = false; btn.innerHTML = '<i class="me-1 mdi mdi-clock-alert-outline"></i>Enviar Atrasado'; }
+});
 </script>
 @endpush

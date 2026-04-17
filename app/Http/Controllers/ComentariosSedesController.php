@@ -166,10 +166,11 @@ class ComentariosSedesController extends Controller
         }
 
         $reporte->fill([
-            'fecha_ultimo_envio' => $ahora,
-            'archivos'           => $archivosActuales,
-            'notas'              => $request->notas ?? $reporte->notas,
-            'editado_tarde'      => $reporte->editado_tarde || $tardio,
+            'fecha_envio_original' => $reporte->fecha_envio_original ?? $ahora,
+            'fecha_ultimo_envio'   => $ahora,
+            'archivos'             => $archivosActuales,
+            'notas'                => $request->notas ?? $reporte->notas,
+            'editado_tarde'        => $reporte->editado_tarde || $tardio,
         ]);
         $reporte->save();
         $reporte->recalcularKpi();
@@ -269,8 +270,11 @@ class ComentariosSedesController extends Controller
                 'estado'        => $r->estado,
                 'editado_tarde' => $r->editado_tarde,
                 'num_archivos'  => count($r->archivos ?? []),
-                'notas'         => $r->notas,
-                'usuario'       => $r->user?->name,
+                'notas'                 => $r->notas,
+                'usuario'               => $r->user?->name,
+                'puede_enviar_atrasado' => is_null($r->fecha_envio_original) &&
+                    ($user->isSuperAdmin() || $user->isAdmin() || $r->sede === $user->sede),
+                'semana_inicio_iso'     => $r->semana_inicio?->toDateString(),
             ]),
         ]);
     }
