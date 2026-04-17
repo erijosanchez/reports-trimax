@@ -351,7 +351,7 @@
             data: {
                 labels: grafData.map(r => r.codigo),
                 datasets: [{
-                    label: 'Días transcurridos',
+                    label: 'KPI Cumplimiento (%)',
                     data: grafData.map(r => r.kpi),
                     backgroundColor: grafData.map(r => (colorMap[r.semaforo] || '#06B6D4') + 'bb'),
                     borderColor: grafData.map(r => colorMap[r.semaforo] || '#06B6D4'),
@@ -369,10 +369,10 @@
                         callbacks: {
                             afterLabel: (ctx) => {
                                 const d = ctx.raw;
-                                if (d === 0) return '⏳ Pendiente de asignación';
-                                if (d <= 45) return '✅ Dentro del SLA';
-                                if (d <= 60) return '⚠️ En riesgo';
-                                return '🔴 SLA excedido en ' + (d - 45) + ' días';
+                                if (d === 0)   return '⏳ Sin proceso activo';
+                                if (d === 100) return '✅ Dentro del SLA';
+                                if (d >= 80)   return '⚠️ En riesgo';
+                                return '🔴 Cumplimiento crítico';
                             }
                         }
                     },
@@ -380,16 +380,16 @@
                         annotations: {
                             slaLine: {
                                 type: 'line',
-                                yMin: 45,
-                                yMax: 45,
-                                borderColor: '#EF4444',
+                                yMin: 100,
+                                yMax: 100,
+                                borderColor: '#22C55E',
                                 borderWidth: 2,
                                 borderDash: [6, 4],
                                 label: {
                                     display: true,
-                                    content: 'SLA 45d',
+                                    content: 'Meta 100%',
                                     position: 'end',
-                                    color: '#EF4444',
+                                    color: '#22C55E',
                                     font: {
                                         size: 11,
                                         weight: 'bold'
@@ -413,8 +413,13 @@
                     },
                     y: {
                         beginAtZero: true,
+                        min: 0,
+                        max: 100,
                         grid: {
                             color: '#f0f0f0'
+                        },
+                        ticks: {
+                            callback: (v) => v + '%'
                         }
                     }
                 }

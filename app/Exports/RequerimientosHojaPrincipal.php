@@ -83,7 +83,7 @@ class RequerimientosHojaPrincipal implements FromQuery, WithHeadings, WithMappin
             $req->estado !== 'Pendiente' ? $req->kpi : '',
             $semaforo,
             $req->fecha_cierre ? $req->fecha_cierre->format('d/m/Y') : '',
-            $req->estado !== 'Pendiente' ? $req->tiempo_total : '',
+            $req->estado !== 'Pendiente' ? $req->total : '',
         ];
     }
 

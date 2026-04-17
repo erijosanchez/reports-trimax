@@ -27,7 +27,7 @@
                                 'Pendiente' => 'bg-info',
                                 'En Proceso' => 'bg-warning text-dark',
                                 'Contratado' => 'bg-success',
-                                'Cancelado' => 'bg-secondary',
+                                'Cancelado' => 'bg-danger',
                                 default => 'bg-secondary',
                             };
                         @endphp
@@ -167,17 +167,17 @@
                                                     default => 'text-muted',
                                                 };
                                             @endphp
-                                            <h2 class="mb-0 {{ $kpiColor }}">{{ $requerimiento->kpi }}</h2>
-                                            <small class="text-muted">días transcurridos</small>
+                                            <h2 class="mb-0 {{ $kpiColor }}">{{ $requerimiento->kpi }}%</h2>
+                                            <small class="text-muted">cumplimiento</small>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="mb-3 col-md-3 col-sm-6">
                                     <div class="h-100 text-center card card-stat">
                                         <div class="card-body">
-                                            <p class="mb-1 text-muted small fw-semibold">TIEMPO TOTAL</p>
-                                            <h2 class="mb-0 text-dark">{{ $requerimiento->tiempo_total }}</h2>
-                                            <small class="text-muted">SLA + KPI</small>
+                                            <p class="mb-1 text-muted small fw-semibold">TOTAL DÍAS</p>
+                                            <h2 class="mb-0 text-dark">{{ $requerimiento->total }}</h2>
+                                            <small class="text-muted">días del proceso</small>
                                         </div>
                                     </div>
                                 </div>
@@ -609,14 +609,14 @@
                                                             'Pendiente' => 'bg-info',
                                                             'En Proceso' => 'bg-warning text-dark',
                                                             'Contratado' => 'bg-success',
-                                                            'Cancelado' => 'bg-secondary',
+                                                            'Cancelado' => 'bg-danger',
                                                             default => 'bg-secondary',
                                                         };
                                                         $bc2 = match ($evento->estado_nuevo) {
                                                             'Pendiente' => 'bg-info',
                                                             'En Proceso' => 'bg-warning text-dark',
                                                             'Contratado' => 'bg-success',
-                                                            'Cancelado' => 'bg-secondary',
+                                                            'Cancelado' => 'bg-danger',
                                                             default => 'bg-secondary',
                                                         };
                                                     @endphp
@@ -814,6 +814,7 @@
             entrevista_presencial: 'Ej: Se citaron 3 candidatos a entrevista presencial...',
             evaluacion: 'Ej: Se aplicó evaluación psicológica y prueba técnica...',
             oferta_candidato: 'Ej: Se envió oferta formal a Juan Pérez. Sueldo: S/ 2,800...',
+            en_capacitacion: 'Ej: El candidato inició capacitación el día...',
             nota: 'Escribe tu nota o comentario libre aquí...',
         };
         document.getElementById('tipoEtapaSelect')?.addEventListener('change', function() {

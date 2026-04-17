@@ -257,7 +257,7 @@
                                                                             'Pendiente' => 'bg-info',
                                                                             'En Proceso' => 'bg-warning text-dark',
                                                                             'Contratado' => 'bg-success',
-                                                                            'Cancelado' => 'bg-secondary',
+                                                                            'Cancelado' => 'bg-danger',
                                                                             default => 'bg-secondary',
                                                                         };
                                                                     @endphp
@@ -267,7 +267,7 @@
                                                                 </td>
                                                                 <td class="text-center">{{ $req->sla }}</td>
                                                                 <td class="text-center">
-                                                                    @if ($req->estado === 'Pendiente')
+                                                                    @if (in_array($req->estado, ['Pendiente', 'Cancelado']))
                                                                         <span class="text-muted">—</span>
                                                                     @else
                                                                         @php
@@ -279,12 +279,12 @@
                                                                             };
                                                                         @endphp
                                                                         <span class="badge {{ $kpiClass }}">
-                                                                            {{ $req->kpi }}d
+                                                                            {{ $req->kpi }}%
                                                                         </span>
                                                                     @endif
                                                                 </td>
                                                                 <td class="text-center">
-                                                                    <small>{{ $req->estado === 'Pendiente' ? '—' : $req->tiempo_total }}</small>
+                                                                    <small>{{ in_array($req->estado, ['Pendiente', 'Cancelado']) ? '—' : $req->total . 'd' }}</small>
                                                                 </td>
                                                                 <td class="text-center">
                                                                     <a href="{{ route('rrhh.requerimientos.show', $req->id) }}"

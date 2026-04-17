@@ -277,7 +277,7 @@
                                                                 </td>
                                                                 <td class="text-center"><?php echo $req->sla; ?></td>
                                                                 <td class="text-center">
-                                                                    <?php if($req->estado === 'Pendiente'): ?>
+                                                                    <?php if(in_array($req->estado, ['Pendiente', 'Cancelado'])): ?>
                                                                         <span class="text-muted">—</span>
                                                                     <?php else: ?>
                                                                         <?php
@@ -289,12 +289,12 @@
                                                                             };
                                                                         ?>
                                                                         <span class="badge <?php echo $kpiClass; ?>">
-                                                                            <?php echo $req->kpi; ?>d
+                                                                            <?php echo $req->kpi; ?>%
                                                                         </span>
                                                                     <?php endif; ?>
                                                                 </td>
                                                                 <td class="text-center">
-                                                                    <small><?php echo $req->estado === 'Pendiente' ? '—' : $req->tiempo_total; ?></small>
+                                                                    <small><?php echo in_array($req->estado, ['Pendiente', 'Cancelado']) ? '—' : $req->total . 'd'; ?></small>
                                                                 </td>
                                                                 <td class="text-center">
                                                                     <a href="<?php echo route('rrhh.requerimientos.show', $req->id); ?>"

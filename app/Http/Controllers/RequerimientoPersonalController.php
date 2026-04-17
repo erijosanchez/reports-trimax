@@ -523,27 +523,36 @@ class RequerimientoPersonalController extends Controller
         $contratados = RequerimientoPersonal::where('estado', RequerimientoPersonal::ESTADO_CONTRATADO)->count();
         $cancelados = RequerimientoPersonal::where('estado', RequerimientoPersonal::ESTADO_CANCELADO)->count();
 
-        $contratadosDentroSla = RequerimientoPersonal::where('estado', RequerimientoPersonal::ESTADO_CONTRATADO)
-            ->whereRaw('DATEDIFF(fecha_cierre, fecha_solicitud) <= 45')->count();
+        // Cumplimiento SLA = promedio de los KPI (%) de todos los requerimientos En Proceso y Contratados
+        $requerimientosActivos = RequerimientoPersonal::select('fecha_solicitud', 'fecha_estimada_contratacion', 'estado', 'sla')
+            ->whereIn('estado', [RequerimientoPersonal::ESTADO_EN_PROCESO, RequerimientoPersonal::ESTADO_CONTRATADO])
+            ->get();
 
-        $porcentajeCumplimiento = $total > 0
-            ? round(($contratadosDentroSla / $total) * 100, 2) : 0;
+        $porcentajeCumplimiento = $requerimientosActivos->count() > 0
+            ? round($requerimientosActivos->avg(fn($r) => $r->kpi), 2)
+            : 0;
 
         $semaforoColor = $porcentajeCumplimiento >= 80 ? 'green' : 'red';
 
-        $requerimientosGrafico = RequerimientoPersonal::select('codigo', 'fecha_solicitud', 'fecha_cierre', 'estado')
+        $requerimientosGrafico = RequerimientoPersonal::select(
+                'codigo', 'fecha_solicitud', 'fecha_estimada_contratacion', 'estado', 'sla'
+            )
             ->orderBy('fecha_solicitud', 'desc')->limit(30)->get()
             ->map(fn($r) => [
                 'codigo'   => $r->codigo,
                 'kpi'      => $r->kpi,
-                'sla'      => 45,
+                'sla'      => $r->sla ?: 45,
                 'semaforo' => $r->semaforo,
                 'color'    => $r->color_semaforo,
             ]);
 
-        $optimo  = RequerimientoPersonal::where('estado', RequerimientoPersonal::ESTADO_CONTRATADO)->whereRaw('DATEDIFF(fecha_cierre, fecha_solicitud) <= 45')->count();
-        $riesgo  = RequerimientoPersonal::where('estado', RequerimientoPersonal::ESTADO_CONTRATADO)->whereRaw('DATEDIFF(fecha_cierre, fecha_solicitud) BETWEEN 46 AND 60')->count();
-        $critico = RequerimientoPersonal::where('estado', RequerimientoPersonal::ESTADO_CONTRATADO)->whereRaw('DATEDIFF(fecha_cierre, fecha_solicitud) > 60')->count();
+        $todosCon​Kpi = RequerimientoPersonal::select('fecha_solicitud', 'fecha_estimada_contratacion', 'estado', 'sla')
+            ->whereIn('estado', [RequerimientoPersonal::ESTADO_EN_PROCESO, RequerimientoPersonal::ESTADO_CONTRATADO])
+            ->get();
+
+        $optimo  = $todosCon​Kpi->filter(fn($r) => $r->kpi === 100)->count();
+        $riesgo  = $todosCon​Kpi->filter(fn($r) => $r->kpi >= 80 && $r->kpi < 100)->count();
+        $critico = $todosCon​Kpi->filter(fn($r) => $r->kpi < 80)->count();
 
         return view('rrhh.requerimientos.dashboard', compact(
             'total',

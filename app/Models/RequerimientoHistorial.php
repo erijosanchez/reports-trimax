@@ -85,6 +85,7 @@ class RequerimientoHistorial extends Model
             'entrevista_presencial' => 'Entrevista presencial',
             'evaluacion'            => 'Evaluación',
             'oferta_candidato'      => 'Oferta al candidato',
+            'en_capacitacion'       => 'En capacitación',
             'alerta_sla'            => 'Alerta SLA',
             'nota'                  => 'Nota',
             default                 => $this->tipo_evento,

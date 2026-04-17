@@ -428,6 +428,7 @@ MODIFY COLUMN tipo_evento
         'entrevista_presencial',
         'evaluacion',
         'oferta_candidato',
+        'en_capacitacion',
         'nota',
         'alerta_sla'
     )

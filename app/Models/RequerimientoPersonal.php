@@ -85,6 +85,7 @@ class RequerimientoPersonal extends Model
         'entrevista_presencial' => '🤝 Entrevista presencial',
         'evaluacion'            => '📝 Evaluación',
         'oferta_candidato'      => '✅ Oferta al candidato',
+        'en_capacitacion'       => '🎓 En capacitación',
         'nota'                  => '💬 Nota libre',
     ];
 
@@ -109,43 +110,78 @@ class RequerimientoPersonal extends Model
     // ─── Accessors ─────────────────────────────────────────────
 
     /**
-     * KPI = días transcurridos. En Pendiente siempre es 0.
+     * Total = días transcurridos del proceso según estado.
+     * - En Proceso  → hoy − fecha_solicitud
+     * - Cancelado   → 0
+     * - Contratado  → fecha_estimada_contratacion − fecha_solicitud
+     */
+    public function getTotalAttribute(): int
+    {
+        if ($this->estado === self::ESTADO_EN_PROCESO) {
+            return (int) $this->fecha_solicitud->diffInDays(now());
+        } elseif ($this->estado === self::ESTADO_CANCELADO) {
+            return 0;
+        } elseif ($this->estado === self::ESTADO_CONTRATADO) {
+            return $this->fecha_estimada_contratacion
+                ? (int) $this->fecha_solicitud->diffInDays($this->fecha_estimada_contratacion)
+                : 0;
+        }
+
+        return 0; // Pendiente
+    }
+
+    /**
+     * KPI = % de cumplimiento basado en el total de días vs SLA.
+     * - Total < SLA  → 100%
+     * - 46–50 días   → 95%
+     * - 51–60 días   → 90%
+     * - 61–70 días   → 85%
+     * - 71–80 días   → 80%
+     * - > 80 días    → 50%
      */
     public function getKpiAttribute(): int
     {
-        if ($this->estado === self::ESTADO_PENDIENTE) return 0;
-        $fin = $this->fecha_cierre ?? now();
-        return (int) $this->fecha_solicitud->diffInDays($fin);
-    }
+        if (in_array($this->estado, [self::ESTADO_PENDIENTE, self::ESTADO_CANCELADO])) {
+            return 0;
+        }
 
-    public function getTiempoTotalAttribute(): int
-    {
-        return $this->sla + $this->kpi;
+        $total = $this->total;
+        $sla   = $this->sla ?: 45;
+
+        if ($total < $sla)   return 100;
+        if ($total <= 50)    return 95;
+        if ($total <= 60)    return 90;
+        if ($total <= 70)    return 85;
+        if ($total <= 80)    return 80;
+        return 50;
     }
 
     public function getSemaforoAttribute(): string
     {
         if ($this->estado === self::ESTADO_PENDIENTE) return 'pendiente';
+        if ($this->estado === self::ESTADO_CANCELADO) return 'cancelado';
+
         return match (true) {
-            $this->kpi <= 45 => 'optimo',
-            $this->kpi <= 60 => 'riesgo',
-            default          => 'critico',
+            $this->kpi === 100  => 'optimo',
+            $this->kpi >= 80    => 'riesgo',
+            default             => 'critico',
         };
     }
 
     public function getColorSemaforoAttribute(): string
     {
         return match ($this->semaforo) {
-            'pendiente' => 'gray',
-            'optimo'    => 'green',
-            'riesgo'    => 'orange',
-            'critico'   => 'red',
+            'pendiente', 'cancelado' => 'gray',
+            'optimo'                 => 'green',
+            'riesgo'                 => 'orange',
+            'critico'                => 'red',
         };
     }
 
     public function slaVencido(): bool
     {
-        return $this->estado === self::ESTADO_EN_PROCESO && $this->kpi >= 45;
+        return $this->estado === self::ESTADO_EN_PROCESO
+            && $this->total >= ($this->sla ?: 45);
     }
 
     public function estaActivo(): bool
