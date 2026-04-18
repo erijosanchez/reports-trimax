@@ -104,13 +104,15 @@
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="row g-3">
+                    <div class="row g-3 mb-3">
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Motorizado <span class="text-danger">*</span></label>
-                            <select name="motorizado_id" class="form-select" required>
+                            <select id="sel-motorizado-ruta" name="motorizado_id" class="form-select" required>
                                 <option value="">Seleccionar motorizado</option>
                                 @foreach($motorizados as $m)
-                                    <option value="{{ $m->id }}">{{ $m->nombre }} ({{ $m->sede }})</option>
+                                    <option value="{{ $m->id }}" data-sede="{{ $m->sede }}">
+                                        {{ $m->nombre }} — {{ $m->sede }}
+                                    </option>
                                 @endforeach
                             </select>
                         </div>
@@ -128,24 +130,44 @@
 
                     <hr>
 
+                    {{-- Selector de órdenes disponibles --}}
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <h6 class="fw-semibold mb-0">
-                            <i class="mdi mdi-map-marker-multiple me-1 text-primary"></i>Paradas
+                            <i class="mdi mdi-map-marker-multiple me-1 text-primary"></i>
+                            Paradas
+                            <span id="badge-paradas-sel" class="badge bg-primary ms-1">0</span>
                         </h6>
-                        <button type="button" id="btn-agregar-parada" class="btn btn-sm btn-outline-secondary">
-                            <i class="mdi mdi-plus me-1"></i>Agregar parada
-                        </button>
+                        <div class="d-flex gap-2 align-items-center">
+                            <select id="sel-orden-agregar" class="form-select form-select-sm" style="min-width:280px">
+                                <option value="">— Seleccionar orden disponible —</option>
+                            </select>
+                            <button type="button" id="btn-agregar-parada" class="btn btn-sm btn-primary"
+                                    title="Agregar orden a la ruta">
+                                <i class="mdi mdi-plus"></i>
+                            </button>
+                        </div>
                     </div>
-                    <div id="contenedor-paradas"></div>
 
-                    <div class="alert alert-info small py-2 mt-2 mb-0">
-                        <i class="mdi mdi-information-outline me-1"></i>
-                        Ingresa el <strong>ID de la orden</strong> de la tabla <code>ordenes_tracking</code>.
+                    {{-- Loading órdenes --}}
+                    <div id="msg-ordenes" class="alert alert-info small py-2 mb-2 d-none">
+                        <span class="spinner-border spinner-border-sm me-1"></span>Cargando órdenes disponibles…
+                    </div>
+                    <div id="msg-sin-ordenes" class="alert alert-warning small py-2 mb-2 d-none">
+                        <i class="mdi mdi-alert-outline me-1"></i>
+                        No hay órdenes pendientes para esta sede.
+                        <a href="/tracking/ordenes" target="_blank">Crear orden</a>
+                    </div>
+
+                    {{-- Lista de paradas seleccionadas --}}
+                    <div id="contenedor-paradas">
+                        <p class="text-muted small text-center py-3" id="msg-vacio">
+                            Selecciona el motorizado y agrega órdenes arriba
+                        </p>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">
+                    <button type="submit" class="btn btn-primary" id="btn-crear-ruta" disabled>
                         <i class="mdi mdi-content-save me-1"></i>Crear Ruta
                     </button>
                 </div>
@@ -157,47 +179,144 @@
 
 @push('scripts')
 <script>
-const csrf = document.querySelector('meta[name="csrf-token"]')?.content;
-let paradaIdx = 0;
+const csrf       = document.querySelector('meta[name="csrf-token"]')?.content;
+let paradasSeleccionadas = [];  // [{id, cliente, direccion, sede}]
+let ordenesDisponibles   = [];
 
-document.getElementById('btn-agregar-parada').addEventListener('click', () => {
-    paradaIdx++;
-    const div = document.createElement('div');
-    div.className = 'card border-0 bg-light mb-2';
-    div.innerHTML = `
-        <div class="card-body py-2 px-3 d-flex gap-2 align-items-center">
-            <span class="badge bg-primary">${paradaIdx}</span>
-            <input type="number" name="paradas[${paradaIdx}][orden_id]"
-                   class="form-control form-control-sm"
-                   placeholder="ID de la orden" required>
-            <button type="button" class="btn btn-sm btn-outline-danger"
-                    onclick="this.closest('.card').remove()">
-                <i class="mdi mdi-close"></i>
-            </button>
-        </div>`;
-    document.getElementById('contenedor-paradas').appendChild(div);
+// Cuando se elige motorizado → cargar órdenes disponibles de esa sede
+document.getElementById('sel-motorizado-ruta').addEventListener('change', async function () {
+    const sede = this.options[this.selectedIndex]?.dataset.sede;
+    if (!sede) return;
+
+    const sel    = document.getElementById('sel-orden-agregar');
+    const msgLoad = document.getElementById('msg-ordenes');
+    const msgVacio = document.getElementById('msg-sin-ordenes');
+
+    sel.innerHTML = '<option value="">Cargando…</option>';
+    msgLoad.classList.remove('d-none');
+    msgVacio.classList.add('d-none');
+
+    const res  = await fetch(`/tracking/api/ordenes-disponibles?sede=${sede}`);
+    const data = await res.json();
+    ordenesDisponibles = data;
+
+    msgLoad.classList.add('d-none');
+
+    if (!data.length) {
+        sel.innerHTML = '<option value="">Sin órdenes pendientes</option>';
+        msgVacio.classList.remove('d-none');
+        return;
+    }
+
+    sel.innerHTML = '<option value="">— Seleccionar orden —</option>'
+        + data.map(o =>
+            `<option value="${o.id}">
+                #${o.id} · ${o.cliente_nombre} — ${o.direccion.substring(0,40)}${o.direccion.length>40?'…':''}
+            </option>`
+        ).join('');
 });
 
+// Agregar parada
+document.getElementById('btn-agregar-parada').addEventListener('click', () => {
+    const sel    = document.getElementById('sel-orden-agregar');
+    const ordenId = parseInt(sel.value);
+    if (!ordenId) return;
+
+    // Evitar duplicados
+    if (paradasSeleccionadas.find(p => p.id === ordenId)) {
+        sel.value = '';
+        return;
+    }
+
+    const orden = ordenesDisponibles.find(o => o.id === ordenId);
+    if (!orden) return;
+
+    paradasSeleccionadas.push(orden);
+    sel.value = '';
+    renderParadas();
+});
+
+function renderParadas() {
+    const cont  = document.getElementById('contenedor-paradas');
+    const badge = document.getElementById('badge-paradas-sel');
+    const btnCrear = document.getElementById('btn-crear-ruta');
+
+    badge.textContent = paradasSeleccionadas.length;
+    btnCrear.disabled = paradasSeleccionadas.length === 0
+        || !document.getElementById('sel-motorizado-ruta').value;
+
+    document.getElementById('msg-vacio').style.display =
+        paradasSeleccionadas.length ? 'none' : 'block';
+
+    if (!paradasSeleccionadas.length) {
+        cont.innerHTML = '<p class="text-muted small text-center py-3" id="msg-vacio">Agrega al menos una orden</p>';
+        return;
+    }
+
+    cont.innerHTML = paradasSeleccionadas.map((o, i) => `
+        <div class="card border-0 bg-light mb-2" id="parada-card-${o.id}">
+            <div class="card-body py-2 px-3 d-flex gap-2 align-items-center">
+                <span class="badge bg-primary" style="min-width:24px">${i + 1}</span>
+                <div class="flex-grow-1">
+                    <div class="fw-semibold small">${o.cliente_nombre}</div>
+                    <div class="text-muted" style="font-size:11px">
+                        ${o.referencia ? '<span class="me-2">#' + o.referencia + '</span>' : ''}
+                        <i class="mdi mdi-map-marker"></i> ${o.direccion}
+                    </div>
+                </div>
+                <div class="d-flex gap-1">
+                    <button type="button" class="btn btn-sm btn-outline-secondary"
+                            onclick="moverParada(${i}, -1)" ${i === 0 ? 'disabled' : ''} title="Subir">
+                        <i class="mdi mdi-arrow-up"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary"
+                            onclick="moverParada(${i}, 1)"
+                            ${i === paradasSeleccionadas.length - 1 ? 'disabled' : ''} title="Bajar">
+                        <i class="mdi mdi-arrow-down"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-danger"
+                            onclick="quitarParada(${o.id})" title="Quitar">
+                        <i class="mdi mdi-close"></i>
+                    </button>
+                </div>
+            </div>
+        </div>`
+    ).join('');
+}
+
+function moverParada(idx, dir) {
+    const newIdx = idx + dir;
+    if (newIdx < 0 || newIdx >= paradasSeleccionadas.length) return;
+    [paradasSeleccionadas[idx], paradasSeleccionadas[newIdx]] =
+        [paradasSeleccionadas[newIdx], paradasSeleccionadas[idx]];
+    renderParadas();
+}
+
+function quitarParada(ordenId) {
+    paradasSeleccionadas = paradasSeleccionadas.filter(p => p.id !== ordenId);
+    renderParadas();
+}
+
+// Submit
 document.getElementById('form-ruta').addEventListener('submit', async e => {
     e.preventDefault();
-    const fd = new FormData(e.target);
 
-    const paradasMap = {};
-    for (const [k, v] of fd.entries()) {
-        const m = k.match(/^paradas\[(\d+)\]\[(\w+)\]$/);
-        if (m) { if (!paradasMap[m[1]]) paradasMap[m[1]] = {}; paradasMap[m[1]][m[2]] = v; }
+    if (!paradasSeleccionadas.length) {
+        alert('Agrega al menos una parada');
+        return;
     }
+
+    const fd   = new FormData(e.target);
+    const btn  = document.getElementById('btn-crear-ruta');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Guardando…';
 
     const body = {
         motorizado_id: fd.get('motorizado_id'),
         fecha:         fd.get('fecha'),
         notas:         fd.get('notas'),
-        paradas:       Object.values(paradasMap),
+        paradas:       paradasSeleccionadas.map(o => ({ orden_id: o.id })),
     };
-
-    const btn = e.target.querySelector('[type=submit]');
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Guardando…';
 
     const res = await fetch('/tracking/rutas', {
         method: 'POST',
@@ -211,8 +330,19 @@ document.getElementById('form-ruta').addEventListener('submit', async e => {
     } else {
         btn.disabled = false;
         btn.innerHTML = '<i class="mdi mdi-content-save me-1"></i>Crear Ruta';
-        alert('Error al crear la ruta. Verifica los datos.');
+        alert('Error al crear la ruta');
     }
+});
+
+// Reset al abrir modal
+document.getElementById('modalCrearRuta').addEventListener('show.bs.modal', () => {
+    paradasSeleccionadas = [];
+    ordenesDisponibles   = [];
+    document.getElementById('sel-motorizado-ruta').value = '';
+    document.getElementById('sel-orden-agregar').innerHTML = '<option value="">— Seleccionar orden —</option>';
+    document.getElementById('badge-paradas-sel').textContent = '0';
+    document.getElementById('btn-crear-ruta').disabled = true;
+    renderParadas();
 });
 </script>
 @endpush

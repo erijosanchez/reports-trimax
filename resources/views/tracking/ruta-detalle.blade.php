@@ -160,14 +160,7 @@
 @push('scripts')
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-const paradas = @json($ruta->paradas->map(fn($p) => [
-    'secuencia' => $p->orden_secuencia,
-    'estado'    => $p->estado,
-    'lat'       => $p->orden->latitud,
-    'lng'       => $p->orden->longitud,
-    'cliente'   => $p->orden->cliente_nombre,
-    'direccion' => $p->orden->direccion,
-]));
+const paradas = @json($paradasJson);
 
 const COLORES = { completado:'#28a745', en_camino:'#ffc107', fallido:'#dc3545', pendiente:'#6c757d' };
 const map     = L.map('mapa-ruta');

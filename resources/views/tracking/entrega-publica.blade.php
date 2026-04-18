@@ -67,6 +67,19 @@
             padding: 28px 20px; text-align: center; margin: 20px 0;
         }
         .resumen-final.show { display: block; }
+
+        .btn-navegar-ruta {
+            background: #fff; color: #1a73e8; border: none;
+            border-radius: 50px; font-weight: 700; font-size: 13px;
+            padding: 8px 16px; display: flex; align-items: center; gap: 6px;
+            box-shadow: 0 2px 8px rgba(0,0,0,.2);
+        }
+        .btn-navegar-parada {
+            background: #e8f0fe; color: #1a73e8; border: none;
+            border-radius: 50px; font-size: 12px; font-weight: 600;
+            padding: 6px 12px; white-space: nowrap;
+        }
+        .btn-navegar-parada:active { background: #d2e3fc; }
     </style>
 </head>
 <body>
@@ -81,23 +94,30 @@
                 {{ $ruta->fecha->format('d/m/Y') }} · {{ $ruta->motorizado->sede }}
             </div>
         </div>
-        <div class="text-end">
+        <div class="text-end d-flex flex-column align-items-end gap-1">
             <div id="badge-ruta" class="badge bg-warning text-dark" style="font-size:12px">
                 {{ ucfirst(str_replace('_',' ', $ruta->estado)) }}
             </div>
-            <div style="font-size:12px;opacity:.8;margin-top:4px">
+            <div style="font-size:12px;opacity:.8">
                 <span id="cont-completadas">{{ $ruta->paradas->where('estado','completado')->count() }}</span>
                 /{{ $ruta->paradas->count() }} entregas
             </div>
         </div>
     </div>
-    <div class="progress-bar-wrap">
-        @php
-            $pct = $ruta->paradas->count()
-                ? round($ruta->paradas->where('estado','completado')->count() / $ruta->paradas->count() * 100)
-                : 0;
-        @endphp
-        <div class="progress-bar-fill" id="barra-progreso" style="width:{{ $pct }}%"></div>
+    {{-- Botón navegar toda la ruta --}}
+    <div class="d-flex justify-content-between align-items-center mt-2 mb-1">
+        <div class="progress-bar-wrap flex-grow-1 me-3">
+            @php
+                $pct = $ruta->paradas->count()
+                    ? round($ruta->paradas->where('estado','completado')->count() / $ruta->paradas->count() * 100)
+                    : 0;
+            @endphp
+            <div class="progress-bar-fill" id="barra-progreso" style="width:{{ $pct }}%"></div>
+        </div>
+        <button class="btn-navegar-ruta" onclick="navegarRutaCompleta()" id="btn-nav-ruta">
+            <i class="mdi mdi-google-maps" style="font-size:16px"></i>
+            Navegar ruta
+        </button>
     </div>
 </div>
 
@@ -155,11 +175,17 @@
                 </div>
             </div>
 
-            {{-- Dirección con link a Maps --}}
-            <a href="{{ $mapsUrl }}" target="_blank" class="direccion-link d-flex align-items-start gap-1 mb-3">
-                <i class="mdi mdi-map-marker mt-1" style="flex-shrink:0"></i>
-                <span>{{ $orden->direccion }}</span>
-            </a>
+            {{-- Dirección con link a Maps + botón navegar --}}
+            <div class="d-flex align-items-start gap-2 mb-3">
+                <a href="{{ $mapsUrl }}" target="_blank" class="direccion-link d-flex align-items-start gap-1 flex-grow-1">
+                    <i class="mdi mdi-map-marker mt-1" style="flex-shrink:0"></i>
+                    <span>{{ $orden->direccion }}</span>
+                </a>
+                <button class="btn-navegar-parada"
+                        onclick="navegarParada({{ $orden->latitud ?? 'null' }}, {{ $orden->longitud ?? 'null' }}, '{{ addslashes($orden->direccion) }}')">
+                    <i class="mdi mdi-navigation"></i> Navegar
+                </button>
+            </div>
 
             {{-- Hora entrega si ya está --}}
             @if($parada->hora_salida)
@@ -289,6 +315,59 @@ async function marcar(paradaId, estado, token) {
         alert('Error al guardar. Verifica tu conexión.');
     } finally {
         spinner.classList.remove('active');
+    }
+}
+
+// Datos de paradas para navegación
+const PARADAS_NAV = @json($paradasNav);
+
+function navegarParada(lat, lng, direccion) {
+    let url;
+    if (lat && lng) {
+        url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
+    } else {
+        url = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(direccion)}&travelmode=driving`;
+    }
+    window.open(url, '_blank');
+}
+
+function navegarRutaCompleta() {
+    const pendientes = PARADAS_NAV.filter(p => p.estado !== 'completado' && p.estado !== 'fallido');
+    if (!pendientes.length) {
+        alert('No hay paradas pendientes.');
+        return;
+    }
+
+    const destino = pendientes[pendientes.length - 1];
+    const destStr = (destino.lat && destino.lng)
+        ? `${destino.lat},${destino.lng}`
+        : encodeURIComponent(destino.direccion);
+
+    const waypoints = pendientes.slice(0, -1)
+        .filter(p => p.lat && p.lng)
+        .map(p => `${p.lat},${p.lng}`)
+        .join('|');
+
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            pos => {
+                const origin = `${pos.coords.latitude},${pos.coords.longitude}`;
+                let url = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destStr}&travelmode=driving`;
+                if (waypoints) url += `&waypoints=${waypoints}`;
+                window.open(url, '_blank');
+            },
+            () => {
+                // Sin GPS del dispositivo, abre sin origen (Maps usa ubicación propia)
+                let url = `https://www.google.com/maps/dir/?api=1&destination=${destStr}&travelmode=driving`;
+                if (waypoints) url += `&waypoints=${waypoints}`;
+                window.open(url, '_blank');
+            },
+            { timeout: 5000 }
+        );
+    } else {
+        let url = `https://www.google.com/maps/dir/?api=1&destination=${destStr}&travelmode=driving`;
+        if (waypoints) url += `&waypoints=${waypoints}`;
+        window.open(url, '_blank');
     }
 }
 </script>

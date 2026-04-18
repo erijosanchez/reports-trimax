@@ -173,7 +173,18 @@ class MotorizadoController extends Controller
 
         $ruta = RutaTracking::with(['motorizado', 'paradas.orden'])->findOrFail($id);
 
-        return view('tracking.ruta-detalle', compact('ruta'));
+        $paradasJson = $ruta->paradas->map(function ($p) {
+            return [
+                'secuencia' => $p->orden_secuencia,
+                'estado'    => $p->estado,
+                'lat'       => $p->orden->latitud,
+                'lng'       => $p->orden->longitud,
+                'cliente'   => $p->orden->cliente_nombre,
+                'direccion' => $p->orden->direccion,
+            ];
+        })->values();
+
+        return view('tracking.ruta-detalle', compact('ruta', 'paradasJson'));
     }
 
     public function rutas()
@@ -237,6 +248,30 @@ class MotorizadoController extends Controller
     }
 
     // ─── API JSON ─────────────────────────────────────────────
+
+    /** GET /tracking/api/ordenes-disponibles?sede=ICA — órdenes pendientes sin ruta hoy */
+    public function ordenesDisponibles(Request $request)
+    {
+        abort_unless(Auth::user()->puedeVerMotorizados(), 403);
+
+        $query = OrdenTracking::whereIn('estado', ['pendiente', 'fallido']);
+
+        if ($request->filled('sede')) {
+            $query->where('sede', $request->sede);
+        }
+
+        // Excluir órdenes ya asignadas a una ruta de hoy
+        $asignadasHoy = RutaParada::whereHas('ruta', fn($q) =>
+            $q->whereDate('fecha', today())
+              ->whereIn('estado', ['pendiente', 'en_ruta'])
+        )->pluck('orden_id');
+
+        $ordenes = $query->whereNotIn('id', $asignadasHoy)
+            ->orderBy('id')
+            ->get(['id', 'cliente_nombre', 'cliente_telefono', 'referencia', 'direccion', 'sede', 'latitud', 'longitud']);
+
+        return response()->json($ordenes);
+    }
 
     /** GET /tracking/api/ubicaciones — posiciones actuales desde Traccar + DB */
     public function ubicaciones()

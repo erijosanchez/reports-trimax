@@ -16,7 +16,18 @@ class EntregaPublicaController extends Controller
             ->with(['motorizado', 'paradas.orden'])
             ->firstOrFail();
 
-        return view('tracking.entrega-publica', compact('ruta', 'token'));
+        $paradasNav = $ruta->paradas->map(function ($p) {
+            return [
+                'id'        => $p->id,
+                'lat'       => $p->orden->latitud,
+                'lng'       => $p->orden->longitud,
+                'direccion' => $p->orden->direccion,
+                'cliente'   => $p->orden->cliente_nombre,
+                'estado'    => $p->estado,
+            ];
+        })->values();
+
+        return view('tracking.entrega-publica', compact('ruta', 'token', 'paradasNav'));
     }
 
     /** POST /entrega/{token}/parada/{parada} — marcar estado */
