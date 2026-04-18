@@ -42,6 +42,7 @@ services:
   mysql:
     image: mysql:8.0
     container_name: trimax_mysql
+    command: --disable-log-bin
     restart: unless-stopped
     ports:
       - "3306:3306"

@@ -254,6 +254,11 @@ class User extends Authenticatable
         return $this->isSuperAdmin() || $this->isAdmin() || $this->puede_ver_pendiente_entrega_montura;
     }
 
+    public function puedeVerMotorizados(): bool
+    {
+        return $this->isSuperAdmin() || $this->isAdmin() || (bool) $this->puede_ver_motorizados;
+    }
+
     public function getRoleName()
     {
         if ($this->isSuperAdmin()) return 'Super Admin';

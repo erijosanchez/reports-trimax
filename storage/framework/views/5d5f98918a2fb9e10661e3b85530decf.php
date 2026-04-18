@@ -275,6 +275,59 @@
 
 
         
+        <?php if($user->puedeVerMotorizados()): ?>
+            <li class="nav-item nav-category">TRACKING</li>
+
+            <li class="nav-item">
+                <a class="nav-link <?php echo request()->routeIs('tracking.mapa') ? 'active' : ''; ?>"
+                    href="<?php echo route('tracking.mapa'); ?>">
+                    <i class="mdi mdi-map-marker-radius menu-icon text-danger"></i>
+                    <span class="menu-title">Mapa en Vivo</span>
+                </a>
+            </li>
+
+            <li class="nav-item">
+                <a class="nav-link <?php echo request()->routeIs('tracking.motorizados') ? 'active' : ''; ?>"
+                    href="<?php echo route('tracking.motorizados'); ?>">
+                    <i class="mdi mdi-motorbike menu-icon"></i>
+                    <span class="menu-title">Motorizados</span>
+                </a>
+            </li>
+
+            <li class="nav-item">
+                <a class="nav-link <?php echo request()->routeIs('tracking.rutas') || request()->routeIs('tracking.ruta-detalle') ? 'active' : ''; ?>"
+                    href="<?php echo route('tracking.rutas'); ?>">
+                    <i class="mdi mdi-route menu-icon"></i>
+                    <span class="menu-title">Rutas de Entrega</span>
+                </a>
+            </li>
+
+            <li class="nav-item">
+                <a class="nav-link <?php echo request()->routeIs('tracking.historial') ? 'active' : ''; ?>"
+                    href="<?php echo route('tracking.historial'); ?>">
+                    <i class="mdi mdi-map-search menu-icon"></i>
+                    <span class="menu-title">Historial Recorrido</span>
+                </a>
+            </li>
+
+            <li class="nav-item">
+                <a class="nav-link <?php echo request()->routeIs('tracking.ordenes') ? 'active' : ''; ?>"
+                    href="<?php echo route('tracking.ordenes'); ?>">
+                    <i class="mdi mdi-package-variant menu-icon"></i>
+                    <span class="menu-title">Órdenes</span>
+                </a>
+            </li>
+
+            <li class="nav-item">
+                <a class="nav-link <?php echo request()->routeIs('tracking.resumen') ? 'active' : ''; ?>"
+                    href="<?php echo route('tracking.resumen'); ?>">
+                    <i class="mdi mdi-view-dashboard menu-icon"></i>
+                    <span class="menu-title">Resumen Diario</span>
+                </a>
+            </li>
+        <?php endif; ?>
+
+        
         <?php if(auth()->user()->isMarketing() || auth()->user()->isSuperAdmin()): ?>
             <li class="nav-item nav-category">MARKETING</li>
             <li class="nav-item">

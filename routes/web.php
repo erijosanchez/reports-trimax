@@ -26,6 +26,7 @@ use App\Http\Controllers\CobranzaSedesController;
 use App\Http\Controllers\CajaChicaSedesController;
 use App\Http\Controllers\ComentariosSedesController;
 use App\Http\Controllers\OrdenesXUsuarioController;
+use App\Http\Controllers\Tracking\MotorizadoController;
 
 // ============================================================
 // RUTAS PARA LARAVEL 11
@@ -34,6 +35,10 @@ use App\Http\Controllers\OrdenesXUsuarioController;
 
 // Public Survey Route
 Route::get('/encuesta/{token}', [SurveyController::class, 'show'])->name('survey.show');
+
+// Entrega pública para motorizados (sin login)
+Route::get('/entrega/{token}',                    [\App\Http\Controllers\Tracking\EntregaPublicaController::class, 'show'])->name('entrega.show');
+Route::post('/entrega/{token}/parada/{parada}',   [\App\Http\Controllers\Tracking\EntregaPublicaController::class, 'marcarParada'])->name('entrega.marcar');
 
 // Auth Routes (Guest)
 Route::middleware(['guest'])->group(function () {
@@ -328,6 +333,43 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
             Route::get('/api/historial',              [ComentariosSedesController::class, 'historial'])->name('historial');
             Route::get('/api/kpi-data',               [ComentariosSedesController::class, 'kpiData'])->name('kpi-data');
         });
+    });
+
+    // ── TRACKING MOTORIZADOS ──────────────────────────────────────────────
+    Route::prefix('tracking')->name('tracking.')->group(function () {
+
+        // Vistas
+        Route::get('/mapa',         [MotorizadoController::class, 'mapa'])->name('mapa');
+        Route::get('/motorizados',  [MotorizadoController::class, 'motorizados'])->name('motorizados');
+        Route::get('/rutas',        [MotorizadoController::class, 'rutas'])->name('rutas');
+        Route::get('/rutas/{id}',   [MotorizadoController::class, 'rutaDetalle'])->name('ruta-detalle');
+        Route::get('/historial',    [MotorizadoController::class, 'historialVista'])->name('historial');
+        Route::get('/resumen',      [MotorizadoController::class, 'resumenDiario'])->name('resumen');
+
+        // CRUD órdenes
+        Route::get('/ordenes',           [MotorizadoController::class, 'ordenes'])->name('ordenes');
+        Route::post('/ordenes',          [MotorizadoController::class, 'storeOrden'])->name('ordenes.store');
+        Route::put('/ordenes/{id}',      [MotorizadoController::class, 'updateOrden'])->name('ordenes.update');
+        Route::post('/ordenes/{id}',     [MotorizadoController::class, 'updateOrden']);
+        Route::delete('/ordenes/{id}',   [MotorizadoController::class, 'destroyOrden'])->name('ordenes.destroy');
+
+        // CRUD motorizados
+        Route::post('/motorizados',      [MotorizadoController::class, 'store'])->name('motorizados.store');
+        Route::put('/motorizados/{id}',  [MotorizadoController::class, 'update'])->name('motorizados.update');
+        Route::post('/motorizados/{id}', [MotorizadoController::class, 'update']); // fallback PUT override
+        Route::delete('/motorizados/{id}', [MotorizadoController::class, 'destroy'])->name('motorizados.destroy');
+
+        // Gestión de rutas
+        Route::post('/rutas',               [MotorizadoController::class, 'storeRuta'])->name('rutas.store');
+        Route::put('/paradas/{id}',         [MotorizadoController::class, 'actualizarParada'])->name('paradas.update');
+        Route::post('/rutas/{id}/token',    [MotorizadoController::class, 'generarToken'])->name('rutas.token');
+
+        // API JSON
+        Route::get('/api/ubicaciones',                   [MotorizadoController::class, 'ubicaciones'])->name('api.ubicaciones');
+        Route::get('/api/motorizados/{id}/historial',    [MotorizadoController::class, 'historial'])->name('api.historial');
+        Route::get('/api/rutas/{id}',                    [MotorizadoController::class, 'rutaJson'])->name('api.ruta');
+        Route::get('/api/ordenes/{id}/tracking',         [MotorizadoController::class, 'trackingOrden'])->name('api.orden-tracking');
+        Route::post('/api/sincronizar',                  [MotorizadoController::class, 'sincronizar'])->name('api.sincronizar');
     });
 
     // Admin Routes (Admin + Super Admin only)
