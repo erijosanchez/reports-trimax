@@ -33,5 +33,3 @@ Route::post('/traccar/webhook', [App\Http\Controllers\Tracking\MotorizadoControl
 
 // Ruta para el asistente de consultas
 
-// Consultas de datos (cuando integres la BD)
-Route::post('/assistant', [AssistantController::class, 'query']);

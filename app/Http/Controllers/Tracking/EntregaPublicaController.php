@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Tracking;
 
 use App\Http\Controllers\Controller;
+use App\Models\OrdenTracking;
 use App\Models\RutaParada;
 use App\Models\RutaTracking;
 use Illuminate\Http\Request;
@@ -53,11 +54,15 @@ class EntregaPublicaController extends Controller
                 'hora_salida'  => $now,
                 'notas'        => $data['notas'] ?? $parada->notas,
             ]);
+            OrdenTracking::where('id', $parada->orden_id)
+                ->update(['estado' => OrdenTracking::ESTADO_ENTREGADO]);
         } else {
             $parada->update([
                 'estado' => 'fallido',
                 'notas'  => $data['notas'] ?? $parada->notas,
             ]);
+            OrdenTracking::where('id', $parada->orden_id)
+                ->update(['estado' => OrdenTracking::ESTADO_FALLIDO]);
         }
 
         // Si todas las paradas tienen estado final → cerrar la ruta
