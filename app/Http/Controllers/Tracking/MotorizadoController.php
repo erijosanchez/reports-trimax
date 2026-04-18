@@ -311,6 +311,38 @@ class MotorizadoController extends Controller
         return response()->json($result);
     }
 
+    /** GET /tracking/api/rutas-activas — paradas de rutas activas de hoy para pintar en el mapa */
+    public function rutasActivas()
+    {
+        abort_unless(Auth::user()->puedeVerMotorizados(), 403);
+
+        $rutas = RutaTracking::with(['motorizado', 'paradas.orden'])
+            ->whereDate('fecha', today())
+            ->whereIn('estado', ['pendiente', 'en_ruta'])
+            ->get();
+
+        $result = $rutas->map(function ($ruta) {
+            $paradas = $ruta->paradas->map(function ($p) {
+                return [
+                    'secuencia' => $p->orden_secuencia,
+                    'lat'       => $p->orden->latitud ? (float) $p->orden->latitud : null,
+                    'lng'       => $p->orden->longitud ? (float) $p->orden->longitud : null,
+                    'cliente'   => $p->orden->cliente_nombre,
+                    'direccion' => $p->orden->direccion,
+                    'estado'    => $p->estado,
+                ];
+            })->filter(fn($p) => $p['lat'] && $p['lng'])->values();
+
+            return [
+                'motorizado_id' => $ruta->motorizado_id,
+                'sede'          => $ruta->motorizado->sede,
+                'paradas'       => $paradas,
+            ];
+        })->filter(fn($r) => $r['paradas']->isNotEmpty())->values();
+
+        return response()->json($result);
+    }
+
     /** GET /tracking/api/motorizados/{id}/historial?fecha=YYYY-MM-DD */
     public function historial(int $id, Request $request)
     {

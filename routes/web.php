@@ -367,6 +367,7 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
         // API JSON
         Route::get('/api/ordenes-disponibles',           [MotorizadoController::class, 'ordenesDisponibles'])->name('api.ordenes-disponibles');
         Route::get('/api/ubicaciones',                   [MotorizadoController::class, 'ubicaciones'])->name('api.ubicaciones');
+        Route::get('/api/rutas-activas',                 [MotorizadoController::class, 'rutasActivas'])->name('api.rutas-activas');
         Route::get('/api/motorizados/{id}/historial',    [MotorizadoController::class, 'historial'])->name('api.historial');
         Route::get('/api/rutas/{id}',                    [MotorizadoController::class, 'rutaJson'])->name('api.ruta');
         Route::get('/api/ordenes/{id}/tracking',         [MotorizadoController::class, 'trackingOrden'])->name('api.orden-tracking');

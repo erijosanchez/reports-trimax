@@ -10,6 +10,7 @@
     .moto-card { border-left: 4px solid #dee2e6; cursor: pointer; transition: box-shadow .15s; }
     .moto-card:hover { box-shadow: 0 2px 10px rgba(0,0,0,.15) !important; }
     .legend-dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 5px; }
+    .legend-parada { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 5px; }
     @media (max-width: 991px) {
         #map { height: 350px; }
         #panel-lateral { max-height: 300px; }
@@ -81,8 +82,19 @@
                 {{-- Leyenda --}}
                 <div class="shadow-sm border-0 card">
                     <div class="card-body py-2 px-3">
-                        <p class="fw-semibold small mb-2">Leyenda por sede</p>
-                        <div id="leyenda-sedes" class="small"></div>
+                        <p class="fw-semibold small mb-2">Leyenda</p>
+                        <div id="leyenda-sedes" class="small mb-2"></div>
+                        <div class="small">
+                            <div class="mb-1">
+                                <span class="legend-parada" style="background:#e67e22"></span>Pendiente
+                            </div>
+                            <div class="mb-1">
+                                <span class="legend-parada" style="background:#27ae60"></span>Entregado
+                            </div>
+                            <div class="mb-1">
+                                <span class="legend-parada" style="background:#e74c3c"></span>Fallido
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -103,6 +115,7 @@ const SEDE_COLORS = {
     'CHICLAYO': '#9b59b6',
     'PIURA':    '#1abc9c',
 };
+const PARADA_COLORS = { pendiente: '#e67e22', en_camino: '#f39c12', completado: '#27ae60', fallido: '#e74c3c' };
 const DEFAULT_COLOR = '#95a5a6';
 
 const map = L.map('map').setView([-12.046374, -77.042793], 6);
@@ -110,14 +123,16 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© OpenStreetMap contributors', maxZoom: 19
 }).addTo(map);
 
-const markers = {};
+const markers        = {};      // motorizado markers
+const paradaMarkers  = {};      // { motorizado_id: [L.Marker, ...] }
+const rutaLines      = {};      // { motorizado_id: L.Polyline }
 let allData = [], filtroSede = '';
 
 function colorSede(sede) {
     return SEDE_COLORS[(sede || '').toUpperCase()] || DEFAULT_COLOR;
 }
 
-function crearIcono(sede) {
+function crearIconoMoto(sede) {
     const c = colorSede(sede);
     return L.divIcon({
         className: '',
@@ -125,6 +140,19 @@ function crearIcono(sede) {
                     transform:rotate(-45deg);background:${c};border:3px solid #fff;
                     box-shadow:0 2px 6px rgba(0,0,0,.4)"></div>`,
         iconSize: [28, 28], iconAnchor: [14, 28], popupAnchor: [0, -30],
+    });
+}
+
+function crearIconoParada(parada) {
+    const c = PARADA_COLORS[parada.estado] || '#e67e22';
+    const check = parada.estado === 'completado' ? '✓' : (parada.estado === 'fallido' ? '✗' : parada.secuencia);
+    return L.divIcon({
+        className: '',
+        html: `<div style="width:26px;height:26px;border-radius:50%;background:${c};
+                    color:#fff;display:flex;align-items:center;justify-content:center;
+                    font-weight:700;font-size:11px;border:2px solid #fff;
+                    box-shadow:0 2px 6px rgba(0,0,0,.35)">${check}</div>`,
+        iconSize: [26, 26], iconAnchor: [13, 13], popupAnchor: [0, -16],
     });
 }
 
@@ -165,8 +193,8 @@ function renderPanel(data) {
 }
 
 function actualizarMarcadores(data) {
-    const lista    = filtroSede ? data.filter(d => d.sede === filtroSede) : data;
-    const idsAct   = new Set(lista.map(m => m.id));
+    const lista  = filtroSede ? data.filter(d => d.sede === filtroSede) : data;
+    const idsAct = new Set(lista.map(m => m.id));
 
     Object.keys(markers).forEach(id => {
         if (!idsAct.has(Number(id))) { map.removeLayer(markers[id]); delete markers[id]; }
@@ -178,22 +206,66 @@ function actualizarMarcadores(data) {
             <strong>${m.nombre}</strong><br>
             <span class="text-muted small">${m.sede}</span>
             <hr class="my-1">
-            <span><i class="mdi mdi-speedometer"></i> <b>${m.velocidad ?? 0} km/h</b></span><br>
+            <span>🏎 <b>${m.velocidad ?? 0} km/h</b></span><br>
             <span style="font-size:11px">${m.ultima_actualizacion
                 ? new Date(m.ultima_actualizacion).toLocaleTimeString('es-PE') : '--'}</span><br>
-            <a href="/tracking/historial?motorizado_id=${m.id}" class="small d-block mt-1">
-                <i class="mdi mdi-map-search"></i> Historial recorrido
-            </a>
-            <a href="/tracking/rutas" class="small d-block">
-                <i class="mdi mdi-route"></i> Ver rutas
-            </a>
+            <a href="/tracking/historial?motorizado_id=${m.id}" class="small d-block mt-1">📍 Historial recorrido</a>
+            <a href="/tracking/rutas" class="small d-block">🗺 Ver rutas</a>
         </div>`;
 
         if (markers[m.id]) {
             markers[m.id].setLatLng([m.latitud, m.longitud]).setPopupContent(popup);
         } else {
-            markers[m.id] = L.marker([m.latitud, m.longitud], { icon: crearIcono(m.sede) })
+            markers[m.id] = L.marker([m.latitud, m.longitud], { icon: crearIconoMoto(m.sede) })
                 .bindPopup(popup).addTo(map);
+        }
+    });
+}
+
+// Limpia marcadores de paradas y líneas anteriores de un motorizado
+function limpiarRuta(motoId) {
+    (paradaMarkers[motoId] || []).forEach(mk => map.removeLayer(mk));
+    paradaMarkers[motoId] = [];
+    if (rutaLines[motoId]) { map.removeLayer(rutaLines[motoId]); delete rutaLines[motoId]; }
+}
+
+function dibujarRutas(rutasActivas, motoData) {
+    // Quitar rutas de motorizados que ya no están activos
+    const motoIdsConRuta = new Set(rutasActivas.map(r => r.motorizado_id));
+    Object.keys(paradaMarkers).forEach(id => {
+        if (!motoIdsConRuta.has(Number(id))) limpiarRuta(Number(id));
+    });
+
+    rutasActivas.forEach(ruta => {
+        const motoId = ruta.motorizado_id;
+        const moto   = motoData.find(m => m.id === motoId);
+        const color  = colorSede(ruta.sede);
+
+        limpiarRuta(motoId);
+        paradaMarkers[motoId] = [];
+
+        // Marcadores por parada
+        ruta.paradas.forEach(p => {
+            const mk = L.marker([p.lat, p.lng], { icon: crearIconoParada(p) })
+                .bindPopup(`<div style="min-width:140px">
+                    <strong>${p.secuencia}. ${p.cliente}</strong><br>
+                    <small class="text-muted">${p.direccion}</small><br>
+                    <span style="font-size:11px;color:${PARADA_COLORS[p.estado]}">${p.estado}</span>
+                </div>`)
+                .addTo(map);
+            paradaMarkers[motoId].push(mk);
+        });
+
+        // Línea de ruta: motorizado → paradas pendientes en orden
+        const pendientes = ruta.paradas.filter(p => p.estado !== 'completado' && p.estado !== 'fallido');
+        if (pendientes.length && moto?.latitud && moto?.longitud) {
+            const puntos = [
+                [moto.latitud, moto.longitud],
+                ...pendientes.map(p => [p.lat, p.lng]),
+            ];
+            rutaLines[motoId] = L.polyline(puntos, {
+                color, weight: 3, dashArray: '8 5', opacity: 0.8,
+            }).addTo(map);
         }
     });
 }
@@ -203,14 +275,21 @@ function irAMotorizado(id) {
     if (m?.latitud) { map.setView([m.latitud, m.longitud], 15); markers[id]?.openPopup(); }
 }
 
-async function cargarUbicaciones() {
+async function cargarTodo() {
     try {
-        const res = await fetch('/tracking/api/ubicaciones');
-        if (!res.ok) throw new Error(res.status);
-        allData = await res.json();
+        const [resUbi, resRutas] = await Promise.all([
+            fetch('/tracking/api/ubicaciones'),
+            fetch('/tracking/api/rutas-activas'),
+        ]);
+        if (!resUbi.ok) throw new Error();
+        allData = await resUbi.json();
+        const rutasActivas = resRutas.ok ? await resRutas.json() : [];
+
         actualizarMarcadores(allData);
+        dibujarRutas(rutasActivas, allData);
         renderPanel(allData);
         renderLeyenda(allData);
+
         const badge = document.getElementById('badge-estado');
         badge.className = 'badge bg-success';
         badge.textContent = 'En vivo';
@@ -226,9 +305,9 @@ document.getElementById('filtro-sede').addEventListener('change', function() {
     actualizarMarcadores(allData);
     renderPanel(allData);
 });
-document.getElementById('btn-refresh').addEventListener('click', cargarUbicaciones);
+document.getElementById('btn-refresh').addEventListener('click', cargarTodo);
 
-cargarUbicaciones();
-setInterval(cargarUbicaciones, 30000);
+cargarTodo();
+setInterval(cargarTodo, 30000);
 </script>
 @endpush
