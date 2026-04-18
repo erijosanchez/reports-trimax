@@ -17,14 +17,22 @@ class MotorizadoController extends Controller
 {
     public function __construct(protected TraccarService $traccar) {}
 
+    private function sedeFiltro(): ?string
+    {
+        $user = Auth::user();
+        return $user->isSede() ? $user->sede : null;
+    }
+
     // ─── VISTAS ───────────────────────────────────────────────
 
     public function mapa()
     {
         abort_unless(Auth::user()->puedeVerMotorizados(), 403);
 
-        $sedes       = Motorizado::SEDES;
-        $motorizados = Motorizado::where('estado', 'activo')->orderBy('sede')->get();
+        $sedes = Motorizado::SEDES;
+        $query = Motorizado::where('estado', 'activo')->orderBy('sede');
+        if ($sede = $this->sedeFiltro()) $query->where('sede', $sede);
+        $motorizados = $query->get();
 
         return view('tracking.mapa', compact('motorizados', 'sedes'));
     }
@@ -33,7 +41,9 @@ class MotorizadoController extends Controller
     {
         abort_unless(Auth::user()->puedeVerMotorizados(), 403);
 
-        $motorizados      = Motorizado::withTrashed()->orderBy('sede')->get();
+        $query = Motorizado::withTrashed()->orderBy('sede');
+        if ($sede = $this->sedeFiltro()) $query->where('sede', $sede);
+        $motorizados      = $query->get();
         $sedes            = Motorizado::SEDES;
         $dispositivosTraccar = $this->traccar->getDispositivos();
 
@@ -48,7 +58,8 @@ class MotorizadoController extends Controller
 
         $query = OrdenTracking::query();
 
-        if ($request->filled('sede'))   $query->where('sede',   $request->sede);
+        if ($sede = $this->sedeFiltro()) $query->where('sede', $sede);
+        elseif ($request->filled('sede')) $query->where('sede', $request->sede);
         if ($request->filled('estado')) $query->where('estado', $request->estado);
         if ($request->filled('buscar')) {
             $query->where(fn($q) => $q
@@ -123,9 +134,12 @@ class MotorizadoController extends Controller
 
         $fecha = $request->get('fecha', today()->toDateString());
 
-        $rutas = RutaTracking::with(['motorizado', 'paradas.orden'])
-            ->whereDate('fecha', $fecha)
-            ->get();
+        $rutasQuery = RutaTracking::with(['motorizado', 'paradas.orden'])
+            ->whereDate('fecha', $fecha);
+        if ($sede = $this->sedeFiltro()) {
+            $rutasQuery->whereHas('motorizado', fn($q) => $q->where('sede', $sede));
+        }
+        $rutas = $rutasQuery->get();
 
         $todasParadas = $rutas->flatMap(fn($r) => $r->paradas);
 
@@ -162,7 +176,9 @@ class MotorizadoController extends Controller
     {
         abort_unless(Auth::user()->puedeVerMotorizados(), 403);
 
-        $motorizados = Motorizado::where('estado', 'activo')->orderBy('sede')->orderBy('nombre')->get();
+        $query = Motorizado::where('estado', 'activo')->orderBy('sede')->orderBy('nombre');
+        if ($sede = $this->sedeFiltro()) $query->where('sede', $sede);
+        $motorizados = $query->get();
 
         return view('tracking.historial', compact('motorizados'));
     }
@@ -191,11 +207,15 @@ class MotorizadoController extends Controller
     {
         abort_unless(Auth::user()->puedeVerMotorizados(), 403);
 
-        $rutas = RutaTracking::with('motorizado')
-            ->orderByDesc('fecha')
-            ->paginate(30);
+        $rutasQuery = RutaTracking::with('motorizado')->orderByDesc('fecha');
+        if ($sede = $this->sedeFiltro()) {
+            $rutasQuery->whereHas('motorizado', fn($q) => $q->where('sede', $sede));
+        }
+        $rutas = $rutasQuery->paginate(30);
 
-        $motorizados = Motorizado::where('estado', 'activo')->orderBy('nombre')->get();
+        $motorizadosQuery = Motorizado::where('estado', 'activo')->orderBy('nombre');
+        if ($sede = $this->sedeFiltro()) $motorizadosQuery->where('sede', $sede);
+        $motorizados = $motorizadosQuery->get();
 
         return view('tracking.rutas', compact('rutas', 'motorizados'));
     }
@@ -256,7 +276,9 @@ class MotorizadoController extends Controller
 
         $query = OrdenTracking::whereIn('estado', ['pendiente', 'fallido']);
 
-        if ($request->filled('sede')) {
+        if ($sede = $this->sedeFiltro()) {
+            $query->where('sede', $sede);
+        } elseif ($request->filled('sede')) {
             $query->where('sede', $request->sede);
         }
 
@@ -278,9 +300,9 @@ class MotorizadoController extends Controller
     {
         abort_unless(Auth::user()->puedeVerMotorizados(), 403);
 
-        $motorizados = Motorizado::with('ultimaPosicion')
-            ->where('estado', 'activo')
-            ->get();
+        $motQuery = Motorizado::with('ultimaPosicion')->where('estado', 'activo');
+        if ($sede = $this->sedeFiltro()) $motQuery->where('sede', $sede);
+        $motorizados = $motQuery->get();
 
         // Enriquecer con datos live de Traccar
         $posicionesTraccar = collect($this->traccar->getPosicionesActuales())
@@ -316,10 +338,13 @@ class MotorizadoController extends Controller
     {
         abort_unless(Auth::user()->puedeVerMotorizados(), 403);
 
-        $rutas = RutaTracking::with(['motorizado', 'paradas.orden'])
+        $rutasActivasQuery = RutaTracking::with(['motorizado', 'paradas.orden'])
             ->whereDate('fecha', today())
-            ->whereIn('estado', ['pendiente', 'en_ruta'])
-            ->get();
+            ->whereIn('estado', ['pendiente', 'en_ruta']);
+        if ($sede = $this->sedeFiltro()) {
+            $rutasActivasQuery->whereHas('motorizado', fn($q) => $q->where('sede', $sede));
+        }
+        $rutas = $rutasActivasQuery->get();
 
         $result = $rutas->map(function ($ruta) {
             $paradas = $ruta->paradas->map(function ($p) {

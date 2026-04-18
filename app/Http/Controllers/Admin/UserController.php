@@ -67,6 +67,8 @@ class UserController extends Controller
             'puede_ver_todos_requerimientos',
             // Productividad Sedes
             'puede_ver_productividad_sedes',
+            // Tracking Motorizados
+            'puede_ver_motorizados',
         ];
     }
 
