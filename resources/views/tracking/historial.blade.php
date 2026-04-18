@@ -68,7 +68,7 @@
                                 </button>
                             </div>
                             <div class="col-md-3 col-sm-12 d-flex gap-2 align-items-center">
-                                <span id="badge-puntos" class="badge bg-secondary">Sin datos</span>
+                                <span id="badge-puntos" class="badge bg-warning text-dark">Sin datos</span>
                                 <span id="badge-distancia" class="badge bg-info d-none"></span>
                                 <span id="badge-velocidad" class="badge bg-warning text-dark d-none"></span>
                             </div>
@@ -129,7 +129,7 @@
                 <div class="shadow-sm border-0 card">
                     <div class="card-header d-flex justify-content-between">
                         <h6 class="mb-0"><i class="mdi mdi-clock-outline me-1 text-warning"></i>Puntos GPS</h6>
-                        <span id="total-puntos" class="badge bg-secondary">0</span>
+                        <span id="total-puntos" class="badge bg-primary">0</span>
                     </div>
                     <div class="card-body p-2" style="max-height:300px;overflow-y:auto" id="lista-puntos">
                         <p class="text-muted small text-center py-2">Sin datos</p>
@@ -301,7 +301,7 @@ async function cargarHistorial() {
         const data = await res.json();
         const puntos = data.puntos || [];
 
-        document.getElementById('badge-puntos').className  = 'badge ' + (puntos.length ? 'bg-success' : 'bg-secondary');
+        document.getElementById('badge-puntos').className  = 'badge ' + (puntos.length ? 'bg-success' : 'bg-warning text-dark');
         document.getElementById('badge-puntos').textContent = puntos.length + ' puntos GPS';
 
         document.getElementById('titulo-mapa').innerHTML =

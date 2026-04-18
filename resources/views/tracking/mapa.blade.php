@@ -116,7 +116,7 @@
                             <button id="btn-refresh" class="btn-outline-primary btn btn-sm">
                                 <i class="me-1 mdi mdi-refresh"></i>Actualizar
                             </button>
-                            <span id="badge-estado" class="bg-secondary badge">Cargando…</span>
+                            <span id="badge-estado" class="bg-info badge">Cargando…</span>
                         </div>
                     </div>
                 </div>

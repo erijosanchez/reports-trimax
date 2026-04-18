@@ -134,7 +134,7 @@
                 <div class="shadow-sm border-0 card">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h6 class="mb-0"><i class="mdi mdi-motorbike me-1 text-primary"></i>Motorizados del día</h6>
-                        <span class="badge bg-secondary">{{ \Carbon\Carbon::parse($fecha)->format('d/m/Y') }}</span>
+                        <span class="badge bg-primary">{{ \Carbon\Carbon::parse($fecha)->format('d/m/Y') }}</span>
                     </div>
                     <div class="card-body p-0">
                         <div class="table-responsive">
@@ -166,7 +166,7 @@
                                         </div>
                                         @endif
                                     </td>
-                                    <td><span class="badge bg-secondary sede-badge">{{ $r->motorizado->sede }}</span></td>
+                                    <td><span class="badge bg-primary sede-badge">{{ $r->motorizado->sede }}</span></td>
                                     <td style="min-width:140px">
                                         <div class="d-flex justify-content-between mb-1" style="font-size:11px">
                                             <span>{{ $comp }}/{{ $tot }}</span>
@@ -188,7 +188,7 @@
                                         @elseif($r->estado === 'en_ruta')
                                             <span class="badge bg-warning text-dark">En ruta</span>
                                         @else
-                                            <span class="badge bg-secondary">Pendiente</span>
+                                            <span class="badge bg-primary">Pendiente</span>
                                         @endif
                                     </td>
                                     <td class="text-center">

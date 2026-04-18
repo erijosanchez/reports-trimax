@@ -50,7 +50,7 @@
                                     <tr>
                                         <td class="text-muted small">{{ $r->id }}</td>
                                         <td class="fw-semibold">{{ $r->motorizado->nombre }}</td>
-                                        <td><span class="badge bg-secondary">{{ $r->motorizado->sede }}</span></td>
+                                        <td><span class="badge bg-primary">{{ $r->motorizado->sede }}</span></td>
                                         <td>{{ $r->fecha->format('d/m/Y') }}</td>
                                         <td>
                                             @if($r->estado === 'completado')
@@ -58,7 +58,7 @@
                                             @elseif($r->estado === 'en_ruta')
                                                 <span class="badge bg-warning text-dark">En ruta</span>
                                             @else
-                                                <span class="badge bg-secondary">Pendiente</span>
+                                                <span class="badge bg-primary">Pendiente</span>
                                             @endif
                                         </td>
                                         <td class="text-center">

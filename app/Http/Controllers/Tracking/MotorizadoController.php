@@ -40,6 +40,7 @@ class MotorizadoController extends Controller
     public function motorizados()
     {
         abort_unless(Auth::user()->puedeVerMotorizados(), 403);
+        abort_if(Auth::user()->isSede(), 403);
 
         $query = Motorizado::withTrashed()->orderBy('sede');
         if ($sede = $this->sedeFiltro()) $query->where('sede', $sede);

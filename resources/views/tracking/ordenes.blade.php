@@ -131,12 +131,12 @@
                                         </td>
                                         <td class="small text-muted">{{ $o->referencia ?? '—' }}</td>
                                         <td class="small" style="max-width:200px">{{ $o->direccion }}</td>
-                                        <td><span class="badge bg-secondary">{{ $o->sede }}</span></td>
+                                        <td><span class="badge bg-primary">{{ $o->sede }}</span></td>
                                         <td>
                                             @php
-                                                $badgeMap = ['pendiente'=>'bg-secondary','en_ruta'=>'bg-warning text-dark','entregado'=>'bg-success','fallido'=>'bg-danger'];
+                                                $badgeMap = ['pendiente'=>'bg-primary','en_ruta'=>'bg-warning text-dark','entregado'=>'bg-success','fallido'=>'bg-danger'];
                                             @endphp
-                                            <span class="badge {{ $badgeMap[$o->estado] ?? 'bg-secondary' }}">
+                                            <span class="badge {{ $badgeMap[$o->estado] ?? 'bg-primary' }}">
                                                 {{ ucfirst(str_replace('_',' ',$o->estado)) }}
                                             </span>
                                         </td>

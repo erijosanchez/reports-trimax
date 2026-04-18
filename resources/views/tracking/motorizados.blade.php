@@ -99,7 +99,7 @@
                                     <tr class="{{ $m->trashed() ? 'table-secondary' : '' }}">
                                         <td class="text-muted small">{{ $m->id }}</td>
                                         <td class="fw-semibold">{{ $m->nombre }}</td>
-                                        <td><span class="badge bg-secondary">{{ $m->sede }}</span></td>
+                                        <td><span class="badge bg-primary">{{ $m->sede }}</span></td>
                                         <td class="small">{{ $m->telefono ?? '—' }}</td>
                                         <td>
                                             @if($m->traccar_device_id)
@@ -116,7 +116,7 @@
                                             @elseif($m->estado === 'activo')
                                                 <span class="badge bg-success">Activo</span>
                                             @else
-                                                <span class="badge bg-secondary">Inactivo</span>
+                                                <span class="badge bg-warning text-dark">Inactivo</span>
                                             @endif
                                         </td>
                                         <td class="text-center">
@@ -183,7 +183,7 @@
                                         <td>{{ $d['name'] }}</td>
                                         <td class="text-muted small">{{ $d['uniqueId'] ?? '—' }}</td>
                                         <td>
-                                            <span class="badge {{ ($d['status'] ?? '') === 'online' ? 'bg-success' : 'bg-secondary' }}">
+                                            <span class="badge {{ ($d['status'] ?? '') === 'online' ? 'bg-success' : 'bg-danger' }}">
                                                 {{ $d['status'] ?? 'offline' }}
                                             </span>
                                         </td>
