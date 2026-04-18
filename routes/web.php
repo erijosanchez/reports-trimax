@@ -347,7 +347,7 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
         Route::get('/resumen',      [MotorizadoController::class, 'resumenDiario'])->name('resumen');
 
         // CRUD órdenes
-        Route::get('/ordenes',           [MotorizadoController::class, 'ordenes'])->name('ordenes');
+        Route::get('/ordenes-entrega',           [MotorizadoController::class, 'ordenes'])->name('ordenes');
         Route::post('/ordenes',          [MotorizadoController::class, 'storeOrden'])->name('ordenes.store');
         Route::put('/ordenes/{id}',      [MotorizadoController::class, 'updateOrden'])->name('ordenes.update');
         Route::post('/ordenes/{id}',     [MotorizadoController::class, 'updateOrden']);
