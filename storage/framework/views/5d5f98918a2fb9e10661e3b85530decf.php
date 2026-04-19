@@ -231,7 +231,7 @@
         <li class="nav-item">
             <a class="nav-link <?php echo request()->routeIs('productividad.ordenes-x-usuario.*') ? 'active' : ''; ?>"
                 href="<?php echo route('productividad.ordenes-x-usuario.index'); ?>">
-                <i class="mdi mdi-account-multiple-outline menu-icon"></i>
+                <i class="mdi-account-multiple-outline mdi menu-icon"></i>
                 <span class="menu-title">Ordenes x Usuario</span>
             </a>
         </li>
@@ -281,11 +281,12 @@
             <li class="nav-item">
                 <a class="nav-link <?php echo request()->routeIs('tracking.mapa') ? 'active' : ''; ?>"
                     href="<?php echo route('tracking.mapa'); ?>">
-                    <i class="mdi mdi-map-marker-radius menu-icon text-danger"></i>
+                    <i class="text-danger mdi mdi-map-marker-radius menu-icon"></i>
                     <span class="menu-title">Mapa en Vivo</span>
                 </a>
             </li>
 
+            <?php if (! ($user->isSede())): ?>
             <li class="nav-item">
                 <a class="nav-link <?php echo request()->routeIs('tracking.motorizados') ? 'active' : ''; ?>"
                     href="<?php echo route('tracking.motorizados'); ?>">
@@ -293,11 +294,12 @@
                     <span class="menu-title">Motorizados</span>
                 </a>
             </li>
+            <?php endif; ?>
 
             <li class="nav-item">
                 <a class="nav-link <?php echo request()->routeIs('tracking.rutas') || request()->routeIs('tracking.ruta-detalle') ? 'active' : ''; ?>"
                     href="<?php echo route('tracking.rutas'); ?>">
-                    <i class="mdi mdi-route menu-icon"></i>
+                    <i class="mdi mdi-routes menu-icon"></i>
                     <span class="menu-title">Rutas de Entrega</span>
                 </a>
             </li>

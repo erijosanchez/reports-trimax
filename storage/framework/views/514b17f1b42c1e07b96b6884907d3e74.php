@@ -1,8 +1,6 @@
-@extends('layouts.app')
+<?php $__env->startSection('title', 'Caja Chica Sedes'); ?>
 
-@section('title', 'Comentarios Sedes')
-
-@section('content')
+<?php $__env->startSection('content'); ?>
 <div class="content-wrapper">
     <div class="page-header">
         <div class="row">
@@ -11,12 +9,12 @@
                     <div class="d-flex align-items-center justify-content-between px-4 py-3 card-body">
                         <div>
                             <h4 class="mb-0 fw-bold">
-                                <i class="me-2 mdi-comment-text-multiple text-primary mdi"></i>Comentarios Sedes
+                                <i class="me-2 text-success mdi mdi-cash-multiple"></i>Caja Chica Sedes
                             </h4>
-                            <p class="mb-0 text-muted small">Reporte semanal — límite: jueves 11:59 PM</p>
+                            <p class="mb-0 text-muted small">Reporte semanal — límite: sábado 11:59 PM</p>
                         </div>
                         <div class="text-end">
-                            <span class="bg-primary badge fs-6">Semana {{ $semanaNumero }}/{{ $anio }}</span>
+                            <span class="bg-success badge fs-6">Semana <?php echo $semanaNumero; ?>/<?php echo $anio; ?></span>
                         </div>
                     </div>
                 </div>
@@ -26,9 +24,9 @@
 
     <div class="page-content">
 
-        {{-- ── FILA 1: Countdown + Estado + KPI Info ─────────────── --}}
+        
         <div class="mb-4 row">
-            {{-- Countdown --}}
+            
             <div class="mb-3 col-lg-4 col-md-6">
                 <div class="shadow-sm border-0 h-100 card" id="card-countdown">
                     <div class="py-4 text-center card-body">
@@ -39,51 +37,53 @@
                         <div id="countdown-display" class="mb-1 fw-bold" style="font-size:2rem;font-family:'Courier New',monospace;letter-spacing:2px;">--:--:--</div>
                         <div id="countdown-subtitle" class="text-muted small">Cargando...</div>
                         <hr class="my-3">
-                        <div class="text-muted small">Límite: <strong>Jueves 11:59 PM</strong></div>
+                        <div class="text-muted small">Límite: <strong>Sábado 11:59 PM</strong></div>
                     </div>
                 </div>
             </div>
 
-            {{-- Estado semana actual (sede) --}}
-            @auth
-            @if ((auth()->user()->isSede() || auth()->user()->isSuperAdmin() || auth()->user()->isAdmin()) && $reporteSemanaActual)
+            
+            <?php if(auth()->guard()->check()): ?>
+            <?php if((auth()->user()->isSede() || auth()->user()->isSuperAdmin() || auth()->user()->isAdmin()) && $reporteSemanaActual): ?>
             <div class="mb-3 col-lg-4 col-md-6">
                 <div class="shadow-sm border-0 h-100 card">
                     <div class="py-4 card-body">
                         <h6 class="mb-3 text-muted text-uppercase fw-bold small">Estado — Semana Actual</h6>
-                        @php $enviado = !is_null($reporteSemanaActual->fecha_envio_original); @endphp
+                        <?php $enviado = !is_null($reporteSemanaActual->fecha_envio_original); ?>
                         <div class="d-flex align-items-center mb-2">
-                            <i class="me-2 text-primary mdi mdi-map-marker"></i>
-                            <strong>{{ $reporteSemanaActual->sede }}</strong>
+                            <i class="me-2 text-success mdi mdi-map-marker"></i>
+                            <strong><?php echo $reporteSemanaActual->sede; ?></strong>
                         </div>
-                        @if ($enviado)
+                        <?php if($enviado): ?>
                             <div class="mb-2 py-2 alert alert-success">
                                 <i class="me-1 mdi mdi-check-circle"></i>
-                                Enviado el {{ $reporteSemanaActual->fecha_envio_original?->setTimezone('America/Lima')->format('d/m H:i') }}
+                                Enviado el <?php echo $reporteSemanaActual->fecha_envio_original?->setTimezone('America/Lima')->format('d/m H:i'); ?>
+
                             </div>
                             <div class="d-flex align-items-center">
                                 <span class="me-2 fw-bold">KPI:</span>
-                                <span class="badge bg-{{ $reporteSemanaActual->kpiColor() }} fs-6">
-                                    {{ $reporteSemanaActual->kpiLabel() }}
+                                <span class="badge bg-<?php echo $reporteSemanaActual->kpiColor(); ?> fs-6">
+                                    <?php echo $reporteSemanaActual->kpiLabel(); ?>
+
                                 </span>
                             </div>
-                            @if ($reporteSemanaActual->editado_tarde)
+                            <?php if($reporteSemanaActual->editado_tarde): ?>
                             <div class="mt-2 mb-0 py-1 alert alert-warning small">
                                 <i class="me-1 mdi mdi-alert"></i>Editado con atraso — KPI ajustado
                             </div>
-                            @endif
-                        @else
+                            <?php endif; ?>
+                        <?php else: ?>
                             <div class="mb-0 py-2 alert alert-warning">
                                 <i class="me-1 mdi mdi-clock-alert"></i>Pendiente de envío
                             </div>
-                        @endif
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
-            @endif
-            @endauth
+            <?php endif; ?>
+            <?php endif; ?>
 
-            {{-- KPI Info --}}
+            
             <div class="mb-3 col-lg-4 col-md-12">
                 <div class="shadow-sm border-0 h-100 card">
                     <div class="py-4 card-body">
@@ -92,31 +92,34 @@
                             <div class="d-flex align-items-center justify-content-between p-2 rounded"
                                  style="background:#d1fae5;border-left:4px solid #10b981;">
                                 <div>
-                                    <div class="text-success fw-bold small">Enviado el jueves</div>
-                                    <div class="text-muted" style="font-size:11px;">Cualquier hora del jueves</div>
+                                    <div class="text-success fw-bold small">Enviado el sábado</div>
+                                    <div class="text-muted" style="font-size:11px;">Hasta las 11:59 PM</div>
                                 </div>
-                                <span class="bg-success badge">100%</span>
+                                <span class="bg-success badge fs-6">100%</span>
                             </div>
                             <div class="d-flex align-items-center justify-content-between p-2 rounded"
-                                 style="background:#fef3c7;border-left:4px solid #f59e0b;">
+                                 style="background:#cffafe;border-left:4px solid #06b6d4;">
                                 <div>
-                                    <div class="text-warning fw-bold small">1 día después (viernes)</div>
+                                    <div class="fw-bold small" style="color:#0e7490;">Enviado el domingo</div>
+                                    <div class="text-muted" style="font-size:11px;">1 día de atraso</div>
                                 </div>
-                                <span class="bg-warning badge">75%</span>
+                                <span class="bg-info badge fs-6">75%</span>
                             </div>
                             <div class="d-flex align-items-center justify-content-between p-2 rounded"
-                                 style="background:#e0f2fe;border-left:4px solid #0891b2;">
+                                 style="background:#fef9c3;border-left:4px solid #eab308;">
                                 <div>
-                                    <div class="fw-bold small" style="color:#0891b2;">2 días después (sábado)</div>
+                                    <div class="text-warning fw-bold small">Enviado el lunes</div>
+                                    <div class="text-muted" style="font-size:11px;">2 días de atraso</div>
                                 </div>
-                                <span class="bg-info badge">50%</span>
+                                <span class="bg-warning badge fs-6">50%</span>
                             </div>
                             <div class="d-flex align-items-center justify-content-between p-2 rounded"
                                  style="background:#fee2e2;border-left:4px solid #ef4444;">
                                 <div>
-                                    <div class="text-danger fw-bold small">3+ días después</div>
+                                    <div class="text-danger fw-bold small">Martes en adelante / No enviado</div>
+                                    <div class="text-muted" style="font-size:11px;">3+ días de atraso</div>
                                 </div>
-                                <span class="bg-danger badge">0%</span>
+                                <span class="bg-danger badge fs-6">0%</span>
                             </div>
                         </div>
                     </div>
@@ -124,15 +127,16 @@
             </div>
         </div>
 
-        {{-- ── FILA 2: Resumen por sede (admin/superadmin) ────────── --}}
-        @if ($resumenSedes && $resumenSedes->count() > 0)
+        
+        <?php if($resumenSedes && $resumenSedes->count() > 0): ?>
         <div class="mb-4 row">
             <div class="col-12">
                 <div class="shadow-sm border-0 card">
                     <div class="d-flex align-items-center justify-content-between bg-white border-bottom card-header">
                         <h5 class="mb-0 fw-bold">
-                            <i class="me-2 mdi-view-dashboard-outline text-primary mdi"></i>
-                            Estado Sedes — Semana {{ $semanaNumero }}/{{ $anio }}
+                            <i class="me-2 mdi-view-dashboard-outline text-success mdi"></i>
+                            Estado Sedes — Semana <?php echo $semanaNumero; ?>/<?php echo $anio; ?>
+
                         </h5>
                         <div class="d-flex align-items-center gap-2 text-muted small">
                             <span class="bg-success badge filtro-estado" data-filtro="enviado">Enviado</span>
@@ -153,109 +157,111 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach ($resumenSedes as $fila)
-                                    <tr class="{{ $fila['enviado'] ? '' : 'table-danger bg-opacity-25' }}" data-estado="{{ $fila['enviado'] ? 'enviado' : 'pendiente' }}">
-                                        <td><strong>{{ $fila['sede'] }}</strong></td>
-                                        <td class="text-muted small">{{ $fila['usuario'] }}</td>
+                                    <?php $__currentLoopData = $resumenSedes; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $fila): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <tr class="<?php echo $fila['enviado'] ? '' : 'table-danger bg-opacity-25'; ?>" data-estado="<?php echo $fila['enviado'] ? 'enviado' : 'pendiente'; ?>">
+                                        <td><strong><?php echo $fila['sede']; ?></strong></td>
+                                        <td class="text-muted small"><?php echo $fila['usuario']; ?></td>
                                         <td class="text-center">
-                                            @if ($fila['enviado'])
+                                            <?php if($fila['enviado']): ?>
                                                 <span class="bg-success badge"><i class="me-1 mdi mdi-check"></i>Enviado</span>
-                                            @else
+                                            <?php else: ?>
                                                 <span class="bg-danger badge"><i class="me-1 mdi mdi-clock-alert"></i>Pendiente</span>
-                                            @endif
+                                            <?php endif; ?>
                                         </td>
                                         <td class="text-center">
-                                            {{ $fila['fecha_envio'] ? $fila['fecha_envio'].' hrs' : '—' }}
-                                            @if ($fila['editado_tarde'])
+                                            <?php echo $fila['fecha_envio'] ? $fila['fecha_envio'].' hrs' : '—'; ?>
+
+                                            <?php if($fila['editado_tarde']): ?>
                                                 <br><small class="text-warning"><i class="mdi mdi-pencil"></i> Editado tarde</small>
-                                            @endif
+                                            <?php endif; ?>
                                         </td>
                                         <td class="text-center">
-                                            @if (!is_null($fila['kpi']))
-                                                <span class="badge bg-{{ $fila['kpi_color'] }} fs-6">{{ $fila['kpi_label'] }}</span>
-                                            @else
+                                            <?php if(!is_null($fila['kpi'])): ?>
+                                                <span class="badge bg-<?php echo $fila['kpi_color']; ?> fs-6"><?php echo $fila['kpi_label']; ?></span>
+                                            <?php else: ?>
                                                 <span class="text-muted">—</span>
-                                            @endif
+                                            <?php endif; ?>
                                         </td>
                                         <td class="text-center">
-                                            @if ($fila['reporte_id'])
-                                                <button class="px-2 py-0 btn-outline-primary btn btn-sm"
-                                                        onclick="verReporte({{ $fila['reporte_id'] }})" title="Ver detalle">
+                                            <?php if($fila['reporte_id']): ?>
+                                                <button class="px-2 py-0 btn-outline-success btn btn-sm"
+                                                        onclick="verReporte(<?php echo $fila['reporte_id']; ?>)" title="Ver detalle">
                                                     <i class="mdi mdi-eye"></i>
                                                 </button>
-                                            @else
+                                            <?php else: ?>
                                                 <span class="text-muted small">Sin reporte</span>
-                                            @endif
+                                            <?php endif; ?>
                                         </td>
                                     </tr>
-                                    @endforeach
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                 </tbody>
                             </table>
                         </div>
                     </div>
                     <div class="d-flex gap-4 bg-white px-4 py-2 border-top text-muted card-footer small">
-                        <span><i class="text-success mdi mdi-check-circle"></i> Enviados: <strong>{{ $resumenSedes->where('enviado', true)->count() }}</strong></span>
-                        <span><i class="text-danger mdi mdi-clock-alert"></i> Pendientes: <strong>{{ $resumenSedes->where('enviado', false)->count() }}</strong></span>
-                        <span><i class="text-primary mdi mdi-chart-line"></i> KPI promedio:
-                            <strong>@php $kpisValidos = $resumenSedes->whereNotNull('kpi')->pluck('kpi'); echo $kpisValidos->count() ? number_format($kpisValidos->avg(), 1).'%' : '—'; @endphp</strong>
+                        <span><i class="text-success mdi mdi-check-circle"></i> Enviados: <strong><?php echo $resumenSedes->where('enviado', true)->count(); ?></strong></span>
+                        <span><i class="text-danger mdi mdi-clock-alert"></i> Pendientes: <strong><?php echo $resumenSedes->where('enviado', false)->count(); ?></strong></span>
+                        <span><i class="text-success mdi mdi-chart-line"></i> KPI promedio:
+                            <strong><?php $kpisValidos = $resumenSedes->whereNotNull('kpi')->pluck('kpi'); echo $kpisValidos->count() ? number_format($kpisValidos->avg(), 1).'%' : '—'; ?></strong>
                         </span>
                     </div>
                 </div>
             </div>
         </div>
-        @endif
+        <?php endif; ?>
 
-        {{-- ── FILA 3: Formulario envío/edición (sede) ─────────────── --}}
-        @auth
-        @if ((auth()->user()->isSede() || auth()->user()->isSuperAdmin() || auth()->user()->isAdmin()) && $reporteSemanaActual)
+        
+        <?php if(auth()->guard()->check()): ?>
+        <?php if((auth()->user()->isSede() || auth()->user()->isSuperAdmin() || auth()->user()->isAdmin()) && $reporteSemanaActual): ?>
         <div class="mb-4 row">
             <div class="col-12">
                 <div class="shadow-sm border-0 card">
                     <div class="d-flex align-items-center justify-content-between bg-white border-bottom card-header">
                         <h5 class="mb-0 fw-bold">
-                            <i class="me-2 text-primary mdi mdi-upload"></i>
-                            @if ($reporteSemanaActual->fecha_envio_original) Editar Reporte @else Enviar Reporte @endif
-                            — Semana {{ $semanaNumero }}/{{ $anio }}
+                            <i class="me-2 text-success mdi mdi-upload"></i>
+                            <?php if($reporteSemanaActual->fecha_envio_original): ?> Editar Reporte <?php else: ?> Enviar Reporte <?php endif; ?>
+                            — Semana <?php echo $semanaNumero; ?>/<?php echo $anio; ?>
+
                         </h5>
-                        <span class="bg-light border text-dark badge">Sede: <strong>{{ $reporteSemanaActual->sede }}</strong></span>
+                        <span class="bg-light border text-dark badge">Sede: <strong><?php echo $reporteSemanaActual->sede; ?></strong></span>
                     </div>
                     <div class="card-body">
-                        @if ($reporteSemanaActual->fecha_envio_original)
-                        {{-- EDICIÓN --}}
+                        <?php if($reporteSemanaActual->fecha_envio_original): ?>
+                        
                         <form id="form-editar-reporte" enctype="multipart/form-data">
-                            @csrf
-                            @method('PUT')
-                            <input type="hidden" name="reporte_id" value="{{ $reporteSemanaActual->id }}">
+                            <?php echo csrf_field(); ?>
+                            <?php echo method_field('PUT'); ?>
+                            <input type="hidden" name="reporte_id" value="<?php echo $reporteSemanaActual->id; ?>">
 
-                            @if (count($reporteSemanaActual->archivos ?? []) > 0)
+                            <?php if(count($reporteSemanaActual->archivos ?? []) > 0): ?>
                             <div class="mb-3">
                                 <label class="form-label fw-semibold">Archivos enviados</label>
                                 <div class="row g-2" id="archivos-existentes">
-                                    @foreach ($reporteSemanaActual->archivos as $idx => $archivo)
-                                    <div class="col-md-4 col-sm-6" id="archivo-card-{{ $idx }}">
+                                    <?php $__currentLoopData = $reporteSemanaActual->archivos; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $idx => $archivo): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <div class="col-md-4 col-sm-6" id="archivo-card-<?php echo $idx; ?>">
                                         <div class="d-flex align-items-center gap-2 bg-light p-2 border rounded">
-                                            <i class="mdi mdi-{{ str_contains($archivo['mime'] ?? '', 'image') ? 'image' : 'file-excel' }} text-primary fs-5"></i>
+                                            <i class="mdi mdi-<?php echo str_contains($archivo['mime'] ?? '', 'image') ? 'image' : 'file-excel'; ?> text-success fs-5"></i>
                                             <div class="flex-grow-1 overflow-hidden">
-                                                <div class="text-truncate small fw-semibold" title="{{ $archivo['name'] }}">{{ $archivo['name'] }}</div>
-                                                <div class="text-muted" style="font-size:11px;">{{ number_format(($archivo['size'] ?? 0)/1024, 1) }} KB</div>
+                                                <div class="text-truncate small fw-semibold" title="<?php echo $archivo['name']; ?>"><?php echo $archivo['name']; ?></div>
+                                                <div class="text-muted" style="font-size:11px;"><?php echo number_format(($archivo['size'] ?? 0)/1024, 1); ?> KB</div>
                                             </div>
                                             <div class="d-flex gap-1">
-                                                <a href="{{ route('productividad.cobranza-sedes.comentarios.download', [$reporteSemanaActual->id, $idx]) }}"
-                                                   class="px-1 py-0 btn-outline-primary btn btn-sm">
+                                                <a href="<?php echo route('productividad.cobranza-sedes.caja-chica.download', [$reporteSemanaActual->id, $idx]); ?>"
+                                                   class="px-1 py-0 btn-outline-success btn btn-sm">
                                                     <i class="mdi mdi-download"></i>
                                                 </a>
                                                 <button type="button" class="px-1 py-0 btn-outline-danger btn btn-sm"
-                                                        onclick="marcarEliminar({{ $idx }}, this)">
+                                                        onclick="marcarEliminar(<?php echo $idx; ?>, this)">
                                                     <i class="mdi-trash-can-outline mdi"></i>
                                                 </button>
                                             </div>
-                                            <input type="hidden" name="eliminar_indices[]" id="eliminar-{{ $idx }}" value="{{ $idx }}" disabled>
+                                            <input type="hidden" name="eliminar_indices[]" id="eliminar-<?php echo $idx; ?>" value="<?php echo $idx; ?>" disabled>
                                         </div>
                                     </div>
-                                    @endforeach
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                 </div>
                             </div>
-                            @endif
+                            <?php endif; ?>
 
                             <div class="mb-3">
                                 <label class="form-label fw-semibold">Agregar archivos adicionales</label>
@@ -266,7 +272,7 @@
                                     <input type="file" id="archivos-edit" name="archivos[]"
                                            multiple accept=".jpg,.jpeg,.png,.gif,.webp,.xlsx,.xls,.csv,.pdf" class="d-none">
                                     <div class="d-flex justify-content-center gap-2 mt-1">
-                                        <button type="button" class="btn-outline-primary btn btn-sm"
+                                        <button type="button" class="btn-outline-success btn btn-sm"
                                                 onclick="document.getElementById('archivos-edit').click()">
                                             <i class="me-1 mdi mdi-paperclip"></i>Seleccionar archivos
                                         </button>
@@ -281,7 +287,7 @@
 
                             <div class="mb-3">
                                 <label class="form-label fw-semibold">Notas</label>
-                                <textarea name="notas" rows="2" class="form-control" placeholder="Opcional...">{{ $reporteSemanaActual->notas }}</textarea>
+                                <textarea name="notas" rows="2" class="form-control" placeholder="Opcional..."><?php echo $reporteSemanaActual->notas; ?></textarea>
                             </div>
 
                             <button type="submit" class="btn btn-warning fw-bold" id="btn-editar">
@@ -289,10 +295,10 @@
                             </button>
                             <div id="msg-editar" class="mt-2"></div>
                         </form>
-                        @else
-                        {{-- ENVÍO INICIAL --}}
+                        <?php else: ?>
+                        
                         <form id="form-enviar-reporte" enctype="multipart/form-data">
-                            @csrf
+                            <?php echo csrf_field(); ?>
                             <div class="mb-3">
                                 <label class="form-label fw-semibold">Archivos del reporte <span class="text-danger">*</span></label>
                                 <div class="drop-zone" id="drop-zone-nuevo">
@@ -302,7 +308,7 @@
                                     <input type="file" id="archivos-nuevo" name="archivos[]"
                                            multiple accept=".jpg,.jpeg,.png,.gif,.webp,.xlsx,.xls,.csv,.pdf" class="d-none">
                                     <div class="d-flex justify-content-center gap-2">
-                                        <button type="button" class="btn-outline-primary btn"
+                                        <button type="button" class="btn-outline-success btn"
                                                 onclick="document.getElementById('archivos-nuevo').click()">
                                             <i class="me-1 mdi mdi-paperclip"></i>Seleccionar archivos
                                         </button>
@@ -318,25 +324,25 @@
                                 <label class="form-label fw-semibold">Notas</label>
                                 <textarea name="notas" rows="2" class="form-control" placeholder="Opcional..."></textarea>
                             </div>
-                            <button type="submit" class="btn btn-primary fw-bold" id="btn-enviar">
+                            <button type="submit" class="btn btn-success fw-bold" id="btn-enviar">
                                 <i class="me-1 mdi mdi-send"></i>Enviar y Registrar
                             </button>
                             <div id="msg-enviar" class="mt-2"></div>
                         </form>
-                        @endif
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
         </div>
-        @endif
-        @endauth
+        <?php endif; ?>
+        <?php endif; ?>
 
-        {{-- ── FILA 4: Gráfico KPI por semana ────────────────────────── --}}
+        
         <div class="mb-4 row">
             <div class="col-12">
                 <div class="shadow-sm border-0 card">
                     <div class="d-flex align-items-center justify-content-between bg-white border-bottom card-header">
-                        <h5 class="mb-0 fw-bold"><i class="me-2 text-primary mdi mdi-chart-line"></i>KPI Semanal</h5>
+                        <h5 class="mb-0 fw-bold"><i class="me-2 text-success mdi mdi-chart-line"></i>KPI Semanal</h5>
                         <div class="d-flex align-items-center gap-2">
                             <label class="me-1 mb-0 text-muted small">Semanas:</label>
                             <select id="filtro-semanas" class="form-select-sm form-select" style="width:80px;">
@@ -356,14 +362,14 @@
             </div>
         </div>
 
-        {{-- ── FILA 4b: Cumplimiento mensual (admin y con permiso productividad sedes) --}}
-        @if (auth()->user()->isSuperAdmin() || auth()->user()->isAdmin() || auth()->user()->puede_ver_productividad_sedes)
+        
+        <?php if(auth()->user()->isSuperAdmin() || auth()->user()->isAdmin() || auth()->user()->puede_ver_productividad_sedes): ?>
         <div class="mb-4 row">
             <div class="col-12">
                 <div class="shadow-sm border-0 card">
                     <div class="d-flex align-items-center justify-content-between bg-white border-bottom card-header">
                         <h5 class="mb-0 fw-bold">
-                            <i class="me-2 text-success mdi mdi-chart-bar"></i>Cumplimiento Mensual por Sede
+                            <i class="me-2 text-primary mdi mdi-chart-bar"></i>Cumplimiento Mensual por Sede
                         </h5>
                         <div class="d-flex align-items-center gap-2">
                             <label class="me-1 mb-0 text-muted small">Meses:</label>
@@ -383,14 +389,14 @@
                 </div>
             </div>
         </div>
-        @endif
+        <?php endif; ?>
 
-        {{-- ── FILA 5: Historial ───────────────────────────────────── --}}
+        
         <div class="row">
             <div class="col-12">
                 <div class="shadow-sm border-0 card">
                     <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 bg-white border-bottom card-header">
-                        <h5 class="mb-0 fw-bold"><i class="me-2 text-primary mdi mdi-history"></i>Historial de Reportes</h5>
+                        <h5 class="mb-0 fw-bold"><i class="me-2 text-success mdi mdi-history"></i>Historial de Reportes</h5>
                         <div class="d-flex flex-wrap align-items-center gap-2">
                             <select id="filtro-sede" class="form-select-sm form-select" style="width:auto" onchange="aplicarFiltros()">
                                 <option value="">Todas las sedes</option>
@@ -402,7 +408,7 @@
                                 <option value="desc">Más reciente primero</option>
                                 <option value="asc">Más antiguo primero</option>
                             </select>
-                            <div id="historial-loader" class="spinner-border spinner-border-sm text-primary d-none"></div>
+                            <div id="historial-loader" class="spinner-border spinner-border-sm text-success d-none"></div>
                         </div>
                     </div>
                     <div class="p-0 card-body">
@@ -417,7 +423,7 @@
                                 </thead>
                                 <tbody id="historial-body">
                                     <tr><td colspan="9" class="py-4 text-center">
-                                        <div class="me-2 spinner-border spinner-border-sm text-primary"></div>Cargando...
+                                        <div class="me-2 spinner-border spinner-border-sm text-success"></div>Cargando...
                                     </td></tr>
                                 </tbody>
                             </table>
@@ -429,25 +435,25 @@
     </div>
 </div>
 
-{{-- Modal Ver Reporte --}}
+
 <div class="modal fade" id="modal-reporte" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title fw-bold">
-                    <i class="me-2 mdi-comment-text-multiple text-primary mdi"></i>
+                    <i class="me-2 text-success mdi mdi-cash-multiple"></i>
                     <span id="modal-titulo">Detalle del Reporte</span>
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body" id="modal-body">
-                <div class="py-4 text-center"><div class="spinner-border text-primary"></div></div>
+                <div class="py-4 text-center"><div class="spinner-border text-success"></div></div>
             </div>
         </div>
     </div>
 </div>
 
-{{-- Modal Enviar Reporte Atrasado --}}
+
 <div class="modal fade" id="modal-enviar-atrasado" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -456,8 +462,8 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form id="form-atrasado" enctype="multipart/form-data">
-                @csrf
-                @method('PUT')
+                <?php echo csrf_field(); ?>
+                <?php echo method_field('PUT'); ?>
                 <input type="hidden" id="atrasado-reporte-id">
                 <div class="modal-body">
                     <div class="mb-3 py-2 alert alert-warning small">
@@ -496,12 +502,12 @@
     </div>
 </div>
 
-{{-- Modal Cámara --}}
+
 <div class="modal fade" id="modal-camara" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title fw-bold"><i class="me-2 text-primary mdi mdi-camera"></i>Tomar Foto</h5>
+                <h5 class="modal-title fw-bold"><i class="me-2 text-success mdi mdi-camera"></i>Tomar Foto</h5>
                 <button type="button" class="btn-close" onclick="cerrarCamara()"></button>
             </div>
             <div class="p-3 text-center modal-body">
@@ -514,25 +520,25 @@
                 </div>
             </div>
             <div class="justify-content-center gap-2 modal-footer">
-                <button id="btn-capturar" class="btn btn-primary" onclick="capturarFoto()">
+                <button id="btn-capturar" class="btn btn-success" onclick="capturarFoto()">
                     <i class="me-1 mdi mdi-camera"></i>Capturar
                 </button>
                 <button id="btn-retomar" class="btn-outline-secondary btn d-none" onclick="retomarFoto()">
                     <i class="me-1 mdi mdi-refresh"></i>Retomar
                 </button>
-                <button id="btn-usar-foto" class="btn btn-primary d-none" onclick="usarFoto()">
+                <button id="btn-usar-foto" class="btn btn-success d-none" onclick="usarFoto()">
                     <i class="me-1 mdi mdi-check"></i>Usar esta foto
                 </button>
             </div>
         </div>
     </div>
 </div>
-@endsection
+<?php $__env->stopSection(); ?>
 
-@push('styles')
+<?php $__env->startPush('styles'); ?>
 <style>
 .drop-zone { border:2px dashed #cbd5e1;border-radius:12px;padding:32px 20px;text-align:center;background:#f8fafc;transition:border-color .2s,background .2s;cursor:pointer; }
-.drop-zone.dragover { border-color:#2563eb;background:#eff6ff; }
+.drop-zone.dragover { border-color:#10b981;background:#ecfdf5; }
 .preview-thumb { position:relative;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;background:#f8fafc; }
 .preview-thumb img { width:100%;height:80px;object-fit:cover; }
 .preview-thumb .preview-remove { position:absolute;top:4px;right:4px;width:22px;height:22px;background:#ef4444;border:none;border-radius:50%;color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;cursor:pointer; }
@@ -540,16 +546,16 @@
 .filtro-estado { cursor:pointer;user-select:none;transition:opacity .2s,text-decoration .2s; }
 .filtro-estado.inactivo { opacity:.35;text-decoration:line-through; }
 </style>
-@endpush
+<?php $__env->stopPush(); ?>
 
-@push('scripts')
+<?php $__env->startPush('scripts'); ?>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
 const ROUTES = {
-    store:    "{{ route('productividad.cobranza-sedes.comentarios.store') }}",
-    historial:"{{ route('productividad.cobranza-sedes.comentarios.historial') }}",
-    kpiData:  "{{ route('productividad.cobranza-sedes.comentarios.kpi-data') }}",
-    base:     "{{ url('/productividad/cobranza-sedes/comentarios') }}",
+    store:    "<?php echo route('productividad.cobranza-sedes.caja-chica.store'); ?>",
+    historial:"<?php echo route('productividad.cobranza-sedes.caja-chica.historial'); ?>",
+    kpiData:  "<?php echo route('productividad.cobranza-sedes.caja-chica.kpi-data'); ?>",
+    base:     "<?php echo url('/productividad/cobranza-sedes/caja-chica'); ?>",
 };
 const CSRF       = document.querySelector('meta[name="csrf-token"]').content;
 const urlShow    = (id)      => `${ROUTES.base}/${id}/show`;
@@ -573,7 +579,7 @@ async function apiFetch(url, options = {}) {
 }
 
 // ── Countdown ──────────────────────────────────────────────────────
-const DEADLINE_TS = {{ $fechaLimiteTs }};
+const DEADLINE_TS = <?php echo $fechaLimiteTs; ?>;
 
 function actualizarCountdown() {
     const diffMs  = DEADLINE_TS - Date.now();
@@ -593,7 +599,7 @@ function actualizarCountdown() {
     display.textContent = `${h}:${m}:${s}`;
     if (diffMs <= 3600000) { display.style.color='#dc2626'; icon.className='mdi mdi-timer-alert-outline text-danger'; card.classList.add('border-danger'); sub.textContent='Menos de 1 hora — ¡envía ahora!'; }
     else if (diffMs <= 7200000) { display.style.color='#d97706'; icon.className='mdi mdi-timer-outline text-warning'; sub.textContent='Menos de 2 horas'; }
-    else { display.style.color='#2563eb'; icon.className='mdi mdi-timer-outline text-primary'; sub.textContent='Jueves, 11:59 PM hora Lima'; }
+    else { display.style.color='#10b981'; icon.className='mdi mdi-timer-outline text-success'; sub.textContent='Sábado, 11:59 PM hora Lima'; }
 }
 actualizarCountdown();
 setInterval(actualizarCountdown, 1000);
@@ -635,7 +641,7 @@ function renderPreview(files, preview, inputId) {
         const col = document.createElement('div');
         col.className = 'col-6 col-md-3 col-lg-2';
         const isImg = f.type.startsWith('image/');
-        col.innerHTML = `<div class="p-1 preview-thumb">${isImg ? `<img src="${URL.createObjectURL(f)}" alt="${f.name}">` : `<div class="d-flex align-items-center justify-content-center" style="height:80px;font-size:2rem;"><i class="text-primary mdi mdi-file-excel"></i></div>`}<button type="button" class="preview-remove" onclick="quitarArchivo(${i}, '${inputId}')">×</button><div class="text-muted preview-name">${f.name}</div></div>`;
+        col.innerHTML = `<div class="p-1 preview-thumb">${isImg ? `<img src="${URL.createObjectURL(f)}" alt="${f.name}">` : `<div class="d-flex align-items-center justify-content-center" style="height:80px;font-size:2rem;"><i class="text-success mdi mdi-file-excel"></i></div>`}<button type="button" class="preview-remove" onclick="quitarArchivo(${i}, '${inputId}')">×</button><div class="text-muted preview-name">${f.name}</div></div>`;
         preview.appendChild(col);
     }
 }
@@ -653,7 +659,7 @@ function quitarArchivo(idx, inputId) {
     renderPreview(dt.files, preview, inputId);
 }
 
-setupDropZone('drop-zone-nuevo',    'archivos-nuevo',    'preview-nuevo');
+setupDropZone('drop-zone-nuevo', 'archivos-nuevo', 'preview-nuevo');
 setupDropZone('drop-zone-edit',     'archivos-edit',     'preview-edit');
 setupDropZone('drop-zone-atrasado', 'archivos-atrasado', 'preview-atrasado');
 
@@ -704,7 +710,7 @@ if (formEditar) {
 // ── Historial ──────────────────────────────────────────────────────
 let _historialData = [];
 
-function badgeEstado(estado) {
+function badgeEstadoCaja(estado) {
     const colorMap = { en_tiempo:'success', con_atraso:'danger', pendiente:'warning', no_enviado:'danger' };
     const labelMap = { en_tiempo:'En tiempo', con_atraso:'Con atraso', pendiente:'Pendiente', no_enviado:'No enviado' };
     return `<span class="badge bg-${colorMap[estado] ?? 'secondary'}">${labelMap[estado] ?? estado}</span>`;
@@ -767,10 +773,10 @@ function renderHistorial(rows) {
             <td class="small">${r.fecha_limite ?? '—'}</td>
             <td class="small">${r.fecha_envio ?? '<span class="text-muted">—</span>'}${r.fecha_edicion ? `<br><span class="text-warning small"><i class="mdi mdi-pencil"></i> ${r.fecha_edicion}</span>` : ''}</td>
             <td>${r.kpi !== null ? `<span class="badge bg-${r.kpi_color} fs-6">${r.kpi_label}</span>` : '<span class="text-muted">—</span>'}</td>
-            <td>${badgeEstado(r.estado)}</td>
+            <td>${badgeEstadoCaja(r.estado)}</td>
             <td class="text-center">${r.num_archivos > 0 ? `<span class="bg-info badge">${r.num_archivos}</span>` : '0'}</td>
             <td class="text-nowrap">
-                <button class="px-2 py-0 btn-outline-primary btn btn-sm" onclick="verReporte(${r.id})"><i class="mdi mdi-eye"></i></button>
+                <button class="px-2 py-0 btn-outline-success btn btn-sm" onclick="verReporte(${r.id})"><i class="mdi mdi-eye"></i></button>
                 ${r.puede_enviar_atrasado ? `<button class="ms-1 px-2 py-0 btn-outline-danger btn btn-sm" onclick="abrirEnviarAtrasado(${r.id},'${r.sede}')" title="Enviar atrasado"><i class="mdi-clock-alert-outline mdi"></i></button>` : ''}
             </td>
         </tr>`).join('');
@@ -783,7 +789,7 @@ async function verReporte(id) {
     const modal  = new bootstrap.Modal(document.getElementById('modal-reporte'));
     const body   = document.getElementById('modal-body');
     const titulo = document.getElementById('modal-titulo');
-    body.innerHTML='<div class="py-4 text-center"><div class="spinner-border text-primary"></div></div>';
+    body.innerHTML='<div class="py-4 text-center"><div class="spinner-border text-success"></div></div>';
     titulo.textContent='Detalle'; modal.show();
     try {
         const r = await apiFetch(urlShow(id));
@@ -797,7 +803,7 @@ async function verReporte(id) {
         otros.forEach(a => {
             const ext = a.name.split('.').pop().toUpperCase();
             const icon = ['XLSX','XLS','CSV'].includes(ext) ? 'mdi-file-excel text-success' : ext==='PDF' ? 'mdi-file-pdf text-danger' : 'mdi-file-document text-primary';
-            archivosHTML += `<div class="d-flex align-items-center gap-2 bg-light mb-1 p-2 border rounded"><i class="mdi ${icon} fs-5"></i><span class="flex-grow-1 text-truncate small fw-semibold">${a.name}</span><a href="${a.download_url}" class="px-2 py-0 btn-outline-primary btn btn-sm" download><i class="mdi mdi-download"></i> Descargar</a></div>`;
+            archivosHTML += `<div class="d-flex align-items-center gap-2 bg-light mb-1 p-2 border rounded"><i class="mdi ${icon} fs-5"></i><span class="flex-grow-1 text-truncate small fw-semibold">${a.name}</span><a href="${a.download_url}" class="px-2 py-0 btn-outline-success btn btn-sm" download><i class="mdi mdi-download"></i> Descargar</a></div>`;
         });
         if (!archivosHTML) archivosHTML = '<p class="text-muted">Sin archivos.</p>';
         body.innerHTML = `
@@ -842,7 +848,7 @@ async function cargarKpiChart(semanas = 8) {
 cargarKpiChart(8);
 document.getElementById('filtro-semanas')?.addEventListener('change', function () { cargarKpiChart(parseInt(this.value)); });
 
-@if (auth()->user()->isSuperAdmin() || auth()->user()->isAdmin() || auth()->user()->puede_ver_productividad_sedes)
+<?php if(auth()->user()->isSuperAdmin() || auth()->user()->isAdmin() || auth()->user()->puede_ver_productividad_sedes): ?>
 let kpiChartMensual = null;
 async function cargarKpiChartMensual(meses = 3) {
     try {
@@ -854,7 +860,7 @@ async function cargarKpiChartMensual(meses = 3) {
 }
 cargarKpiChartMensual(3);
 document.getElementById('filtro-meses-mensual')?.addEventListener('change', function () { cargarKpiChartMensual(parseInt(this.value)); });
-@endif
+<?php endif; ?>
 
 // ── Cámara ─────────────────────────────────────────────────────────
 let _streamActivo=null,_camaraInputId=null,_camaraPreviewId=null,_fotoBlob=null,_modalCamaraInst=null;
@@ -929,4 +935,6 @@ document.getElementById('form-atrasado')?.addEventListener('submit', async funct
     finally { btn.disabled = false; btn.innerHTML = '<i class="me-1 mdi-clock-alert-outline mdi"></i>Enviar Atrasado'; }
 });
 </script>
-@endpush
+<?php $__env->stopPush(); ?>
+
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH /var/www/resources/views/productividad/cobranza-sedes/caja-chica.blade.php ENDPATH**/ ?>

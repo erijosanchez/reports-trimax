@@ -339,7 +339,7 @@
             <div class="col-12">
                 <div class="shadow-sm border-0 card">
                     <div class="d-flex align-items-center justify-content-between bg-white border-bottom card-header">
-                        <h5 class="mb-0 fw-bold"><i class="me-2 text-success mdi mdi-chart-line"></i>KPI Semanal por Sede</h5>
+                        <h5 class="mb-0 fw-bold"><i class="me-2 text-success mdi mdi-chart-line"></i>KPI Semanal</h5>
                         <div class="d-flex align-items-center gap-2">
                             <label class="me-1 mb-0 text-muted small">Semanas:</label>
                             <select id="filtro-semanas" class="form-select-sm form-select" style="width:80px;">
@@ -392,16 +392,16 @@
         <div class="row">
             <div class="col-12">
                 <div class="shadow-sm border-0 card">
-                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 bg-white border-bottom card-header">
+                    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 bg-white border-bottom card-header">
                         <h5 class="mb-0 fw-bold"><i class="me-2 text-success mdi mdi-history"></i>Historial de Reportes</h5>
-                        <div class="d-flex align-items-center gap-2 flex-wrap">
-                            <select id="filtro-sede" class="form-select form-select-sm" style="width:auto" onchange="aplicarFiltros()">
+                        <div class="d-flex flex-wrap align-items-center gap-2">
+                            <select id="filtro-sede" class="form-select-sm form-select" style="width:auto" onchange="aplicarFiltros()">
                                 <option value="">Todas las sedes</option>
                             </select>
-                            <select id="filtro-semana" class="form-select form-select-sm" style="width:auto" onchange="aplicarFiltros()">
+                            <select id="filtro-semana" class="form-select-sm form-select" style="width:auto" onchange="aplicarFiltros()">
                                 <option value="">Todas las semanas</option>
                             </select>
-                            <select id="sort-fecha" class="form-select form-select-sm" style="width:auto" onchange="aplicarFiltros()">
+                            <select id="sort-fecha" class="form-select-sm form-select" style="width:auto" onchange="aplicarFiltros()">
                                 <option value="desc">Más reciente primero</option>
                                 <option value="asc">Más antiguo primero</option>
                             </select>
@@ -455,7 +455,7 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title fw-bold"><i class="me-2 text-warning mdi mdi-clock-alert-outline"></i>Enviar Reporte Atrasado</h5>
+                <h5 class="modal-title fw-bold"><i class="me-2 mdi-clock-alert-outline text-warning mdi"></i>Enviar Reporte Atrasado</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form id="form-atrasado" enctype="multipart/form-data">
@@ -491,7 +491,7 @@
                 <div class="modal-footer">
                     <button type="button" class="btn-secondary btn btn-sm" data-bs-dismiss="modal">Cancelar</button>
                     <button type="submit" class="btn btn-warning fw-bold btn-sm" id="btn-enviar-atrasado">
-                        <i class="me-1 mdi mdi-clock-alert-outline"></i>Enviar Atrasado
+                        <i class="me-1 mdi-clock-alert-outline mdi"></i>Enviar Atrasado
                     </button>
                 </div>
             </form>
@@ -774,7 +774,7 @@ function renderHistorial(rows) {
             <td class="text-center">${r.num_archivos > 0 ? `<span class="bg-info badge">${r.num_archivos}</span>` : '0'}</td>
             <td class="text-nowrap">
                 <button class="px-2 py-0 btn-outline-success btn btn-sm" onclick="verReporte(${r.id})"><i class="mdi mdi-eye"></i></button>
-                ${r.puede_enviar_atrasado ? `<button class="px-2 py-0 btn-outline-danger btn btn-sm ms-1" onclick="abrirEnviarAtrasado(${r.id},'${r.sede}')" title="Enviar atrasado"><i class="mdi mdi-clock-alert-outline"></i></button>` : ''}
+                ${r.puede_enviar_atrasado ? `<button class="ms-1 px-2 py-0 btn-outline-danger btn btn-sm" onclick="abrirEnviarAtrasado(${r.id},'${r.sede}')" title="Enviar atrasado"><i class="mdi-clock-alert-outline mdi"></i></button>` : ''}
             </td>
         </tr>`).join('');
 }
@@ -818,17 +818,17 @@ async function verReporte(id) {
 }
 
 // ── Gráfico KPI ────────────────────────────────────────────────────
-function opcionesChart(tooltipExtra = '') {
+function opcionesChart() {
     return {
         responsive: true, maintainAspectRatio: false,
         interaction: { mode: 'index', intersect: false },
         scales: {
-            y: { min: 0, max: 100, ticks: { callback: v => v + '%', stepSize: 25 }, grid: { color: '#f1f5f9' } },
-            x: { grid: { display: false } },
+            x: { stacked: true, grid: { display: false } },
+            y: { stacked: true, beginAtZero: true, ticks: { stepSize: 1, precision: 0 }, grid: { color: '#f1f5f9' } },
         },
         plugins: {
             legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } },
-            tooltip: { callbacks: { label: c => `${c.dataset.label}: ${c.parsed.y !== null ? c.parsed.y + '%' : 'Sin dato'}` + tooltipExtra } },
+            tooltip: { callbacks: { label: c => `${c.dataset.label}: ${c.parsed.y} sedes` } },
         },
     };
 }
@@ -839,7 +839,7 @@ async function cargarKpiChart(semanas = 8) {
         const data = await apiFetch(`${ROUTES.kpiData}?tipo=semanas&semanas=${semanas}`);
         const ctx  = document.getElementById('kpi-chart').getContext('2d');
         if (kpiChart) kpiChart.destroy();
-        kpiChart = new Chart(ctx, { type: 'line', data, options: opcionesChart() });
+        kpiChart = new Chart(ctx, { type: 'bar', data, options: opcionesChart() });
     } catch(e) { console.error(e); }
 }
 cargarKpiChart(8);
@@ -852,7 +852,7 @@ async function cargarKpiChartMensual(meses = 3) {
         const data = await apiFetch(`${ROUTES.kpiData}?tipo=mensual&meses=${meses}`);
         const ctx  = document.getElementById('kpi-chart-mensual').getContext('2d');
         if (kpiChartMensual) kpiChartMensual.destroy();
-        kpiChartMensual = new Chart(ctx, { type: 'line', data, options: opcionesChart(' (prom.)') });
+        kpiChartMensual = new Chart(ctx, { type: 'bar', data, options: opcionesChart() });
     } catch(e) { console.error(e); }
 }
 cargarKpiChartMensual(3);
@@ -922,14 +922,14 @@ document.getElementById('form-atrasado')?.addEventListener('submit', async funct
     const btn = document.getElementById('btn-enviar-atrasado');
     const msg = document.getElementById('msg-atrasado');
     const id  = document.getElementById('atrasado-reporte-id').value;
-    btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Enviando...'; msg.innerHTML = '';
+    btn.disabled = true; btn.innerHTML = '<span class="me-1 spinner-border spinner-border-sm"></span>Enviando...'; msg.innerHTML = '';
     try {
         document.getElementById('archivos-atrasado').files = _acumulados['archivos-atrasado'].files;
         const data = await apiFetch(urlUpdate(id), { method: 'POST', body: new FormData(this) });
-        msg.innerHTML = `<div class="alert alert-warning py-2">${data.message}</div>`;
+        msg.innerHTML = `<div class="py-2 alert alert-warning">${data.message}</div>`;
         setTimeout(() => location.reload(), 1800);
-    } catch(err) { msg.innerHTML = `<div class="alert alert-danger py-2">${err.message}</div>`; }
-    finally { btn.disabled = false; btn.innerHTML = '<i class="me-1 mdi mdi-clock-alert-outline"></i>Enviar Atrasado'; }
+    } catch(err) { msg.innerHTML = `<div class="py-2 alert alert-danger">${err.message}</div>`; }
+    finally { btn.disabled = false; btn.innerHTML = '<i class="me-1 mdi-clock-alert-outline mdi"></i>Enviar Atrasado'; }
 });
 </script>
 @endpush

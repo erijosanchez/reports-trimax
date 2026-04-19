@@ -437,14 +437,10 @@ class CobranzaSedesController extends Controller
             $fin = $hoy->copy();
         }
 
-        // Generar días del mes hasta hoy
         $diasData = [];
         $cursor   = $inicio->copy();
         while ($cursor->lte($fin)) {
-            $diasData[] = [
-                'fecha' => $cursor->toDateString(),
-                'label' => $cursor->format('d'),
-            ];
+            $diasData[] = ['fecha' => $cursor->toDateString(), 'label' => $cursor->format('d')];
             $cursor->addDay();
         }
 
@@ -452,45 +448,25 @@ class CobranzaSedesController extends Controller
             return ['labels' => [], 'datasets' => []];
         }
 
-        $fechas = array_column($diasData, 'fecha');
-        $query  = ReporteCobranza::whereIn('semana_inicio', $fechas);
-        if ($sede) {
-            $query->where('sede', $sede);
-        }
-        $reportes = $query->get()->groupBy('sede');
+        $fechas   = array_column($diasData, 'fecha');
+        $query    = ReporteCobranza::whereIn('semana_inicio', $fechas);
+        if ($sede) $query->where('sede', $sede);
+        $reportes = $query->get();
 
-        $colores = [
-            '#2563eb', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
-            '#06b6d4', '#ec4899', '#84cc16', '#f97316', '#6366f1',
-        ];
-
-        $datasets = [];
-        foreach ($reportes->keys()->sort()->values() as $idx => $sedeNombre) {
-            $kpis = [];
-            foreach ($diasData as $d) {
-                $rep    = $reportes[$sedeNombre]->first(
-                    fn($r) => optional($r->semana_inicio)->toDateString() === $d['fecha']
-                );
-                $kpis[] = ($rep && !is_null($rep->kpi_porcentaje))
-                    ? (float) $rep->kpi_porcentaje
-                    : null;
-            }
-            $color      = $colores[$idx % count($colores)];
-            $datasets[] = [
-                'label'           => $sedeNombre,
-                'data'            => $kpis,
-                'backgroundColor' => $color . '33',
-                'borderColor'     => $color,
-                'borderWidth'     => 2,
-                'spanGaps'        => true,
-                'tension'         => 0.3,
-                'pointRadius'     => 4,
-            ];
+        $enviados   = [];
+        $noEnviados = [];
+        foreach ($diasData as $d) {
+            $del_dia      = $reportes->filter(fn($r) => optional($r->semana_inicio)->toDateString() === $d['fecha']);
+            $enviados[]   = $del_dia->whereNotNull('fecha_envio_original')->count();
+            $noEnviados[] = $del_dia->whereNull('fecha_envio_original')->count();
         }
 
         return [
             'labels'   => array_column($diasData, 'label'),
-            'datasets' => $datasets,
+            'datasets' => [
+                ['label' => 'Enviados',    'data' => $enviados,   'backgroundColor' => 'rgba(16,185,129,0.85)', 'stack' => 'total'],
+                ['label' => 'No enviados', 'data' => $noEnviados, 'backgroundColor' => 'rgba(239,68,68,0.85)',  'stack' => 'total'],
+            ],
         ];
     }
 
@@ -499,71 +475,36 @@ class CobranzaSedesController extends Controller
         $now     = Carbon::now('America/Lima');
         $nombMes = ['', 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 
-        // Generar últimos N meses
         $mesesData = [];
         for ($i = $meses - 1; $i >= 0; $i--) {
             $fecha = $now->copy()->subMonths($i);
-            $mesesData[] = [
-                'anio'  => (int) $fecha->year,
-                'mes'   => (int) $fecha->month,
-                'label' => $nombMes[$fecha->month] . ' ' . $fecha->year,
-            ];
+            $mesesData[] = ['anio' => (int)$fecha->year, 'mes' => (int)$fecha->month, 'label' => $nombMes[$fecha->month] . ' ' . $fecha->year];
         }
 
-        // Obtener reportes de esos meses
         $query = ReporteCobranza::whereNotNull('semana_inicio')
             ->where(function ($q) use ($mesesData) {
                 foreach ($mesesData as $m) {
-                    $q->orWhere(function ($q2) use ($m) {
-                        $q2->whereYear('semana_inicio', $m['anio'])
-                           ->whereMonth('semana_inicio', $m['mes']);
-                    });
+                    $q->orWhere(fn($q2) => $q2->whereYear('semana_inicio', $m['anio'])->whereMonth('semana_inicio', $m['mes']));
                 }
             });
+        if ($sede) $query->where('sede', $sede);
+        $reportes = $query->get();
 
-        if ($sede) {
-            $query->where('sede', $sede);
-        }
-
-        $reportes = $query->get()->groupBy('sede');
-
-        $colores = [
-            '#2563eb', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
-            '#06b6d4', '#ec4899', '#84cc16', '#f97316', '#6366f1',
-        ];
-
-        $sedes    = $reportes->keys()->sort()->values();
-        $datasets = [];
-
-        foreach ($sedes as $idx => $nombreSede) {
-            $kpis = [];
-            foreach ($mesesData as $m) {
-                $reportesMes = $reportes[$nombreSede]->filter(
-                    fn($r) => optional($r->semana_inicio)->year  === $m['anio']
-                           && optional($r->semana_inicio)->month === $m['mes']
-                           && !is_null($r->kpi_porcentaje)
-                );
-                $kpis[] = $reportesMes->count()
-                    ? round((float) $reportesMes->avg('kpi_porcentaje'), 1)
-                    : null;
-            }
-
-            $color = $colores[$idx % count($colores)];
-            $datasets[] = [
-                'label'           => $nombreSede,
-                'data'            => $kpis,
-                'backgroundColor' => $color . '33',
-                'borderColor'     => $color,
-                'borderWidth'     => 2,
-                'spanGaps'        => true,
-                'tension'         => 0.3,
-                'pointRadius'     => 4,
-            ];
+        $enviados   = [];
+        $noEnviados = [];
+        foreach ($mesesData as $m) {
+            $del_mes      = $reportes->filter(fn($r) => optional($r->semana_inicio)->year === $m['anio'] && optional($r->semana_inicio)->month === $m['mes']);
+            $enviados[]   = $del_mes->whereNotNull('fecha_envio_original')->count();
+            $noEnviados[] = $del_mes->whereNull('fecha_envio_original')->count();
         }
 
         return [
             'labels'   => array_column($mesesData, 'label'),
-            'datasets' => $datasets,
+            'datasets' => [
+                ['label' => 'Enviados',    'data' => $enviados,   'backgroundColor' => 'rgba(16,185,129,0.85)', 'stack' => 'total'],
+                ['label' => 'No enviados', 'data' => $noEnviados, 'backgroundColor' => 'rgba(239,68,68,0.85)',  'stack' => 'total'],
+            ],
         ];
     }
+
 }

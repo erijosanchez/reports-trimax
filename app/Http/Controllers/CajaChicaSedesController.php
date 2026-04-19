@@ -329,18 +329,23 @@ class CajaChicaSedesController extends Controller
         $query = ReporteCajaChica::whereIn('semana_numero', array_column($semanasData, 'semana'))
             ->whereIn('anio', array_unique(array_column($semanasData, 'anio')));
         if ($sede) $query->where('sede', $sede);
-        $reportes = $query->get()->groupBy('sede');
+        $reportes = $query->get();
 
-        $colores  = ['#2563eb','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#ec4899','#84cc16','#f97316','#6366f1'];
-        $datasets = [];
-
-        foreach ($reportes->keys()->sort()->values() as $idx => $s) {
-            $kpis = array_map(fn($sw) => ($r = $reportes[$s]->first(fn($r) => $r->semana_numero === $sw['semana'] && $r->anio === $sw['anio'])) ? (float)$r->kpi_porcentaje : null, $semanasData);
-            $c = $colores[$idx % count($colores)];
-            $datasets[] = ['label' => $s, 'data' => $kpis, 'backgroundColor' => $c.'33', 'borderColor' => $c, 'borderWidth' => 2, 'spanGaps' => true, 'tension' => 0.3, 'pointRadius' => 4];
+        $enviados   = [];
+        $noEnviados = [];
+        foreach ($semanasData as $sw) {
+            $del_periodo  = $reportes->filter(fn($r) => $r->semana_numero === $sw['semana'] && $r->anio === $sw['anio']);
+            $enviados[]   = $del_periodo->whereNotNull('fecha_envio_original')->count();
+            $noEnviados[] = $del_periodo->whereNull('fecha_envio_original')->count();
         }
 
-        return ['labels' => array_column($semanasData, 'label'), 'datasets' => $datasets];
+        return [
+            'labels'   => array_column($semanasData, 'label'),
+            'datasets' => [
+                ['label' => 'Enviados',    'data' => $enviados,   'backgroundColor' => 'rgba(16,185,129,0.85)', 'stack' => 'total'],
+                ['label' => 'No enviados', 'data' => $noEnviados, 'backgroundColor' => 'rgba(239,68,68,0.85)',  'stack' => 'total'],
+            ],
+        ];
     }
 
     private function getKpiMensualData(int $meses, ?string $sede = null): array
@@ -361,21 +366,22 @@ class CajaChicaSedesController extends Controller
                 }
             });
         if ($sede) $query->where('sede', $sede);
-        $reportes = $query->get()->groupBy('sede');
+        $reportes = $query->get();
 
-        $colores  = ['#2563eb','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#ec4899','#84cc16','#f97316','#6366f1'];
-        $datasets = [];
-
-        foreach ($reportes->keys()->sort()->values() as $idx => $s) {
-            $kpis = [];
-            foreach ($mesesData as $m) {
-                $rm = $reportes[$s]->filter(fn($r) => optional($r->semana_inicio)->year === $m['anio'] && optional($r->semana_inicio)->month === $m['mes'] && !is_null($r->kpi_porcentaje));
-                $kpis[] = $rm->count() ? round((float)$rm->avg('kpi_porcentaje'), 1) : null;
-            }
-            $c = $colores[$idx % count($colores)];
-            $datasets[] = ['label' => $s, 'data' => $kpis, 'backgroundColor' => $c.'33', 'borderColor' => $c, 'borderWidth' => 2, 'spanGaps' => true, 'tension' => 0.3, 'pointRadius' => 4];
+        $enviados   = [];
+        $noEnviados = [];
+        foreach ($mesesData as $m) {
+            $del_mes      = $reportes->filter(fn($r) => optional($r->semana_inicio)->year === $m['anio'] && optional($r->semana_inicio)->month === $m['mes']);
+            $enviados[]   = $del_mes->whereNotNull('fecha_envio_original')->count();
+            $noEnviados[] = $del_mes->whereNull('fecha_envio_original')->count();
         }
 
-        return ['labels' => array_column($mesesData, 'label'), 'datasets' => $datasets];
+        return [
+            'labels'   => array_column($mesesData, 'label'),
+            'datasets' => [
+                ['label' => 'Enviados',    'data' => $enviados,   'backgroundColor' => 'rgba(16,185,129,0.85)', 'stack' => 'total'],
+                ['label' => 'No enviados', 'data' => $noEnviados, 'backgroundColor' => 'rgba(239,68,68,0.85)',  'stack' => 'total'],
+            ],
+        ];
     }
 }
