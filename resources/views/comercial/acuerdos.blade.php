@@ -873,7 +873,7 @@
         const canValidate = userEmail === 'planeamiento.comercial@trimaxperu.com';
         const canApprove = userEmail === 'smonopoli@trimaxperu.com';
         const canManageAcuerdos = userEmail === 'smonopoli@trimaxperu.com' || userEmail ===
-            'planeamiento.comercial@trimaxperu.com';
+            'planeamiento.comercial@trimaxperu.com' || userEmail === 'auditor.junior@trimaxperu.com';
         const isSede = {{ auth()->user()->isSede() ? 'true' : 'false' }};
         const userSede = "{{ auth()->user()->sede ?? '' }}";
 

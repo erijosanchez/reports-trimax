@@ -372,7 +372,7 @@ class DescuentosEspecialesController extends Controller
         try {
             $descuento = DescuentoEspecial::findOrFail($id);
 
-            $emailsAutorizados = ['smonopoli@trimaxperu.com', 'planeamiento.comercial@trimaxperu.com'];
+            $emailsAutorizados = ['smonopoli@trimaxperu.com', 'planeamiento.comercial@trimaxperu.com', 'auditor.junior@trimaxperu.com'];
             if (Auth::id() !== $descuento->user_id && !in_array(Auth::user()->email, $emailsAutorizados)) {
                 return response()->json([
                     'success' => false,
@@ -410,7 +410,7 @@ class DescuentosEspecialesController extends Controller
                 }
             }
 
-            $descuento->update([
+            $datosUpdate = [
                 'numero_factura' => $validated['numero_factura'] ?? null,
                 'numero_orden' => $validated['numero_orden'] ?? null,
                 'sede' => $validated['sede'],
@@ -426,17 +426,29 @@ class DescuentosEspecialesController extends Controller
                 'material' => $validated['material'] ?? null,
                 'comentarios' => $validated['comentarios'] ?? null,
                 'archivos_adjuntos' => $archivosActuales,
-                'aplicado' => 'Pendiente',
-                'aprobado' => 'Pendiente',
-                'aplicado_por' => null,
-                'aprobado_por' => null,
-                'aplicado_at' => null,
-                'aprobado_at' => null
-            ]);
+            ];
+
+            $resetearEstados = Auth::user()->email !== 'auditor.junior@trimaxperu.com';
+            if ($resetearEstados) {
+                $datosUpdate = array_merge($datosUpdate, [
+                    'aplicado' => 'Pendiente',
+                    'aprobado' => 'Pendiente',
+                    'aplicado_por' => null,
+                    'aprobado_por' => null,
+                    'aplicado_at' => null,
+                    'aprobado_at' => null,
+                ]);
+            }
+
+            $descuento->update($datosUpdate);
+
+            $mensaje = $resetearEstados
+                ? 'Descuento actualizado exitosamente. Las validaciones se han reseteado.'
+                : 'Descuento actualizado exitosamente.';
 
             return response()->json([
                 'success' => true,
-                'message' => 'Descuento actualizado exitosamente. Las validaciones se han reseteado.',
+                'message' => $mensaje,
                 'descuento' => $descuento->load(['creador', 'aplicador', 'aprobador'])
             ]);
         } catch (\Exception $e) {

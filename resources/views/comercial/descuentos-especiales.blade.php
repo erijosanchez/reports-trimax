@@ -776,7 +776,7 @@
         const canApprove = userEmail === 'smonopoli@trimaxperu.com' || userEmail ===
             'planeamiento.comercial@trimaxperu.com';
         const canManageDescuentos = userEmail === 'smonopoli@trimaxperu.com' || userEmail ===
-            'planeamiento.comercial@trimaxperu.com';
+            'planeamiento.comercial@trimaxperu.com' || userEmail === 'auditor.junior@trimaxperu.com';
 
         $(document).ready(function() {
             cargarDescuentos();

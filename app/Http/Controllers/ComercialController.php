@@ -916,7 +916,7 @@ class ComercialController extends Controller
         try {
             $acuerdo = AcuerdoComercial::findOrFail($id);
 
-            $emailsAutorizados = ['smonopoli@trimaxperu.com', 'planeamiento.comercial@trimaxperu.com'];
+            $emailsAutorizados = ['smonopoli@trimaxperu.com', 'planeamiento.comercial@trimaxperu.com', 'auditor.junior@trimaxperu.com'];
             if (Auth::id() !== $acuerdo->user_id && !in_array(Auth::user()->email, $emailsAutorizados)) {
                 return response()->json([
                     'success' => false,
@@ -954,7 +954,7 @@ class ComercialController extends Controller
                 }
             }
 
-            $acuerdo->update([
+            $datosUpdate = [
                 'sede' => $validated['sede'],
                 'ruc' => $validated['ruc'],
                 'razon_social' => $validated['razon_social'],
@@ -970,18 +970,30 @@ class ComercialController extends Controller
                 'fecha_inicio' => $validated['fecha_inicio'],
                 'fecha_fin' => $validated['fecha_fin'],
                 'archivos_adjuntos' => $archivosActuales,
-                'estado' => 'Solicitado',
-                'validado' => 'Pendiente',
-                'aprobado' => 'Pendiente',
-                'validado_por' => null,
-                'aprobado_por' => null,
-                'validado_at' => null,
-                'aprobado_at' => null
-            ]);
+            ];
+
+            $resetearEstados = Auth::user()->email !== 'auditor.junior@trimaxperu.com';
+            if ($resetearEstados) {
+                $datosUpdate = array_merge($datosUpdate, [
+                    'estado' => 'Solicitado',
+                    'validado' => 'Pendiente',
+                    'aprobado' => 'Pendiente',
+                    'validado_por' => null,
+                    'aprobado_por' => null,
+                    'validado_at' => null,
+                    'aprobado_at' => null,
+                ]);
+            }
+
+            $acuerdo->update($datosUpdate);
+
+            $mensaje = $resetearEstados
+                ? 'Acuerdo actualizado exitosamente. Las validaciones se han reseteado.'
+                : 'Acuerdo actualizado exitosamente.';
 
             return response()->json([
                 'success' => true,
-                'message' => 'Acuerdo actualizado exitosamente. Las validaciones se han reseteado.',
+                'message' => $mensaje,
                 'acuerdo' => $acuerdo->load(['creador', 'validador', 'aprobador'])
             ]);
         } catch (\Exception $e) {
