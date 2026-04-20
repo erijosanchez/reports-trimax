@@ -873,7 +873,8 @@
         const canValidate = userEmail === 'planeamiento.comercial@trimaxperu.com';
         const canApprove = userEmail === 'smonopoli@trimaxperu.com';
         const canManageAcuerdos = userEmail === 'smonopoli@trimaxperu.com' || userEmail ===
-            'planeamiento.comercial@trimaxperu.com' || userEmail === 'auditor.junior@trimaxperu.com';
+            'planeamiento.comercial@trimaxperu.com';
+        const canEditAcuerdos = canManageAcuerdos || userEmail === 'auditor.junior@trimaxperu.com';
         const isSede = {{ auth()->user()->isSede() ? 'true' : 'false' }};
         const userSede = "{{ auth()->user()->sede ?? '' }}";
 
@@ -1232,7 +1233,7 @@
 
                     const esDeshabilitado = acuerdo.estado === 'Deshabilitado';
                     const esCreador = acuerdo.creador && acuerdo.creador.id == {{ Auth::id() }};
-                    const puedeEditar = esCreador || canManageAcuerdos;
+                    const puedeEditar = esCreador || canEditAcuerdos;
 
                     html += `
                     <tr ${esDeshabilitado ? 'class="table-secondary"' : ''}>

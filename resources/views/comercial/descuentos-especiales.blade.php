@@ -776,7 +776,9 @@
         const canApprove = userEmail === 'smonopoli@trimaxperu.com' || userEmail ===
             'planeamiento.comercial@trimaxperu.com';
         const canManageDescuentos = userEmail === 'smonopoli@trimaxperu.com' || userEmail ===
-            'planeamiento.comercial@trimaxperu.com' || userEmail === 'auditor.junior@trimaxperu.com';
+            'planeamiento.comercial@trimaxperu.com';
+        const canEditDescuentos = canManageDescuentos || userEmail === 'auditor.junior@trimaxperu.com';
+        const isSede = {{ auth()->user()->isSede() ? 'true' : 'false' }};
 
         $(document).ready(function() {
             cargarDescuentos();
@@ -1015,7 +1017,7 @@
 
                     const esDeshabilitado = !descuento.habilitado;
                     const esCreador = descuento.creador && descuento.creador.id == {{ Auth::id() }};
-                    const puedeEditar = esCreador || canManageDescuentos;
+                    const puedeEditar = esCreador || canEditDescuentos;
 
                     html += `
                 <tr ${esDeshabilitado ? 'class="table-secondary"' : ''}>
@@ -1594,6 +1596,16 @@
 
             $('#modalTitle').text('Editar Descuento Especial');
             $('#formDescuento').attr('data-descuento-id', id);
+
+            const camposRestringidos = [
+                'select[name="sede"]', 'input[name="ruc"]', 'input[name="razon_social"]',
+                'input[name="consultor"]', 'input[name="ciudad"]', 'input[name="descuento_especial"]',
+                'select[name="tipo"]', 'input[name="marca"]', 'input[name="ar"]',
+                'input[name="disenos"]', 'input[name="material"]', 'textarea[name="comentarios"]'
+            ];
+            camposRestringidos.forEach(selector => {
+                $(selector, '#formDescuento').prop('disabled', isSede);
+            });
 
             $('#modalDescuento').modal('show');
         }

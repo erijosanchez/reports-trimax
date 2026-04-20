@@ -380,6 +380,22 @@ class DescuentosEspecialesController extends Controller
                 ], 403);
             }
 
+            if (Auth::user()->isSede()) {
+                $request->validate([
+                    'numero_factura' => 'nullable|string',
+                    'numero_orden' => 'nullable|string',
+                ]);
+                $descuento->update([
+                    'numero_factura' => $request->input('numero_factura'),
+                    'numero_orden' => $request->input('numero_orden'),
+                ]);
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Descuento actualizado exitosamente.',
+                    'descuento' => $descuento->load(['creador', 'aplicador', 'aprobador'])
+                ]);
+            }
+
             $validated = $request->validate([
                 'numero_factura' => 'nullable|string',
                 'numero_orden' => 'nullable|string',
