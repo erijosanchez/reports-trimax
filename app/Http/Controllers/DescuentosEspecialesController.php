@@ -48,14 +48,19 @@ class DescuentosEspecialesController extends Controller
     public function obtenerDescuentos(Request $request)
     {
         try {
+            $user = Auth::user();
             $query = DescuentoEspecial::with(['creador', 'aplicador', 'aprobador']);
 
+            if ($user->isSede()) {
+                $query->where('sede', $user->sede);
+            }
+
             // Filtros
-            if ($request->filled('usuario')) {
+            if ($request->filled('usuario') && !$user->isSede()) {
                 $query->where('user_id', $request->usuario);
             }
 
-            if ($request->filled('sede')) {
+            if ($request->filled('sede') && !$user->isSede()) {
                 $query->where('sede', $request->sede);
             }
 
