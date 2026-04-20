@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Services\ActivityLogService;
 use App\Services\GoogleSheetsService;
 use App\Models\AcuerdoComercial;
 use App\Models\User;
@@ -350,6 +351,8 @@ class ComercialController extends Controller
 
             $this->enviarNotificacionCreacion($acuerdo);
 
+            ActivityLogService::log(Auth::id(), 'create_acuerdo', 'AcuerdoComercial', $acuerdo->id, "Creó acuerdo {$acuerdo->numero_acuerdo} para {$acuerdo->razon_social} (sede: {$acuerdo->sede})");
+
             return response()->json([
                 'success' => true,
                 'message' => 'Acuerdo creado exitosamente',
@@ -398,6 +401,8 @@ class ComercialController extends Controller
             if ($acuerdo->validado === 'Aprobado' && $acuerdo->aprobado === 'Aprobado') {
                 $this->enviarNotificacionAprobacion($acuerdo);
             }
+
+            ActivityLogService::log(Auth::id(), 'validate_acuerdo', 'AcuerdoComercial', $acuerdo->id, "Validó acuerdo {$acuerdo->numero_acuerdo}: {$validated['accion']}");
 
             return response()->json([
                 'success' => true,
@@ -460,6 +465,8 @@ class ComercialController extends Controller
             if ($acuerdo->validado === 'Aprobado' && $acuerdo->aprobado === 'Aprobado') {
                 $this->enviarNotificacionAprobacion($acuerdo);
             }
+
+            ActivityLogService::log(Auth::id(), 'approve_acuerdo', 'AcuerdoComercial', $acuerdo->id, "Aprobó acuerdo {$acuerdo->numero_acuerdo}: {$validated['accion']}");
 
             return response()->json([
                 'success' => true,
@@ -664,6 +671,8 @@ class ComercialController extends Controller
 
             $this->enviarNotificacionRehabilitacion($acuerdo, $validated['motivo']);
 
+            ActivityLogService::log(Auth::id(), 'enable_acuerdo', 'AcuerdoComercial', $acuerdo->id, "Rehabilitó acuerdo {$acuerdo->numero_acuerdo}. Motivo: {$validated['motivo']}");
+
             return response()->json([
                 'success' => true,
                 'message' => 'Acuerdo rehabilitado correctamente',
@@ -812,6 +821,8 @@ class ComercialController extends Controller
 
             $this->enviarNotificacionDeshabilitacion($acuerdo, $validated['motivo']);
 
+            ActivityLogService::log(Auth::id(), 'disable_acuerdo', 'AcuerdoComercial', $acuerdo->id, "Deshabilitó acuerdo {$acuerdo->numero_acuerdo}. Motivo: {$validated['motivo']}");
+
             return response()->json([
                 'success' => true,
                 'message' => 'Acuerdo deshabilitado correctamente',
@@ -855,6 +866,8 @@ class ComercialController extends Controller
             $acuerdo->actualizarEstado();
 
             $this->enviarNotificacionExtension($acuerdo, $validated['motivo'], $validated['nueva_fecha_fin']);
+
+            ActivityLogService::log(Auth::id(), 'extend_acuerdo', 'AcuerdoComercial', $acuerdo->id, "Extendió acuerdo {$acuerdo->numero_acuerdo} hasta {$validated['nueva_fecha_fin']}");
 
             return response()->json([
                 'success' => true,
@@ -987,6 +1000,8 @@ class ComercialController extends Controller
 
             $acuerdo->update($datosUpdate);
 
+            ActivityLogService::log(Auth::id(), 'edit_acuerdo', 'AcuerdoComercial', $acuerdo->id, "Editó acuerdo {$acuerdo->numero_acuerdo} (sede: {$acuerdo->sede})" . ($resetearEstados ? ' — estados reseteados' : ''));
+
             $mensaje = $resetearEstados
                 ? 'Acuerdo actualizado exitosamente. Las validaciones se han reseteado.'
                 : 'Acuerdo actualizado exitosamente.';
@@ -1030,6 +1045,8 @@ class ComercialController extends Controller
 
             $acuerdo->actualizarEstado();
 
+            ActivityLogService::log(Auth::id(), 'change_validacion_acuerdo', 'AcuerdoComercial', $acuerdo->id, "Cambió validación del acuerdo {$acuerdo->numero_acuerdo} a: {$validated['nuevo_estado']}");
+
             return response()->json([
                 'success' => true,
                 'message' => 'Validación actualizada correctamente',
@@ -1068,6 +1085,8 @@ class ComercialController extends Controller
             ]);
 
             $acuerdo->actualizarEstado();
+
+            ActivityLogService::log(Auth::id(), 'change_aprobacion_acuerdo', 'AcuerdoComercial', $acuerdo->id, "Cambió aprobación del acuerdo {$acuerdo->numero_acuerdo} a: {$validated['nuevo_estado']}");
 
             return response()->json([
                 'success' => true,

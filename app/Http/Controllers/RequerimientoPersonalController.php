@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\RequerimientoPersonal;
 use App\Models\RequerimientoHistorial;
+use App\Services\ActivityLogService;
 use App\Models\User;
 use App\Notifications\RequerimientoCreado;
 use App\Notifications\RequerimientoEstadoActualizado;
@@ -169,6 +170,8 @@ class RequerimientoPersonalController extends Controller
 
         $this->notificarDestinatarios($requerimiento, new RequerimientoCreado($requerimiento));
 
+        ActivityLogService::log(Auth::id(), 'create_requerimiento', 'RequerimientoPersonal', $requerimiento->id, "Creó requerimiento {$requerimiento->codigo} para puesto: {$requerimiento->puesto} (sede: {$requerimiento->sede})");
+
         return redirect()->route('rrhh.requerimientos.index')
             ->with('success', "Requerimiento {$requerimiento->codigo} creado. Estado: Pendiente de asignación.");
     }
@@ -227,6 +230,8 @@ class RequerimientoPersonalController extends Controller
             $requerimiento,
             new RequerimientoEstadoActualizado($requerimiento, $estadoAnterior, $estadoNuevo, 'cambio_estado')
         );
+
+        ActivityLogService::log(Auth::id(), 'update_estado_requerimiento', 'RequerimientoPersonal', $requerimiento->id, "Cambió estado del requerimiento {$requerimiento->codigo}: {$estadoAnterior} → {$estadoNuevo}");
 
         return back()->with('success', 'Estado actualizado correctamente.');
     }
@@ -292,6 +297,8 @@ class RequerimientoPersonalController extends Controller
             )
         );
 
+        ActivityLogService::log(Auth::id(), 'assign_responsable_requerimiento', 'RequerimientoPersonal', $requerimiento->id, "Asignó responsable RH '{$nombre}' al requerimiento {$requerimiento->codigo}");
+
         return back()->with('success', "Responsable asignado. El requerimiento ahora está En Proceso.");
     }
 
@@ -333,6 +340,8 @@ class RequerimientoPersonalController extends Controller
                 "[{$etiqueta}] " . $request->descripcion
             )
         );
+
+        ActivityLogService::log(Auth::id(), 'register_etapa_requerimiento', 'RequerimientoPersonal', $requerimiento->id, "Registró etapa '{$etiqueta}' en requerimiento {$requerimiento->codigo}");
 
         return back()->with('success', "Etapa \"{$etiqueta}\" registrada correctamente.");
     }
@@ -444,6 +453,9 @@ class RequerimientoPersonalController extends Controller
             "Firmado por {$etiquetas[$rol]}",
             $user->name . ' firmó el formulario como ' . $etiquetas[$rol] . '.'
         );
+
+        $etiquetaRol = $etiquetas[$rol];
+        ActivityLogService::log(Auth::id(), 'sign_requerimiento', 'RequerimientoPersonal', $requerimiento->id, "Firmó requerimiento {$requerimiento->codigo} como {$etiquetaRol}");
 
         return back()->with('success', 'Firmado correctamente.');
     }

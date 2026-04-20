@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\ActivityLogService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Hash;
 
@@ -111,6 +113,8 @@ class UserController extends Controller
 
         $user->assignRole($request->role);
 
+        ActivityLogService::log(Auth::id(), 'create_user', 'User', $user->id, "Creó usuario: {$user->name} ({$user->email}) con rol {$request->role}");
+
         return redirect()->route('admin.users')
             ->with('success', "Usuario {$user->name} creado exitosamente.");
     }
@@ -161,6 +165,8 @@ class UserController extends Controller
 
         $user->syncRoles([$request->role]);
 
+        ActivityLogService::log(Auth::id(), 'update_user', 'User', $user->id, "Actualizó usuario: {$user->name} ({$user->email}), rol: {$request->role}");
+
         return redirect()->route('admin.users')
             ->with('success', "Usuario {$user->name} actualizado exitosamente.");
     }
@@ -174,7 +180,11 @@ class UserController extends Controller
         }
 
         $userName = $user->name;
+        $userEmail = $user->email;
+        $userId = $user->id;
         $user->delete();
+
+        ActivityLogService::log(Auth::id(), 'delete_user', 'User', $userId, "Eliminó usuario: {$userName} ({$userEmail})");
 
         return back()->with('success', "Usuario {$userName} eliminado exitosamente.");
     }

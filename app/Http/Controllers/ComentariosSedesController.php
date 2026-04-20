@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\ReporteComentarios;
 use App\Models\User;
+use App\Services\ActivityLogService;
 use App\Notifications\ComentariosSubmitida;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -120,6 +121,8 @@ class ComentariosSedesController extends Controller
 
         $this->enviarNotificaciones($reporte, false);
 
+        ActivityLogService::log(auth()->id(), 'submit_reporte_comentarios', 'ReporteComentarios', $reporte->id, "Envió reporte de comentarios (sede: {$sede})");
+
         return response()->json([
             'success' => true,
             'message' => 'Reporte de Comentarios enviado correctamente.',
@@ -176,6 +179,8 @@ class ComentariosSedesController extends Controller
         $reporte->recalcularKpi();
 
         $this->enviarNotificaciones($reporte, true);
+
+        ActivityLogService::log(auth()->id(), 'update_reporte_comentarios', 'ReporteComentarios', $reporte->id, 'Editó reporte de comentarios' . ($tardio ? ' (edición tardía)' : ''));
 
         return response()->json([
             'success' => true,

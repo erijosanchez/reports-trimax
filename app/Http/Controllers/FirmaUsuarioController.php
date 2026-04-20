@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Services\ActivityLogService;
 
 class FirmaUsuarioController extends Controller
 {
@@ -32,12 +33,17 @@ class FirmaUsuarioController extends Controller
 
         Auth::user()->update(['firma_imagen' => $data]);
 
+        ActivityLogService::log(Auth::id(), 'save_firma', 'User', Auth::id(), 'Guardó su firma digital');
+
         return back()->with('success', 'Firma guardada correctamente.');
     }
 
     public function destroy()
     {
         Auth::user()->update(['firma_imagen' => null]);
+
+        ActivityLogService::log(Auth::id(), 'delete_firma', 'User', Auth::id(), 'Eliminó su firma digital');
+
         return back()->with('success', 'Firma eliminada.');
     }
 }

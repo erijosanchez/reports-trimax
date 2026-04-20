@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\ReporteCobranza;
 use App\Models\User;
+use App\Services\ActivityLogService;
 use App\Notifications\CobranzaSubmitida;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -142,6 +143,8 @@ class CobranzaSedesController extends Controller
 
         $this->enviarNotificaciones($reporte, false);
 
+        ActivityLogService::log(auth()->id(), 'submit_reporte_cobranza', 'ReporteCobranza', $reporte->id, "Envió reporte de cobranza (sede: {$sede})");
+
         return response()->json([
             'success' => true,
             'message' => 'Reporte enviado correctamente.',
@@ -202,6 +205,8 @@ class CobranzaSedesController extends Controller
         $reporte->recalcularKpi();
 
         $this->enviarNotificaciones($reporte, true);
+
+        ActivityLogService::log(auth()->id(), 'update_reporte_cobranza', 'ReporteCobranza', $reporte->id, 'Editó reporte de cobranza' . ($tardio ? ' (edición tardía)' : ''));
 
         return response()->json([
             'success' => true,

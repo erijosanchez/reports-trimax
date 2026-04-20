@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\DescuentoEspecial;
 use App\Models\User;
+use App\Services\ActivityLogService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Notification;
 use App\Notifications\DescuentoEspecialCreado;
@@ -166,6 +167,8 @@ class DescuentosEspecialesController extends Controller
             // Enviar notificaciones
             $this->enviarNotificacionCreacion($descuento);
 
+            ActivityLogService::log(Auth::id(), 'create_descuento', 'DescuentoEspecial', $descuento->id, "Creó descuento {$descuento->numero_descuento} para {$descuento->razon_social} (sede: {$descuento->sede})");
+
             return response()->json([
                 'success' => true,
                 'message' => 'Descuento especial creado exitosamente',
@@ -211,6 +214,8 @@ class DescuentosEspecialesController extends Controller
             if ($descuento->aplicado === 'Aprobado' && $descuento->aprobado === 'Aprobado') {
                 $this->enviarNotificacionAprobacion($descuento);
             }
+
+            ActivityLogService::log(Auth::id(), 'apply_descuento', 'DescuentoEspecial', $descuento->id, "Marcó descuento {$descuento->numero_descuento} como aplicado: {$validated['accion']}");
 
             return response()->json([
                 'success' => true,
@@ -259,6 +264,8 @@ class DescuentosEspecialesController extends Controller
                 $this->enviarNotificacionAprobacion($descuento);
             }
 
+            ActivityLogService::log(Auth::id(), 'approve_descuento', 'DescuentoEspecial', $descuento->id, "Aprobó descuento {$descuento->numero_descuento}: {$validated['accion']}");
+
             return response()->json([
                 'success' => true,
                 'message' => 'Descuento aprobado correctamente',
@@ -302,6 +309,8 @@ class DescuentosEspecialesController extends Controller
             ]);
 
             $this->enviarNotificacionDeshabilitacion($descuento, $validated['motivo']);
+
+            ActivityLogService::log(Auth::id(), 'disable_descuento', 'DescuentoEspecial', $descuento->id, "Deshabilitó descuento {$descuento->numero_descuento}. Motivo: {$validated['motivo']}");
 
             return response()->json([
                 'success' => true,
@@ -354,6 +363,8 @@ class DescuentosEspecialesController extends Controller
 
             $this->enviarNotificacionRehabilitacion($descuento, $validated['motivo']);
 
+            ActivityLogService::log(Auth::id(), 'enable_descuento', 'DescuentoEspecial', $descuento->id, "Rehabilitó descuento {$descuento->numero_descuento}. Motivo: {$validated['motivo']}");
+
             return response()->json([
                 'success' => true,
                 'message' => 'Descuento rehabilitado correctamente',
@@ -394,6 +405,7 @@ class DescuentosEspecialesController extends Controller
                     'numero_factura' => $request->input('numero_factura'),
                     'numero_orden' => $request->input('numero_orden'),
                 ]);
+                ActivityLogService::log(Auth::id(), 'edit_descuento', 'DescuentoEspecial', $descuento->id, "Editó factura/orden del descuento {$descuento->numero_descuento}");
                 return response()->json([
                     'success' => true,
                     'message' => 'Descuento actualizado exitosamente.',
@@ -463,6 +475,8 @@ class DescuentosEspecialesController extends Controller
 
             $descuento->update($datosUpdate);
 
+            ActivityLogService::log(Auth::id(), 'edit_descuento', 'DescuentoEspecial', $descuento->id, "Editó descuento {$descuento->numero_descuento} (sede: {$descuento->sede})" . ($resetearEstados ? ' — estados reseteados' : ''));
+
             $mensaje = $resetearEstados
                 ? 'Descuento actualizado exitosamente. Las validaciones se han reseteado.'
                 : 'Descuento actualizado exitosamente.';
@@ -507,6 +521,8 @@ class DescuentosEspecialesController extends Controller
                 'aplicado_at' => now()
             ]);
 
+            ActivityLogService::log(Auth::id(), 'change_aplicacion_descuento', 'DescuentoEspecial', $descuento->id, "Cambió aplicación del descuento {$descuento->numero_descuento} a: {$validated['nuevo_estado']}");
+
             return response()->json([
                 'success' => true,
                 'message' => 'Aplicación actualizada correctamente',
@@ -547,6 +563,8 @@ class DescuentosEspecialesController extends Controller
                 'aprobado_por' => Auth::id(),
                 'aprobado_at' => now()
             ]);
+
+            ActivityLogService::log(Auth::id(), 'change_aprobacion_descuento', 'DescuentoEspecial', $descuento->id, "Cambió aprobación del descuento {$descuento->numero_descuento} a: {$validated['nuevo_estado']}");
 
             return response()->json([
                 'success' => true,

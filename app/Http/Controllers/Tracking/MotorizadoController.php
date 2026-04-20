@@ -8,6 +8,7 @@ use App\Models\OrdenTracking;
 use App\Models\RutaParada;
 use App\Models\RutaTracking;
 use App\Models\TrackingPosition;
+use App\Services\ActivityLogService;
 use App\Services\TraccarService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -91,6 +92,8 @@ class MotorizadoController extends Controller
         ]);
 
         $orden = OrdenTracking::create($data);
+
+        ActivityLogService::log(Auth::id(), 'create_orden_tracking', 'OrdenTracking', $orden->id, "Creó orden de entrega para {$orden->cliente_nombre} (sede: {$orden->sede})");
 
         return response()->json(['success' => true, 'orden' => $orden]);
     }
@@ -237,6 +240,8 @@ class MotorizadoController extends Controller
 
         $motorizado = Motorizado::create($data);
 
+        ActivityLogService::log(Auth::id(), 'create_motorizado', 'Motorizado', $motorizado->id, "Creó motorizado: {$motorizado->nombre} (sede: {$motorizado->sede})");
+
         return response()->json(['success' => true, 'motorizado' => $motorizado]);
     }
 
@@ -256,6 +261,8 @@ class MotorizadoController extends Controller
 
         $motorizado->update($data);
 
+        ActivityLogService::log(Auth::id(), 'update_motorizado', 'Motorizado', $motorizado->id, "Actualizó motorizado: {$motorizado->nombre} (sede: {$motorizado->sede})");
+
         return response()->json(['success' => true, 'motorizado' => $motorizado->fresh()]);
     }
 
@@ -263,7 +270,11 @@ class MotorizadoController extends Controller
     {
         abort_unless(Auth::user()->puedeVerMotorizados(), 403);
 
-        Motorizado::findOrFail($id)->delete();
+        $motorizado = Motorizado::findOrFail($id);
+        $motNombre = $motorizado->nombre;
+        $motorizado->delete();
+
+        ActivityLogService::log(Auth::id(), 'delete_motorizado', 'Motorizado', $id, "Eliminó motorizado: {$motNombre}");
 
         return response()->json(['success' => true]);
     }
@@ -486,6 +497,9 @@ class MotorizadoController extends Controller
 
         $ruta->update(['token_acceso' => $token]);
 
+        ActivityLogService::log(Auth::id(), 'generate_token_ruta', 'RutaTracking', $ruta->id, "Generó token de entrega para ruta #{$ruta->id} ({$ruta->motorizado->nombre}, {$ruta->fecha->format('d/m/Y')})");
+
+
         $url = url("/entrega/{$token}");
 
         $whatsapp = 'https://wa.me/' . preg_replace('/\D/', '', $ruta->motorizado->telefono ?? '')
@@ -581,6 +595,8 @@ class MotorizadoController extends Controller
                 'estado'          => RutaParada::ESTADO_PENDIENTE,
             ]);
         }
+
+        ActivityLogService::log(Auth::id(), 'create_ruta_tracking', 'RutaTracking', $ruta->id, "Creó ruta #{$ruta->id} para motorizado ID {$data['motorizado_id']} el {$data['fecha']} con " . count($data['paradas']) . " paradas");
 
         return response()->json(['success' => true, 'ruta_id' => $ruta->id]);
     }

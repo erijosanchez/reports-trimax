@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Services\ActivityLogService;
 use Illuminate\Http\Request;
 use PragmaRX\Google2FA\Google2FA;
 use Illuminate\Support\Facades\Auth;
@@ -52,6 +53,8 @@ class TwoFactorController extends Controller
             'two_factor_confirmed_at' => now(),
         ]);
 
+        ActivityLogService::log($user->id, 'enable_2fa', 'User', $user->id, 'Habilitó autenticación en dos pasos');
+
         return redirect()->route('home')->with('success', '2FA habilitado exitosamente');
     }
 
@@ -86,6 +89,8 @@ class TwoFactorController extends Controller
             'two_factor_secret' => null,
             'two_factor_confirmed_at' => null,
         ]);
+
+        ActivityLogService::log($user->id, 'disable_2fa', 'User', $user->id, 'Deshabilitó autenticación en dos pasos');
 
         return back()->with('success', '2FA deshabilitado');
     }

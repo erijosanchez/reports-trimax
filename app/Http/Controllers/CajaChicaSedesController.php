@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\ReporteCajaChica;
 use App\Models\User;
+use App\Services\ActivityLogService;
 use App\Notifications\CajaChicaSubmitida;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -118,6 +119,8 @@ class CajaChicaSedesController extends Controller
 
         $this->enviarNotificaciones($reporte, false);
 
+        ActivityLogService::log(auth()->id(), 'submit_reporte_caja_chica', 'ReporteCajaChica', $reporte->id, "Envió reporte de caja chica (sede: {$sede})");
+
         return response()->json([
             'success' => true,
             'message' => 'Reporte de Caja Chica enviado correctamente.',
@@ -174,6 +177,8 @@ class CajaChicaSedesController extends Controller
         $reporte->recalcularKpi();
 
         $this->enviarNotificaciones($reporte, true);
+
+        ActivityLogService::log(auth()->id(), 'update_reporte_caja_chica', 'ReporteCajaChica', $reporte->id, 'Editó reporte de caja chica' . ($tardio ? ' (edición tardía)' : ''));
 
         return response()->json([
             'success' => true,

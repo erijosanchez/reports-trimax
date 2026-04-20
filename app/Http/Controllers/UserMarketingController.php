@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use App\Models\UsersMarketing;
+use App\Services\ActivityLogService;
 use Google\Service\Directory\Users;
 
 class UserMarketingController extends Controller
@@ -124,6 +125,8 @@ class UserMarketingController extends Controller
 
             DB::commit();
 
+            ActivityLogService::log(auth()->id(), 'create_user_marketing', 'UsersMarketing', $user->id, "Creó usuario marketing: {$user->name} (rol: {$user->role})");
+
             return redirect()
                 ->route('marketing.users.show', $user->id)
                 ->with('success', 'Usuario creado exitosamente. Link de encuesta generado.');
@@ -218,6 +221,8 @@ class UserMarketingController extends Controller
 
             DB::commit();
 
+            ActivityLogService::log(auth()->id(), 'update_user_marketing', 'UsersMarketing', $user->id, "Actualizó usuario marketing: {$user->name} (rol: {$user->role})");
+
             return redirect()
                 ->route('marketing.users.show', $user->id)
                 ->with('success', 'Usuario actualizado exitosamente.');
@@ -268,6 +273,8 @@ class UserMarketingController extends Controller
 
             DB::commit();
 
+            ActivityLogService::log(auth()->id(), 'assign_sedes_marketing', 'UsersMarketing', $consultor->id, "Asignó sedes al consultor marketing: {$consultor->name}");
+
             return redirect()
                 ->route('marketing.users.show', $consultor->id)
                 ->with('success', 'Sedes asignadas correctamente al consultor');
@@ -288,6 +295,8 @@ class UserMarketingController extends Controller
 
         $status = $user->is_active ? 'activado' : 'desactivado';
 
+        ActivityLogService::log(auth()->id(), 'toggle_status_marketing', 'UsersMarketing', $user->id, "{$status} usuario marketing: {$user->name}");
+
         return back()->with('success', "Usuario {$status} exitosamente.");
     }
 
@@ -299,6 +308,8 @@ class UserMarketingController extends Controller
         $user = UsersMarketing::findOrFail($id);
         $user->unique_token = Str::random(32);
         $user->save();
+
+        ActivityLogService::log(auth()->id(), 'regenerate_token_marketing', 'UsersMarketing', $user->id, "Regeneró token del usuario marketing: {$user->name}");
 
         return back()->with('success', 'Token regenerado exitosamente. Nuevo link de encuesta generado.');
     }
@@ -320,6 +331,8 @@ class UserMarketingController extends Controller
             $user->delete();
 
             DB::commit();
+
+            ActivityLogService::log(auth()->id(), 'delete_user_marketing', 'UsersMarketing', $user->id, "Eliminó usuario marketing: {$user->name} (rol: {$user->role})");
 
             return redirect()
                 ->route('marketing.users.index')
