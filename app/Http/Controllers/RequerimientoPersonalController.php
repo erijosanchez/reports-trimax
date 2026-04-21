@@ -282,7 +282,11 @@ class RequerimientoPersonalController extends Controller
 
         // Notificar al responsable interno asignado
         if ($request->responsable_rh_id) {
-            User::find($request->responsable_rh_id)->notify(new RequerimientoRhAsignado($requerimiento));
+            try {
+                User::find($request->responsable_rh_id)->notify(new RequerimientoRhAsignado($requerimiento));
+            } catch (\Exception $e) {
+                \Log::warning('No se pudo enviar notificación RH asignado: ' . $e->getMessage());
+            }
         }
 
         // Notificar a todos los involucrados
@@ -331,15 +335,19 @@ class RequerimientoPersonalController extends Controller
         );
 
         // Notificar al solicitante sobre el avance
-        $requerimiento->solicitante->notify(
-            new RequerimientoEstadoActualizado(
-                $requerimiento,
-                null,
-                null,
-                'etapa',
-                "[{$etiqueta}] " . $request->descripcion
-            )
-        );
+        try {
+            $requerimiento->solicitante->notify(
+                new RequerimientoEstadoActualizado(
+                    $requerimiento,
+                    null,
+                    null,
+                    'etapa',
+                    "[{$etiqueta}] " . $request->descripcion
+                )
+            );
+        } catch (\Exception $e) {
+            \Log::warning('No se pudo enviar notificación de etapa: ' . $e->getMessage());
+        }
 
         ActivityLogService::log(Auth::id(), 'register_etapa_requerimiento', 'RequerimientoPersonal', $requerimiento->id, "Registró etapa '{$etiqueta}' en requerimiento {$requerimiento->codigo}");
 
