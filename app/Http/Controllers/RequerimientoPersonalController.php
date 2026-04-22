@@ -106,6 +106,7 @@ class RequerimientoPersonalController extends Controller
 
         $request->validate([
             'puesto'              => 'required|string',
+            'puesto_otro'         => 'required_if:puesto,Otros|nullable|string|max:255',
             'sede'                => 'required|string',
             'jefe_directo'        => 'required|string',
             'supervisa_a'         => 'nullable|string|max:255',
@@ -140,7 +141,7 @@ class RequerimientoPersonalController extends Controller
                 'codigo'               => RequerimientoPersonal::generarCodigo(),
                 'solicitante_id'       => Auth::id(),
                 'gerencia'             => 'GERENCIA COMERCIAL',
-                'puesto'               => $request->puesto,
+                'puesto'               => $request->puesto === 'Otros' ? $request->puesto_otro : $request->puesto,
                 'sede'                 => $request->sede,
                 'jefe_directo'         => $request->jefe_directo,
                 'supervisa_a'          => $request->supervisa_a,
