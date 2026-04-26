@@ -72,12 +72,8 @@
     <script src="{{ asset('assets/js/dashboard.js') }}"></script>
     <script src="{{ asset('assets/js/Chart.roundedBarCharts.js') }}"></script>
     <!-- End custom js for this page-->
-    <!-- GPS Tracking solo para usuarios autenticados -->
     @yield('scripts')
     @stack('scripts')
-    @auth
-        <script src="{{ asset('assets/js/gps-tracking.js') }}"></script>
-    @endauth
 </body>
 
 </html>

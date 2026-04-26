@@ -27,9 +27,6 @@ Route::prefix('ordenes')->group(function () {
     Route::get('/test-connection', [ComercialController::class, 'testConnection']);
 });
 
-// Webhook Traccar (sin auth — validar token en el controller si deseas)
-Route::post('/traccar/webhook', [App\Http\Controllers\Tracking\MotorizadoController::class, 'webhook'])
-    ->name('traccar.webhook');
 
 // Ruta para el asistente de consultas
 
