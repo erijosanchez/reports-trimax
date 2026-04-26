@@ -12,7 +12,7 @@ class Motorizado extends Model
     protected $table = 'motorizados';
 
     protected $fillable = [
-        'nombre', 'sede', 'telefono', 'traccar_device_id', 'estado',
+        'nombre', 'sede', 'telefono', 'traccar_device_id', 'estado', 'token_gps',
     ];
 
     protected $casts = [

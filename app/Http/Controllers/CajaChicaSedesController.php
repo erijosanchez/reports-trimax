@@ -8,6 +8,7 @@ use App\Services\ActivityLogService;
 use App\Notifications\CajaChicaSubmitida;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -317,8 +318,12 @@ class CajaChicaSedesController extends Controller
     private function enviarNotificaciones(ReporteCajaChica $reporte, bool $esEdicion): void
     {
         foreach (self::EMAILS_DESTINO as $email) {
-            Notification::route('mail', $email)
-                ->notify(new CajaChicaSubmitida($reporte, $esEdicion));
+            try {
+                Notification::route('mail', $email)
+                    ->notify(new CajaChicaSubmitida($reporte, $esEdicion));
+            } catch (\Exception $e) {
+                Log::error("Notificación caja chica no enviada a {$email}: " . $e->getMessage());
+            }
         }
     }
 

@@ -8,6 +8,7 @@ use App\Services\ActivityLogService;
 use App\Notifications\ComentariosSubmitida;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -319,8 +320,12 @@ class ComentariosSedesController extends Controller
     private function enviarNotificaciones(ReporteComentarios $reporte, bool $esEdicion): void
     {
         foreach (self::EMAILS_DESTINO as $email) {
-            Notification::route('mail', $email)
-                ->notify(new ComentariosSubmitida($reporte, $esEdicion));
+            try {
+                Notification::route('mail', $email)
+                    ->notify(new ComentariosSubmitida($reporte, $esEdicion));
+            } catch (\Exception $e) {
+                Log::error("Notificación comentarios no enviada a {$email}: " . $e->getMessage());
+            }
         }
     }
 

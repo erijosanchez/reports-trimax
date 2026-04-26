@@ -65,6 +65,21 @@ class TraccarService
         }
     }
 
+    public function getRutaGps(int $deviceId, string $from, string $to): array
+    {
+        try {
+            $response = $this->client()->get('/api/reports/route', [
+                'deviceId' => $deviceId,
+                'from'     => $from,
+                'to'       => $to,
+            ]);
+            return $response->successful() ? $response->json() : [];
+        } catch (\Exception $e) {
+            Log::error('Traccar getRutaGps: ' . $e->getMessage());
+            return [];
+        }
+    }
+
     /**
      * Sincroniza posiciones actuales de Traccar → tracking_positions local.
      * Mapea traccar_device_id → motorizado.

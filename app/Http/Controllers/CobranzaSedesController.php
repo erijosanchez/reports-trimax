@@ -8,6 +8,7 @@ use App\Services\ActivityLogService;
 use App\Notifications\CobranzaSubmitida;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -421,8 +422,12 @@ class CobranzaSedesController extends Controller
 
         // Notificar usando Notification::route para emails externos
         foreach (self::EMAILS_DESTINO as $email) {
-            Notification::route('mail', $email)
-                ->notify(new \App\Notifications\CobranzaSubmitida($reporte, $esEdicion));
+            try {
+                Notification::route('mail', $email)
+                    ->notify(new \App\Notifications\CobranzaSubmitida($reporte, $esEdicion));
+            } catch (\Exception $e) {
+                Log::error("Notificación cobranza no enviada a {$email}: " . $e->getMessage());
+            }
         }
     }
 

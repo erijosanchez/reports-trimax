@@ -327,6 +327,14 @@
                     <span class="menu-title">Resumen Diario</span>
                 </a>
             </li>
+
+            <li class="nav-item">
+                <a class="nav-link {{ request()->routeIs('tracking.rutas-gps') ? 'active' : '' }}"
+                    href="{{ route('tracking.rutas-gps') }}">
+                    <i class="mdi mdi-map-marker-distance menu-icon text-success"></i>
+                    <span class="menu-title">Control de Rutas GPS</span>
+                </a>
+            </li>
         @endif
 
         {{-- MÓDULO MARKETING (Solo marketing y superadmin) --}}

@@ -27,6 +27,8 @@ use App\Http\Controllers\CajaChicaSedesController;
 use App\Http\Controllers\ComentariosSedesController;
 use App\Http\Controllers\OrdenesXUsuarioController;
 use App\Http\Controllers\Tracking\MotorizadoController;
+use App\Http\Controllers\Tracking\RutaGpsController;
+use App\Http\Controllers\Tracking\RutaGpsPublicaController;
 
 // ============================================================
 // RUTAS PARA LARAVEL 11
@@ -39,6 +41,12 @@ Route::get('/encuesta/{token}', [SurveyController::class, 'show'])->name('survey
 // Entrega pública para motorizados (sin login)
 Route::get('/entrega/{token}',                    [\App\Http\Controllers\Tracking\EntregaPublicaController::class, 'show'])->name('entrega.show');
 Route::post('/entrega/{token}/parada/{parada}',   [\App\Http\Controllers\Tracking\EntregaPublicaController::class, 'marcarParada'])->name('entrega.marcar');
+
+// Control GPS para motorizados (sin login — token permanente por conductor)
+Route::get('/gps/{token}',                        [RutaGpsPublicaController::class, 'show'])->name('gps.motorizado');
+Route::post('/gps/{token}/iniciar',               [RutaGpsPublicaController::class, 'iniciar'])->name('gps.motorizado.iniciar');
+Route::post('/gps/{token}/finalizar/{id}',        [RutaGpsPublicaController::class, 'finalizar'])->name('gps.motorizado.finalizar');
+Route::post('/gps/{token}/parada/{paradaId}',     [RutaGpsPublicaController::class, 'marcarParada'])->name('gps.motorizado.parada');
 
 // Auth Routes (Guest)
 Route::middleware(['guest'])->group(function () {
@@ -372,6 +380,13 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
         Route::get('/api/rutas/{id}',                    [MotorizadoController::class, 'rutaJson'])->name('api.ruta');
         Route::get('/api/ordenes/{id}/tracking',         [MotorizadoController::class, 'trackingOrden'])->name('api.orden-tracking');
         Route::post('/api/sincronizar',                  [MotorizadoController::class, 'sincronizar'])->name('api.sincronizar');
+
+        // Control de Rutas GPS (admin — solo vista y gestión)
+        Route::get('/rutas-gps',                         [RutaGpsController::class, 'index'])->name('rutas-gps');
+        Route::post('/rutas-gps/token/{id}',             [RutaGpsController::class, 'generarToken'])->name('rutas-gps.token');
+        Route::post('/rutas-gps/{id}/forzar-cierre',     [RutaGpsController::class, 'forzarCierre'])->name('rutas-gps.forzar-cierre');
+        Route::get('/api/rutas-gps',                     [RutaGpsController::class, 'apiRutas'])->name('api.rutas-gps');
+        Route::get('/api/rutas-gps/resumen',             [RutaGpsController::class, 'resumenDiario'])->name('api.rutas-gps.resumen');
     });
 
     // Admin Routes (Admin + Super Admin only)
