@@ -48,7 +48,8 @@
                                     <select name="sede" class="form-select-sm form-select">
                                         <option value="">Todas</option>
                                         @foreach ($sedes as $s)
-                                            <option value="{{ $s }}" {{ request('sede') === $s ? 'selected' : '' }}>
+                                            <option value="{{ $s }}"
+                                                {{ request('sede') === $s ? 'selected' : '' }}>
                                                 {{ $s }}
                                             </option>
                                         @endforeach
@@ -60,9 +61,11 @@
                                         <option value="">Todos</option>
                                         <option value="pendiente" {{ request('estado') === 'pendiente' ? 'selected' : '' }}>
                                             Pendiente</option>
-                                        <option value="completado" {{ request('estado') === 'completado' ? 'selected' : '' }}>
+                                        <option value="completado"
+                                            {{ request('estado') === 'completado' ? 'selected' : '' }}>
                                             Completado</option>
-                                        <option value="fallido" {{ request('estado') === 'fallido' ? 'selected' : '' }}>Fallido
+                                        <option value="fallido" {{ request('estado') === 'fallido' ? 'selected' : '' }}>
+                                            Fallido
                                         </option>
                                     </select>
                                 </div>
@@ -181,7 +184,7 @@
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">Motorizado <span class="text-danger">*</span></label>
                                 <select name="motorizado_id" id="sel-motorizado" class="form-select" required>
-                                    <option value="">Seleccionar</option>
+                                    <option value="">Seleccionar motorizado</option>
                                     @foreach ($motorizados as $m)
                                         <option value="{{ $m->id }}" data-sede="{{ $m->sede }}">
                                             {{ $m->nombre }} — {{ $m->sede }}
@@ -190,10 +193,16 @@
                                 </select>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold">Ruta (ID) <span class="text-danger">*</span></label>
-                                <input type="number" name="ruta_id" id="ruta-id" class="form-control"
-                                    placeholder="ID de la ruta GPS" required>
-                                <div class="form-text">La ruta debe estar creada primero desde la app.</div>
+                                <label class="form-label fw-semibold">Ruta del día <span
+                                        class="text-danger">*</span></label>
+                                <select name="ruta_id" id="sel-ruta" class="form-select" required disabled>
+                                    <option value="">Primero selecciona un motorizado</option>
+                                </select>
+                                <div id="msg-sin-ruta" class="text-warning form-text d-none">
+                                    <i class="mdi-alert-outline mdi"></i>
+                                    Este motorizado no tiene ruta activa hoy.
+                                    Dile que presione "Iniciar" en la app primero.
+                                </div>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">Cliente <span class="text-danger">*</span></label>
@@ -217,16 +226,23 @@
                                 </select>
                             </div>
                             <div class="col-12">
-                                <label class="form-label fw-semibold">Dirección <span class="text-danger">*</span></label>
-                                <input type="text" name="direccion" class="form-control" required>
+                                <label class="form-label fw-semibold">
+                                    Dirección <span class="text-danger">*</span>
+                                    <span id="badge-coords" class="bg-secondary ms-2 badge">Sin coords</span>
+                                </label>
+                                <input type="text" name="direccion" id="inp-direccion" class="form-control" required
+                                    placeholder="Ej: Av. Javier Prado 123, San Isidro">
+                                <div class="form-text">Las coordenadas se buscan automáticamente al escribir</div>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">Latitud</label>
-                                <input type="number" name="latitud" class="form-control" step="0.0000001">
+                                <input type="number" name="latitud" id="inp-latitud" class="form-control"
+                                    step="0.0000001" readonly>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">Longitud</label>
-                                <input type="number" name="longitud" class="form-control" step="0.0000001">
+                                <input type="number" name="longitud" id="inp-longitud" class="form-control"
+                                    step="0.0000001" readonly>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">Orden secuencia <span
@@ -265,13 +281,82 @@
             setTimeout(() => el.remove(), 3000);
         }
 
-        // Auto-llenar sede al seleccionar motorizado
-        document.getElementById('sel-motorizado').addEventListener('change', function() {
+        // Auto-llenar sede y cargar rutas al seleccionar motorizado
+        document.getElementById('sel-motorizado').addEventListener('change', async function() {
+            const motId = this.value;
             const sede = this.options[this.selectedIndex]?.dataset.sede;
+            const selRuta = document.getElementById('sel-ruta');
+            const msgSinRuta = document.getElementById('msg-sin-ruta');
+
             if (sede) document.getElementById('sel-sede').value = sede;
+
+            if (!motId) {
+                selRuta.innerHTML = '<option value="">Primero selecciona un motorizado</option>';
+                selRuta.disabled = true;
+                return;
+            }
+
+            selRuta.innerHTML = '<option value="">Cargando rutas...</option>';
+            selRuta.disabled = true;
+            msgSinRuta.classList.add('d-none');
+
+            try {
+                const res = await fetch(`/tracking/motorizados/${motId}/rutas-hoy`);
+                const data = await res.json();
+
+                if (!data.length) {
+                    selRuta.innerHTML = '<option value="">Sin rutas activas hoy</option>';
+                    selRuta.disabled = true;
+                    msgSinRuta.classList.remove('d-none');
+                    return;
+                }
+
+                selRuta.innerHTML = data.map(r =>
+                    `<option value="${r.id}">${r.label}</option>`
+                ).join('');
+                selRuta.disabled = false;
+                msgSinRuta.classList.add('d-none');
+
+            } catch (e) {
+                selRuta.innerHTML = '<option value="">Error al cargar rutas</option>';
+                selRuta.disabled = true;
+            }
         });
 
-        // Crear
+        // Geocodificar dirección con Nominatim (gratis, sin API key)
+        let geocodeTimer = null;
+        document.getElementById('inp-direccion')?.addEventListener('input', function() {
+            clearTimeout(geocodeTimer);
+            const dir = this.value.trim();
+            if (dir.length < 10) return;
+
+            geocodeTimer = setTimeout(async () => {
+                try {
+                    const res = await fetch(
+                        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(dir + ', Peru')}&format=json&limit=1`, {
+                            headers: {
+                                'Accept-Language': 'es'
+                            }
+                        }
+                    );
+                    const data = await res.json();
+                    if (data.length) {
+                        document.getElementById('inp-latitud').value = parseFloat(data[0].lat).toFixed(
+                            7);
+                        document.getElementById('inp-longitud').value = parseFloat(data[0].lon).toFixed(
+                            7);
+                        document.getElementById('badge-coords').className = 'badge bg-success ms-2';
+                        document.getElementById('badge-coords').textContent = '✓ Coords encontradas';
+                    } else {
+                        document.getElementById('badge-coords').className = 'badge bg-warning ms-2';
+                        document.getElementById('badge-coords').textContent =
+                            'Sin coords — ingresa manual';
+                    }
+                } catch (_) {}
+            }, 800); // espera 800ms después de dejar de escribir
+        });
+
+        // Crear entrega
         document.getElementById('form-crear').addEventListener('submit', async e => {
             e.preventDefault();
             const fd = new FormData(e.target);

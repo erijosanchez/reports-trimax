@@ -300,6 +300,13 @@
                     <span class="menu-title">Historial Km</span>
                 </a>
             </li>
+            <li class="nav-item">
+                <a class="nav-link {{ request()->routeIs('tracking.historial-recorrido') ? 'active' : '' }}"
+                    href="{{ route('tracking.historial-recorrido') }}">
+                    <i class="text-info mdi mdi-map-marker-path menu-icon"></i>
+                    <span class="menu-title">Recorrido GPS</span>
+                </a>
+            </li>
 
             @unless ($user->isSede())
                 <li class="nav-item">

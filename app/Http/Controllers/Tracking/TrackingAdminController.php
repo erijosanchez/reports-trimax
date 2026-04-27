@@ -52,6 +52,25 @@ class TrackingAdminController extends Controller
         return view('tracking.resumen-diario', compact('rutas', 'kpi', 'porSede', 'fecha'));
     }
 
+    // Agrega este método
+    public function rutasActivasPorMotorizado(int $motorizadoId)
+    {
+        $this->checkPermiso();
+
+        $rutas = GpsRuta::where('motorizado_id', $motorizadoId)
+            ->whereIn('status', ['pendiente', 'activa'])
+            ->whereDate('fecha', today())
+            ->get(['id', 'fecha', 'status', 'started_at']);
+
+        return response()->json($rutas->map(fn($r) => [
+            'id'         => $r->id,
+            'label'      => 'Ruta #' . $r->id . ' — ' .
+                ucfirst($r->status) . ' — ' .
+                $r->fecha->format('d/m/Y'),
+            'status'     => $r->status,
+        ]));
+    }
+
     // ── Historial km ──────────────────────────────────────
     public function historialKm(Request $request)
     {
@@ -74,7 +93,11 @@ class TrackingAdminController extends Controller
         $rutas = $query->paginate(30)->withQueryString();
 
         return view('tracking.historial-km', compact(
-            'rutas', 'motorizados', 'desde', 'hasta', 'motorizadoId'
+            'rutas',
+            'motorizados',
+            'desde',
+            'hasta',
+            'motorizadoId'
         ));
     }
 
@@ -156,10 +179,16 @@ class TrackingAdminController extends Controller
         return view('tracking.entregas', compact('entregas', 'motorizados', 'sedes'));
     }
 
-    public function storeEntrega(Request $request)
+    public function historialRecorrido()
     {
         $this->checkPermiso();
+        $motorizados = Motorizado::where('estado', 'activo')
+            ->orderBy('sede')->orderBy('nombre')->get();
+        return view('tracking.historial-recorrido', compact('motorizados'));
+    }
 
+    public function storeEntrega(Request $request)
+    {
         $data = $request->validate([
             'motorizado_id'    => 'required|exists:motorizados,id',
             'ruta_id'          => 'required|exists:gps_rutas,id',
@@ -169,10 +198,14 @@ class TrackingAdminController extends Controller
             'direccion'        => 'required|string',
             'latitud'          => 'nullable|numeric',
             'longitud'         => 'nullable|numeric',
-            'orden_secuencia'  => 'required|integer|min:1',
             'sede'             => 'required|string',
             'notas'            => 'nullable|string',
         ]);
+
+        // Auto-asignar secuencia
+        $ultimaSecuencia = Entrega::where('ruta_id', $data['ruta_id'])
+            ->max('orden_secuencia') ?? 0;
+        $data['orden_secuencia'] = $ultimaSecuencia + 1;
 
         $entrega = Entrega::create($data);
 

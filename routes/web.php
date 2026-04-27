@@ -341,6 +341,14 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
         Route::post('/motorizados',       [TrackingAdminController::class, 'storeMotorizado'])->name('motorizados.store');
         Route::put('/motorizados/{id}',   [TrackingAdminController::class, 'updateMotorizado'])->name('motorizados.update');
         Route::delete('/motorizados/{id}', [TrackingAdminController::class, 'destroyMotorizado'])->name('motorizados.destroy');
+        Route::get(
+            '/motorizados/{id}/rutas-hoy',
+            [TrackingAdminController::class, 'rutasActivasPorMotorizado']
+        )->name('motorizados.rutas-hoy');
+        Route::get(
+            '/historial-recorrido',
+            [TrackingAdminController::class, 'historialRecorrido']
+        )->name('historial-recorrido');
 
         // Entregas
         Route::get('/entregas',    [TrackingAdminController::class, 'entregas'])->name('entregas');

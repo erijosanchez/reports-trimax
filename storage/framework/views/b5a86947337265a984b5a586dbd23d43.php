@@ -195,13 +195,13 @@
                 return L.divIcon({
                     className: '',
                     html: `<div class="moto-wrapper">
-            <div class="moto-ring" style="background:${c}"></div>
-            <div class="moto-icon" style="background:${c}">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="white">
-                    <path d="M5 11l1.5-4.5h7L15 9h3a3 3 0 0 1 3 3v1h-2a3 3 0 0 1-6 0H9a3 3 0 0 1-6 0H1v-2h4zm2.5 5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zm9 0a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z"/>
-                </svg>
-            </div>
-        </div>`,
+                                <div class="moto-ring" style="background:${c}"></div>
+                                <div class="moto-icon" style="background:${c}">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+                                        <path d="M19 7c0-1.1-.9-2-2-2h-3l2 4H4l-2 3h1.3c.4-1.2 1.5-2 2.7-2s2.3.8 2.7 2h6.6c.4-1.2 1.5-2 2.7-2s2.3.8 2.7 2H22l-1-3h-2V7zM6 16.5c0 .8-.7 1.5-1.5 1.5S3 17.3 3 16.5 3.7 15 4.5 15s1.5.7 1.5 1.5zm13 0c0 .8-.7 1.5-1.5 1.5s-1.5-.7-1.5-1.5.7-1.5 1.5-1.5 1.5.7 1.5 1.5z"/>
+                                    </svg>
+                                </div>
+                            </div>`,
                     iconSize: [48, 48],
                     iconAnchor: [24, 24],
                     popupAnchor: [0, -28],
@@ -295,7 +295,12 @@
             // ── Cargar todo ───────────────────────────────────────────
             async function cargarTodo() {
                 try {
-                    const res = await fetch('/api/admin/mapa-vivo');
+                    const res = await fetch('/api/admin/mapa-vivo', {
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                            'Accept': 'application/json',
+                        }
+                    });
                     allData = await res.json();
 
                     actualizarMarcadores(allData);

@@ -105,6 +105,32 @@ class GpsController extends Controller
         ]);
     }
 
+    // GET /api/admin/recorrido
+    public function recorrido(Request $request)
+    {
+        $motorizadoId = $request->get('motorizado_id');
+        $fecha        = $request->get('fecha', today()->toDateString());
+
+        $motorizado = Motorizado::findOrFail($motorizadoId);
+
+        $puntos = GpsPosicion::where('motorizado_id', $motorizadoId)
+            ->whereDate('capturado_en', $fecha)
+            ->orderBy('capturado_en')
+            ->get()
+            ->map(fn($p) => [
+                'lat' => $p->latitud,
+                'lng' => $p->longitud,
+                'vel' => round($p->velocidad, 1),
+                'ts'  => $p->capturado_en->setTimezone('America/Lima')->toIso8601String(),
+            ]);
+
+        return response()->json([
+            'motorizado' => $motorizado->only('id', 'nombre', 'sede'),
+            'fecha'      => $fecha,
+            'puntos'     => $puntos,
+        ]);
+    }
+
     // ── POST /api/gps/finalizar ───────────────────────────
     public function finalizar(Request $request)
     {
@@ -253,8 +279,8 @@ class GpsController extends Controller
             'ended_at'    => $r->ended_at?->setTimezone('America/Lima')->format('H:i'),
             'distance_km' => round($r->distance_km, 2),
             'duracion'    => $r->duracion,
-            'completadas' => $r->entregas->where('estado','completado')->count(),
-            'fallidas'    => $r->entregas->where('estado','fallido')->count(),
+            'completadas' => $r->entregas->where('estado', 'completado')->count(),
+            'fallidas'    => $r->entregas->where('estado', 'fallido')->count(),
             'total'       => $r->entregas->count(),
         ]));
     }

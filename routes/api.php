@@ -57,4 +57,5 @@ Route::prefix('admin')->group(function () {
     Route::get('/mapa-vivo',        [GpsController::class, 'mapaVivo']);
     Route::get('/historial-km',     [GpsController::class, 'historialKm']);
     Route::get('/resumen-diario',   [GpsController::class, 'resumenDiario']);
+    Route::get('/recorrido',   [GpsController::class, 'recorrido']);
 });
