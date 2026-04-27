@@ -14,6 +14,7 @@
         "google/apiclient": "2.16",
         "laravel/framework": "^12.0",
         "laravel/horizon": "^5.40",
+        "laravel/sanctum": "^4.3",
         "laravel/tinker": "^2.10.1",
         "maatwebsite/excel": "^3.1",
         "pragmarx/google2fa-laravel": "^2.3",

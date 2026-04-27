@@ -14,7 +14,6 @@ use App\Http\Controllers\ComercialController;
 use App\Http\Controllers\MarketingController;
 use App\Http\Controllers\UserMarketingController;
 use App\Http\Controllers\SurveyController;
-use App\Http\Controllers\ImportController;
 use App\Http\Controllers\DescuentosEspecialesController;
 use App\Http\Controllers\AIAssistantController;
 use App\Http\Controllers\LeadTimeController;
@@ -26,6 +25,7 @@ use App\Http\Controllers\CobranzaSedesController;
 use App\Http\Controllers\CajaChicaSedesController;
 use App\Http\Controllers\ComentariosSedesController;
 use App\Http\Controllers\OrdenesXUsuarioController;
+use App\Http\Controllers\Tracking\TrackingAdminController;
 
 // ============================================================
 // RUTAS PARA LARAVEL 11
@@ -328,6 +328,23 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
             Route::get('/api/historial',              [ComentariosSedesController::class, 'historial'])->name('historial');
             Route::get('/api/kpi-data',               [ComentariosSedesController::class, 'kpiData'])->name('kpi-data');
         });
+    });
+
+    // ── Tracking Admin ────────────────────────────────────────
+    Route::prefix('tracking')->name('tracking.')->group(function () {
+        Route::get('/mapa-vivo',     [TrackingAdminController::class, 'mapaVivo'])->name('mapa');
+        Route::get('/resumen',       [TrackingAdminController::class, 'resumenDiario'])->name('resumen');
+        Route::get('/historial-km',  [TrackingAdminController::class, 'historialKm'])->name('historial');
+
+        // Motorizados
+        Route::get('/motorizados',        [TrackingAdminController::class, 'motorizados'])->name('motorizados');
+        Route::post('/motorizados',       [TrackingAdminController::class, 'storeMotorizado'])->name('motorizados.store');
+        Route::put('/motorizados/{id}',   [TrackingAdminController::class, 'updateMotorizado'])->name('motorizados.update');
+        Route::delete('/motorizados/{id}', [TrackingAdminController::class, 'destroyMotorizado'])->name('motorizados.destroy');
+
+        // Entregas
+        Route::get('/entregas',    [TrackingAdminController::class, 'entregas'])->name('entregas');
+        Route::post('/entregas',   [TrackingAdminController::class, 'storeEntrega'])->name('entregas.store');
     });
 
     // Admin Routes (Admin + Super Admin only)

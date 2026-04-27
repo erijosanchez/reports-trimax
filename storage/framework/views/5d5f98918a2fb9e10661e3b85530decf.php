@@ -225,54 +225,53 @@
         ?>
 
         <?php if($tieneAccesoProductividad): ?>
-        <li class="nav-item nav-category">PRODUCTIVIDAD SEDES</li>
+            <li class="nav-item nav-category">PRODUCTIVIDAD SEDES</li>
 
-        
-        <li class="nav-item">
-            <a class="nav-link <?php echo request()->routeIs('productividad.ordenes-x-usuario.*') ? 'active' : ''; ?>"
-                href="<?php echo route('productividad.ordenes-x-usuario.index'); ?>">
-                <i class="mdi-account-multiple-outline mdi menu-icon"></i>
-                <span class="menu-title">Ordenes x Usuario</span>
-            </a>
-        </li>
+            
+            <li class="nav-item">
+                <a class="nav-link <?php echo request()->routeIs('productividad.ordenes-x-usuario.*') ? 'active' : ''; ?>"
+                    href="<?php echo route('productividad.ordenes-x-usuario.index'); ?>">
+                    <i class="mdi-account-multiple-outline mdi menu-icon"></i>
+                    <span class="menu-title">Ordenes x Usuario</span>
+                </a>
+            </li>
 
-        
-        <li class="nav-item">
-            <a class="nav-link <?php echo request()->routeIs('productividad.cobranza-sedes.*') ? '' : 'collapsed'; ?>"
-                data-bs-toggle="collapse" href="#cobranza-sedes-menu"
-                aria-expanded="<?php echo request()->routeIs('productividad.cobranza-sedes.*') ? 'true' : 'false'; ?>"
-                aria-controls="cobranza-sedes-menu">
-                <i class="mdi mdi-file-send menu-icon"></i>
-                <span class="menu-title">Envios</span>
-                <i class="menu-arrow"></i>
-            </a>
+            
+            <li class="nav-item">
+                <a class="nav-link <?php echo request()->routeIs('productividad.cobranza-sedes.*') ? '' : 'collapsed'; ?>"
+                    data-bs-toggle="collapse" href="#cobranza-sedes-menu"
+                    aria-expanded="<?php echo request()->routeIs('productividad.cobranza-sedes.*') ? 'true' : 'false'; ?>"
+                    aria-controls="cobranza-sedes-menu">
+                    <i class="mdi mdi-file-send menu-icon"></i>
+                    <span class="menu-title">Envios</span>
+                    <i class="menu-arrow"></i>
+                </a>
 
-            <div class="collapse <?php echo request()->routeIs('productividad.cobranza-sedes.*') ? 'show' : ''; ?>"
-                id="cobranza-sedes-menu">
-                <ul class="flex-column nav sub-menu">
-                    <li class="nav-item">
-                        <a class="nav-link <?php echo request()->routeIs('productividad.cobranza-sedes.cobranza.index') ? 'active' : ''; ?>"
-                            href="<?php echo route('productividad.cobranza-sedes.cobranza.index'); ?>">
-                            Depósito de Efectivo
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link <?php echo request()->routeIs('productividad.cobranza-sedes.caja-chica.index') ? 'active' : ''; ?>"
-                            href="<?php echo route('productividad.cobranza-sedes.caja-chica.index'); ?>">
-                            Caja Chica
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link <?php echo request()->routeIs('productividad.cobranza-sedes.comentarios.index') ? 'active' : ''; ?>"
-                            href="<?php echo route('productividad.cobranza-sedes.comentarios.index'); ?>">
-                            Comentarios
-                        </a>
-                    </li>
-                </ul>
-            </div>
-        </li>
+                <div class="collapse <?php echo request()->routeIs('productividad.cobranza-sedes.*') ? 'show' : ''; ?>"
+                    id="cobranza-sedes-menu">
+                    <ul class="flex-column nav sub-menu">
+                        <li class="nav-item">
+                            <a class="nav-link <?php echo request()->routeIs('productividad.cobranza-sedes.cobranza.index') ? 'active' : ''; ?>"
+                                href="<?php echo route('productividad.cobranza-sedes.cobranza.index'); ?>">
+                                Depósito de Efectivo
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link <?php echo request()->routeIs('productividad.cobranza-sedes.caja-chica.index') ? 'active' : ''; ?>"
+                                href="<?php echo route('productividad.cobranza-sedes.caja-chica.index'); ?>">
+                                Caja Chica
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link <?php echo request()->routeIs('productividad.cobranza-sedes.comentarios.index') ? 'active' : ''; ?>"
+                                href="<?php echo route('productividad.cobranza-sedes.comentarios.index'); ?>">
+                                Comentarios
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </li>
         <?php endif; ?>
-
 
         
         <?php if($user->puedeVerMotorizados()): ?>
@@ -286,40 +285,6 @@
                 </a>
             </li>
 
-            <?php if (! ($user->isSede())): ?>
-            <li class="nav-item">
-                <a class="nav-link <?php echo request()->routeIs('tracking.motorizados') ? 'active' : ''; ?>"
-                    href="<?php echo route('tracking.motorizados'); ?>">
-                    <i class="mdi mdi-motorbike menu-icon"></i>
-                    <span class="menu-title">Motorizados</span>
-                </a>
-            </li>
-            <?php endif; ?>
-
-            <li class="nav-item">
-                <a class="nav-link <?php echo request()->routeIs('tracking.rutas') || request()->routeIs('tracking.ruta-detalle') ? 'active' : ''; ?>"
-                    href="<?php echo route('tracking.rutas'); ?>">
-                    <i class="mdi mdi-routes menu-icon"></i>
-                    <span class="menu-title">Rutas de Entrega</span>
-                </a>
-            </li>
-
-            <li class="nav-item">
-                <a class="nav-link <?php echo request()->routeIs('tracking.historial') ? 'active' : ''; ?>"
-                    href="<?php echo route('tracking.historial'); ?>">
-                    <i class="mdi mdi-map-search menu-icon"></i>
-                    <span class="menu-title">Historial Recorrido</span>
-                </a>
-            </li>
-
-            <li class="nav-item">
-                <a class="nav-link <?php echo request()->routeIs('tracking.ordenes') ? 'active' : ''; ?>"
-                    href="<?php echo route('tracking.ordenes'); ?>">
-                    <i class="mdi mdi-package-variant menu-icon"></i>
-                    <span class="menu-title">Órdenes</span>
-                </a>
-            </li>
-
             <li class="nav-item">
                 <a class="nav-link <?php echo request()->routeIs('tracking.resumen') ? 'active' : ''; ?>"
                     href="<?php echo route('tracking.resumen'); ?>">
@@ -327,6 +292,32 @@
                     <span class="menu-title">Resumen Diario</span>
                 </a>
             </li>
+
+            <li class="nav-item">
+                <a class="nav-link <?php echo request()->routeIs('tracking.historial') ? 'active' : ''; ?>"
+                    href="<?php echo route('tracking.historial'); ?>">
+                    <i class="text-success mdi mdi-map-marker-distance menu-icon"></i>
+                    <span class="menu-title">Historial Km</span>
+                </a>
+            </li>
+
+            <?php if (! ($user->isSede())): ?>
+                <li class="nav-item">
+                    <a class="nav-link <?php echo request()->routeIs('tracking.motorizados') ? 'active' : ''; ?>"
+                        href="<?php echo route('tracking.motorizados'); ?>">
+                        <i class="mdi mdi-motorbike menu-icon"></i>
+                        <span class="menu-title">Motorizados</span>
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link <?php echo request()->routeIs('tracking.entregas') ? 'active' : ''; ?>"
+                        href="<?php echo route('tracking.entregas'); ?>">
+                        <i class="mdi mdi-package-variant menu-icon"></i>
+                        <span class="menu-title">Entregas</span>
+                    </a>
+                </li>
+            <?php endif; ?>
         <?php endif; ?>
 
         

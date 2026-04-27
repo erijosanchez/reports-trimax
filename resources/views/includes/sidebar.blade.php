@@ -225,52 +225,99 @@
         @endphp
 
         @if ($tieneAccesoProductividad)
-        <li class="nav-item nav-category">PRODUCTIVIDAD SEDES</li>
+            <li class="nav-item nav-category">PRODUCTIVIDAD SEDES</li>
 
-        {{-- Órdenes x Usuario --}}
-        <li class="nav-item">
-            <a class="nav-link {{ request()->routeIs('productividad.ordenes-x-usuario.*') ? 'active' : '' }}"
-                href="{{ route('productividad.ordenes-x-usuario.index') }}">
-                <i class="mdi-account-multiple-outline mdi menu-icon"></i>
-                <span class="menu-title">Ordenes x Usuario</span>
-            </a>
-        </li>
+            {{-- Órdenes x Usuario --}}
+            <li class="nav-item">
+                <a class="nav-link {{ request()->routeIs('productividad.ordenes-x-usuario.*') ? 'active' : '' }}"
+                    href="{{ route('productividad.ordenes-x-usuario.index') }}">
+                    <i class="mdi-account-multiple-outline mdi menu-icon"></i>
+                    <span class="menu-title">Ordenes x Usuario</span>
+                </a>
+            </li>
 
-        {{-- envios --}}
-        <li class="nav-item">
-            <a class="nav-link {{ request()->routeIs('productividad.cobranza-sedes.*') ? '' : 'collapsed' }}"
-                data-bs-toggle="collapse" href="#cobranza-sedes-menu"
-                aria-expanded="{{ request()->routeIs('productividad.cobranza-sedes.*') ? 'true' : 'false' }}"
-                aria-controls="cobranza-sedes-menu">
-                <i class="mdi mdi-file-send menu-icon"></i>
-                <span class="menu-title">Envios</span>
-                <i class="menu-arrow"></i>
-            </a>
+            {{-- envios --}}
+            <li class="nav-item">
+                <a class="nav-link {{ request()->routeIs('productividad.cobranza-sedes.*') ? '' : 'collapsed' }}"
+                    data-bs-toggle="collapse" href="#cobranza-sedes-menu"
+                    aria-expanded="{{ request()->routeIs('productividad.cobranza-sedes.*') ? 'true' : 'false' }}"
+                    aria-controls="cobranza-sedes-menu">
+                    <i class="mdi mdi-file-send menu-icon"></i>
+                    <span class="menu-title">Envios</span>
+                    <i class="menu-arrow"></i>
+                </a>
 
-            <div class="collapse {{ request()->routeIs('productividad.cobranza-sedes.*') ? 'show' : '' }}"
-                id="cobranza-sedes-menu">
-                <ul class="flex-column nav sub-menu">
-                    <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('productividad.cobranza-sedes.cobranza.index') ? 'active' : '' }}"
-                            href="{{ route('productividad.cobranza-sedes.cobranza.index') }}">
-                            Depósito de Efectivo
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('productividad.cobranza-sedes.caja-chica.index') ? 'active' : '' }}"
-                            href="{{ route('productividad.cobranza-sedes.caja-chica.index') }}">
-                            Caja Chica
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('productividad.cobranza-sedes.comentarios.index') ? 'active' : '' }}"
-                            href="{{ route('productividad.cobranza-sedes.comentarios.index') }}">
-                            Comentarios
-                        </a>
-                    </li>
-                </ul>
-            </div>
-        </li>
+                <div class="collapse {{ request()->routeIs('productividad.cobranza-sedes.*') ? 'show' : '' }}"
+                    id="cobranza-sedes-menu">
+                    <ul class="flex-column nav sub-menu">
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('productividad.cobranza-sedes.cobranza.index') ? 'active' : '' }}"
+                                href="{{ route('productividad.cobranza-sedes.cobranza.index') }}">
+                                Depósito de Efectivo
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('productividad.cobranza-sedes.caja-chica.index') ? 'active' : '' }}"
+                                href="{{ route('productividad.cobranza-sedes.caja-chica.index') }}">
+                                Caja Chica
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('productividad.cobranza-sedes.comentarios.index') ? 'active' : '' }}"
+                                href="{{ route('productividad.cobranza-sedes.comentarios.index') }}">
+                                Comentarios
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </li>
+        @endif
+
+        {{-- ══════ MÓDULO TRACKING MOTORIZADOS ══════ --}}
+        @if ($user->puedeVerMotorizados())
+            <li class="nav-item nav-category">TRACKING</li>
+
+            <li class="nav-item">
+                <a class="nav-link {{ request()->routeIs('tracking.mapa') ? 'active' : '' }}"
+                    href="{{ route('tracking.mapa') }}">
+                    <i class="text-danger mdi mdi-map-marker-radius menu-icon"></i>
+                    <span class="menu-title">Mapa en Vivo</span>
+                </a>
+            </li>
+
+            <li class="nav-item">
+                <a class="nav-link {{ request()->routeIs('tracking.resumen') ? 'active' : '' }}"
+                    href="{{ route('tracking.resumen') }}">
+                    <i class="mdi mdi-view-dashboard menu-icon"></i>
+                    <span class="menu-title">Resumen Diario</span>
+                </a>
+            </li>
+
+            <li class="nav-item">
+                <a class="nav-link {{ request()->routeIs('tracking.historial') ? 'active' : '' }}"
+                    href="{{ route('tracking.historial') }}">
+                    <i class="text-success mdi mdi-map-marker-distance menu-icon"></i>
+                    <span class="menu-title">Historial Km</span>
+                </a>
+            </li>
+
+            @unless ($user->isSede())
+                <li class="nav-item">
+                    <a class="nav-link {{ request()->routeIs('tracking.motorizados') ? 'active' : '' }}"
+                        href="{{ route('tracking.motorizados') }}">
+                        <i class="mdi mdi-motorbike menu-icon"></i>
+                        <span class="menu-title">Motorizados</span>
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link {{ request()->routeIs('tracking.entregas') ? 'active' : '' }}"
+                        href="{{ route('tracking.entregas') }}">
+                        <i class="mdi mdi-package-variant menu-icon"></i>
+                        <span class="menu-title">Entregas</span>
+                    </a>
+                </li>
+            @endunless
         @endif
 
         {{-- MÓDULO MARKETING (Solo marketing y superadmin) --}}

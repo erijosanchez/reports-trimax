@@ -1,7 +1,7 @@
+@extends('layouts.app')
+@section('title', 'Gestión de Motorizados')
 
-<?php $__env->startSection('title', 'Gestión de Motorizados'); ?>
-
-<?php $__env->startSection('content'); ?>
+@section('content')
     <div class="content-wrapper">
         <div class="page-header">
             <div class="row">
@@ -25,18 +25,18 @@
 
         <div class="page-content">
 
-            
+            {{-- Stats --}}
             <div class="mb-4 row">
-                <?php
+                @php
                     $total = $motorizados->whereNull('deleted_at')->count();
                     $activos = $motorizados->where('estado', 'activo')->whereNull('deleted_at')->count();
-                ?>
+                @endphp
                 <div class="mb-3 col-md-4">
                     <div class="shadow-sm border-0 card">
                         <div class="d-flex align-items-center justify-content-between card-body">
                             <div>
                                 <p class="mb-1 text-muted">Total</p>
-                                <h2 class="mb-0 text-primary fw-bold"><?php echo $total; ?></h2>
+                                <h2 class="mb-0 text-primary fw-bold">{{ $total }}</h2>
                             </div>
                             <div class="d-flex align-items-center justify-content-center bg-primary rounded-circle"
                                 style="width:48px;height:48px">
@@ -50,7 +50,7 @@
                         <div class="d-flex align-items-center justify-content-between card-body">
                             <div>
                                 <p class="mb-1 text-muted">Activos</p>
-                                <h2 class="mb-0 text-success fw-bold"><?php echo $activos; ?></h2>
+                                <h2 class="mb-0 text-success fw-bold">{{ $activos }}</h2>
                             </div>
                             <div class="d-flex align-items-center justify-content-center bg-success rounded-circle"
                                 style="width:48px;height:48px">
@@ -64,7 +64,7 @@
                         <div class="d-flex align-items-center justify-content-between card-body">
                             <div>
                                 <p class="mb-1 text-muted">Inactivos</p>
-                                <h2 class="mb-0 text-warning fw-bold"><?php echo $total - $activos; ?></h2>
+                                <h2 class="mb-0 text-warning fw-bold">{{ $total - $activos }}</h2>
                             </div>
                             <div class="d-flex align-items-center justify-content-center bg-warning rounded-circle"
                                 style="width:48px;height:48px">
@@ -75,7 +75,7 @@
                 </div>
             </div>
 
-            
+            {{-- Tabla --}}
             <div class="row">
                 <div class="col-12">
                     <div class="shadow-sm border-0 card">
@@ -94,47 +94,47 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <?php $__empty_1 = true; $__currentLoopData = $motorizados; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $m): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
-                                            <tr class="<?php echo $m->trashed() ? 'table-secondary' : ''; ?>">
-                                                <td class="text-muted small"><?php echo $m->id; ?></td>
-                                                <td class="fw-semibold"><?php echo $m->nombre; ?></td>
-                                                <td><span class="bg-primary badge"><?php echo $m->sede; ?></span></td>
-                                                <td class="small"><?php echo $m->telefono ?? '—'; ?></td>
-                                                <td class="text-muted small"><?php echo $m->email; ?></td>
+                                        @forelse($motorizados as $m)
+                                            <tr class="{{ $m->trashed() ? 'table-secondary' : '' }}">
+                                                <td class="text-muted small">{{ $m->id }}</td>
+                                                <td class="fw-semibold">{{ $m->nombre }}</td>
+                                                <td><span class="bg-primary badge">{{ $m->sede }}</span></td>
+                                                <td class="small">{{ $m->telefono ?? '—' }}</td>
+                                                <td class="text-muted small">{{ $m->email }}</td>
                                                 <td>
-                                                    <?php if($m->trashed()): ?>
+                                                    @if ($m->trashed())
                                                         <span class="bg-dark badge">Eliminado</span>
-                                                    <?php elseif($m->estado === 'activo'): ?>
+                                                    @elseif($m->estado === 'activo')
                                                         <span class="bg-success badge">Activo</span>
-                                                    <?php else: ?>
+                                                    @else
                                                         <span class="bg-warning text-dark badge">Inactivo</span>
-                                                    <?php endif; ?>
+                                                    @endif
                                                 </td>
                                                 <td class="text-center">
-                                                    <?php if (! ($m->trashed())): ?>
+                                                    @unless ($m->trashed())
                                                         <button class="btn-outline-warning btn btn-sm btn-editar"
-                                                            data-id="<?php echo $m->id; ?>" data-nombre="<?php echo $m->nombre; ?>"
-                                                            data-sede="<?php echo $m->sede; ?>"
-                                                            data-telefono="<?php echo $m->telefono ?? ''; ?>"
-                                                            data-email="<?php echo $m->email; ?>"
-                                                            data-estado="<?php echo $m->estado; ?>">
+                                                            data-id="{{ $m->id }}" data-nombre="{{ $m->nombre }}"
+                                                            data-sede="{{ $m->sede }}"
+                                                            data-telefono="{{ $m->telefono ?? '' }}"
+                                                            data-email="{{ $m->email }}"
+                                                            data-estado="{{ $m->estado }}">
                                                             <i class="mdi mdi-pencil"></i>
                                                         </button>
                                                         <button class="btn-outline-danger btn btn-sm btn-eliminar"
-                                                            data-id="<?php echo $m->id; ?>">
+                                                            data-id="{{ $m->id }}">
                                                             <i class="mdi mdi-delete"></i>
                                                         </button>
-                                                    <?php endif; ?>
+                                                    @endunless
                                                 </td>
                                             </tr>
-                                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
+                                        @empty
                                             <tr>
                                                 <td colspan="7" class="py-5 text-muted text-center">
                                                     <i class="d-block opacity-50 mb-2 mdi mdi-motorbike mdi-36px"></i>
                                                     No hay motorizados registrados
                                                 </td>
                                             </tr>
-                                        <?php endif; ?>
+                                        @endforelse
                                     </tbody>
                                 </table>
                             </div>
@@ -145,11 +145,11 @@
         </div>
     </div>
 
-    
+    {{-- Modal Crear --}}
     <div class="modal fade" id="modalCrear" tabindex="-1">
         <div class="modal-dialog">
             <form id="form-crear">
-                <?php echo csrf_field(); ?>
+                @csrf
                 <div class="modal-content">
                     <div class="bg-primary text-white modal-header">
                         <h5 class="modal-title"><i class="me-1 mdi mdi-motorbike"></i>Nuevo Motorizado</h5>
@@ -164,9 +164,9 @@
                             <label class="form-label fw-semibold">Sede <span class="text-danger">*</span></label>
                             <select name="sede" class="form-select" required>
                                 <option value="">Seleccionar</option>
-                                <?php $__currentLoopData = $sedes; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $s): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                    <option value="<?php echo $s; ?>"><?php echo $s; ?></option>
-                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                @foreach ($sedes as $s)
+                                    <option value="{{ $s }}">{{ $s }}</option>
+                                @endforeach
                             </select>
                         </div>
                         <div class="mb-3">
@@ -203,12 +203,12 @@
         </div>
     </div>
 
-    
+    {{-- Modal Editar --}}
     <div class="modal fade" id="modalEditar" tabindex="-1">
         <div class="modal-dialog">
             <form id="form-editar">
-                <?php echo csrf_field(); ?>
-                <?php echo method_field('PUT'); ?>
+                @csrf
+                @method('PUT')
                 <input type="hidden" id="edit-id">
                 <div class="modal-content">
                     <div class="bg-warning text-dark modal-header">
@@ -223,9 +223,9 @@
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Sede <span class="text-danger">*</span></label>
                             <select name="sede" id="edit-sede" class="form-select" required>
-                                <?php $__currentLoopData = $sedes; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $s): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                    <option value="<?php echo $s; ?>"><?php echo $s; ?></option>
-                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                @foreach ($sedes as $s)
+                                    <option value="{{ $s }}">{{ $s }}</option>
+                                @endforeach
                             </select>
                         </div>
                         <div class="mb-3">
@@ -259,9 +259,9 @@
             </form>
         </div>
     </div>
-<?php $__env->stopSection(); ?>
+@endsection
 
-<?php $__env->startPush('scripts'); ?>
+@push('scripts')
     <script>
         const csrf = document.querySelector('meta[name="csrf-token"]').content;
 
@@ -357,6 +357,4 @@
             });
         });
     </script>
-<?php $__env->stopPush(); ?>
-
-<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH /var/www/resources/views/tracking/motorizados.blade.php ENDPATH**/ ?>
+@endpush
