@@ -1,1 +1,3 @@
 *.sqlite*
+sql/
+aditional.sql
