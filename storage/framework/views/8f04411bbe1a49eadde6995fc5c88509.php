@@ -1,11 +1,9 @@
-@extends('layouts.app')
+<?php $__env->startSection('title', 'Órdenes x Usuario'); ?>
 
-@section('title', 'Órdenes x Usuario')
-
-@section('content')
+<?php $__env->startSection('content'); ?>
 <div class="content-wrapper">
 
-    {{-- ── Header ── --}}
+    
     <div class="row mb-3">
         <div class="col-12">
             <div class="card border-0 shadow-sm">
@@ -16,20 +14,20 @@
                         </h4>
                         <p class="mb-0 text-muted small">Análisis de órdenes registradas por usuario y hora — por día o por mes</p>
                     </div>
-                    <span class="badge bg-primary fs-6" id="badge-fecha-actual">{{ now()->format('d/m/Y') }}</span>
+                    <span class="badge bg-primary fs-6" id="badge-fecha-actual"><?php echo now()->format('d/m/Y'); ?></span>
                 </div>
             </div>
         </div>
     </div>
 
-    {{-- ── Filtros ── --}}
+    
     <div class="row mb-3">
         <div class="col-12">
             <div class="card border-0 shadow-sm">
                 <div class="card-body py-3">
                     <div class="row g-2 align-items-end">
 
-                        {{-- Toggle modo día / mes --}}
+                        
                         <div class="col-auto">
                             <label class="form-label small fw-bold mb-1">Modo</label>
                             <div class="btn-group btn-group-sm d-flex" role="group">
@@ -44,7 +42,7 @@
                             </div>
                         </div>
 
-                        {{-- Navegación de fecha (modo día) --}}
+                        
                         <div id="filtro-dia-wrap" class="col-md-4 col-sm-12">
                             <label class="form-label small fw-bold mb-1">Fecha</label>
                             <div class="input-group input-group-sm">
@@ -52,7 +50,7 @@
                                     <i class="mdi mdi-chevron-left"></i>
                                 </button>
                                 <input type="date" id="filtro-fecha" class="form-control text-center"
-                                    value="{{ date('Y-m-d') }}" max="{{ date('Y-m-d') }}">
+                                    value="<?php echo date('Y-m-d'); ?>" max="<?php echo date('Y-m-d'); ?>">
                                 <button class="btn btn-outline-secondary" id="btn-dia-siguiente" title="Día siguiente">
                                     <i class="mdi mdi-chevron-right"></i>
                                 </button>
@@ -60,7 +58,7 @@
                             </div>
                         </div>
 
-                        {{-- Navegación de mes (modo mes) --}}
+                        
                         <div id="filtro-mes-wrap" class="col-md-4 col-sm-12 d-none">
                             <label class="form-label small fw-bold mb-1">Mes</label>
                             <div class="input-group input-group-sm">
@@ -68,7 +66,7 @@
                                     <i class="mdi mdi-chevron-left"></i>
                                 </button>
                                 <input type="month" id="filtro-mes" class="form-control text-center"
-                                    value="{{ date('Y-m') }}" max="{{ date('Y-m') }}">
+                                    value="<?php echo date('Y-m'); ?>" max="<?php echo date('Y-m'); ?>">
                                 <button class="btn btn-outline-secondary" id="btn-mes-siguiente" title="Mes siguiente">
                                     <i class="mdi mdi-chevron-right"></i>
                                 </button>
@@ -76,22 +74,22 @@
                             </div>
                         </div>
 
-                        {{-- Sede (solo admin/superadmin) --}}
-                        @if(auth()->user()->isAdmin() || auth()->user()->isSuperAdmin())
+                        
+                        <?php if(auth()->user()->isAdmin() || auth()->user()->isSuperAdmin()): ?>
                         <div class="col-md-3 col-sm-6">
                             <label class="form-label small fw-bold mb-1">Sede</label>
                             <select id="filtro-sede" class="form-select form-select-sm">
                                 <option value="">Todas las sedes</option>
-                                @foreach($sedesDisponibles as $s)
-                                    <option value="{{ $s }}">{{ $s }}</option>
-                                @endforeach
+                                <?php $__currentLoopData = $sedesDisponibles; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $s): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <option value="<?php echo $s; ?>"><?php echo $s; ?></option>
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </select>
                         </div>
-                        @else
-                        <input type="hidden" id="filtro-sede" value="{{ auth()->user()->sede }}">
-                        @endif
+                        <?php else: ?>
+                        <input type="hidden" id="filtro-sede" value="<?php echo auth()->user()->sede; ?>">
+                        <?php endif; ?>
 
-                        {{-- Usuario --}}
+                        
                         <div class="col-md-2 col-sm-6">
                             <label class="form-label small fw-bold mb-1">Usuario</label>
                             <select id="filtro-usuario" class="form-select form-select-sm">
@@ -99,7 +97,7 @@
                             </select>
                         </div>
 
-                        {{-- Botón --}}
+                        
                         <div class="col-auto">
                             <button id="btn-filtrar" class="btn btn-primary btn-sm">
                                 <i class="mdi mdi-magnify me-1"></i>Filtrar
@@ -112,16 +110,16 @@
         </div>
     </div>
 
-    {{-- ── Loader ── --}}
+    
     <div id="section-loading" class="text-center py-5 d-none">
         <div class="spinner-border text-primary" role="status"></div>
         <p class="mt-2 text-muted small">Cargando datos...</p>
     </div>
 
-    {{-- ── Contenido ── --}}
+    
     <div id="section-content" class="d-none">
 
-        {{-- KPIs --}}
+        
         <div class="row mb-3 g-3">
             <div class="col-md-4 col-sm-6">
                 <div class="card border-0 shadow-sm h-100">
@@ -149,7 +147,7 @@
             </div>
         </div>
 
-        {{-- Gráfico: órdenes por hora y usuario --}}
+        
         <div class="row mb-3">
             <div class="col-12">
                 <div class="card border-0 shadow-sm">
@@ -160,7 +158,7 @@
                         <span class="text-muted small" id="lbl-fecha-grafico">—</span>
                     </div>
                     <div class="card-body p-2">
-                        {{-- scroll horizontal cuando hay muchos usuarios/horas --}}
+                        
                         <div style="overflow-x:auto; overflow-y:hidden;">
                             <div id="chart-hora-wrap" style="position:relative; height:320px; min-width:600px;">
                                 <canvas id="chart-por-hora"></canvas>
@@ -171,7 +169,7 @@
             </div>
         </div>
 
-        {{-- Gráfico: total de órdenes por hora (sin desglose de usuario) --}}
+        
         <div class="row mb-3">
             <div class="col-12">
                 <div class="card border-0 shadow-sm">
@@ -203,7 +201,7 @@
             </div>
         </div>
 
-        {{-- Gráfico: total por usuario dividido antes/después 5pm --}}
+        
         <div class="row mb-3">
             <div class="col-12">
                 <div class="card border-0 shadow-sm">
@@ -227,7 +225,7 @@
             </div>
         </div>
 
-        {{-- Gráfico: total por semana dividido antes/después 5pm --}}
+        
         <div class="row mb-3">
             <div class="col-12">
                 <div class="card border-0 shadow-sm">
@@ -251,7 +249,7 @@
             </div>
         </div>
 
-        {{-- Tabla resumen --}}
+        
         <div class="row mb-3 g-3">
             <div class="col-lg-12">
                 <div class="card border-0 shadow-sm h-100">
@@ -281,7 +279,7 @@
             </div>
         </div>
 
-        {{-- Tabla detallada con paginación --}}
+        
         <div class="row mb-3">
             <div class="col-12">
                 <div class="card border-0 shadow-sm">
@@ -311,7 +309,7 @@
                             </table>
                         </div>
                     </div>
-                    {{-- Paginación --}}
+                    
                     <div class="card-footer bg-white border-top d-flex align-items-center justify-content-between py-2 px-3" id="footer-paginacion">
                         <div class="d-flex align-items-center gap-2">
                             <button class="btn btn-sm btn-outline-secondary" id="btn-pag-primera" title="Primera página">
@@ -334,9 +332,9 @@
             </div>
         </div>
 
-    </div>{{-- /section-content --}}
+    </div>
 
-    {{-- Mensaje vacío --}}
+    
     <div id="section-empty" class="d-none">
         <div class="card border-0 shadow-sm">
             <div class="card-body text-center py-5">
@@ -347,16 +345,16 @@
     </div>
 
 </div>
-@endsection
+<?php $__env->stopSection(); ?>
 
-@push('scripts')
+<?php $__env->startPush('scripts'); ?>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
 (function () {
     'use strict';
 
-    const API_DATA     = @json(route('productividad.ordenes-x-usuario.data'));
-    const API_USUARIOS = @json(route('productividad.ordenes-x-usuario.usuarios'));
+    const API_DATA     = <?php echo json_encode(route('productividad.ordenes-x-usuario.data'), 15, 512) ?>;
+    const API_USUARIOS = <?php echo json_encode(route('productividad.ordenes-x-usuario.usuarios'), 15, 512) ?>;
 
     let chartHora         = null;
     let chartHoraTotal    = null;
@@ -915,4 +913,6 @@
 
 })();
 </script>
-@endpush
+<?php $__env->stopPush(); ?>
+
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH /var/www/resources/views/productividad/ordenes-x-usuario/index.blade.php ENDPATH**/ ?>
