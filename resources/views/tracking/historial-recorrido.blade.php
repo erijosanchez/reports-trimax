@@ -3,46 +3,65 @@
 
 @push('styles')
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
     <style>
         #map {
             height: calc(100vh - 320px);
-            min-height: 450px;
-            border-radius: 10px;
+            min-height: 500px;
+            border-radius: 14px;
+            overflow: hidden;
+        }
+
+        @media(max-width:767px) {
+            #map {
+                height: 380px;
+            }
         }
 
         .speed-badge {
             display: inline-block;
             width: 12px;
             height: 4px;
-            border-radius: 2px;
-            margin-right: 6px;
-            vertical-align: middle;
+            border-radius: 10px;
+            margin-right: 5px;
         }
 
-        @media(max-width:767px) {
-            #map {
-                height: 320px;
-            }
+        .gps-item {
+            transition: .2s ease;
+        }
+
+        .gps-item:hover {
+            background: #f7f9fc;
+        }
+
+        .leaflet-popup-content-wrapper {
+            border-radius: 14px;
         }
     </style>
 @endpush
 
 @section('content')
     <div class="content-wrapper">
+
         <div class="page-header">
             <div class="row">
                 <div class="grid-margin col-lg-12 stretch-card">
-                    <div class="card">
+                    <div class="shadow-sm border-0 card">
                         <div class="d-flex align-items-center justify-content-between px-4 py-3 card-body">
                             <div>
-                                <h4 class="mb-0 fw-bold">
-                                    <i class="me-2 text-primary mdi mdi-map-search"></i>Historial de Recorrido
-                                </h4>
-                                <p class="mb-0 text-muted small">Ruta GPS dibujada con velocidad por tramo</p>
+                                <h3 class="mb-1 fw-bold">
+                                    👋 Bienvenido,
+                                    {{ auth()->user()->name }}
+                                </h3>
+                                <p class="mb-0 text-muted">
+                                    Usa el sistema responsablemente
+                                </p>
                             </div>
-                            <a href="{{ route('tracking.historial') }}" class="btn-outline-secondary btn btn-sm">
-                                <i class="mdi-arrow-left me-1 mdi"></i>Volver
-                            </a>
+
+                            <div class="d-flex align-items-center gap-3">
+                                <input type="date" class="form-control" id="sel-fecha-top"
+                                    value="{{ request('fecha', today()->toDateString()) }}">
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -51,41 +70,55 @@
 
         <div class="page-content">
 
-            {{-- Filtros --}}
+            {{-- filtros --}}
             <div class="mb-4 row">
                 <div class="col-12">
                     <div class="shadow-sm border-0 card">
-                        <div class="py-3 card-body">
+                        <div class="card-body">
+
                             <div class="align-items-end row g-2">
+
                                 <div class="col-md-4">
-                                    <label class="mb-1 form-label small fw-bold">Motorizado</label>
-                                    <select id="sel-motorizado" class="form-select-sm form-select">
+                                    <select id="sel-motorizado" class="form-select">
                                         <option value="">Seleccionar motorizado</option>
+
                                         @foreach ($motorizados as $m)
-                                            <option value="{{ $m->id }}"
-                                                {{ request('motorizado_id') == $m->id ? 'selected' : '' }}>
+                                            <option value="{{ $m->id }}">
                                                 {{ $m->nombre }} — {{ $m->sede }}
                                             </option>
                                         @endforeach
                                     </select>
                                 </div>
+
                                 <div class="col-md-3">
-                                    <label class="mb-1 form-label small fw-bold">Fecha</label>
-                                    <input type="date" id="sel-fecha" class="form-control form-control-sm"
-                                        value="{{ request('fecha', today()->toDateString()) }}"
-                                        max="{{ today()->toDateString() }}">
+                                    <input type="date" id="sel-fecha" class="form-control"
+                                        value="{{ request('fecha', today()->toDateString()) }}">
                                 </div>
+
                                 <div class="col-md-2">
-                                    <button id="btn-buscar" class="w-100 btn btn-sm btn-primary">
-                                        <i class="me-1 mdi mdi-magnify"></i>Ver recorrido
+                                    <button id="btn-buscar" class="w-100 btn btn-primary">
+
+                                        <i class="me-1 mdi mdi-magnify"></i>
+                                        Ver recorrido
                                     </button>
                                 </div>
+
                                 <div class="d-flex flex-wrap align-items-center gap-2 col-md-3">
-                                    <span id="badge-puntos" class="bg-secondary badge">Sin datos</span>
-                                    <span id="badge-km" class="bg-primary badge d-none"></span>
-                                    <span id="badge-vel" class="bg-warning text-dark badge d-none"></span>
+
+                                    <span id="badge-puntos" class="bg-info badge">
+                                        0 puntos
+                                    </span>
+
+                                    <span id="badge-km" class="bg-primary badge d-none">
+                                    </span>
+
+                                    <span id="badge-vel" class="bg-warning text-dark badge d-none">
+                                    </span>
+
                                 </div>
+
                             </div>
+
                         </div>
                     </div>
                 </div>
@@ -93,113 +126,244 @@
 
             <div class="row">
 
-                {{-- Mapa --}}
+                {{-- mapa --}}
                 <div class="mb-4 col-lg-8">
+
                     <div class="shadow-sm border-0 card">
+
                         <div class="d-flex align-items-center justify-content-between card-header">
-                            <h6 class="mb-0 fw-bold" id="titulo-mapa">
+
+                            <h5 class="mb-0 fw-bold" id="titulo-mapa">
                                 <i class="me-1 text-primary mdi mdi-map-marker-path"></i>
-                                Selecciona un motorizado y fecha
-                            </h6>
+                                Selecciona un motorizado
+                            </h5>
+
                             <div class="d-flex gap-3 text-muted small">
-                                <span><span class="speed-badge" style="background:#3498db"></span>
-                                    < 30 km/h</span>
-                                        <span><span class="speed-badge" style="background:#f39c12"></span>30–60</span>
-                                        <span><span class="speed-badge" style="background:#e74c3c"></span>> 60</span>
+
+                                <span>
+                                    <span class="bg-primary speed-badge"></span>
+                                    < 30 km/h </span>
+
+                                        <span>
+                                            <span class="bg-warning speed-badge"></span>
+                                            30 - 60
+                                        </span>
+
+                                        <span>
+                                            <span class="bg-danger speed-badge"></span>
+                                            > 60
+                                        </span>
+
                             </div>
+
                         </div>
+
                         <div class="p-2 card-body">
-                            <div id="map">
-                                <div class="d-flex align-items-center justify-content-center h-100 text-muted"
-                                    style="min-height:450px">
-                                    <div class="text-center">
-                                        <i class="d-block opacity-50 mb-2 mdi mdi-map-search mdi-48px"></i>
-                                        <p>Selecciona un motorizado y fecha para ver el recorrido</p>
-                                    </div>
-                                </div>
-                            </div>
+                            <div id="map"></div>
                         </div>
+
                     </div>
+
                 </div>
 
-                {{-- Stats + puntos --}}
+                {{-- stats --}}
                 <div class="mb-4 col-lg-4">
 
-                    {{-- Stats --}}
                     <div class="shadow-sm mb-3 border-0 card">
+
                         <div class="card-header">
-                            <h6 class="mb-0 fw-bold">
-                                <i class="me-1 text-success mdi mdi-chart-line"></i>Estadísticas
-                            </h6>
+                            <h5 class="mb-0 fw-bold">
+                                📈 Estadísticas
+                            </h5>
                         </div>
-                        <div class="p-3 card-body" id="panel-stats">
-                            <p class="py-3 text-muted text-center small">Carga un recorrido para ver estadísticas</p>
+
+                        <div class="card-body" id="panel-stats">
+
+                            <div class="py-5 text-muted text-center">
+                                Sin datos
+                            </div>
+
                         </div>
+
                     </div>
 
-                    {{-- Lista puntos --}}
+                    {{-- puntos --}}
                     <div class="shadow-sm border-0 card">
+
                         <div class="d-flex align-items-center justify-content-between card-header">
-                            <h6 class="mb-0 fw-bold">
-                                <i class="me-1 mdi-clock-outline text-warning mdi"></i>Puntos GPS
-                            </h6>
-                            <span id="total-puntos" class="bg-primary badge">0</span>
+                            <h5 class="mb-0 fw-bold">
+                                📍 Puntos GPS
+                            </h5>
+
+                            <span id="total-puntos" class="bg-primary badge">
+                                0
+                            </span>
                         </div>
-                        <div class="p-2 card-body" style="max-height:280px;overflow-y:auto" id="lista-puntos">
-                            <p class="py-3 text-muted text-center small">Sin datos</p>
+
+                        <div class="p-2 card-body" style="max-height:420px;overflow-y:auto" id="lista-puntos">
+
+                            <div class="py-5 text-muted text-center">
+                                Sin datos
+                            </div>
+
                         </div>
+
                     </div>
 
                 </div>
+
             </div>
+
         </div>
     </div>
 @endsection
 
 @push('scripts')
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
     <script>
         let mapInstance = null;
         let capasRuta = [];
         let marcadores = [];
 
         function initMap() {
+
             if (mapInstance) return;
-            document.getElementById('map').innerHTML = '';
-            document.getElementById('map').style.minHeight = '450px';
-            mapInstance = L.map('map').setView([-12.046374, -77.042793], 6);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap',
-                maxZoom: 19,
-            }).addTo(mapInstance);
+
+            mapInstance = L.map('map', {
+                preferCanvas: true,
+                zoomControl: true,
+            }).setView([-12.046374, -77.042793], 12);
+
+            L.tileLayer(
+                'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; OpenStreetMap',
+                    maxZoom: 19
+                }
+            ).addTo(mapInstance);
         }
 
-        function limpiar() {
-            capasRuta.forEach(c => mapInstance.removeLayer(c));
-            marcadores.forEach(m => mapInstance.removeLayer(m));
+        function limpiarMapa() {
+
+            capasRuta.forEach(c => {
+                mapInstance.removeLayer(c);
+            });
+
+            marcadores.forEach(m => {
+                mapInstance.removeLayer(m);
+            });
+
             capasRuta = [];
             marcadores = [];
         }
 
         function colorVelocidad(vel) {
-            if (vel > 60) return '#e74c3c';
-            if (vel > 30) return '#f39c12';
-            return '#3498db';
+
+            if (vel > 60) return '#ef4444';
+            if (vel > 30) return '#f59e0b';
+
+            return '#3b82f6';
         }
 
-        function iconoMarcador(color, icono) {
+        function iconoMarcador(color, emoji) {
+
             return L.divIcon({
                 className: '',
-                html: `<div style="width:28px;height:28px;border-radius:50%;background:${color};
-                    color:#fff;display:flex;align-items:center;justify-content:center;
-                    font-size:14px;border:3px solid #fff;
-                    box-shadow:0 3px 10px rgba(0,0,0,.4)">${icono}</div>`,
-                iconSize: [28, 28],
-                iconAnchor: [14, 14],
+                html: `
+                    <div style="
+                        width:34px;
+                        height:34px;
+                        border-radius:50%;
+                        background:${color};
+                        border:4px solid #fff;
+                        display:flex;
+                        align-items:center;
+                        justify-content:center;
+                        box-shadow:0 5px 15px rgba(0,0,0,.25);
+                        font-size:16px;
+                    ">
+                        ${emoji}
+                    </div>
+                `,
+                iconSize: [34, 34],
+                iconAnchor: [17, 17]
             });
         }
 
+        async function snapToRoads(puntos) {
+
+            if (puntos.length < 2) {
+                return puntos.map(p => [p.lat, p.lng]);
+            }
+
+            // filtrar ruido GPS
+            const filtrados = puntos.filter(p =>
+                p.lat &&
+                p.lng &&
+                p.vel < 140
+            );
+
+            // reducir puntos
+            const reducidos = filtrados.filter((_, i) => i % 3 === 0);
+
+            const coordenadas = reducidos
+                .map(p => `${p.lng},${p.lat}`)
+                .join(';');
+
+            try {
+
+                const response = await fetch(
+                    `https://router.project-osrm.org/match/v1/driving/${coordenadas}?overview=full&geometries=geojson`
+                );
+
+                const data = await response.json();
+
+                if (
+                    data.code === 'Ok' &&
+                    data.matchings &&
+                    data.matchings.length
+                ) {
+
+                    return data.matchings[0]
+                        .geometry
+                        .coordinates
+                        .map(c => [c[1], c[0]]);
+                }
+
+            } catch (e) {
+
+                console.error('OSRM ERROR', e);
+            }
+
+            return filtrados.map(p => [p.lat, p.lng]);
+        }
+
+        function calcularKm(puntos) {
+
+            let total = 0;
+
+            for (let i = 1; i < puntos.length; i++) {
+
+                const R = 6371;
+
+                const dLat = (puntos[i].lat - puntos[i - 1].lat) * Math.PI / 180;
+
+                const dLng = (puntos[i].lng - puntos[i - 1].lng) * Math.PI / 180;
+
+                const a =
+                    Math.sin(dLat / 2) ** 2 +
+                    Math.cos(puntos[i - 1].lat * Math.PI / 180) *
+                    Math.cos(puntos[i].lat * Math.PI / 180) *
+                    Math.sin(dLng / 2) ** 2;
+
+                total += R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            }
+
+            return total;
+        }
+
         async function cargarRecorrido() {
+
             const motId = document.getElementById('sel-motorizado').value;
             const fecha = document.getElementById('sel-fecha').value;
 
@@ -209,234 +373,296 @@
             }
 
             const btn = document.getElementById('btn-buscar');
+
             btn.disabled = true;
-            btn.innerHTML = '<span class="me-1 spinner-border spinner-border-sm"></span>Cargando…';
+
+            btn.innerHTML = `
+                <span class="me-1 spinner-border spinner-border-sm"></span>
+                Cargando...
+            `;
 
             try {
-                initMap();
-                limpiar();
 
-                const res = await fetch(`/api/admin/recorrido?motorizado_id=${motId}&fecha=${fecha}`);
-                const data = await res.json();
+                initMap();
+
+                limpiarMapa();
+
+                const response = await fetch(
+                    `/api/admin/recorrido?motorizado_id=${motId}&fecha=${fecha}`
+                );
+
+                const data = await response.json();
+
                 const puntos = data.puntos || [];
 
-                // Badges
-                document.getElementById('badge-puntos').className = 'badge ' + (puntos.length ? 'bg-success' :
-                    'bg-warning text-dark');
-                document.getElementById('badge-puntos').textContent = puntos.length + ' puntos GPS';
-
-                document.getElementById('titulo-mapa').innerHTML =
-                    `<i class="me-1 text-primary mdi mdi-map-marker-path"></i>
-             ${data.motorizado?.nombre} — ${fecha}`;
-
                 if (!puntos.length) {
-                    renderStats([], null, null);
-                    renderListaPuntos([]);
+
+                    alert('No hay puntos GPS');
+
                     return;
                 }
 
-                const coords = puntos.map(p => [p.lat, p.lng]);
+                document.getElementById('titulo-mapa').innerHTML = `
+                    <i class="me-1 text-primary mdi mdi-map-marker-path"></i>
+                    ${data.motorizado?.nombre} — ${fecha}
+                `;
 
-                // Polyline coloreada por velocidad — 3 capas estilo app
-                for (let i = 1; i < coords.length; i++) {
-                    const vel = puntos[i].vel || 0;
+                // badges
+                document.getElementById('badge-puntos').textContent =
+                    `${puntos.length} puntos GPS`;
+
+                // snap real
+                btn.innerHTML = `
+                    <span class="me-1 spinner-border spinner-border-sm"></span>
+                    Ajustando ruta...
+                `;
+
+                const coordsSnapped = await snapToRoads(puntos);
+
+                // sombra
+                const sombra = L.polyline(coordsSnapped, {
+                    color: 'rgba(0,0,0,0.25)',
+                    weight: 12,
+                    opacity: .35,
+                    smoothFactor: 2,
+                    lineCap: 'round',
+                    lineJoin: 'round'
+                }).addTo(mapInstance);
+
+                // borde
+                const borde = L.polyline(coordsSnapped, {
+                    color: '#ffffff',
+                    weight: 8,
+                    opacity: 1,
+                    smoothFactor: 2,
+                    lineCap: 'round',
+                    lineJoin: 'round'
+                }).addTo(mapInstance);
+
+                capasRuta.push(sombra, borde);
+
+                // segmentos por velocidad
+                for (let i = 1; i < coordsSnapped.length; i++) {
+
+                    const idx = Math.min(
+                        Math.floor(i * puntos.length / coordsSnapped.length),
+                        puntos.length - 1
+                    );
+
+                    const vel = puntos[idx]?.vel || 0;
+
                     const color = colorVelocidad(vel);
 
-                    // Sombra
-                    const sombra = L.polyline([coords[i - 1], coords[i]], {
-                        color: 'rgba(0,0,0,0.15)',
-                        weight: 9,
-                        lineJoin: 'round',
-                        lineCap: 'round',
-                    }).addTo(mapInstance);
+                    const linea = L.polyline(
+                        [coordsSnapped[i - 1], coordsSnapped[i]], {
+                            color,
+                            weight: 5,
+                            opacity: .95,
+                            smoothFactor: 2,
+                            lineCap: 'round',
+                            lineJoin: 'round'
+                        }
+                    ).addTo(mapInstance);
 
-                    // Borde blanco
-                    const borde = L.polyline([coords[i - 1], coords[i]], {
-                        color: '#fff',
-                        weight: 6,
-                        lineJoin: 'round',
-                        lineCap: 'round',
-                    }).addTo(mapInstance);
-
-                    // Línea principal
-                    const linea = L.polyline([coords[i - 1], coords[i]], {
-                        color,
-                        weight: 4,
-                        opacity: 0.9,
-                        lineJoin: 'round',
-                        lineCap: 'round',
-                    }).addTo(mapInstance);
-
-                    linea.bindTooltip(`${vel} km/h`, {
-                        sticky: true
-                    });
-                    capasRuta.push(sombra, borde, linea);
+                    capasRuta.push(linea);
                 }
 
-                // Marcador inicio
-                const mInicio = L.marker(coords[0], {
-                        icon: iconoMarcador('#2ecc71', '🚩')
-                    })
-                    .bindPopup(`<strong>Inicio</strong><br>${puntos[0].ts
-                ? new Date(puntos[0].ts).toLocaleTimeString('es-PE') : ''}`)
-                    .addTo(mapInstance);
+                // inicio
+                const markerInicio = L.marker(
+                    coordsSnapped[0], {
+                        icon: iconoMarcador('#22c55e', '▶')
+                    }
+                ).addTo(mapInstance);
 
-                // Marcador fin
-                const mFin = L.marker(coords.at(-1), {
-                        icon: iconoMarcador('#e74c3c', '🏁')
-                    })
-                    .bindPopup(`<strong>Fin</strong><br>${puntos.at(-1).ts
-                ? new Date(puntos.at(-1).ts).toLocaleTimeString('es-PE') : ''}`)
-                    .addTo(mapInstance);
+                // fin
+                const markerFin = L.marker(
+                    coordsSnapped.at(-1), {
+                        icon: iconoMarcador('#ef4444', '🏁')
+                    }
+                ).addTo(mapInstance);
 
-                marcadores.push(mInicio, mFin);
-                mapInstance.fitBounds(coords, {
+                marcadores.push(markerInicio, markerFin);
+
+                mapInstance.fitBounds(coordsSnapped, {
                     padding: [50, 50]
                 });
 
-                renderStats(puntos, data.motorizado?.nombre, fecha);
+                renderStats(puntos);
+
                 renderListaPuntos(puntos);
 
-                // Badges
-                const km = (puntos.length > 1 ? calcularKm(puntos) : 0).toFixed(2);
-                const vels = puntos.map(p => p.vel).filter(v => v > 0);
-                const vMax = vels.length ? Math.max(...vels).toFixed(1) : 0;
-
-                document.getElementById('badge-km').className = 'badge bg-primary';
-                document.getElementById('badge-km').textContent = km + ' km';
-                document.getElementById('badge-vel').className = 'badge bg-warning text-dark';
-                document.getElementById('badge-vel').textContent = vMax + ' km/h máx';
-                document.getElementById('badge-km').classList.remove('d-none');
-                document.getElementById('badge-vel').classList.remove('d-none');
-
             } catch (e) {
+
                 console.error(e);
-                alert('Error al cargar el recorrido');
+
+                alert('Error cargando recorrido');
+
             } finally {
+
                 btn.disabled = false;
-                btn.innerHTML = '<i class="me-1 mdi mdi-magnify"></i>Ver recorrido';
+
+                btn.innerHTML = `
+                    <i class="me-1 mdi mdi-magnify"></i>
+                    Ver recorrido
+                `;
             }
         }
 
-        function calcularKm(puntos) {
-            let total = 0;
-            for (let i = 1; i < puntos.length; i++) {
-                const R = 6371;
-                const dLat = (puntos[i].lat - puntos[i - 1].lat) * Math.PI / 180;
-                const dLng = (puntos[i].lng - puntos[i - 1].lng) * Math.PI / 180;
-                const a = Math.sin(dLat / 2) ** 2 +
-                    Math.cos(puntos[i - 1].lat * Math.PI / 180) *
-                    Math.cos(puntos[i].lat * Math.PI / 180) *
-                    Math.sin(dLng / 2) ** 2;
-                total += R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-            }
-            return total;
-        }
-
-        function renderStats(puntos, nombre, fecha) {
-            if (!puntos.length) {
-                document.getElementById('panel-stats').innerHTML =
-                    '<p class="py-3 text-muted text-center small">Sin datos GPS para esta fecha</p>';
-                return;
-            }
+        function renderStats(puntos) {
 
             const km = calcularKm(puntos).toFixed(2);
-            const vels = puntos.map(p => p.vel).filter(v => v > 0);
-            const vMax = vels.length ? Math.max(...vels).toFixed(1) : 0;
-            const vProm = vels.length ?
-                (vels.reduce((a, b) => a + b, 0) / vels.length).toFixed(1) : 0;
-            const tIni = puntos[0].ts ?
+
+            const velocidades = puntos
+                .map(p => p.vel)
+                .filter(v => v > 0);
+
+            const velMax = velocidades.length ?
+                Math.max(...velocidades).toFixed(1) :
+                0;
+
+            const velProm = velocidades.length ?
+                (
+                    velocidades.reduce((a, b) => a + b, 0) /
+                    velocidades.length
+                ).toFixed(1) :
+                0;
+
+            const inicio = puntos[0]?.ts ?
                 new Date(puntos[0].ts).toLocaleTimeString('es-PE', {
-                    hour: '2-digit',
-                    minute: '2-digit'
-                }) : '--';
-            const tFin = puntos.at(-1).ts ?
-                new Date(puntos.at(-1).ts).toLocaleTimeString('es-PE', {
-                    hour: '2-digit',
-                    minute: '2-digit'
-                }) : '--';
-
-            document.getElementById('panel-stats').innerHTML = `
-    <div class="text-center row g-2">
-        <div class="col-6">
-            <div class="bg-light py-2 rounded">
-                <div class="text-primary fw-bold">${km} km</div>
-                <div class="text-muted" style="font-size:11px">Distancia</div>
-            </div>
-        </div>
-        <div class="col-6">
-            <div class="bg-light py-2 rounded">
-                <div class="text-info fw-bold">${puntos.length}</div>
-                <div class="text-muted" style="font-size:11px">Puntos GPS</div>
-            </div>
-        </div>
-        <div class="col-6">
-            <div class="bg-light py-2 rounded">
-                <div class="text-warning fw-bold">${vMax} km/h</div>
-                <div class="text-muted" style="font-size:11px">Vel. máxima</div>
-            </div>
-        </div>
-        <div class="col-6">
-            <div class="bg-light py-2 rounded">
-                <div class="text-success fw-bold">${vProm} km/h</div>
-                <div class="text-muted" style="font-size:11px">Vel. promedio</div>
-            </div>
-        </div>
-        <div class="col-6">
-            <div class="bg-light py-2 rounded">
-                <div class="text-secondary fw-bold">${tIni}</div>
-                <div class="text-muted" style="font-size:11px">Inicio</div>
-            </div>
-        </div>
-        <div class="col-6">
-            <div class="bg-light py-2 rounded">
-                <div class="text-danger fw-bold">${tFin}</div>
-                <div class="text-muted" style="font-size:11px">Fin</div>
-            </div>
-        </div>
-    </div>`;
-        }
-
-        function renderListaPuntos(puntos) {
-            document.getElementById('total-puntos').textContent = puntos.length;
-            if (!puntos.length) {
-                document.getElementById('lista-puntos').innerHTML =
-                    '<p class="py-3 text-muted text-center small">Sin datos</p>';
-                return;
-            }
-
-            const step = Math.max(1, Math.floor(puntos.length / 50));
-            const items = puntos.filter((_, i) => i % step === 0);
-
-            document.getElementById('lista-puntos').innerHTML = items.map(p => {
-                const ts = p.ts ? new Date(p.ts).toLocaleTimeString('es-PE', {
+                    timeZone: 'America/Lima',
                     hour: '2-digit',
                     minute: '2-digit',
                     second: '2-digit'
                 }) : '--';
-                const color = colorVelocidad(p.vel || 0);
-                return `
-        <div class="d-flex align-items-center justify-content-between py-1 border-bottom"
-            style="font-size:11px;cursor:pointer"
-            onclick="irAPunto(${p.lat},${p.lng})">
-            <span class="text-muted">${ts}</span>
-            <span class="badge" style="background:${color}">${p.vel} km/h</span>
-        </div>`;
-            }).join('');
+
+            const fin = puntos.at(-1)?.ts ?
+                new Date(puntos.at(-1).ts).toLocaleTimeString('es-PE', {
+                    timeZone: 'America/Lima',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                }) : '--';
+
+            document.getElementById('panel-stats').innerHTML = `
+
+                <div class="text-center row g-3">
+
+                    <div class="col-6">
+                        <div class="bg-light p-3 rounded">
+                            <h3 class="text-primary fw-bold">${km}</h3>
+                            <small class="text-muted">Kilómetros</small>
+                        </div>
+                    </div>
+
+                    <div class="col-6">
+                        <div class="bg-light p-3 rounded">
+                            <h3 class="text-info fw-bold">${puntos.length}</h3>
+                            <small class="text-muted">Puntos GPS</small>
+                        </div>
+                    </div>
+
+                    <div class="col-6">
+                        <div class="bg-light p-3 rounded">
+                            <h3 class="text-warning fw-bold">${velMax}</h3>
+                            <small class="text-muted">Vel máx</small>
+                        </div>
+                    </div>
+
+                    <div class="col-6">
+                        <div class="bg-light p-3 rounded">
+                            <h3 class="text-success fw-bold">${velProm}</h3>
+                            <small class="text-muted">Vel promedio</small>
+                        </div>
+                    </div>
+
+                    <div class="col-6">
+                        <div class="bg-light p-3 rounded">
+                            <h6 class="fw-bold">${inicio}</h6>
+                            <small class="text-muted">Inicio</small>
+                        </div>
+                    </div>
+
+                    <div class="col-6">
+                        <div class="bg-light p-3 rounded">
+                            <h6 class="fw-bold">${fin}</h6>
+                            <small class="text-muted">Fin</small>
+                        </div>
+                    </div>
+
+                </div>
+            `;
+
+            document.getElementById('badge-km').classList.remove('d-none');
+            document.getElementById('badge-vel').classList.remove('d-none');
+
+            document.getElementById('badge-km').textContent =
+                `${km} km`;
+
+            document.getElementById('badge-vel').textContent =
+                `${velMax} km/h máx`;
+        }
+
+        function renderListaPuntos(puntos) {
+
+            document.getElementById('total-puntos').textContent =
+                puntos.length;
+
+            const step = Math.max(
+                1,
+                Math.floor(puntos.length / 60)
+            );
+
+            const visibles = puntos.filter((_, i) => i % step === 0);
+
+            document.getElementById('lista-puntos').innerHTML =
+                visibles.map(p => {
+
+                    const color = colorVelocidad(p.vel || 0);
+
+                    const hora = p.ts ?
+                        new Date(p.ts).toLocaleTimeString('es-PE', {
+                            timeZone: 'America/Lima',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit'
+                        }) :
+                        '--';
+
+                    return `
+                        <div
+                            class="d-flex align-items-center justify-content-between p-2 border-bottom gps-item"
+                            style="cursor:pointer"
+                            onclick="irAPunto(${p.lat}, ${p.lng})"
+                        >
+
+                            <div>
+                                <div class="small fw-bold">
+                                    ${hora}
+                                </div>
+
+                                <div class="text-muted small">
+                                    ${p.lat}, ${p.lng}
+                                </div>
+                            </div>
+
+                            <span class="badge"
+                                style="background:${color}">
+                                ${p.vel} km/h
+                            </span>
+
+                        </div>
+                    `;
+                }).join('');
         }
 
         function irAPunto(lat, lng) {
-            if (mapInstance) mapInstance.setView([lat, lng], 17);
+
+            mapInstance.flyTo([lat, lng], 17, {
+                duration: 1.5
+            });
         }
 
-        document.getElementById('btn-buscar').addEventListener('click', cargarRecorrido);
-
-        // Autocargar si vienen params
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('motorizado_id')) {
-            document.getElementById('sel-motorizado').value = urlParams.get('motorizado_id');
-            if (urlParams.get('fecha')) document.getElementById('sel-fecha').value = urlParams.get('fecha');
-            cargarRecorrido();
-        }
+        document.getElementById('btn-buscar')
+            .addEventListener('click', cargarRecorrido);
     </script>
 @endpush
