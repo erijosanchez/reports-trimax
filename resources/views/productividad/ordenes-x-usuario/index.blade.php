@@ -742,7 +742,20 @@
 
         wrap.style.minWidth = Math.max(400, data.labels.length * 72 + 80) + 'px';
 
-        // Plugin para mostrar el total encima de cada barra apilada
+        // Polyfill roundRect por si el browser no lo soporta
+        if (!CanvasRenderingContext2D.prototype.roundRect) {
+            CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+                this.beginPath();
+                this.moveTo(x + r, y);
+                this.arcTo(x + w, y, x + w, y + h, r);
+                this.arcTo(x + w, y + h, x, y + h, r);
+                this.arcTo(x, y + h, x, y, r);
+                this.arcTo(x, y, x + w, y, r);
+                this.closePath();
+            };
+        }
+
+        // Plugin: total encima de cada barra apilada
         const totalEncima = {
             id: 'totalEncimaSemana',
             afterDatasetsDraw(chart) {
@@ -760,6 +773,55 @@
                     ctx.fillText(total.toLocaleString('es-PE'), xPos, yPos - 4);
                 });
                 ctx.restore();
+            }
+        };
+
+        // Plugin: porcentaje dentro de cada segmento de barra apilada
+        const pctDentroSemana = {
+            id: 'pctDentroSemana',
+            afterDatasetsDraw(chart) {
+                const { ctx } = chart;
+
+                chart.data.datasets.forEach((dataset, datasetIndex) => {
+                    const meta = chart.getDatasetMeta(datasetIndex);
+                    if (meta.hidden) return;
+
+                    meta.data.forEach((bar, index) => {
+                        const antes   = data.antes_5pm[index]  || 0;
+                        const despues = data.despues_5pm[index] || 0;
+                        const total   = antes + despues;
+                        if (!total) return;
+
+                        const valor = datasetIndex === 0 ? antes : despues;
+                        const pct   = Math.round((valor / total) * 100);
+                        if (pct < 5) return;
+
+                        const { x: bx, y: by, base, width } = bar.getProps(
+                            ['x', 'y', 'base', 'width'], true
+                        );
+                        const segHeight = base - by;
+                        if (segHeight < 20) return;
+
+                        const midY = by + segHeight / 2;
+
+                        const pillW = 42, pillH = 18, pillR = 9;
+                        const px = bx - pillW / 2;
+                        const py = midY - pillH / 2;
+
+                        ctx.save();
+                        ctx.beginPath();
+                        ctx.roundRect(px, py, pillW, pillH, pillR);
+                        ctx.fillStyle = 'rgba(15, 23, 42, 0.72)';
+                        ctx.fill();
+
+                        ctx.font         = 'bold 11px sans-serif';
+                        ctx.fillStyle    = '#ffffff';
+                        ctx.textAlign    = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText(pct + '%', bx, midY);
+                        ctx.restore();
+                    });
+                });
             }
         };
 
@@ -786,7 +848,7 @@
                     },
                 ]
             },
-            plugins: [totalEncima],
+            plugins: [totalEncima, pctDentroSemana],
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
