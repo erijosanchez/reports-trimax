@@ -451,8 +451,8 @@
                             <select id="filtro-sede" class="form-select-sm form-select" style="width:auto" onchange="aplicarFiltros()">
                                 <option value="">Todas las sedes</option>
                             </select>
-                            <input type="date" id="filtro-fecha" class="form-control form-control-sm" style="width:auto" onchange="aplicarFiltros()" title="Filtrar por fecha exacta">
-                            <button class="btn-outline-secondary btn btn-sm" onclick="document.getElementById('filtro-fecha').value='';aplicarFiltros()" title="Limpiar fecha">
+                            <input type="date" id="filtro-fecha" class="form-control form-control-sm" style="width:auto" onchange="cargarHistorial(this.value)" title="Filtrar por fecha exacta">
+                            <button class="btn-outline-secondary btn btn-sm" onclick="document.getElementById('filtro-fecha').value='';cargarHistorial()" title="Limpiar fecha">
                                 <i class="mdi mdi-close"></i>
                             </button>
                             <select id="sort-fecha" class="form-select-sm form-select" style="width:auto" onchange="aplicarFiltros()">
@@ -904,15 +904,21 @@ if (formEditar) {
 
 // ── Historial ─────────────────────────────────────────────────────
 let _historialData = [];
+let _sedesCache = [];
 
-async function cargarHistorial() {
+async function cargarHistorial(fecha = '') {
     const tbody = document.getElementById('historial-body');
     const loader = document.getElementById('historial-loader');
     loader.classList.remove('d-none');
     try {
-        const data = await apiFetch(ROUTES.historial);
+        let url = ROUTES.historial;
+        if (fecha) url += (url.includes('?') ? '&' : '?') + 'fecha=' + encodeURIComponent(fecha);
+        const data = await apiFetch(url);
         _historialData = data.data ?? [];
-        poblarFiltroSede(_historialData);
+        if (!fecha) {
+            _sedesCache = _historialData;
+            poblarFiltroSede(_historialData);
+        }
         aplicarFiltros();
     } catch (err) {
         tbody.innerHTML = `<tr><td colspan="8" class="py-3 text-danger text-center">${err.message}</td></tr>`;
@@ -933,8 +939,7 @@ function aplicarFiltros() {
     const fecha = document.getElementById('filtro-fecha')?.value ?? '';
     const dir   = document.getElementById('sort-fecha')?.value ?? 'desc';
     let rows = [..._historialData];
-    if (sede)  rows = rows.filter(r => r.sede === sede);
-    if (fecha) rows = rows.filter(r => r.semana_inicio_iso === fecha);
+    if (sede) rows = rows.filter(r => r.sede === sede);
     rows.sort((a, b) => {
         const da = a.semana_inicio_iso ?? '', db = b.semana_inicio_iso ?? '';
         return dir === 'asc' ? da.localeCompare(db) : db.localeCompare(da);

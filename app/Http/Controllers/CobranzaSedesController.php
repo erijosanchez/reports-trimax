@@ -324,7 +324,12 @@ class CobranzaSedesController extends Controller
             $query->where('sede', $request->sede);
         }
 
-        $registros = $query->limit(100)->get()->map(function ($r) use ($user) {
+        if ($request->filled('fecha')) {
+            $query->whereDate('semana_inicio', $request->fecha);
+        }
+
+        $limit = $request->filled('fecha') ? 500 : 100;
+        $registros = $query->limit($limit)->get()->map(function ($r) use ($user) {
             return [
                 'id'              => $r->id,
                 'sede'            => $r->sede,
