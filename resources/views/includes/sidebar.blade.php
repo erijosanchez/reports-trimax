@@ -271,6 +271,15 @@
                     </ul>
                 </div>
             </li>
+
+            {{-- Productivy --}}
+            <li class="nav-item">
+                <a class="nav-link {{ request()->routeIs('productividad.productivy.*') ? 'active' : '' }}"
+                    href="{{ route('productividad.productivy.index') }}">
+                    <i class="mdi mdi-trophy-variant menu-icon" style="color:#7367f0"></i>
+                    <span class="menu-title">Productivy</span>
+                </a>
+            </li>
         @endif
 
         {{-- ══════ MÓDULO TRACKING MOTORIZADOS ══════ --}}

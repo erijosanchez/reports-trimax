@@ -26,6 +26,7 @@ use App\Http\Controllers\CajaChicaSedesController;
 use App\Http\Controllers\ComentariosSedesController;
 use App\Http\Controllers\OrdenesXUsuarioController;
 use App\Http\Controllers\Tracking\TrackingAdminController;
+use App\Http\Controllers\ProductivyController;
 
 // ============================================================
 // RUTAS PARA LARAVEL 11
@@ -328,6 +329,11 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
             Route::get('/api/historial',              [ComentariosSedesController::class, 'historial'])->name('historial');
             Route::get('/api/kpi-data',               [ComentariosSedesController::class, 'kpiData'])->name('kpi-data');
         });
+    });
+
+    // Productividad Sedes — Productivy
+    Route::prefix('productividad/productivy')->name('productividad.productivy.')->group(function () {
+        Route::get('/', [ProductivyController::class, 'index'])->name('index');
     });
 
     // ── Tracking Admin ────────────────────────────────────────
