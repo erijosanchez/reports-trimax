@@ -33,7 +33,7 @@ class TriMaxAIAssistant
     protected $openrouterFallbackModel;
 
     // Máximo de mensajes de historial a enviar
-    protected int $maxHistoryMessages = 10;
+    protected int $maxHistoryMessages = 6;
 
     public function __construct(GoogleSheetsService $googleSheets)
     {
@@ -85,6 +85,7 @@ class TriMaxAIAssistant
         $toolsUsed = [];
         $maxIterations = 5;
         $iteration = 0;
+        $toolCallCache = []; // Evita llamar la misma función con los mismos args dos veces
 
         while ($iteration < $maxIterations) {
             $choice = $response['choices'][0] ?? null;
@@ -99,13 +100,19 @@ class TriMaxAIAssistant
                 foreach ($toolCalls as $toolCall) {
                     $functionName = $toolCall['function']['name'] ?? '';
                     $arguments = json_decode($toolCall['function']['arguments'] ?? '{}', true) ?? [];
+                    $cacheKey = $functionName . ':' . json_encode($arguments);
 
-                    Log::info("🔧 Tool call: {$functionName}", $arguments);
+                    if (isset($toolCallCache[$cacheKey])) {
+                        Log::info("♻️ Tool {$functionName} ya fue llamado con estos args, reutilizando resultado.");
+                        $result = $toolCallCache[$cacheKey];
+                    } else {
+                        Log::info("🔧 Tool call: {$functionName}", $arguments);
+                        $result = $this->executeFunction($functionName, $arguments, $user);
+                        $toolCallCache[$cacheKey] = $result;
+                        Log::info("📊 Resultado de {$functionName}: " . substr(json_encode($result), 0, 500));
+                    }
 
-                    $result = $this->executeFunction($functionName, $arguments, $user);
                     $toolsUsed[] = $functionName;
-
-                    Log::info("📊 Resultado de {$functionName}: " . substr(json_encode($result), 0, 500));
 
                     $messages[] = [
                         'role' => 'tool',
@@ -224,17 +231,18 @@ Si el usuario pide algo fuera de sus permisos, indícalo con cortesía.
 ══════════════════════════════
 REGLAS CRÍTICAS:
 ══════════════════════════════
-1. NUNCA inventes datos. SIEMPRE usa las funciones para consultar datos reales.
-2. Si el usuario no tiene permiso para algo, dilo: 'No tienes acceso a esa información con tu rol actual.'
-3. Si el usuario tiene sede asignada y NO tiene permiso de consolidado, las funciones ya filtran por su sede automáticamente.
+1. NUNCA inventes ni supongas datos del negocio. Para CUALQUIER pregunta sobre ventas, órdenes, acuerdos, descuentos, encuestas, personal o rankings, DEBES llamar la función correspondiente antes de responder. Si no llamas una función, estás inventando.
+2. Si el usuario no tiene permiso para algo, dilo: 'No tienes acceso a esa información con tu rol actual.' NUNCA muestres datos de otras sedes o roles superiores.
+3. Si el usuario tiene sede asignada y NO tiene permiso de consolidado, las funciones ya filtran por su sede automáticamente — no necesitas hacer nada extra.
 4. Responde en español, natural y conciso. Usa emojis moderadamente.
 5. Dirígete al usuario como {$userName}.
 6. Respuestas cortas: máximo 3-4 párrafos, salvo que pidan un reporte detallado.
-7. NUNCA digas que una sede no existe sin consultar primero.
+7. NUNCA digas que una sede no existe sin consultar primero con obtener_ventas_sede.
 8. Cuando muestres datos numéricos, formatea con separadores de miles y 2 decimales.
 9. Si piden comparaciones entre sedes/periodos, llama la función múltiples veces.
 10. Para ventas granulares (por marca, tipo cliente, zona) usa obtener_ventas_bd. Para cuotas y cumplimiento usa obtener_ventas_sede.
 11. Tienes historial de conversación de esta sesión — úsalo para mantener el contexto.
+12. Si una función retorna error, comunícalo al usuario y sugiere intentar de nuevo.
 
 MÓDULOS DEL SISTEMA:
 - Descuentos Especiales: Solicitudes con flujo de aprobación (Pendiente → Aprobado/Rechazado)
@@ -706,11 +714,22 @@ MÓDULOS DEL SISTEMA:
             $totalVentas = array_sum(array_column($sedes, 'venta_general'));
             $totalCuota = array_sum(array_column($sedes, 'cuota'));
 
+            // Compact format when returning all sedes to reduce AI payload size (~40% fewer tokens)
+            $isFullQuery = !$sedeFilter || in_array($sedeFilter, ['TODAS', 'ALL']);
+            $sedesOutput = $isFullQuery
+                ? array_map(fn($s) => [
+                    'sede'  => $s['sede'],
+                    'venta' => $s['venta_general'],
+                    'cuota' => $s['cuota'],
+                    'cumpl' => $s['cumplimiento_cuota'],
+                ], $sedes)
+                : $sedes;
+
             return [
                 'fuente' => 'Google Sheets',
                 'periodo' => "{$mes} {$anio}",
                 'cantidad_sedes' => count($sedes),
-                'sedes' => $sedes,
+                'sedes' => $sedesOutput,
                 'resumen' => [
                     'total_ventas' => round($totalVentas, 2),
                     'total_cuota' => round($totalCuota, 2),
@@ -822,28 +841,31 @@ MÓDULOS DEL SISTEMA:
      */
     protected function fnObtenerEstadisticasOrdenes(array $args, $user): array
     {
-        try {
-            $cacheKey = 'ai_stats_ordenes_v2';
+        // Si el usuario es de sede sin permiso consolidado, forzar su sede
+        if ($user->isSede() && !$user->puedeVerVentasConsolidadas() && $user->sede) {
+            $args['sede'] = $user->sede;
+        }
 
-            $stats = Cache::remember($cacheKey, 300, function () {
+        try {
+            $sedeFilter = $args['sede'] ?? null;
+            $cacheKey = 'ai_stats_ordenes_v2' . ($sedeFilter ? '_' . md5($sedeFilter) : '');
+
+            if ($sedeFilter) {
+                $rawData = $this->googleSheets->getSheetData('Historico');
+                $ordenes = $this->googleSheets->parseSheetData($rawData);
+                $ordenes = array_filter($ordenes, fn($orden) =>
+                    stripos($orden['descripcion_sede'] ?? '', $sedeFilter) !== false
+                );
+                $stats = $this->calcularEstadisticasOrdenes(array_values($ordenes));
+                $stats['sede_filtrada'] = $sedeFilter;
+                return $stats;
+            }
+
+            return Cache::remember($cacheKey, 300, function () {
                 $rawData = $this->googleSheets->getSheetData('Historico');
                 $ordenes = $this->googleSheets->parseSheetData($rawData);
                 return $this->calcularEstadisticasOrdenes($ordenes);
             });
-
-            if (!empty($args['sede'])) {
-                $rawData = $this->googleSheets->getSheetData('Historico');
-                $ordenes = $this->googleSheets->parseSheetData($rawData);
-
-                $ordenes = array_filter($ordenes, fn($orden) =>
-                    stripos($orden['descripcion_sede'] ?? '', $args['sede']) !== false
-                );
-
-                $stats = $this->calcularEstadisticasOrdenes(array_values($ordenes));
-                $stats['sede_filtrada'] = $args['sede'];
-            }
-
-            return $stats;
         } catch (\Exception $e) {
             Log::error('Error estadísticas órdenes: ' . $e->getMessage());
             return ['error' => 'No se pudieron obtener las estadísticas: ' . $e->getMessage()];
@@ -1019,7 +1041,17 @@ MÓDULOS DEL SISTEMA:
             $rawData = $this->googleSheets->getSheetData('Historico');
             $ordenes = $this->googleSheets->parseSheetData($rawData);
             $resultados = $this->googleSheets->searchInData($ordenes, $termino);
-            $resultados = array_slice(array_values($resultados), 0, 10);
+            $resultados = array_values($resultados);
+
+            // Si el usuario es de sede sin permiso consolidado, filtrar por su sede
+            if ($user->isSede() && !$user->puedeVerVentasConsolidadas() && $user->sede) {
+                $resultados = array_filter($resultados, fn($orden) =>
+                    stripos($orden['descripcion_sede'] ?? '', $user->sede) !== false
+                );
+                $resultados = array_values($resultados);
+            }
+
+            $resultados = array_slice($resultados, 0, 10);
 
             return [
                 'termino_buscado' => $termino,
@@ -1190,17 +1222,17 @@ MÓDULOS DEL SISTEMA:
             return ['error' => 'No hay datos de sedes disponibles'];
         }
 
-        // Ordenar según criterio
+        // Ordenar según criterio (compatible con formato compacto: venta/cumpl o completo: venta_general/cumplimiento_cuota)
         usort($sedes, function ($a, $b) use ($criterio, $orden) {
             $valorA = match ($criterio) {
-                'cumplimiento' => floatval(str_replace('%', '', $a['cumplimiento_cuota'])),
-                'ventas' => $a['venta_general'],
-                default => $a['venta_general'],
+                'cumplimiento' => floatval(str_replace('%', '', $a['cumpl'] ?? $a['cumplimiento_cuota'] ?? '0')),
+                'ventas' => $a['venta'] ?? $a['venta_general'] ?? 0,
+                default => $a['venta'] ?? $a['venta_general'] ?? 0,
             };
             $valorB = match ($criterio) {
-                'cumplimiento' => floatval(str_replace('%', '', $b['cumplimiento_cuota'])),
-                'ventas' => $b['venta_general'],
-                default => $b['venta_general'],
+                'cumplimiento' => floatval(str_replace('%', '', $b['cumpl'] ?? $b['cumplimiento_cuota'] ?? '0')),
+                'ventas' => $b['venta'] ?? $b['venta_general'] ?? 0,
+                default => $b['venta'] ?? $b['venta_general'] ?? 0,
             };
 
             return $orden === 'mejores'
@@ -1308,25 +1340,16 @@ MÓDULOS DEL SISTEMA:
 
     protected function callAIWithTools(array $messages, $user = null): ?array
     {
-        // 1. Groq modelo principal (con un reintento si el rate limit es corto)
+        // 1. Groq modelo principal
         [$result, $status] = $this->callGroqProvider($this->groqApiKey, $this->groqApiUrl, $this->groqModel, $messages, $user);
         if ($result !== null) {
             return $result;
         }
 
-        // Si fue 429 con retry corto (<= 5s), esperar y reintentar una vez
-        if ($status === 429) {
-            sleep(4);
-            [$result] = $this->callGroqProvider($this->groqApiKey, $this->groqApiUrl, $this->groqModel, $messages, $user);
-            if ($result !== null) {
-                return $result;
-            }
-        }
-
-        // 2. Groq modelo ligero — solo si el request cabe (413 = demasiado grande, saltar)
+        // 2. Groq modelo ligero — solo si el payload cabe (413 = demasiado grande, saltar directo a OpenRouter)
         if ($this->groqFallbackModel !== $this->groqModel && $status !== 413) {
-            Log::warning("AI: Groq [{$this->groqModel}] falló, reintentando con [{$this->groqFallbackModel}].");
-            [$result, $lightStatus] = $this->callGroqProvider($this->groqApiKey, $this->groqApiUrl, $this->groqFallbackModel, $messages, $user);
+            Log::warning("AI: Groq [{$this->groqModel}] falló ({$status}), usando [{$this->groqFallbackModel}].");
+            [$result] = $this->callGroqProvider($this->groqApiKey, $this->groqApiUrl, $this->groqFallbackModel, $messages, $user);
             if ($result !== null) {
                 return $result;
             }
@@ -1342,9 +1365,11 @@ MÓDULOS DEL SISTEMA:
 
             // 4. OpenRouter modelo secundario
             if ($this->openrouterFallbackModel !== $this->openrouterModel) {
-                Log::warning("AI: OpenRouter [{$this->openrouterModel}] falló, reintentando con [{$this->openrouterFallbackModel}].");
+                Log::warning("AI: OpenRouter [{$this->openrouterModel}] falló, usando [{$this->openrouterFallbackModel}].");
                 return $this->callOpenRouterProvider($this->openrouterFallbackModel, $messages, $user);
             }
+        } else {
+            Log::error("AI: OpenRouter no configurado (OPENROUTER_API_KEY no establecido) — todos los proveedores fallaron.");
         }
 
         return null;
