@@ -74,7 +74,8 @@ class ProductivyController extends Controller
             $depKpiSum  = 0;
             $depEnviados = 0;
             foreach ($diasSemana as $fecha) {
-                $registro  = $sedeDepositos->firstWhere('semana_inicio', $fecha);
+                // semana_inicio está casteado como 'date' (Carbon), no string → comparar con toDateString()
+                $registro  = $sedeDepositos->first(fn($r) => $r->semana_inicio->toDateString() === $fecha);
                 $esFuturo  = Carbon::parse($fecha)->isAfter($hoy);
 
                 if ($esFuturo) {
