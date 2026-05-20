@@ -425,23 +425,33 @@
                                                                                     value="1"
                                                                                     class="form-check-input"
                                                                                     {{ old('puede_ver_productividad_sedes', $user->puede_ver_productividad_sedes ?? false) ? 'checked' : '' }}>
-                                                                                Ver Productividad Sedes
+                                                                                Ver Envíos (Cobranza / Caja Chica / Comentarios)
                                                                                 <i class="input-helper"></i>
                                                                             </label>
-                                                                            <div><small class="text-muted">Cobranza, Caja
-                                                                                    Chica y Comentarios — solo vista, no
-                                                                                    puede enviar</small></div>
+                                                                            <div><small class="text-muted">Solo vista de los reportes enviados, no puede enviar</small></div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-md-6">
+                                                                        <div class="form-check form-check-success">
+                                                                            <label class="form-check-label">
+                                                                                <input type="checkbox"
+                                                                                    name="puede_ver_productivy_total"
+                                                                                    value="1"
+                                                                                    class="form-check-input"
+                                                                                    {{ old('puede_ver_productivy_total', $user->puede_ver_productivy_total ?? false) ? 'checked' : '' }}>
+                                                                                Ver Productivy (vista total)
+                                                                                <i class="input-helper"></i>
+                                                                            </label>
+                                                                            <div><small class="text-muted">KPI semanal de todas las sedes</small></div>
                                                                         </div>
                                                                     </div>
                                                                 </div>
                                                                 <div class="mt-3 mb-0 px-3 py-2 border alert alert-light">
                                                                     <small class="text-muted">
                                                                         <i class="me-1 mdi-information-outline mdi"></i>
-                                                                        Los roles <strong>Sede</strong>,
-                                                                        <strong>Admin</strong> y <strong>Super
-                                                                            Admin</strong> tienen acceso automáticamente.
-                                                                        Usa este permiso para otros roles que necesiten ver
-                                                                        los reportes.
+                                                                        <strong>Admin</strong> y <strong>Super Admin</strong> tienen acceso completo automáticamente.
+                                                                        El rol <strong>Sede</strong> accede a Productivy pero solo ve su propia sede.
+                                                                        Usa estos permisos para dar acceso a otros roles.
                                                                     </small>
                                                                 </div>
                                                             </div>
@@ -594,7 +604,8 @@
                                                 ])->filter(fn($label, $campo) => $user->$campo);
 
                                                 $permisosProductividad = collect([
-                                                    'puede_ver_productividad_sedes' => 'Productividad Sedes',
+                                                    'puede_ver_productividad_sedes' => 'Envíos Sedes',
+                                                    'puede_ver_productivy_total'    => 'Productivy Total',
                                                 ])->filter(fn($label, $campo) => $user->$campo);
 
                                                 $permisosTracking = collect([

@@ -758,6 +758,12 @@ ALTER TABLE users
     ADD COLUMN firma_imagen       MEDIUMTEXT NULL AFTER cargo,
     ADD COLUMN es_gerente_general TINYINT(1) NOT NULL DEFAULT 0 AFTER firma_imagen;
 
+/* Permiso para ver la vista total de Productivy (todas las sedes) */
+ALTER TABLE users
+ADD COLUMN puede_ver_productivy_total TINYINT(1) NOT NULL DEFAULT 0
+AFTER puede_ver_productividad_sedes;
+/* end permiso productivy total */
+
 /* Eliminar unique key de asignacion_bases
    El sheet tiene filas legítimas con mismo (orden, ojo, fecha, catalogo) pero
    distinto estado (N=nueva, R=reemplazada). La estrategia TRUNCATE+INSERT no

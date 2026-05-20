@@ -33,6 +33,7 @@ class User extends Authenticatable
         'puede_gestionar_requerimientos',
         'puede_ver_todos_requerimientos',
         'puede_ver_productividad_sedes',
+        'puede_ver_productivy_total',
         'puede_ver_motorizados',
         'is_active',
         'last_login_at',
@@ -65,6 +66,7 @@ class User extends Authenticatable
         'puede_gestionar_requerimientos' => 'boolean',
         'puede_ver_todos_requerimientos' => 'boolean',
         'puede_ver_productividad_sedes' => 'boolean',
+        'puede_ver_productivy_total' => 'boolean',
         'puede_ver_motorizados' => 'boolean',
         'es_gerente_general' => 'boolean',
         'last_login_at' => 'datetime',
@@ -245,6 +247,27 @@ class User extends Authenticatable
     {
         return $this->isSuperAdmin() || $this->isAdmin() || $this->isSede()
             || $this->puede_ver_productividad_sedes;
+    }
+
+    /**
+     * Ver Productivy (vista total de todas las sedes):
+     * - Admin y superadmin siempre.
+     * - Otros roles solo si tienen el permiso explícito.
+     */
+    public function puedeVerProductivyTotal(): bool
+    {
+        return $this->isSuperAdmin() || $this->isAdmin() || (bool) $this->puede_ver_productivy_total;
+    }
+
+    /**
+     * Puede acceder al módulo Productivy (tabla de KPIs semanal).
+     * - Admin/superadmin → vista total.
+     * - Sede → solo su propia sede.
+     * - Otros → necesitan puede_ver_productivy_total.
+     */
+    public function puedeAccederProducitvy(): bool
+    {
+        return $this->puedeVerProductivyTotal() || ($this->isSede() && $this->hasSede());
     }
 
     /**

@@ -222,11 +222,13 @@
         {{-- <<<<<<<<<<<< MODULO PRODUCTIVIDAD DE SEDES >>>>>>>>>>>>>>>>>>>>> --}}
         @php
             $tieneAccesoProductividad = $user->puedeVerCobranzaSedes();
+            $tieneAccesoProducitvy    = $user->puedeAccederProducitvy();
         @endphp
 
-        @if ($tieneAccesoProductividad)
+        @if ($tieneAccesoProductividad || $tieneAccesoProducitvy)
             <li class="nav-item nav-category">PRODUCTIVIDAD SEDES</li>
 
+            @if ($tieneAccesoProductividad)
             {{-- Órdenes x Usuario --}}
             <li class="nav-item">
                 <a class="nav-link {{ request()->routeIs('productividad.ordenes-x-usuario.*') ? 'active' : '' }}"
@@ -271,8 +273,10 @@
                     </ul>
                 </div>
             </li>
+            @endif
 
             {{-- Productivy --}}
+            @if ($tieneAccesoProducitvy)
             <li class="nav-item">
                 <a class="nav-link {{ request()->routeIs('productividad.productivy.*') ? 'active' : '' }}"
                     href="{{ route('productividad.productivy.index') }}">
@@ -280,6 +284,7 @@
                     <span class="menu-title">Productivy</span>
                 </a>
             </li>
+            @endif
         @endif
 
         {{-- ══════ MÓDULO TRACKING MOTORIZADOS ══════ --}}

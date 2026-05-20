@@ -13,6 +13,17 @@ class ProductivyController extends Controller
 {
     public function index(Request $request)
     {
+        $user = auth()->user();
+
+        if (!$user->puedeAccederProducitvy()) {
+            abort(403, 'No tienes acceso al módulo Productivy.');
+        }
+
+        // Si solo es sede (sin permiso de vista total), filtramos a su sede
+        $sedeFilter = (!$user->puedeVerProductivyTotal() && $user->isSede())
+            ? strtoupper($user->sede)
+            : null;
+
         $hoy    = Carbon::now('America/Lima');
         $semana = (int) $request->input('semana', $hoy->isoWeek());
         $anio   = (int) $request->input('anio',   $hoy->isoWeekYear());
@@ -36,12 +47,12 @@ class ProductivyController extends Controller
             $diasSemana[] = $weekStart->copy()->addDays($i)->toDateString();
         }
 
-        // Sedes activas
-        $sedes = User::whereNotNull('sede')
-            ->where('sede', '!=', '')
-            ->selectRaw('DISTINCT sede')
-            ->orderBy('sede')
-            ->pluck('sede');
+        // Sedes activas (filtradas por sede del usuario si corresponde)
+        $sedesQuery = User::whereNotNull('sede')->where('sede', '!=', '')->selectRaw('DISTINCT sede');
+        if ($sedeFilter) {
+            $sedesQuery->where('sede', $sedeFilter);
+        }
+        $sedes = $sedesQuery->orderBy('sede')->pluck('sede');
 
         // Depósitos enviados esta semana (detalle por día)
         $depositosBrutos = ReporteCobranza::whereBetween('semana_inicio', [
@@ -142,7 +153,7 @@ class ProductivyController extends Controller
             'prevSemana', 'prevAnio', 'nextSemana', 'nextAnio',
             'totalSedes', 'avgDepositos', 'avgCajaChica', 'avgComentarios',
             'ccEnviadas', 'comEnviados', 'avgProductivy',
-            'diasSemana'
+            'diasSemana', 'sedeFilter'
         ));
     }
 }
