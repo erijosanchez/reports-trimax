@@ -13,7 +13,7 @@
                             <h4 class="mb-0 fw-bold">
                                 <i class="me-2 text-primary mdi mdi-currency-usd"></i>Depósito de Efectivo
                             </h4>
-                            <p class="mb-0 text-muted small">Reporte diario — límite: 12:00 PM</p>
+                            <p class="mb-0 text-muted small">Reporte diario — límite: {{ $fechaLimiteLabel }}</p>
                         </div>
                         <div class="text-end">
                             <span class="bg-primary badge fs-6">
@@ -43,7 +43,7 @@
                         <div id="countdown-subtitle" class="text-muted small">Cargando...</div>
                         <hr class="my-3">
                         <div class="text-muted small">
-                            Límite: <strong>Diario 12:00 PM</strong>
+                            Límite: <strong>Diario {{ $fechaLimiteLabel }}</strong>
                         </div>
                     </div>
                 </div>
@@ -104,7 +104,7 @@
                         <h6 class="mb-3 text-muted text-uppercase fw-bold small">Escala KPI</h6>
                         <div class="d-flex flex-column gap-2">
                             <div class="d-flex align-items-center justify-content-between">
-                                <span class="small">Antes de las 12:00 PM</span>
+                                <span class="small">Antes de las {{ $fechaLimiteLabel }}</span>
                                 <span class="bg-success badge">100%</span>
                             </div>
                             <div class="d-flex align-items-center justify-content-between">
@@ -124,6 +124,11 @@
                                 <span class="bg-danger badge">0%</span>
                             </div>
                         </div>
+                        @if ($mostrarExcepcionNota)
+                        <div class="mt-2 text-muted" style="font-size:11px;">
+                            <i class="mdi mdi-information-outline me-1"></i>Huanuco, Ica y Ate: límite 11:00 AM
+                        </div>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -746,7 +751,7 @@ function actualizarCountdown() {
     } else {
         display.style.color = '#2563eb';
         icon.className      = 'mdi mdi-timer-outline text-primary';
-        sub.textContent     = 'Hoy, 12:00 PM hora Lima';
+        sub.textContent     = 'Hoy, {{ $fechaLimiteLabel }} hora Lima';
     }
 }
 

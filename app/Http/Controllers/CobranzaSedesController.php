@@ -40,8 +40,11 @@ class CobranzaSedesController extends Controller
         }
 
         $hoy = Carbon::now('America/Lima');
-        [, , , , $limiteCarbon] = ReporteCobranza::datosSemanActual();
-        $fechaLimiteTs = $limiteCarbon->timestamp * 1000;
+        $sedeLimite = ($user->isSede() && $user->sede) ? $user->sede : null;
+        [, , , , $limiteCarbon] = ReporteCobranza::datosSemanActual($sedeLimite);
+        $fechaLimiteTs    = $limiteCarbon->timestamp * 1000;
+        $fechaLimiteLabel = $limiteCarbon->format('h:i A');
+        $mostrarExcepcionNota = !$user->isSede() || !in_array($user->sede, ReporteCobranza::SEDES_LIMITE_11);
         $fechaDiaLabel = $hoy->format('d/m/Y');
 
         // Reporte del día actual (solo para sede)
@@ -97,7 +100,9 @@ class CobranzaSedesController extends Controller
             'historial',
             'kpiData',
             'fechaDiaLabel',
-            'fechaLimiteTs'
+            'fechaLimiteTs',
+            'fechaLimiteLabel',
+            'mostrarExcepcionNota',
         ));
     }
 

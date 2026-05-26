@@ -45,10 +45,14 @@ class ReporteCobranza extends Model
         return $this->belongsTo(User::class);
     }
 
+    // Sedes con límite excepcional de 11:00 AM (resto: 10:00 AM)
+    const SEDES_LIMITE_11 = ['HUANUCO', 'ICA', 'ATE'];
+
     // ── KPI ───────────────────────────────────────────────────────
 
     /**
-     * Calcula el KPI según la hora de entrega respecto al límite (sábado 12:00 PM).
+     * Calcula el KPI según la hora de entrega respecto al límite diario.
+     * Límite general: 10:00 AM. Excepciones (11:00 AM): Huanuco, Ica, Ate.
      *  En tiempo           → 100%
      *  Atraso ≤ 1 hora     → 90%
      *  Atraso ≤ 2 horas    → 80%
@@ -104,7 +108,7 @@ class ReporteCobranza extends Model
      */
     public static function obtenerOCrearSemanaActual(int $userId, string $sede): self
     {
-        [$semanaNumero, $anio, $inicio, $fin, $limite] = self::datosSemanActual();
+        [$semanaNumero, $anio, $inicio, $fin, $limite] = self::datosSemanActual($sede);
 
         return self::firstOrCreate(
             ['sede' => $sede, 'semana_inicio' => $inicio],
@@ -119,14 +123,25 @@ class ReporteCobranza extends Model
         );
     }
 
+    /** Devuelve [hora, minuto] del límite para la sede dada. */
+    public static function horaLimitePara(?string $sede): array
+    {
+        if ($sede && in_array($sede, self::SEDES_LIMITE_11)) {
+            return [11, 0];
+        }
+        return [10, 0];
+    }
+
     /**
      * Calcula los datos del día actual (Lima UTC-5).
-     * Retorna [dia_del_anio, anio, fecha_hoy, fecha_hoy, límite(hoy 12:00)].
+     * Retorna [dia_del_anio, anio, fecha_hoy, fecha_hoy, límite].
+     * Límite: 10:00 AM general; 11:00 AM para Huanuco, Ica, Ate.
      */
-    public static function datosSemanActual(): array
+    public static function datosSemanActual(?string $sede = null): array
     {
-        $hoy    = Carbon::now('America/Lima');
-        $limite = $hoy->copy()->setTime(12, 0, 0);
+        $hoy = Carbon::now('America/Lima');
+        [$hora, $min] = self::horaLimitePara($sede);
+        $limite = $hoy->copy()->setTime($hora, $min, 0);
 
         return [
             (int) $hoy->dayOfYear(),

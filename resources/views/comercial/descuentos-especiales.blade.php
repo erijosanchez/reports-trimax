@@ -1022,7 +1022,7 @@
                     html += `
                 <tr ${esDeshabilitado ? 'class="table-secondary"' : ''}>
                     <td class="text-center">${numFila}</td>
-                    <td><a href="#" onclick="verDetalles(${descuento.id}); return false;" title="Ver detalles" class="text-primary fw-bold text-decoration-none">${descuento.numero_descuento}</a></td>
+                    <td><a href="#" onclick="verDetalles(${descuento.id}); return false;" title="Ver detalles" class="text-primary text-decoration-none fw-bold">${descuento.numero_descuento}</a></td>
                     <td>
                         ${badgeAplicado}
                         ${canAplicar && descuento.aplicado === 'Pendiente' && !esDeshabilitado ? `
@@ -1521,7 +1521,7 @@
                         <h6 class="text-primary"><i class="mdi mdi-package"></i> Detalles del Descuento</h6>
                         <table class="table table-borderless table-sm">
                             <tr><th>Descuento:</th><td style="max-width: 250px; max-height: 80px; overflow-y: auto; overflow-x: hidden; word-wrap: break-word; white-space: normal;">${descuento.descuento_especial}</td></tr>
-                            <tr><th>Tipo:</th><td><span class="bg-secondary badge">${descuento.tipo}</span></td></tr>
+                            <tr><th>Tipo:</th><td><span class="bg-success badge">${descuento.tipo}</span></td></tr>
                             <tr><th>Marca:</th><td>${descuento.marca}</td></tr>
                             <tr><th>AR:</th><td>${descuento.ar || '-'}</td></tr>
                             <tr><th>Diseños:</th><td>${descuento.disenos || '-'}</td></tr>
