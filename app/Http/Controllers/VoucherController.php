@@ -30,7 +30,7 @@ class VoucherController extends Controller
             $vouchers = Voucher::with(['creator', 'aplicador', 'facturas'])->latest()->get();
         } else {
             $vouchers = Voucher::with(['creator', 'aplicador', 'facturas'])
-                ->where('created_by', $user->id)
+                ->where('sede', $user->sede)
                 ->latest()
                 ->get();
         }

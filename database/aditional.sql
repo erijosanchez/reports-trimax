@@ -837,4 +837,8 @@ CREATE TABLE voucher_facturas (
     FOREIGN KEY (voucher_id) REFERENCES vouchers(id) ON DELETE CASCADE
 );
 
+/* Agrega columna archivos a vouchers (si la tabla fue creada sin ella) */
+ALTER TABLE vouchers
+ADD COLUMN archivos JSON NULL AFTER status;
+
 /* ══ FIN MÓDULO VOUCHERS ══════════════════════════════════════ */
