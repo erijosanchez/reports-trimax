@@ -36,6 +36,7 @@ class RetiroOrdenController extends Controller
     public function store(Request $request)
     {
         $request->validate([
+            'sede'               => 'nullable|string|max:255',
             'numero_orden'       => 'nullable|string|max:255',
             'motivo'             => 'nullable|string|max:255',
             'nombre_responsable' => 'nullable|string|in:Said,Ruth,Juan L,Rafael',
@@ -45,7 +46,7 @@ class RetiroOrdenController extends Controller
         $user = auth()->user();
 
         $retiro = RetiroOrden::create([
-            'sede'               => $user->sede,
+            'sede'               => $request->sede ?: $user->sede,
             'numero_orden'       => $request->numero_orden,
             'motivo'             => $request->motivo,
             'nombre_responsable' => $request->nombre_responsable,
@@ -66,6 +67,7 @@ class RetiroOrdenController extends Controller
     public function update(Request $request, $id)
     {
         $request->validate([
+            'sede'               => 'nullable|string|max:255',
             'numero_orden'       => 'nullable|string|max:255',
             'motivo'             => 'nullable|string|max:255',
             'nombre_responsable' => 'nullable|string|in:Said,Ruth,Juan L,Rafael',
@@ -73,7 +75,7 @@ class RetiroOrdenController extends Controller
         ]);
 
         $retiro = RetiroOrden::findOrFail($id);
-        $retiro->update($request->only(['numero_orden', 'motivo', 'nombre_responsable', 'observacion']));
+        $retiro->update($request->only(['sede', 'numero_orden', 'motivo', 'nombre_responsable', 'observacion']));
 
         return response()->json([
             'success' => true,

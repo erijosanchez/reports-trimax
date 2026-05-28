@@ -292,7 +292,7 @@
             <li class="nav-item">
                 <a class="nav-link {{ request()->routeIs('retiros-ordenes.*') ? 'active' : '' }}"
                     href="{{ route('retiros-ordenes.index') }}">
-                    <i class="mdi mdi-clipboard-list-outline menu-icon"></i>
+                    <i class="mdi mdi-playlist-remove menu-icon"></i>
                     <span class="menu-title">Retiros de Órdenes</span>
                 </a>
             </li>

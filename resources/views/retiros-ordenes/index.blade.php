@@ -215,8 +215,10 @@
                     <div id="msg-crear"></div>
 
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Sede <span class="text-muted">(automático)</span></label>
-                        <input type="text" class="form-control" value="{{ $sedUsuario ?? '' }}" readonly disabled>
+                        <label class="form-label fw-semibold">Sede</label>
+                        <input type="text" class="form-control" name="sede" id="c-sede"
+                               value="{{ $sedUsuario ?? '' }}" placeholder="Sede">
+                        <div class="form-text">Se autocompleta con tu sede; puedes modificarla si es necesario.</div>
                     </div>
 
                     <div class="mb-3">
@@ -275,6 +277,13 @@
                 <input type="hidden" id="e-id">
                 <div class="modal-body">
                     <div id="msg-editar"></div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Sede</label>
+                        <input type="text" class="form-control" name="sede" id="e-sede"
+                               placeholder="Sede">
+                        <div class="form-text">Puedes modificar la sede si es necesario.</div>
+                    </div>
 
                     <div class="mb-3">
                         <label class="form-label fw-semibold"># Orden</label>
@@ -495,6 +504,7 @@
         const row = document.getElementById(`row-${id}`);
 
         document.getElementById('e-id').value              = id;
+        document.getElementById('e-sede').value            = row.querySelector('.sede-badge')?.textContent.trim().replace('—','') ?? '';
         document.getElementById('e-numero_orden').value    = row.querySelector('.td-orden')?.textContent.trim().replace('—','') ?? '';
         document.getElementById('e-motivo').value          = row.querySelector('.td-motivo')?.textContent.trim().replace('—','') ?? '';
         document.getElementById('e-observacion').value     = row.querySelector('.td-observacion')?.textContent.trim().replace('—','') ?? '';
@@ -526,6 +536,7 @@
 
             const row = document.getElementById(`row-${id}`);
             if (row) {
+                if (fd.sede) row.querySelector('.sede-badge').textContent = fd.sede;
                 row.querySelector('.td-orden').textContent       = fd.numero_orden || '—';
                 row.querySelector('.td-motivo').textContent      = fd.motivo || '—';
                 row.querySelector('.td-observacion').textContent = fd.observacion || '—';
