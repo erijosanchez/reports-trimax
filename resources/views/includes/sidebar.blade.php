@@ -221,11 +221,12 @@
 
         {{-- <<<<<<<<<<<< MODULO PRODUCTIVIDAD DE SEDES >>>>>>>>>>>>>>>>>>>>> --}}
         @php
-            $tieneAccesoProductividad = $user->puedeVerCobranzaSedes();
-            $tieneAccesoProducitvy    = $user->puedeAccederProducitvy();
+            $tieneAccesoProductividad  = $user->puedeVerCobranzaSedes();
+            $tieneAccesoProducitvy     = $user->puedeAccederProducitvy();
+            $tieneAccesoRetirosOrdenes = $user->puedeVerRetirosOrdenes();
         @endphp
 
-        @if ($tieneAccesoProductividad || $tieneAccesoProducitvy)
+        @if ($tieneAccesoProductividad || $tieneAccesoProducitvy || $tieneAccesoRetirosOrdenes)
             <li class="nav-item nav-category">PRODUCTIVIDAD SEDES</li>
 
             @if ($tieneAccesoProductividad)
@@ -282,6 +283,17 @@
                     href="{{ route('productividad.productivy.index') }}">
                     <i class="mdi mdi-trophy-variant menu-icon" style="color:#7367f0"></i>
                     <span class="menu-title">Productivy</span>
+                </a>
+            </li>
+            @endif
+
+            {{-- Retiros de Órdenes --}}
+            @if ($tieneAccesoRetirosOrdenes)
+            <li class="nav-item">
+                <a class="nav-link {{ request()->routeIs('retiros-ordenes.*') ? 'active' : '' }}"
+                    href="{{ route('retiros-ordenes.index') }}">
+                    <i class="mdi mdi-clipboard-list-outline menu-icon"></i>
+                    <span class="menu-title">Retiros de Órdenes</span>
                 </a>
             </li>
             @endif

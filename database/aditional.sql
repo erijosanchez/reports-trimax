@@ -770,3 +770,37 @@ AFTER puede_ver_productividad_sedes;
    necesita unique key. */
 ALTER TABLE asignacion_bases DROP INDEX uq_asignacion_bases;
 
+/* ══════════════════════════════════════════════════════════════
+   MÓDULO: RETIROS DE ÓRDENES
+   Tabla principal del módulo de retiros/órdenes de trabajo
+   ══════════════════════════════════════════════════════════════ */
+
+CREATE TABLE retiros_ordenes (
+    id                  BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    sede                VARCHAR(255) NOT NULL,
+    numero_orden        VARCHAR(255) NULL,
+    motivo              VARCHAR(255) NULL,
+    nombre_responsable  VARCHAR(255) NULL,
+    observacion         TEXT NULL,
+    status              ENUM('espera', 'atendido', 'rechazado') NOT NULL DEFAULT 'espera',
+    created_by          BIGINT UNSIGNED NOT NULL,
+    created_at          TIMESTAMP NULL DEFAULT NULL,
+    updated_at          TIMESTAMP NULL DEFAULT NULL,
+
+    INDEX idx_retiros_sede   (sede),
+    INDEX idx_retiros_status (status),
+    INDEX idx_retiros_created_by (created_by),
+
+    CONSTRAINT fk_retiros_ordenes_created_by
+        FOREIGN KEY (created_by)
+        REFERENCES users(id)
+        ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+/* Permiso para ver el módulo Retiros de Órdenes */
+ALTER TABLE users
+ADD COLUMN puede_ver_retiros_ordenes TINYINT(1) NOT NULL DEFAULT 0
+AFTER puede_ver_productivy_total;
+
+/* ══ FIN MÓDULO RETIROS DE ÓRDENES ══════════════════════════ */
+

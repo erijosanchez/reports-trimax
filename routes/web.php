@@ -27,6 +27,7 @@ use App\Http\Controllers\ComentariosSedesController;
 use App\Http\Controllers\OrdenesXUsuarioController;
 use App\Http\Controllers\Tracking\TrackingAdminController;
 use App\Http\Controllers\ProductivyController;
+use App\Http\Controllers\RetiroOrdenController;
 
 // ============================================================
 // RUTAS PARA LARAVEL 11
@@ -334,6 +335,17 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
     // Productividad Sedes — Productivy
     Route::prefix('productividad/productivy')->name('productividad.productivy.')->group(function () {
         Route::get('/', [ProductivyController::class, 'index'])->name('index');
+    });
+
+    // Retiros de Órdenes
+    Route::prefix('retiros-ordenes')->name('retiros-ordenes.')->group(function () {
+        Route::get('/',                           [RetiroOrdenController::class, 'index'])->name('index');
+        Route::post('/',                          [RetiroOrdenController::class, 'store'])->name('store');
+        Route::put('/{id}',                       [RetiroOrdenController::class, 'update'])->name('update');
+        Route::patch('/{id}/reasignar',           [RetiroOrdenController::class, 'reasignar'])->name('reasignar');
+        Route::patch('/{id}/atender',             [RetiroOrdenController::class, 'atender'])->name('atender');
+        Route::patch('/{id}/rechazar',            [RetiroOrdenController::class, 'rechazar'])->name('rechazar');
+        Route::delete('/{id}',                    [RetiroOrdenController::class, 'destroy'])->name('destroy');
     });
 
     // ── Tracking Admin ────────────────────────────────────────

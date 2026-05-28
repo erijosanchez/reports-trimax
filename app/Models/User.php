@@ -35,6 +35,7 @@ class User extends Authenticatable
         'puede_ver_productividad_sedes',
         'puede_ver_productivy_total',
         'puede_ver_motorizados',
+        'puede_ver_retiros_ordenes',
         'is_active',
         'last_login_at',
         'two_factor_secret',
@@ -68,6 +69,7 @@ class User extends Authenticatable
         'puede_ver_productividad_sedes' => 'boolean',
         'puede_ver_productivy_total' => 'boolean',
         'puede_ver_motorizados' => 'boolean',
+        'puede_ver_retiros_ordenes' => 'boolean',
         'es_gerente_general' => 'boolean',
         'last_login_at' => 'datetime',
         'two_factor_confirmed_at' => 'datetime',
@@ -282,6 +284,12 @@ class User extends Authenticatable
     public function puedeVerMotorizados(): bool
     {
         return $this->isSuperAdmin() || $this->isAdmin() || (bool) $this->puede_ver_motorizados;
+    }
+
+    public function puedeVerRetirosOrdenes(): bool
+    {
+        return $this->isSuperAdmin() || $this->isAdmin() || $this->isSede()
+            || (bool) $this->puede_ver_retiros_ordenes;
     }
 
     public function getRoleName()
