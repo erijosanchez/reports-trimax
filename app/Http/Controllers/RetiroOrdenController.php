@@ -3,11 +3,17 @@
 namespace App\Http\Controllers;
 
 use App\Models\RetiroOrden;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class RetiroOrdenController extends Controller
 {
-    private const RESPONSABLES = ['Said', 'Ruth', 'Juan L', 'Rafael'];
+    private const RESPONSABLES_IDS = [10, 23, 27, 67];
+
+    private function responsables()
+    {
+        return User::whereIn('id', self::RESPONSABLES_IDS)->orderBy('name')->get(['id', 'name']);
+    }
 
     public function index()
     {
@@ -17,7 +23,7 @@ class RetiroOrdenController extends Controller
             abort(403, 'No tienes permiso para acceder a Retiros de Órdenes.');
         }
 
-        if ($user->isSuperAdmin() || $user->isAdmin()) {
+        if ($user->isSuperAdmin() || $user->isAdmin() || in_array($user->id, self::RESPONSABLES_IDS)) {
             $registros = RetiroOrden::with('creator')->latest()->get();
         } else {
             $registros = RetiroOrden::with('creator')
@@ -26,21 +32,27 @@ class RetiroOrdenController extends Controller
                 ->get();
         }
 
+        $responsables   = $this->responsables();
+        $responsableMap = $responsables->pluck('id', 'name')->all(); // ['Said Falconi' => 10, ...]
+
         return view('retiros-ordenes.index', [
-            'registros'    => $registros,
-            'responsables' => self::RESPONSABLES,
-            'sedUsuario'   => $user->sede,
+            'registros'      => $registros,
+            'responsables'   => $responsables,
+            'responsableMap' => $responsableMap,
+            'sedUsuario'     => $user->sede,
+            'currentUserId'  => $user->id,
         ]);
     }
 
     public function store(Request $request)
     {
+        $names = $this->responsables()->pluck('name')->all();
+
         $request->validate([
             'sede'               => 'nullable|string|max:255',
             'numero_orden'       => 'nullable|string|max:255',
             'motivo'             => 'nullable|string|max:255',
-            'nombre_responsable' => 'nullable|string|in:Said,Ruth,Juan L,Rafael',
-            'observacion'        => 'nullable|string|max:2000',
+            'nombre_responsable' => 'nullable|string|in:' . implode(',', $names),
         ]);
 
         $user = auth()->user();
@@ -50,7 +62,7 @@ class RetiroOrdenController extends Controller
             'numero_orden'       => $request->numero_orden,
             'motivo'             => $request->motivo,
             'nombre_responsable' => $request->nombre_responsable,
-            'observacion'        => $request->observacion,
+            'observacion'        => null,
             'status'             => 'espera',
             'created_by'         => $user->id,
         ]);
@@ -66,11 +78,13 @@ class RetiroOrdenController extends Controller
 
     public function update(Request $request, $id)
     {
+        $names = $this->responsables()->pluck('name')->all();
+
         $request->validate([
             'sede'               => 'nullable|string|max:255',
             'numero_orden'       => 'nullable|string|max:255',
             'motivo'             => 'nullable|string|max:255',
-            'nombre_responsable' => 'nullable|string|in:Said,Ruth,Juan L,Rafael',
+            'nombre_responsable' => 'nullable|string|in:' . implode(',', $names),
             'observacion'        => 'nullable|string|max:2000',
         ]);
 
@@ -85,8 +99,10 @@ class RetiroOrdenController extends Controller
 
     public function reasignar(Request $request, $id)
     {
+        $names = $this->responsables()->pluck('name')->all();
+
         $request->validate([
-            'nombre_responsable' => 'required|string|in:Said,Ruth,Juan L,Rafael',
+            'nombre_responsable' => 'required|string|in:' . implode(',', $names),
         ]);
 
         $retiro = RetiroOrden::findOrFail($id);
@@ -100,7 +116,17 @@ class RetiroOrdenController extends Controller
 
     public function atender($id)
     {
+        $user   = auth()->user();
         $retiro = RetiroOrden::findOrFail($id);
+
+        $responsable = $this->responsables()->firstWhere('name', $retiro->nombre_responsable);
+        if (!$responsable || $responsable->id !== $user->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Solo el responsable asignado puede marcar esta orden como atendida.',
+            ], 403);
+        }
+
         $retiro->update(['status' => 'atendido']);
 
         return response()->json([
@@ -111,7 +137,17 @@ class RetiroOrdenController extends Controller
 
     public function rechazar($id)
     {
+        $user   = auth()->user();
         $retiro = RetiroOrden::findOrFail($id);
+
+        $responsable = $this->responsables()->firstWhere('name', $retiro->nombre_responsable);
+        if (!$responsable || $responsable->id !== $user->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Solo el responsable asignado puede marcar esta orden como rechazada.',
+            ], 403);
+        }
+
         $retiro->update(['status' => 'rechazado']);
 
         return response()->json([

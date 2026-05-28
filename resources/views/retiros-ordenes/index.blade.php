@@ -113,7 +113,13 @@
                             </thead>
                             <tbody id="tbodyRetiros">
                                 @forelse($registros as $r)
-                                <tr id="row-{{ $r->id }}" data-id="{{ $r->id }}">
+                                @php
+                                    $esResponsableAsignado = isset($responsableMap[$r->nombre_responsable])
+                                        && $responsableMap[$r->nombre_responsable] === $currentUserId;
+                                @endphp
+                                <tr id="row-{{ $r->id }}" data-id="{{ $r->id }}"
+                                    data-status="{{ $r->status }}"
+                                    data-responsable="{{ $r->nombre_responsable }}">
                                     <td class="ps-3 text-muted" style="font-size:.8rem">{{ $r->id }}</td>
                                     <td>
                                         <span class="sede-badge">{{ $r->sede ?? '—' }}</span>
@@ -150,7 +156,7 @@
                                     <td style="font-size:.78rem; white-space:nowrap">
                                         {{ $r->created_at?->format('d/m/Y H:i') }}
                                     </td>
-                                    <td class="text-center" style="min-width:150px">
+                                    <td class="text-center accion-cell" style="min-width:150px">
                                         <div class="d-flex align-items-center justify-content-center gap-1">
                                             <button class="btn btn-sm btn-outline-secondary btn-editar"
                                                     title="Editar"
@@ -161,7 +167,7 @@
                                                     data-observacion="{{ $r->observacion }}">
                                                 <i class="mdi mdi-pencil"></i>
                                             </button>
-                                            @if($r->status === 'espera')
+                                            @if($r->status === 'espera' && $esResponsableAsignado)
                                             <button class="btn btn-sm btn-success btn-atender"
                                                     title="Marcar Atendido"
                                                     data-id="{{ $r->id }}">
@@ -238,15 +244,9 @@
                         <select class="form-select" name="nombre_responsable" id="c-nombre_responsable">
                             <option value="">— Seleccionar —</option>
                             @foreach($responsables as $resp)
-                            <option value="{{ $resp }}">{{ $resp }}</option>
+                            <option value="{{ $resp->name }}">{{ $resp->name }}</option>
                             @endforeach
                         </select>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Observación</label>
-                        <textarea class="form-control" name="observacion" id="c-observacion"
-                                  rows="3" placeholder="Observación adicional..."></textarea>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -302,7 +302,7 @@
                         <select class="form-select" name="nombre_responsable" id="e-nombre_responsable">
                             <option value="">— Seleccionar —</option>
                             @foreach($responsables as $resp)
-                            <option value="{{ $resp }}">{{ $resp }}</option>
+                            <option value="{{ $resp->name }}">{{ $resp->name }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -342,7 +342,7 @@
                     <label class="form-label fw-semibold">Nuevo Responsable</label>
                     <select class="form-select" id="r-nombre_responsable" name="nombre_responsable">
                         @foreach($responsables as $resp)
-                        <option value="{{ $resp }}">{{ $resp }}</option>
+                        <option value="{{ $resp->name }}">{{ $resp->name }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -361,11 +361,13 @@
 @section('scripts')
 <script>
 (function () {
-    const CSRF    = document.querySelector('meta[name="csrf-token"]').content;
-    const ROUTES  = {
+    const CSRF             = document.querySelector('meta[name="csrf-token"]').content;
+    const ROUTES           = {
         store:    '{{ route("retiros-ordenes.store") }}',
         base:     '{{ url("retiros-ordenes") }}',
     };
+    const CURRENT_USER_ID  = {{ $currentUserId }};
+    const RESPONSABLE_MAP  = {!! json_encode($responsableMap) !!};
 
     /* ── helpers ──────────────────────────────────────────── */
     function toast(msg, type = 'success') {
@@ -416,12 +418,13 @@
         return map[status] ?? status;
     }
 
-    function accionesBtns(id, status) {
+    function accionesBtns(id, status, responsableNombre) {
+        const esResponsable = RESPONSABLE_MAP[responsableNombre] === CURRENT_USER_ID;
         let btns = `
             <button class="btn btn-sm btn-outline-secondary btn-editar" title="Editar" data-id="${id}">
                 <i class="mdi mdi-pencil"></i>
             </button>`;
-        if (status === 'espera') {
+        if (status === 'espera' && esResponsable) {
             btns += `
             <button class="btn btn-sm btn-success btn-atender" title="Marcar Atendido" data-id="${id}">
                 <i class="mdi mdi-check"></i> Atendido
@@ -467,6 +470,8 @@
             const tr = document.createElement('tr');
             tr.id = `row-${r.id}`;
             tr.dataset.id = r.id;
+            tr.dataset.status = r.status;
+            tr.dataset.responsable = r.nombre_responsable ?? '';
             tr.innerHTML = `
                 <td class="ps-3 text-muted" style="font-size:.8rem">${r.id}</td>
                 <td><span class="sede-badge">${r.sede ?? '—'}</span></td>
@@ -486,7 +491,7 @@
                 <td class="td-observacion" style="min-width:140px; max-width:200px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">${r.observacion ?? '—'}</td>
                 <td>${statusBadge(r.status)}</td>
                 <td style="font-size:.78rem; white-space:nowrap">${r.created_at ?? ''}</td>
-                <td class="text-center accion-cell">${accionesBtns(r.id, r.status)}</td>`;
+                <td class="text-center accion-cell">${accionesBtns(r.id, r.status, r.nombre_responsable ?? '')}</td>`;
             tbody.insertAdjacentElement('afterbegin', tr);
 
         } catch (err) {
@@ -543,6 +548,8 @@
                 row.querySelector('.td-responsable').textContent = fd.nombre_responsable || '—';
                 const rBtn = row.querySelector('.btn-reasignar');
                 if (rBtn) rBtn.dataset.actual = fd.nombre_responsable ?? '';
+                row.dataset.responsable = fd.nombre_responsable ?? '';
+                row.querySelector('.accion-cell').innerHTML = accionesBtns(id, row.dataset.status, row.dataset.responsable);
             }
 
         } catch (err) {
@@ -586,6 +593,8 @@
                 row.querySelector('.td-responsable').textContent = nuevo || '—';
                 const rBtn = row.querySelector('.btn-reasignar');
                 if (rBtn) rBtn.dataset.actual = nuevo;
+                row.dataset.responsable = nuevo;
+                row.querySelector('.accion-cell').innerHTML = accionesBtns(id, row.dataset.status, nuevo);
             }
 
         } catch (err) {
@@ -608,8 +617,9 @@
             toast('Orden marcada como atendida.');
 
             if (row) {
+                row.dataset.status = 'atendido';
                 row.querySelector('td:nth-child(7)').innerHTML = statusBadge('atendido');
-                row.querySelector('.accion-cell').innerHTML = accionesBtns(id, 'atendido');
+                row.querySelector('.accion-cell').innerHTML = accionesBtns(id, 'atendido', row.dataset.responsable ?? '');
             }
         } catch (err) {
             toast(err.message, 'error');
@@ -633,8 +643,9 @@
             toast('Orden marcada como rechazada.');
 
             if (row) {
+                row.dataset.status = 'rechazado';
                 row.querySelector('td:nth-child(7)').innerHTML = statusBadge('rechazado');
-                row.querySelector('.accion-cell').innerHTML = accionesBtns(id, 'rechazado');
+                row.querySelector('.accion-cell').innerHTML = accionesBtns(id, 'rechazado', row.dataset.responsable ?? '');
             }
         } catch (err) {
             toast(err.message, 'error');

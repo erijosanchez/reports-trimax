@@ -487,6 +487,37 @@
                                                                 </div>
                                                             </div>
 
+                                                            {{-- MÓDULO RETIROS DE ÓRDENES --}}
+                                                            <div class="mb-3 pt-3 border-top">
+                                                                <p class="mb-2 text-muted text-uppercase fw-bold small"
+                                                                    style="letter-spacing: 0.5px;">
+                                                                    <i class="me-1 mdi mdi-clipboard-list-outline"></i> Módulo Retiros de Órdenes
+                                                                </p>
+                                                                <div class="ms-1 row g-2">
+                                                                    <div class="col-md-6">
+                                                                        <div class="form-check form-check-success">
+                                                                            <label class="form-check-label">
+                                                                                <input type="checkbox"
+                                                                                    name="puede_ver_retiros_ordenes"
+                                                                                    value="1"
+                                                                                    class="form-check-input"
+                                                                                    {{ old('puede_ver_retiros_ordenes', $user->puede_ver_retiros_ordenes ?? false) ? 'checked' : '' }}>
+                                                                                Ver Retiros de Órdenes
+                                                                                <i class="input-helper"></i>
+                                                                            </label>
+                                                                            <div><small class="text-muted">Registrar, gestionar y atender retiros de órdenes por sede</small></div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="mt-3 mb-0 px-3 py-2 border alert alert-light">
+                                                                    <small class="text-muted">
+                                                                        <i class="me-1 mdi-information-outline mdi"></i>
+                                                                        Los roles <strong>Admin</strong> y <strong>Super Admin</strong> tienen acceso automáticamente.
+                                                                        El rol <strong>Sede</strong> también tiene acceso y solo ve las órdenes de su sede.
+                                                                    </small>
+                                                                </div>
+                                                            </div>
+
                                                         </div>
                                                     </div>
                                                 @endif
@@ -611,6 +642,10 @@
                                                 $permisosTracking = collect([
                                                     'puede_ver_motorizados' => 'Tracking Motorizados',
                                                 ])->filter(fn($label, $campo) => $user->$campo);
+
+                                                $permisosRetiros = collect([
+                                                    'puede_ver_retiros_ordenes' => 'Retiros de Órdenes',
+                                                ])->filter(fn($label, $campo) => $user->$campo);
                                             @endphp
 
                                             @if ($permisosComerciales->isNotEmpty())
@@ -666,6 +701,21 @@
                                                     <div class="d-flex flex-wrap gap-1">
                                                         @foreach ($permisosTracking as $label)
                                                             <span class="badge badge-info">
+                                                                <i class="me-1 mdi mdi-check"></i>{{ $label }}
+                                                            </span>
+                                                        @endforeach
+                                                    </div>
+                                                </div>
+                                            @endif
+
+                                            @if ($permisosRetiros->isNotEmpty())
+                                                <div class="mb-3 pb-3 border-bottom">
+                                                    <p class="mb-2 text-muted"><small><i
+                                                                class="me-1 mdi mdi-clipboard-list-outline"></i>Permisos
+                                                            Retiros</small></p>
+                                                    <div class="d-flex flex-wrap gap-1">
+                                                        @foreach ($permisosRetiros as $label)
+                                                            <span class="badge badge-dark">
                                                                 <i class="me-1 mdi mdi-check"></i>{{ $label }}
                                                             </span>
                                                         @endforeach
