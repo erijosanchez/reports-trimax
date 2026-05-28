@@ -28,6 +28,7 @@ use App\Http\Controllers\OrdenesXUsuarioController;
 use App\Http\Controllers\Tracking\TrackingAdminController;
 use App\Http\Controllers\ProductivyController;
 use App\Http\Controllers\RetiroOrdenController;
+use App\Http\Controllers\VoucherController;
 
 // ============================================================
 // RUTAS PARA LARAVEL 11
@@ -346,6 +347,18 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
         Route::patch('/{id}/atender',             [RetiroOrdenController::class, 'atender'])->name('atender');
         Route::patch('/{id}/rechazar',            [RetiroOrdenController::class, 'rechazar'])->name('rechazar');
         Route::delete('/{id}',                    [RetiroOrdenController::class, 'destroy'])->name('destroy');
+    });
+
+    // Vouchers
+    Route::prefix('vouchers')->name('vouchers.')->group(function () {
+        Route::get('/',                        [VoucherController::class, 'index'])->name('index');
+        Route::post('/',                       [VoucherController::class, 'store'])->name('store');
+        Route::post('/{id}/factura',           [VoucherController::class, 'addFactura'])->name('addFactura');
+        Route::delete('/factura/{id}',         [VoucherController::class, 'removeFactura'])->name('removeFactura');
+        Route::patch('/{id}/enviar',           [VoucherController::class, 'enviarAplicar'])->name('enviar');
+        Route::patch('/{id}/aplicar',          [VoucherController::class, 'aplicar'])->name('aplicar');
+        Route::delete('/{id}',                 [VoucherController::class, 'destroy'])->name('destroy');
+        Route::get('/{id}/facturas',           [VoucherController::class, 'getFacturas'])->name('facturas');
     });
 
     // ── Tracking Admin ────────────────────────────────────────

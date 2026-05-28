@@ -36,6 +36,7 @@ class User extends Authenticatable
         'puede_ver_productivy_total',
         'puede_ver_motorizados',
         'puede_ver_retiros_ordenes',
+        'puede_ver_vouchers',
         'is_active',
         'last_login_at',
         'two_factor_secret',
@@ -70,6 +71,7 @@ class User extends Authenticatable
         'puede_ver_productivy_total' => 'boolean',
         'puede_ver_motorizados' => 'boolean',
         'puede_ver_retiros_ordenes' => 'boolean',
+        'puede_ver_vouchers'        => 'boolean',
         'es_gerente_general' => 'boolean',
         'last_login_at' => 'datetime',
         'two_factor_confirmed_at' => 'datetime',
@@ -290,6 +292,13 @@ class User extends Authenticatable
     {
         return $this->isSuperAdmin() || $this->isAdmin() || $this->isSede()
             || (bool) $this->puede_ver_retiros_ordenes;
+    }
+
+    public function puedeVerVouchers(): bool
+    {
+        return $this->isSuperAdmin() || $this->isAdmin() || $this->isSede()
+            || $this->id === 62
+            || (bool) $this->puede_ver_vouchers;
     }
 
     public function getRoleName()

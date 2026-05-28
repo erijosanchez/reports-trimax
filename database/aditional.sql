@@ -804,3 +804,37 @@ AFTER puede_ver_productivy_total;
 
 /* ══ FIN MÓDULO RETIROS DE ÓRDENES ══════════════════════════ */
 
+
+/* ══ MÓDULO VOUCHERS ══════════════════════════════════════════ */
+
+ALTER TABLE users
+ADD COLUMN puede_ver_vouchers TINYINT(1) NOT NULL DEFAULT 0
+AFTER puede_ver_retiros_ordenes;
+
+CREATE TABLE vouchers (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    codigo VARCHAR(50) NOT NULL,
+    sede VARCHAR(100) NOT NULL,
+    status ENUM('pendiente','aplicado') DEFAULT 'pendiente',
+    archivos JSON NULL,
+    total DECIMAL(10,2) DEFAULT 0,
+    solicitado_at DATE NULL,
+    aplicado_at DATE NULL,
+    created_by BIGINT UNSIGNED NULL,
+    applied_by BIGINT UNSIGNED NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (created_by) REFERENCES users(id),
+    FOREIGN KEY (applied_by) REFERENCES users(id)
+);
+
+CREATE TABLE voucher_facturas (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    voucher_id INT NOT NULL,
+    factura VARCHAR(50) NOT NULL,
+    monto DECIMAL(10,2) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (voucher_id) REFERENCES vouchers(id) ON DELETE CASCADE
+);
+
+/* ══ FIN MÓDULO VOUCHERS ══════════════════════════════════════ */

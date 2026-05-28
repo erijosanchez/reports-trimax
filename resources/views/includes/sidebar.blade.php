@@ -224,9 +224,10 @@
             $tieneAccesoProductividad  = $user->puedeVerCobranzaSedes();
             $tieneAccesoProducitvy     = $user->puedeAccederProducitvy();
             $tieneAccesoRetirosOrdenes = $user->puedeVerRetirosOrdenes();
+            $tieneAccesoVouchers       = $user->puedeVerVouchers();
         @endphp
 
-        @if ($tieneAccesoProductividad || $tieneAccesoProducitvy || $tieneAccesoRetirosOrdenes)
+        @if ($tieneAccesoProductividad || $tieneAccesoProducitvy || $tieneAccesoRetirosOrdenes || $tieneAccesoVouchers)
             <li class="nav-item nav-category">PRODUCTIVIDAD SEDES</li>
 
             @if ($tieneAccesoProductividad)
@@ -294,6 +295,17 @@
                     href="{{ route('retiros-ordenes.index') }}">
                     <i class="mdi mdi-playlist-remove menu-icon"></i>
                     <span class="menu-title">Retiros de Órdenes</span>
+                </a>
+            </li>
+            @endif
+
+            {{-- Vouchers --}}
+            @if ($tieneAccesoVouchers)
+            <li class="nav-item">
+                <a class="nav-link {{ request()->routeIs('vouchers.*') ? 'active' : '' }}"
+                    href="{{ route('vouchers.index') }}">
+                    <i class="mdi mdi-receipt menu-icon"></i>
+                    <span class="menu-title">Vouchers</span>
                 </a>
             </li>
             @endif
