@@ -508,6 +508,20 @@
                                                                             <div><small class="text-muted">Registrar, gestionar y atender retiros de órdenes por sede</small></div>
                                                                         </div>
                                                                     </div>
+                                                                    <div class="col-md-6">
+                                                                        <div class="form-check form-check-success">
+                                                                            <label class="form-check-label">
+                                                                                <input type="checkbox"
+                                                                                    name="puede_ver_vouchers"
+                                                                                    value="1"
+                                                                                    class="form-check-input"
+                                                                                    {{ old('puede_ver_vouchers', $user->puede_ver_vouchers ?? false) ? 'checked' : '' }}>
+                                                                                Ver Vouchers
+                                                                                <i class="input-helper"></i>
+                                                                            </label>
+                                                                            <div><small class="text-muted">Registrar y gestionar vouchers de pago por sede</small></div>
+                                                                        </div>
+                                                                    </div>
                                                                 </div>
                                                                 <div class="mt-3 mb-0 px-3 py-2 border alert alert-light">
                                                                     <small class="text-muted">

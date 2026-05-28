@@ -74,6 +74,8 @@ class UserController extends Controller
             'puede_ver_motorizados',
             // Retiros de Órdenes
             'puede_ver_retiros_ordenes',
+            // Vouchers
+            'puede_ver_vouchers',
         ];
     }
 
