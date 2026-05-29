@@ -113,22 +113,71 @@ class GpsController extends Controller
 
         $motorizado = Motorizado::findOrFail($motorizadoId);
 
-        $puntos = GpsPosicion::where('motorizado_id', $motorizadoId)
+        $posiciones = GpsPosicion::where('motorizado_id', $motorizadoId)
             ->whereDate('capturado_en', $fecha)
             ->orderBy('capturado_en')
-            ->get()
-            ->map(fn($p) => [
+            ->get();
+
+        // Agrupar por ruta_id si existe; si no, detectar por brecha de tiempo
+        $grupos = $posiciones->groupBy('ruta_id');
+
+        $sinRuta = $grupos->count() === 1 && ($grupos->has(null) || $grupos->has(''));
+        if ($sinRuta) {
+            $grupos = $this->detectarRutasPorTiempo($posiciones);
+        }
+
+        $rutas = [];
+        $num   = 1;
+        foreach ($grupos as $grupoPuntos) {
+            $arr = $grupoPuntos->map(fn($p) => [
                 'lat' => $p->latitud,
                 'lng' => $p->longitud,
                 'vel' => round($p->velocidad, 1),
                 'ts'  => $p->capturado_en->setTimezone('America/Lima')->toIso8601String(),
-            ]);
+            ])->values()->all();
+
+            if (count($arr) >= 2) {           // ignorar grupos de 1 punto (ruido)
+                $rutas[] = [
+                    'numero' => $num++,
+                    'puntos' => $arr,
+                ];
+            }
+        }
 
         return response()->json([
-            'motorizado' => $motorizado->only('id', 'nombre', 'sede'),
-            'fecha'      => $fecha,
-            'puntos'     => $puntos,
+            'motorizado'   => $motorizado->only('id', 'nombre', 'sede'),
+            'fecha'        => $fecha,
+            'rutas'        => $rutas,
+            'total_puntos' => $posiciones->count(),
+            'total_rutas'  => count($rutas),
         ]);
+    }
+
+    private function detectarRutasPorTiempo($posiciones, int $brechaMinutos = 15): \Illuminate\Support\Collection
+    {
+        $grupos  = collect();
+        $actual  = collect();
+        $num     = 1;
+
+        foreach ($posiciones as $pos) {
+            if ($actual->isEmpty()) {
+                $actual->push($pos);
+                continue;
+            }
+            $gap = $pos->capturado_en->diffInMinutes($actual->last()->capturado_en);
+            if ($gap >= $brechaMinutos) {
+                $grupos->put($num++, $actual);
+                $actual = collect([$pos]);
+            } else {
+                $actual->push($pos);
+            }
+        }
+
+        if ($actual->isNotEmpty()) {
+            $grupos->put($num, $actual);
+        }
+
+        return $grupos;
     }
 
     // ── POST /api/gps/finalizar ───────────────────────────

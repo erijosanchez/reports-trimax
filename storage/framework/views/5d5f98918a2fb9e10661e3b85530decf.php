@@ -221,12 +221,16 @@
 
         
         <?php
-            $tieneAccesoProductividad = $user->puedeVerCobranzaSedes();
+            $tieneAccesoProductividad  = $user->puedeVerCobranzaSedes();
+            $tieneAccesoProducitvy     = $user->puedeAccederProducitvy();
+            $tieneAccesoRetirosOrdenes = $user->puedeVerRetirosOrdenes();
+            $tieneAccesoVouchers       = $user->puedeVerVouchers();
         ?>
 
-        <?php if($tieneAccesoProductividad): ?>
+        <?php if($tieneAccesoProductividad || $tieneAccesoProducitvy || $tieneAccesoRetirosOrdenes || $tieneAccesoVouchers): ?>
             <li class="nav-item nav-category">PRODUCTIVIDAD SEDES</li>
 
+            <?php if($tieneAccesoProductividad): ?>
             
             <li class="nav-item">
                 <a class="nav-link <?php echo request()->routeIs('productividad.ordenes-x-usuario.*') ? 'active' : ''; ?>"
@@ -271,8 +275,10 @@
                     </ul>
                 </div>
             </li>
+            <?php endif; ?>
 
             
+            <?php if($tieneAccesoProducitvy): ?>
             <li class="nav-item">
                 <a class="nav-link <?php echo request()->routeIs('productividad.productivy.*') ? 'active' : ''; ?>"
                     href="<?php echo route('productividad.productivy.index'); ?>">
@@ -280,6 +286,29 @@
                     <span class="menu-title">Productivy</span>
                 </a>
             </li>
+            <?php endif; ?>
+
+            
+            <?php if($tieneAccesoRetirosOrdenes): ?>
+            <li class="nav-item">
+                <a class="nav-link <?php echo request()->routeIs('retiros-ordenes.*') ? 'active' : ''; ?>"
+                    href="<?php echo route('retiros-ordenes.index'); ?>">
+                    <i class="mdi mdi-playlist-remove menu-icon"></i>
+                    <span class="menu-title">Retiros de Órdenes</span>
+                </a>
+            </li>
+            <?php endif; ?>
+
+            
+            <?php if($tieneAccesoVouchers): ?>
+            <li class="nav-item">
+                <a class="nav-link <?php echo request()->routeIs('vouchers.*') ? 'active' : ''; ?>"
+                    href="<?php echo route('vouchers.index'); ?>">
+                    <i class="mdi mdi-receipt menu-icon"></i>
+                    <span class="menu-title">Vouchers</span>
+                </a>
+            </li>
+            <?php endif; ?>
         <?php endif; ?>
 
         

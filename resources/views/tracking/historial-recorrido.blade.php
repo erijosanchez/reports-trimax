@@ -222,447 +222,286 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <script>
-        let mapInstance = null;
-        let capasRuta = [];
-        let marcadores = [];
+        let mapInstance  = null;
+        let capasRuta    = [];
+        let marcadores   = [];
+
+        // Color distinto por número de ruta
+        const COLORES_RUTA = ['#3b82f6','#a855f7','#f97316','#22c55e','#ec4899','#06b6d4','#eab308'];
+
+        function colorRuta(num) {
+            return COLORES_RUTA[(num - 1) % COLORES_RUTA.length];
+        }
 
         function initMap() {
-
             if (mapInstance) return;
-
-            mapInstance = L.map('map', {
-                preferCanvas: true,
-                zoomControl: true,
-            }).setView([-12.046374, -77.042793], 12);
-
-            L.tileLayer(
-                'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    attribution: '&copy; OpenStreetMap',
-                    maxZoom: 19
-                }
-            ).addTo(mapInstance);
+            mapInstance = L.map('map', { preferCanvas: true, zoomControl: true })
+                          .setView([-12.046374, -77.042793], 12);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap', maxZoom: 19
+            }).addTo(mapInstance);
         }
 
         function limpiarMapa() {
-
-            capasRuta.forEach(c => {
-                mapInstance.removeLayer(c);
-            });
-
-            marcadores.forEach(m => {
-                mapInstance.removeLayer(m);
-            });
-
-            capasRuta = [];
+            [...capasRuta, ...marcadores].forEach(c => mapInstance.removeLayer(c));
+            capasRuta  = [];
             marcadores = [];
         }
 
         function colorVelocidad(vel) {
-
             if (vel > 60) return '#ef4444';
             if (vel > 30) return '#f59e0b';
-
             return '#3b82f6';
         }
 
-        function iconoMarcador(color, emoji) {
-
+        function iconoMarcador(colorFondo, texto, colorBorde) {
             return L.divIcon({
                 className: '',
-                html: `
-                    <div style="
-                        width:34px;
-                        height:34px;
-                        border-radius:50%;
-                        background:${color};
-                        border:4px solid #fff;
-                        display:flex;
-                        align-items:center;
-                        justify-content:center;
-                        box-shadow:0 5px 15px rgba(0,0,0,.25);
-                        font-size:16px;
-                    ">
-                        ${emoji}
-                    </div>
-                `,
-                iconSize: [34, 34],
-                iconAnchor: [17, 17]
+                html: `<div style="
+                    min-width:36px; height:36px; border-radius:18px;
+                    background:${colorFondo}; border:3px solid ${colorBorde || '#fff'};
+                    display:flex; align-items:center; justify-content:center;
+                    box-shadow:0 4px 12px rgba(0,0,0,.30);
+                    font-size:13px; font-weight:700; color:#fff;
+                    padding:0 6px; white-space:nowrap;
+                ">${texto}</div>`,
+                iconSize:   [36, 36],
+                iconAnchor: [18, 18],
             });
         }
 
         async function snapToRoads(puntos) {
-
-            if (puntos.length < 2) {
-                return puntos.map(p => [p.lat, p.lng]);
-            }
-
-            // filtrar ruido GPS
-            const filtrados = puntos.filter(p =>
-                p.lat &&
-                p.lng &&
-                p.vel < 140
-            );
-
-            // reducir puntos
+            if (puntos.length < 2) return puntos.map(p => [p.lat, p.lng]);
+            const filtrados = puntos.filter(p => p.lat && p.lng && p.vel < 140);
             const reducidos = filtrados.filter((_, i) => i % 3 === 0);
-
-            const coordenadas = reducidos
-                .map(p => `${p.lng},${p.lat}`)
-                .join(';');
-
+            const coords    = reducidos.map(p => `${p.lng},${p.lat}`).join(';');
             try {
-
-                const response = await fetch(
-                    `https://router.project-osrm.org/match/v1/driving/${coordenadas}?overview=full&geometries=geojson`
-                );
-
-                const data = await response.json();
-
-                if (
-                    data.code === 'Ok' &&
-                    data.matchings &&
-                    data.matchings.length
-                ) {
-
-                    return data.matchings[0]
-                        .geometry
-                        .coordinates
-                        .map(c => [c[1], c[0]]);
+                const res  = await fetch(`https://router.project-osrm.org/match/v1/driving/${coords}?overview=full&geometries=geojson`);
+                const data = await res.json();
+                if (data.code === 'Ok' && data.matchings?.length) {
+                    return data.matchings[0].geometry.coordinates.map(c => [c[1], c[0]]);
                 }
-
-            } catch (e) {
-
-                console.error('OSRM ERROR', e);
-            }
-
+            } catch (e) { console.error('OSRM', e); }
             return filtrados.map(p => [p.lat, p.lng]);
         }
 
         function calcularKm(puntos) {
-
             let total = 0;
-
             for (let i = 1; i < puntos.length; i++) {
-
-                const R = 6371;
-
-                const dLat = (puntos[i].lat - puntos[i - 1].lat) * Math.PI / 180;
-
-                const dLng = (puntos[i].lng - puntos[i - 1].lng) * Math.PI / 180;
-
-                const a =
-                    Math.sin(dLat / 2) ** 2 +
-                    Math.cos(puntos[i - 1].lat * Math.PI / 180) *
-                    Math.cos(puntos[i].lat * Math.PI / 180) *
-                    Math.sin(dLng / 2) ** 2;
-
-                total += R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+                const R    = 6371;
+                const dLat = (puntos[i].lat - puntos[i-1].lat) * Math.PI / 180;
+                const dLng = (puntos[i].lng - puntos[i-1].lng) * Math.PI / 180;
+                const a    = Math.sin(dLat/2)**2 +
+                             Math.cos(puntos[i-1].lat*Math.PI/180) *
+                             Math.cos(puntos[i].lat*Math.PI/180) *
+                             Math.sin(dLng/2)**2;
+                total += R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
             }
-
             return total;
         }
 
-        async function cargarRecorrido() {
-
-            const motId = document.getElementById('sel-motorizado').value;
-            const fecha = document.getElementById('sel-fecha').value;
-
-            if (!motId) {
-                alert('Selecciona un motorizado');
-                return;
-            }
-
-            const btn = document.getElementById('btn-buscar');
-
-            btn.disabled = true;
-
-            btn.innerHTML = `
-                <span class="me-1 spinner-border spinner-border-sm"></span>
-                Cargando...
-            `;
-
-            try {
-
-                initMap();
-
-                limpiarMapa();
-
-                const response = await fetch(
-                    `/api/admin/recorrido?motorizado_id=${motId}&fecha=${fecha}`
-                );
-
-                const data = await response.json();
-
-                const puntos = data.puntos || [];
-
-                if (!puntos.length) {
-
-                    alert('No hay puntos GPS');
-
-                    return;
-                }
-
-                document.getElementById('titulo-mapa').innerHTML = `
-                    <i class="me-1 text-primary mdi mdi-map-marker-path"></i>
-                    ${data.motorizado?.nombre} — ${fecha}
-                `;
-
-                // badges
-                document.getElementById('badge-puntos').textContent =
-                    `${puntos.length} puntos GPS`;
-
-                // snap real
-                btn.innerHTML = `
-                    <span class="me-1 spinner-border spinner-border-sm"></span>
-                    Ajustando ruta...
-                `;
-
-                const coordsSnapped = await snapToRoads(puntos);
-
-                // sombra
-                const sombra = L.polyline(coordsSnapped, {
-                    color: 'rgba(0,0,0,0.25)',
-                    weight: 12,
-                    opacity: .35,
-                    smoothFactor: 2,
-                    lineCap: 'round',
-                    lineJoin: 'round'
-                }).addTo(mapInstance);
-
-                // borde
-                const borde = L.polyline(coordsSnapped, {
-                    color: '#ffffff',
-                    weight: 8,
-                    opacity: 1,
-                    smoothFactor: 2,
-                    lineCap: 'round',
-                    lineJoin: 'round'
-                }).addTo(mapInstance);
-
-                capasRuta.push(sombra, borde);
-
-                // segmentos por velocidad
-                for (let i = 1; i < coordsSnapped.length; i++) {
-
-                    const idx = Math.min(
-                        Math.floor(i * puntos.length / coordsSnapped.length),
-                        puntos.length - 1
-                    );
-
-                    const vel = puntos[idx]?.vel || 0;
-
-                    const color = colorVelocidad(vel);
-
-                    const linea = L.polyline(
-                        [coordsSnapped[i - 1], coordsSnapped[i]], {
-                            color,
-                            weight: 5,
-                            opacity: .95,
-                            smoothFactor: 2,
-                            lineCap: 'round',
-                            lineJoin: 'round'
-                        }
-                    ).addTo(mapInstance);
-
-                    capasRuta.push(linea);
-                }
-
-                // inicio
-                const markerInicio = L.marker(
-                    coordsSnapped[0], {
-                        icon: iconoMarcador('#22c55e', '▶')
-                    }
-                ).addTo(mapInstance);
-
-                // fin
-                const markerFin = L.marker(
-                    coordsSnapped.at(-1), {
-                        icon: iconoMarcador('#ef4444', '🏁')
-                    }
-                ).addTo(mapInstance);
-
-                marcadores.push(markerInicio, markerFin);
-
-                mapInstance.fitBounds(coordsSnapped, {
-                    padding: [50, 50]
-                });
-
-                renderStats(puntos);
-
-                renderListaPuntos(puntos);
-
-            } catch (e) {
-
-                console.error(e);
-
-                alert('Error cargando recorrido');
-
-            } finally {
-
-                btn.disabled = false;
-
-                btn.innerHTML = `
-                    <i class="me-1 mdi mdi-magnify"></i>
-                    Ver recorrido
-                `;
-            }
-        }
-
-        function renderStats(puntos) {
-
-            const km = calcularKm(puntos).toFixed(2);
-
-            const velocidades = puntos
-                .map(p => p.vel)
-                .filter(v => v > 0);
-
-            const velMax = velocidades.length ?
-                Math.max(...velocidades).toFixed(1) :
-                0;
-
-            const velProm = velocidades.length ?
-                (
-                    velocidades.reduce((a, b) => a + b, 0) /
-                    velocidades.length
-                ).toFixed(1) :
-                0;
-
-            const inicio = puntos[0]?.ts ?
-                new Date(puntos[0].ts).toLocaleTimeString('es-PE', {
-                    timeZone: 'America/Lima',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    second: '2-digit'
-                }) : '--';
-
-            const fin = puntos.at(-1)?.ts ?
-                new Date(puntos.at(-1).ts).toLocaleTimeString('es-PE', {
-                    timeZone: 'America/Lima',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    second: '2-digit'
-                }) : '--';
-
-            document.getElementById('panel-stats').innerHTML = `
-
-                <div class="text-center row g-3">
-
-                    <div class="col-6">
-                        <div class="bg-light p-3 rounded">
-                            <h3 class="text-primary fw-bold">${km}</h3>
-                            <small class="text-muted">Kilómetros</small>
-                        </div>
-                    </div>
-
-                    <div class="col-6">
-                        <div class="bg-light p-3 rounded">
-                            <h3 class="text-info fw-bold">${puntos.length}</h3>
-                            <small class="text-muted">Puntos GPS</small>
-                        </div>
-                    </div>
-
-                    <div class="col-6">
-                        <div class="bg-light p-3 rounded">
-                            <h3 class="text-warning fw-bold">${velMax}</h3>
-                            <small class="text-muted">Vel máx</small>
-                        </div>
-                    </div>
-
-                    <div class="col-6">
-                        <div class="bg-light p-3 rounded">
-                            <h3 class="text-success fw-bold">${velProm}</h3>
-                            <small class="text-muted">Vel promedio</small>
-                        </div>
-                    </div>
-
-                    <div class="col-6">
-                        <div class="bg-light p-3 rounded">
-                            <h6 class="fw-bold">${inicio}</h6>
-                            <small class="text-muted">Inicio</small>
-                        </div>
-                    </div>
-
-                    <div class="col-6">
-                        <div class="bg-light p-3 rounded">
-                            <h6 class="fw-bold">${fin}</h6>
-                            <small class="text-muted">Fin</small>
-                        </div>
-                    </div>
-
-                </div>
-            `;
-
-            document.getElementById('badge-km').classList.remove('d-none');
-            document.getElementById('badge-vel').classList.remove('d-none');
-
-            document.getElementById('badge-km').textContent =
-                `${km} km`;
-
-            document.getElementById('badge-vel').textContent =
-                `${velMax} km/h máx`;
-        }
-
-        function renderListaPuntos(puntos) {
-
-            document.getElementById('total-puntos').textContent =
-                puntos.length;
-
-            const step = Math.max(
-                1,
-                Math.floor(puntos.length / 60)
-            );
-
-            const visibles = puntos.filter((_, i) => i % step === 0);
-
-            document.getElementById('lista-puntos').innerHTML =
-                visibles.map(p => {
-
-                    const color = colorVelocidad(p.vel || 0);
-
-                    const hora = p.ts ?
-                        new Date(p.ts).toLocaleTimeString('es-PE', {
-                            timeZone: 'America/Lima',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            second: '2-digit'
-                        }) :
-                        '--';
-
-                    return `
-                        <div
-                            class="d-flex align-items-center justify-content-between p-2 border-bottom gps-item"
-                            style="cursor:pointer"
-                            onclick="irAPunto(${p.lat}, ${p.lng})"
-                        >
-
-                            <div>
-                                <div class="small fw-bold">
-                                    ${hora}
-                                </div>
-
-                                <div class="text-muted small">
-                                    ${p.lat}, ${p.lng}
-                                </div>
-                            </div>
-
-                            <span class="badge"
-                                style="background:${color}">
-                                ${p.vel} km/h
-                            </span>
-
-                        </div>
-                    `;
-                }).join('');
-        }
-
-        function irAPunto(lat, lng) {
-
-            mapInstance.flyTo([lat, lng], 17, {
-                duration: 1.5
+        function hora(ts) {
+            if (!ts) return '--';
+            return new Date(ts).toLocaleTimeString('es-PE', {
+                timeZone: 'America/Lima', hour: '2-digit', minute: '2-digit'
             });
         }
 
-        document.getElementById('btn-buscar')
-            .addEventListener('click', cargarRecorrido);
+        async function dibujarRuta(ruta) {
+            const { numero, puntos } = ruta;
+            const color = colorRuta(numero);
+
+            const coords = await snapToRoads(puntos);
+
+            // sombra
+            capasRuta.push(L.polyline(coords, {
+                color: 'rgba(0,0,0,0.22)', weight: 12, opacity: .3,
+                smoothFactor: 2, lineCap: 'round', lineJoin: 'round'
+            }).addTo(mapInstance));
+
+            // borde con color de la ruta
+            capasRuta.push(L.polyline(coords, {
+                color, weight: 8, opacity: 1,
+                smoothFactor: 2, lineCap: 'round', lineJoin: 'round'
+            }).addTo(mapInstance));
+
+            // segmentos por velocidad encima
+            for (let i = 1; i < coords.length; i++) {
+                const idx = Math.min(
+                    Math.floor(i * puntos.length / coords.length),
+                    puntos.length - 1
+                );
+                capasRuta.push(L.polyline([coords[i-1], coords[i]], {
+                    color:  colorVelocidad(puntos[idx]?.vel || 0),
+                    weight: 5, opacity: .92,
+                    smoothFactor: 2, lineCap: 'round', lineJoin: 'round'
+                }).addTo(mapInstance));
+            }
+
+            // marcador inicio
+            const mInicio = L.marker(coords[0], {
+                icon: iconoMarcador(color, `R${numero} ▶`, '#fff')
+            }).bindPopup(`<b>Ruta ${numero}</b><br>Inicio: ${hora(puntos[0]?.ts)}`)
+              .addTo(mapInstance);
+
+            // marcador fin
+            const mFin = L.marker(coords.at(-1), {
+                icon: iconoMarcador('#1e293b', `R${numero} 🏁`, color)
+            }).bindPopup(`<b>Ruta ${numero}</b><br>Fin: ${hora(puntos.at(-1)?.ts)}`)
+              .addTo(mapInstance);
+
+            marcadores.push(mInicio, mFin);
+
+            return coords;
+        }
+
+        async function cargarRecorrido() {
+            const motId = document.getElementById('sel-motorizado').value;
+            const fecha = document.getElementById('sel-fecha').value;
+            if (!motId) { alert('Selecciona un motorizado'); return; }
+
+            const btn = document.getElementById('btn-buscar');
+            btn.disabled = true;
+            btn.innerHTML = `<span class="me-1 spinner-border spinner-border-sm"></span> Cargando...`;
+
+            try {
+                initMap();
+                limpiarMapa();
+
+                const res  = await fetch(`/api/admin/recorrido?motorizado_id=${motId}&fecha=${fecha}`);
+                const data = await res.json();
+                const rutas = data.rutas || [];
+
+                if (!rutas.length) { alert('No hay puntos GPS para esta fecha'); return; }
+
+                document.getElementById('titulo-mapa').innerHTML =
+                    `<i class="me-1 text-primary mdi mdi-map-marker-path"></i>
+                     ${data.motorizado?.nombre} — ${fecha}
+                     <span class="ms-2 badge bg-primary">${rutas.length} ruta${rutas.length > 1 ? 's' : ''}</span>`;
+
+                document.getElementById('badge-puntos').textContent =
+                    `${data.total_puntos} puntos GPS`;
+
+                btn.innerHTML = `<span class="me-1 spinner-border spinner-border-sm"></span> Ajustando rutas...`;
+
+                const todosCoords = [];
+                for (const ruta of rutas) {
+                    const coords = await dibujarRuta(ruta);
+                    todosCoords.push(...coords);
+                }
+
+                if (todosCoords.length) {
+                    mapInstance.fitBounds(todosCoords, { padding: [50, 50] });
+                }
+
+                document.getElementById('badge-km').classList.remove('d-none');
+                document.getElementById('badge-vel').classList.remove('d-none');
+
+                renderStats(rutas);
+                renderListaPuntos(rutas);
+
+            } catch (e) {
+                console.error(e);
+                alert('Error cargando recorrido');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = `<i class="me-1 mdi mdi-magnify"></i> Ver recorrido`;
+            }
+        }
+
+        function renderStats(rutas) {
+            const todosPuntos = rutas.flatMap(r => r.puntos);
+            const kmTotal     = rutas.reduce((s, r) => s + calcularKm(r.puntos), 0).toFixed(2);
+            const vels        = todosPuntos.map(p => p.vel).filter(v => v > 0);
+            const velMax      = vels.length ? Math.max(...vels).toFixed(1) : 0;
+
+            document.getElementById('badge-km').textContent  = `${kmTotal} km`;
+            document.getElementById('badge-vel').textContent = `${velMax} km/h máx`;
+
+            const filasRutas = rutas.map(r => {
+                const color = colorRuta(r.numero);
+                const km    = calcularKm(r.puntos).toFixed(2);
+                const vr    = r.puntos.map(p => p.vel).filter(v => v > 0);
+                const vmax  = vr.length ? Math.max(...vr).toFixed(1) : 0;
+                return `
+                    <div class="d-flex align-items-center gap-2 p-2 rounded mb-2"
+                         style="background:rgba(0,0,0,.04);border-left:4px solid ${color}">
+                        <div style="width:10px;height:10px;border-radius:50%;background:${color};flex-shrink:0"></div>
+                        <div class="flex-grow-1">
+                            <div class="fw-bold small">Ruta ${r.numero}</div>
+                            <div class="text-muted small">${hora(r.puntos[0]?.ts)} → ${hora(r.puntos.at(-1)?.ts)}</div>
+                        </div>
+                        <div class="text-end">
+                            <div class="fw-bold small">${km} km</div>
+                            <div class="text-muted small">${r.puntos.length} pts</div>
+                        </div>
+                    </div>`;
+            }).join('');
+
+            document.getElementById('panel-stats').innerHTML = `
+                <div class="row g-2 text-center mb-3">
+                    <div class="col-6">
+                        <div class="bg-light p-2 rounded">
+                            <div class="fw-bold text-primary">${kmTotal}</div>
+                            <small class="text-muted">km totales</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="bg-light p-2 rounded">
+                            <div class="fw-bold text-warning">${velMax}</div>
+                            <small class="text-muted">vel máx</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="small fw-semibold text-muted mb-2 text-uppercase" style="letter-spacing:.06em">
+                    Detalle por ruta
+                </div>
+                ${filasRutas}`;
+        }
+
+        function renderListaPuntos(rutas) {
+            const total = rutas.reduce((s, r) => s + r.puntos.length, 0);
+            document.getElementById('total-puntos').textContent = total;
+
+            const html = rutas.map(ruta => {
+                const color = colorRuta(ruta.numero);
+                const step  = Math.max(1, Math.floor(ruta.puntos.length / 40));
+                const items = ruta.puntos
+                    .filter((_, i) => i % step === 0)
+                    .map(p => `
+                        <div class="d-flex align-items-center justify-content-between p-2 border-bottom gps-item"
+                             style="cursor:pointer" onclick="irAPunto(${p.lat},${p.lng})">
+                            <div>
+                                <div class="small fw-bold">${hora(p.ts)}</div>
+                                <div class="text-muted" style="font-size:11px">${p.lat.toFixed(5)}, ${p.lng.toFixed(5)}</div>
+                            </div>
+                            <span class="badge" style="background:${colorVelocidad(p.vel||0)}">${p.vel} km/h</span>
+                        </div>`).join('');
+
+                return `
+                    <div class="px-2 py-1 fw-bold small"
+                         style="background:${color}18;border-left:3px solid ${color};color:${color}">
+                        Ruta ${ruta.numero} &nbsp;·&nbsp;
+                        ${hora(ruta.puntos[0]?.ts)} → ${hora(ruta.puntos.at(-1)?.ts)}
+                    </div>
+                    ${items}`;
+            }).join('');
+
+            document.getElementById('lista-puntos').innerHTML = html;
+        }
+
+        function irAPunto(lat, lng) {
+            mapInstance.flyTo([lat, lng], 17, { duration: 1.5 });
+        }
+
+        document.getElementById('btn-buscar').addEventListener('click', cargarRecorrido);
+
+        // sincronizar los dos date pickers
+        document.getElementById('sel-fecha-top').addEventListener('change', function() {
+            document.getElementById('sel-fecha').value = this.value;
+        });
+        document.getElementById('sel-fecha').addEventListener('change', function() {
+            document.getElementById('sel-fecha-top').value = this.value;
+        });
     </script>
 @endpush
