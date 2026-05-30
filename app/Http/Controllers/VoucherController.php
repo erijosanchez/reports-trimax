@@ -86,10 +86,11 @@ class VoucherController extends Controller
 
         $voucher->load(['creator', 'aplicador', 'facturas']);
 
-        $silvia = User::find(self::SILVIA_ID);
-        if ($silvia) {
-            $silvia->notify(new VoucherEnviadoParaAplicar($voucher));
-        }
+        // TEMPORAL: notificación desactivada mientras el personal se adapta al sistema
+        // $silvia = User::find(self::SILVIA_ID);
+        // if ($silvia) {
+        //     $silvia->notify(new VoucherEnviadoParaAplicar($voucher));
+        // }
 
         return response()->json([
             'success' => true,
@@ -150,10 +151,11 @@ class VoucherController extends Controller
             return response()->json(['success' => false, 'message' => 'No autorizado.'], 403);
         }
 
-        $silvia = User::find(self::SILVIA_ID);
-        if ($silvia) {
-            $silvia->notify(new VoucherEnviadoParaAplicar($voucher));
-        }
+        // TEMPORAL: notificación desactivada mientras el personal se adapta al sistema
+        // $silvia = User::find(self::SILVIA_ID);
+        // if ($silvia) {
+        //     $silvia->notify(new VoucherEnviadoParaAplicar($voucher));
+        // }
 
         return response()->json([
             'success' => true,

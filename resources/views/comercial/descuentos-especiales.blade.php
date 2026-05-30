@@ -202,6 +202,11 @@
                                                             <i class="mdi mdi-refresh"></i> Recargar
                                                         </button>
                                                     </div>
+                                                    <div>
+                                                        <button class="btn btn-success" id="btnExportarExcel" onclick="exportarExcel()">
+                                                            <i class="mdi mdi-microsoft-excel"></i> Exportar Excel
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             </div>
 
@@ -766,6 +771,7 @@
 
 @section('scripts')
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
     <script>
         let descuentosData = [];
         let descuentosActuales = [];
@@ -2037,5 +2043,61 @@
         document.getElementById('tabEstadisticasDescLink')?.addEventListener('shown.bs.tab', function () {
             inicializarGraficosDesc();
         });
+
+        function exportarExcel() {
+            const datos = descuentosActuales;
+
+            if (!datos || datos.length === 0) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Sin datos',
+                    text: 'No hay descuentos para exportar con los filtros actuales.',
+                    confirmButtonColor: '#3B82F6'
+                });
+                return;
+            }
+
+            const filas = datos.map((d, i) => ({
+                '#': i + 1,
+                'N° Descuento': d.numero_descuento || '',
+                'Aplicado': d.aplicado || '',
+                'Aprobado': d.aprobado || '',
+                'N° Factura': d.numero_factura || '',
+                'N° Orden': d.numero_orden || '',
+                'Sede': d.sede || '',
+                'RUC': d.ruc || '',
+                'Razón Social': d.razon_social || '',
+                'Consultor': d.consultor || '',
+                'Ciudad': d.ciudad || '',
+                'Descuento Especial': d.descuento_especial || '',
+                'Tipo': d.tipo || '',
+                'Marca': d.marca || '',
+                'AR': d.ar || '',
+                'Diseños': d.disenos || '',
+                'Material': d.material || '',
+                'Comentarios': d.comentarios || '',
+                'Fecha Registro': formatearFecha(d.created_at),
+                'Creado Por': d.creador ? d.creador.name : '',
+                'Habilitado': d.habilitado ? 'Sí' : 'No',
+            }));
+
+            const ws = XLSX.utils.json_to_sheet(filas);
+
+            const anchos = [
+                { wch: 4 }, { wch: 18 }, { wch: 12 }, { wch: 12 }, { wch: 18 }, { wch: 18 },
+                { wch: 16 }, { wch: 13 }, { wch: 35 }, { wch: 22 }, { wch: 16 },
+                { wch: 50 }, { wch: 20 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 },
+                { wch: 40 }, { wch: 16 }, { wch: 24 }, { wch: 10 }
+            ];
+            ws['!cols'] = anchos;
+
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Descuentos Especiales');
+
+            const fecha = new Date();
+            const nombreArchivo = `Descuentos_Especiales_${fecha.getFullYear()}${String(fecha.getMonth()+1).padStart(2,'0')}${String(fecha.getDate()).padStart(2,'0')}.xlsx`;
+
+            XLSX.writeFile(wb, nombreArchivo);
+        }
     </script>
 @endsection
