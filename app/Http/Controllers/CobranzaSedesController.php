@@ -49,8 +49,36 @@ class CobranzaSedesController extends Controller
 
         // Reporte del día actual (solo para sede)
         $reporteSemanaActual = null;
+        $reporteHoyEstado    = null;
+        $plazoPasadoHoy      = false;
+
         if ($user->isSede() && $user->sede) {
+            $fechaHoy = $hoy->toDateString();
+            [$horaLimite, $minLimite] = ReporteCobranza::horaLimitePara($user->sede);
+            $limiteDeHoy    = $hoy->copy()->setTime($horaLimite, $minLimite, 0);
+            $plazoPasadoHoy = $hoy->greaterThan($limiteDeHoy) && $hoy->dayOfWeek !== Carbon::SUNDAY;
+
+            if ($plazoPasadoHoy) {
+                $reporteHoyEstado = ReporteCobranza::firstOrCreate(
+                    ['sede' => $user->sede, 'semana_inicio' => $fechaHoy],
+                    [
+                        'user_id'        => $user->id,
+                        'semana_numero'  => (int) $hoy->dayOfYear,
+                        'anio'           => (int) $hoy->year,
+                        'semana_fin'     => $fechaHoy,
+                        'fecha_limite'   => $limiteDeHoy,
+                        'kpi_porcentaje' => 0.0,
+                        'editado_tarde'  => false,
+                        'estado'         => 'no_enviado',
+                    ]
+                );
+            }
+
             $reporteSemanaActual = ReporteCobranza::obtenerOCrearSemanaActual($user->id, $user->sede);
+
+            if (!$plazoPasadoHoy) {
+                $reporteHoyEstado = $reporteSemanaActual;
+            }
         }
 
         // Resumen del día por sede (para admin/superadmin y usuarios con permiso productividad sedes)
@@ -94,8 +122,14 @@ class CobranzaSedesController extends Controller
         $sedeFiltro = ($user->isSede() && !$user->isSuperAdmin() && !$user->isAdmin()) ? $user->sede : null;
         $kpiData = $this->getKpiChartData(2, $sedeFiltro);
 
+        $fechaReporteLabel = $reporteSemanaActual
+            ? $reporteSemanaActual->semana_inicio->format('d/m/Y')
+            : Carbon::parse(ReporteCobranza::datosSemanActual($sedeLimite)[2])->format('d/m/Y');
+
         return view('productividad.cobranza-sedes.cobranza', compact(
             'reporteSemanaActual',
+            'reporteHoyEstado',
+            'plazoPasadoHoy',
             'resumenSedes',
             'historial',
             'kpiData',
@@ -103,6 +137,7 @@ class CobranzaSedesController extends Controller
             'fechaLimiteTs',
             'fechaLimiteLabel',
             'mostrarExcepcionNota',
+            'fechaReporteLabel',
         ));
     }
 
@@ -311,54 +346,75 @@ class CobranzaSedesController extends Controller
 
     public function historial(Request $request)
     {
-        $user  = auth()->user();
+        $user = auth()->user();
 
         if (!$user->puedeVerCobranzaSedes()) {
             return response()->json(['error' => 'Sin permiso.'], 403);
         }
 
-        $query = ReporteCobranza::with('user')
-            ->orderByDesc('semana_inicio')
-            ->orderByDesc('created_at');
+        $query = ReporteCobranza::with('user');
 
         if ($user->isSede() && !$user->isSuperAdmin() && !$user->isAdmin()) {
             $query->where('sede', $user->sede);
         }
 
-        if ($request->filled('sede')) {
-            $query->where('sede', $request->sede);
-        }
+        if ($request->filled('sede'))   $query->where('sede', $request->sede);
+        if ($request->filled('fecha'))  $query->whereDate('semana_inicio', $request->fecha);
+        if ($request->filled('estado')) $query->where('estado', $request->estado);
 
-        if ($request->filled('fecha')) {
-            $query->whereDate('semana_inicio', $request->fecha);
-        }
+        $dir = $request->get('sort', 'desc') === 'asc' ? 'asc' : 'desc';
+        $query->orderBy('semana_inicio', $dir)->orderBy('created_at', $dir);
 
-        $limit = $request->filled('fecha') ? 500 : 100;
-        $registros = $query->limit($limit)->get()->map(function ($r) use ($user) {
+        $perPage = 25;
+        $page    = max(1, (int) $request->get('page', 1));
+        $total   = $query->count();
+        $items   = $query->skip(($page - 1) * $perPage)->take($perPage)->get();
+
+        $data = $items->map(function ($r) use ($user) {
             return [
-                'id'              => $r->id,
-                'sede'            => $r->sede,
-                'semana'          => $r->semana_inicio?->format('d/m/Y'),
-                'semana_inicio'   => $r->semana_inicio?->format('d/m/Y'),
-                'semana_fin'      => null,
-                'fecha_limite'    => $r->fecha_limite?->setTimezone('America/Lima')->format('d/m/Y H:i'),
-                'fecha_envio'     => $r->fecha_envio_original?->setTimezone('America/Lima')->format('d/m/Y H:i'),
-                'fecha_edicion'   => $r->editado_tarde ? $r->fecha_ultimo_envio?->setTimezone('America/Lima')->format('d/m/Y H:i') : null,
-                'kpi'             => $r->kpi_porcentaje,
-                'kpi_label'       => $r->kpiLabel(),
-                'kpi_color'       => $r->kpiColor(),
-                'estado'          => $r->estado,
-                'editado_tarde'   => $r->editado_tarde,
-                'num_archivos'    => count($r->archivos ?? []),
-                'notas'                  => $r->notas,
-                'usuario'                => $r->user?->name,
-                'puede_enviar_atrasado'  => is_null($r->fecha_envio_original) &&
+                'id'                    => $r->id,
+                'sede'                  => $r->sede,
+                'semana'                => $r->semana_inicio?->format('d/m/Y'),
+                'semana_inicio'         => $r->semana_inicio?->format('d/m/Y'),
+                'fecha_limite'          => $r->fecha_limite?->setTimezone('America/Lima')->format('d/m/Y H:i'),
+                'fecha_envio'           => $r->fecha_envio_original?->setTimezone('America/Lima')->format('d/m/Y H:i'),
+                'fecha_edicion'         => $r->editado_tarde ? $r->fecha_ultimo_envio?->setTimezone('America/Lima')->format('d/m/Y H:i') : null,
+                'kpi'                   => $r->kpi_porcentaje,
+                'kpi_label'             => $r->kpiLabel(),
+                'kpi_color'             => $r->kpiColor(),
+                'estado'                => $r->estado,
+                'editado_tarde'         => $r->editado_tarde,
+                'num_archivos'          => count($r->archivos ?? []),
+                'notas'                 => $r->notas,
+                'usuario'               => $r->user?->name,
+                'puede_enviar_atrasado' => is_null($r->fecha_envio_original) &&
                     ($user->isSuperAdmin() || $user->isAdmin() || $r->sede === $user->sede),
-                'semana_inicio_iso'      => $r->semana_inicio?->toDateString(),
+                'puede_editar'          => !is_null($r->fecha_envio_original) &&
+                    ($user->isSuperAdmin() || $user->isAdmin() || $r->sede === $user->sede),
+                'semana_inicio_iso'     => $r->semana_inicio?->toDateString(),
             ];
         });
 
-        return response()->json(['data' => $registros]);
+        return response()->json([
+            'data'         => $data,
+            'total'        => $total,
+            'per_page'     => $perPage,
+            'current_page' => $page,
+            'last_page'    => (int) ceil($total / $perPage),
+        ]);
+    }
+
+    public function sedesDisponibles()
+    {
+        $user = auth()->user();
+        if (!$user->puedeVerCobranzaSedes()) {
+            return response()->json([], 403);
+        }
+        $query = ReporteCobranza::selectRaw('DISTINCT sede')->orderBy('sede');
+        if ($user->isSede() && !$user->isSuperAdmin() && !$user->isAdmin()) {
+            $query->where('sede', $user->sede);
+        }
+        return response()->json($query->pluck('sede'));
     }
 
     // ── Detalle de un reporte ─────────────────────────────────────

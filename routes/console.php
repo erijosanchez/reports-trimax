@@ -8,6 +8,7 @@ use App\Jobs\AlertaSlaRequerimientosJob;
 use App\Jobs\AlertaCobranzaVencimientoJob;
 use App\Jobs\AlertaCajaChicaVencimientoJob;
 use App\Jobs\AlertaComentariosVencimientoJob;
+use App\Jobs\MarcarNoEnviadosCobranzaJob;
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
@@ -17,6 +18,13 @@ Schedule::job(new AlertaSlaRequerimientosJob)
     ->dailyAt('08:00')
     ->withoutOverlapping()
     ->onOneServer();
+
+// Marca "no_enviado" en sedes que no enviaron ayer — corre a las 2 AM (Lima), lun–dom.
+Schedule::job(new MarcarNoEnviadosCobranzaJob)
+    ->dailyAt('02:00')
+    ->withoutOverlapping()
+    ->onOneServer()
+    ->timezone('America/Lima');
 
 // Alerta Depósito de Efectivo: lunes–sábado 11:00 AM (Lima) — 1h antes del límite diario (12:00 PM).
 // Solo dispara correo si el usuario aún no envió el reporte de HOY (anti-spam por check interno).

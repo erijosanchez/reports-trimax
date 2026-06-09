@@ -56,32 +56,38 @@
                 <div class="shadow-sm border-0 h-100 card">
                     <div class="py-4 card-body">
                         <h6 class="mb-3 text-muted text-uppercase fw-bold small">Estado — Hoy</h6>
-                        @if ($reporteSemanaActual)
+                        @if ($reporteHoyEstado)
                             @php
-                                $enviado = !is_null($reporteSemanaActual->fecha_envio_original);
+                                $enviado = !is_null($reporteHoyEstado->fecha_envio_original);
                             @endphp
                             <div class="d-flex align-items-center mb-2">
                                 <i class="me-2 text-primary mdi mdi-map-marker"></i>
-                                <strong>{{ $reporteSemanaActual->sede }}</strong>
+                                <strong>{{ $reporteHoyEstado->sede }}</strong>
                             </div>
                             @if ($enviado)
                                 <div class="mb-2 py-2 alert alert-success">
                                     <i class="me-1 mdi mdi-check-circle"></i>
                                     Reporte enviado el
-                                    {{ $reporteSemanaActual->fecha_envio_original?->setTimezone('America/Lima')->format('d/m H:i') }}
+                                    {{ $reporteHoyEstado->fecha_envio_original?->setTimezone('America/Lima')->format('d/m H:i') }}
                                 </div>
                                 <div class="d-flex align-items-center">
                                     <span class="me-2 fw-bold">KPI:</span>
-                                    <span class="badge bg-{{ $reporteSemanaActual->kpiColor() }} fs-6">
-                                        {{ $reporteSemanaActual->kpiLabel() }}
+                                    <span class="badge bg-{{ $reporteHoyEstado->kpiColor() }} fs-6">
+                                        {{ $reporteHoyEstado->kpiLabel() }}
                                     </span>
                                 </div>
-                                @if ($reporteSemanaActual->editado_tarde)
+                                @if ($reporteHoyEstado->editado_tarde)
                                 <div class="mt-2 mb-0 py-1 alert alert-warning small">
                                     <i class="me-1 mdi mdi-alert"></i>
                                     Editado con atraso — KPI ajustado
                                 </div>
                                 @endif
+                            @elseif ($plazoPasadoHoy)
+                                <div class="mb-0 py-2 alert alert-danger">
+                                    <i class="me-1 mdi mdi-clock-remove"></i>
+                                    <strong>Plazo vencido</strong> — no enviado.<br>
+                                    <small>Busca el botón <strong>Enviar Atrasado</strong> en Historial.</small>
+                                </div>
                             @else
                                 <div class="mb-0 py-2 alert alert-warning">
                                     <i class="me-1 mdi mdi-clock-alert"></i>
@@ -242,6 +248,22 @@
             </div>
         </div>
         @endif
+
+        {{-- Banner: plazo vencido hoy y aún no enviado --}}
+        @auth
+        @if (auth()->user()->isSede() && $plazoPasadoHoy && $reporteHoyEstado && is_null($reporteHoyEstado->fecha_envio_original))
+        <div class="mb-4 row">
+            <div class="col-12">
+                <div class="py-2 alert alert-danger mb-0">
+                    <i class="me-2 mdi mdi-alert-circle"></i>
+                    <strong>El plazo de hoy ({{ $fechaLimiteLabel }}) ya venció.</strong>
+                    Busca en Historial el botón <strong>Enviar Atrasado</strong> para registrar tu depósito.
+                    El formulario de abajo corresponde al día <strong>{{ $fechaReporteLabel }}</strong>.
+                </div>
+            </div>
+        </div>
+        @endif
+        @endauth
 
         {{-- ══════════════════════════════════════════════
              FILA: Formulario de envío (solo sede)
@@ -451,6 +473,7 @@
                     <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 bg-white border-bottom card-header">
                         <h5 class="mb-0 fw-bold">
                             <i class="me-2 text-primary mdi mdi-history"></i>Historial de Reportes
+                            <span id="historial-total-badge" class="ms-2 text-muted fw-normal small d-none"></span>
                         </h5>
                         <div class="d-flex flex-wrap align-items-center gap-2">
                             <select id="filtro-sede" class="form-select-sm form-select" style="width:auto" onchange="aplicarFiltros()">
@@ -492,6 +515,12 @@
                                 </tbody>
                             </table>
                         </div>
+                        <div id="historial-pagination-bar" class="d-flex align-items-center justify-content-between px-3 py-2 border-top d-none">
+                            <div id="historial-info" class="text-muted small"></div>
+                            <nav>
+                                <ul id="historial-pager" class="pagination pagination-sm mb-0"></ul>
+                            </nav>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -515,6 +544,54 @@
                     <div class="spinner-border text-primary"></div>
                 </div>
             </div>
+        </div>
+    </div>
+</div>
+
+{{-- ── Modal Editar desde Historial ───────────────────────── --}}
+<div class="modal fade" id="modal-editar-historial" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">
+                    <i class="me-2 text-primary mdi mdi-pencil"></i>
+                    Editar Reporte — <span id="editar-historial-titulo"></span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="form-editar-historial" enctype="multipart/form-data">
+                @csrf
+                @method('PUT')
+                <input type="hidden" id="editar-historial-id">
+                <div class="modal-body">
+                    <div id="editar-historial-archivos-existentes" class="mb-3"></div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Agregar archivos</label>
+                        <div class="drop-zone" id="drop-zone-editar-historial">
+                            <i class="mdi-cloud-upload-outline mdi" style="font-size:2rem;color:#94a3b8;"></i>
+                            <p class="mt-2 mb-1 text-muted small">Arrastra archivos aquí o selecciona</p>
+                            <input type="file" id="archivos-editar-historial" name="archivos[]"
+                                   multiple accept=".jpg,.jpeg,.png,.gif,.webp,.xlsx,.xls,.csv,.pdf" class="d-none">
+                            <button type="button" class="mt-1 btn-outline-primary btn btn-sm"
+                                    onclick="document.getElementById('archivos-editar-historial').click()">
+                                <i class="me-1 mdi mdi-paperclip"></i>Seleccionar
+                            </button>
+                        </div>
+                        <div id="preview-editar-historial" class="mt-2 row g-2"></div>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label fw-semibold">Notas</label>
+                        <textarea id="editar-historial-notas" name="notas" rows="2" class="form-control form-control-sm" placeholder="Opcional..."></textarea>
+                    </div>
+                    <div id="msg-editar-historial"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary btn btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary fw-bold btn-sm" id="btn-guardar-editar-historial">
+                        <i class="me-1 mdi mdi-content-save"></i>Guardar Cambios
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -680,6 +757,7 @@
 const ROUTES = {
     store:    "{{ route('productividad.cobranza-sedes.cobranza.store') }}",
     historial:"{{ route('productividad.cobranza-sedes.cobranza.historial') }}",
+    sedes:    "{{ route('productividad.cobranza-sedes.cobranza.sedes') }}",
     kpiData:  "{{ route('productividad.cobranza-sedes.cobranza.kpi-data') }}",
     base:     "{{ url('/productividad/cobranza-sedes/deposito-efectivo') }}",
 };
@@ -826,9 +904,10 @@ function quitarArchivo(idx, inputId) {
     renderPreview(dt.files, preview, inputId);
 }
 
-setupDropZone('drop-zone-nuevo',    'archivos-nuevo',    'preview-nuevo');
-setupDropZone('drop-zone-edit',     'archivos-edit',     'preview-edit');
-setupDropZone('drop-zone-atrasado', 'archivos-atrasado', 'preview-atrasado');
+setupDropZone('drop-zone-nuevo',           'archivos-nuevo',           'preview-nuevo');
+setupDropZone('drop-zone-edit',            'archivos-edit',            'preview-edit');
+setupDropZone('drop-zone-atrasado',        'archivos-atrasado',        'preview-atrasado');
+setupDropZone('drop-zone-editar-historial','archivos-editar-historial','preview-editar-historial');
 
 // ── Marcar archivos existentes para eliminar ──────────────────────
 function marcarEliminar(idx, btn) {
@@ -908,23 +987,25 @@ if (formEditar) {
 }
 
 // ── Historial ─────────────────────────────────────────────────────
-let _historialData = [];
-let _sedesCache = [];
+let _historialMeta = { current_page: 1, last_page: 1, total: 0 };
 
-async function cargarHistorial(fecha = '') {
-    const tbody = document.getElementById('historial-body');
+async function cargarHistorial(page = 1) {
+    const tbody  = document.getElementById('historial-body');
     const loader = document.getElementById('historial-loader');
     loader.classList.remove('d-none');
     try {
-        let url = ROUTES.historial;
-        if (fecha) url += (url.includes('?') ? '&' : '?') + 'fecha=' + encodeURIComponent(fecha);
+        const sede  = document.getElementById('filtro-sede')?.value ?? '';
+        const fecha = document.getElementById('filtro-fecha')?.value ?? '';
+        const sort  = document.getElementById('sort-fecha')?.value ?? 'desc';
+        let url = ROUTES.historial + `?page=${page}&sort=${sort}`;
+        if (sede)  url += `&sede=${encodeURIComponent(sede)}`;
+        if (fecha) url += `&fecha=${encodeURIComponent(fecha)}`;
         const data = await apiFetch(url);
-        _historialData = data.data ?? [];
-        if (!fecha) {
-            _sedesCache = _historialData;
-            poblarFiltroSede(_historialData);
-        }
-        aplicarFiltros();
+        _historialMeta = { current_page: data.current_page, last_page: data.last_page, total: data.total };
+        renderHistorial(data.data ?? []);
+        renderPaginacion();
+        const badge = document.getElementById('historial-total-badge');
+        if (badge) { badge.textContent = `(${data.total} registros)`; badge.classList.remove('d-none'); }
     } catch (err) {
         tbody.innerHTML = `<tr><td colspan="8" class="py-3 text-danger text-center">${err.message}</td></tr>`;
     } finally {
@@ -932,24 +1013,37 @@ async function cargarHistorial(fecha = '') {
     }
 }
 
-function poblarFiltroSede(rows) {
-    const sel = document.getElementById('filtro-sede');
-    if (!sel) return;
-    const sedes = [...new Set(rows.map(r => r.sede))].sort();
-    sedes.forEach(s => { const o = document.createElement('option'); o.value = s; o.textContent = s; sel.appendChild(o); });
+function aplicarFiltros() {
+    cargarHistorial(1);
 }
 
-function aplicarFiltros() {
-    const sede  = document.getElementById('filtro-sede')?.value ?? '';
-    const fecha = document.getElementById('filtro-fecha')?.value ?? '';
-    const dir   = document.getElementById('sort-fecha')?.value ?? 'desc';
-    let rows = [..._historialData];
-    if (sede) rows = rows.filter(r => r.sede === sede);
-    rows.sort((a, b) => {
-        const da = a.semana_inicio_iso ?? '', db = b.semana_inicio_iso ?? '';
-        return dir === 'asc' ? da.localeCompare(db) : db.localeCompare(da);
-    });
-    renderHistorial(rows);
+function renderPaginacion() {
+    const bar   = document.getElementById('historial-pagination-bar');
+    const info  = document.getElementById('historial-info');
+    const pager = document.getElementById('historial-pager');
+    if (!bar || !info || !pager) return;
+    const { current_page: cur, last_page: last, total } = _historialMeta;
+    if (last <= 1) { bar.classList.add('d-none'); return; }
+    bar.classList.remove('d-none');
+    info.textContent = `Página ${cur} de ${last} — ${total} registros`;
+    let pages = [];
+    for (let i = 1; i <= last; i++) {
+        if (i === 1 || i === last || Math.abs(i - cur) <= 1) pages.push(i);
+        else if (pages[pages.length - 1] !== '...') pages.push('...');
+    }
+    pager.innerHTML = `
+        <li class="page-item ${cur <= 1 ? 'disabled' : ''}">
+            <a class="page-link" href="#" onclick="event.preventDefault();cargarHistorial(${cur - 1})">&laquo;</a>
+        </li>
+        ${pages.map(p => p === '...'
+            ? `<li class="page-item disabled"><span class="page-link">…</span></li>`
+            : `<li class="page-item ${p === cur ? 'active' : ''}">
+                <a class="page-link" href="#" onclick="event.preventDefault();cargarHistorial(${p})">${p}</a>
+               </li>`
+        ).join('')}
+        <li class="page-item ${cur >= last ? 'disabled' : ''}">
+            <a class="page-link" href="#" onclick="event.preventDefault();cargarHistorial(${cur + 1})">&raquo;</a>
+        </li>`;
 }
 
 function badgeEstado(estado) {
@@ -985,6 +1079,10 @@ function renderHistorial(rows) {
                 <button class="px-2 py-0 btn-outline-primary btn btn-sm" onclick="verReporte(${r.id})" title="Ver detalles">
                     <i class="mdi mdi-eye"></i>
                 </button>
+                ${r.puede_editar ? `
+                <button class="ms-1 px-2 py-0 btn-outline-warning btn btn-sm" onclick="abrirEditarHistorial(${r.id},'${r.sede}','${r.semana_inicio}')" title="Editar reporte">
+                    <i class="mdi mdi-pencil"></i>
+                </button>` : ''}
                 ${r.puede_enviar_atrasado ? `
                 <button class="ms-1 px-2 py-0 btn-outline-danger btn btn-sm" onclick="abrirEnviarAtrasado(${r.id},'${r.sede}')" title="Enviar reporte atrasado">
                     <i class="mdi-clock-alert-outline mdi"></i>
@@ -994,7 +1092,102 @@ function renderHistorial(rows) {
     `).join('');
 }
 
-cargarHistorial();
+cargarHistorial(1);
+
+// Poblar filtro sede desde API
+(async function poblarFiltroSedeApi() {
+    try {
+        const sedes = await apiFetch(ROUTES.sedes);
+        const sel   = document.getElementById('filtro-sede');
+        if (!sel || !Array.isArray(sedes)) return;
+        sedes.forEach(s => {
+            const o = document.createElement('option');
+            o.value = s; o.textContent = s;
+            sel.appendChild(o);
+        });
+    } catch (_) {}
+})();
+
+// ── Modal Editar desde Historial ─────────────────────────────────
+async function abrirEditarHistorial(id, sede, fecha) {
+    document.getElementById('editar-historial-id').value = id;
+    document.getElementById('editar-historial-titulo').textContent = `${sede} — ${fecha}`;
+    document.getElementById('editar-historial-notas').value = '';
+    document.getElementById('msg-editar-historial').innerHTML = '';
+    document.getElementById('editar-historial-archivos-existentes').innerHTML =
+        '<div class="py-2 text-center"><div class="spinner-border spinner-border-sm text-primary"></div></div>';
+    _acumulados['archivos-editar-historial'] = new DataTransfer();
+    document.getElementById('preview-editar-historial').innerHTML = '';
+
+    new bootstrap.Modal(document.getElementById('modal-editar-historial')).show();
+
+    try {
+        const r = await apiFetch(urlShow(id));
+        document.getElementById('editar-historial-notas').value = r.notas ?? '';
+        const archivos   = r.archivos ?? [];
+        const container  = document.getElementById('editar-historial-archivos-existentes');
+        if (!archivos.length) {
+            container.innerHTML = '<p class="text-muted small">Sin archivos previos.</p>';
+        } else {
+            container.innerHTML = `
+                <label class="form-label fw-semibold">Archivos actuales</label>
+                <div class="row g-2">
+                    ${archivos.map((a, idx) => `
+                    <div class="col-md-4 col-sm-6" id="eh-archivo-${idx}">
+                        <div class="d-flex align-items-center gap-2 bg-light p-2 border rounded">
+                            <i class="mdi mdi-${a.es_imagen ? 'image' : 'file-document'} text-primary fs-5"></i>
+                            <div class="flex-grow-1 overflow-hidden">
+                                <div class="text-truncate small fw-semibold" title="${a.name}">${a.name}</div>
+                            </div>
+                            <button type="button" class="px-1 py-0 btn-outline-danger btn btn-sm"
+                                    id="eh-btn-del-${idx}" onclick="toggleEliminarHistorial(${idx}, this)" title="Eliminar">
+                                <i class="mdi-trash-can-outline mdi"></i>
+                            </button>
+                            <input type="hidden" name="eliminar_indices[]" id="eh-eliminar-${idx}" value="${idx}" disabled>
+                        </div>
+                    </div>`).join('')}
+                </div>`;
+        }
+    } catch (err) {
+        document.getElementById('editar-historial-archivos-existentes').innerHTML =
+            `<div class="alert alert-danger small">${err.message}</div>`;
+    }
+}
+
+function toggleEliminarHistorial(idx, btn) {
+    const input = document.getElementById(`eh-eliminar-${idx}`);
+    const card  = document.getElementById(`eh-archivo-${idx}`)?.querySelector('.d-flex');
+    if (!input) return;
+    const marcado = input.disabled;
+    input.disabled = !marcado;
+    btn.classList.toggle('btn-outline-danger', marcado);
+    btn.classList.toggle('btn-danger',        !marcado);
+    if (card) card.style.opacity = marcado ? '0.45' : '';
+}
+
+document.getElementById('form-editar-historial')?.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btn-guardar-editar-historial');
+    const msg = document.getElementById('msg-editar-historial');
+    const id  = document.getElementById('editar-historial-id').value;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="me-1 spinner-border spinner-border-sm"></span>Guardando...';
+    msg.innerHTML = '';
+    try {
+        document.getElementById('archivos-editar-historial').files = _acumulados['archivos-editar-historial'].files;
+        const data = await apiFetch(urlUpdate(id), { method: 'POST', body: new FormData(this) });
+        msg.innerHTML = `<div class="py-2 alert alert-success">${data.message}</div>`;
+        setTimeout(() => {
+            bootstrap.Modal.getInstance(document.getElementById('modal-editar-historial'))?.hide();
+            cargarHistorial(_historialMeta.current_page);
+        }, 1500);
+    } catch(err) {
+        msg.innerHTML = `<div class="py-2 alert alert-danger">${err.message}</div>`;
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="me-1 mdi mdi-content-save"></i>Guardar Cambios';
+    }
+});
 
 // ── Modal Ver Reporte ─────────────────────────────────────────────
 async function verReporte(id) {

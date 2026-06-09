@@ -15,20 +15,32 @@ class GoogleSheetsService
     public function __construct()
     {
         $this->spreadsheetId = config('google.spreadsheet_id');
-        $this->initializeClient();
     }
 
-    private function initializeClient()
+    private function initializeClient(): void
     {
+        if ($this->service) return;
+
+        $credFile = config('google.service_account_file');
+        if (!$credFile || !file_exists($credFile)) {
+            throw new \RuntimeException("Google service account file not found: {$credFile}");
+        }
+
         $this->client = new Client();
         $this->client->setApplicationName(config('google.application_name'));
         $this->client->setScopes([Sheets::SPREADSHEETS_READONLY]);
-        $this->client->setAuthConfig(config('google.service_account_file'));
+        $this->client->setAuthConfig($credFile);
         $this->client->setHttpClient(new \GuzzleHttp\Client([
             'timeout'         => 15,
             'connect_timeout' => 8,
         ]));
         $this->service = new Sheets($this->client);
+    }
+
+    private function service(): Sheets
+    {
+        $this->initializeClient();
+        return $this->service;
     }
 
     /**
@@ -40,7 +52,7 @@ class GoogleSheetsService
             // Si no se especifica rango, obtener todo
             $fullRange = $range ? "{$sheetName}!{$range}" : $sheetName;
 
-            $response = $this->service->spreadsheets_values->get(
+            $response = $this->service()->spreadsheets_values->get(
                 $this->spreadsheetId,
                 $fullRange
             );
@@ -230,7 +242,7 @@ class GoogleSheetsService
         try {
             $fullRange = $range ? "{$sheetName}!{$range}" : $sheetName;
 
-            $response = $this->service->spreadsheets_values->get(
+            $response = $this->service()->spreadsheets_values->get(
                 $spreadsheetId,
                 $fullRange
             );

@@ -301,6 +301,7 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
             Route::get('/{reporte}/download/{index}', [CobranzaSedesController::class, 'download'])->name('download');
             Route::get('/{reporte}/preview/{index}',  [CobranzaSedesController::class, 'preview'])->name('preview');
             Route::get('/api/historial',          [CobranzaSedesController::class, 'historial'])->name('historial');
+            Route::get('/api/sedes',              [CobranzaSedesController::class, 'sedesDisponibles'])->name('sedes');
             Route::get('/api/kpi-data',           [CobranzaSedesController::class, 'kpiData'])->name('kpi-data');
         });
     });

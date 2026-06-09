@@ -4,11 +4,12 @@ namespace App\Notifications;
 
 use App\Models\ReporteCobranza;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Support\Facades\Storage;
 
-class CobranzaSubmitida extends Notification
+class CobranzaSubmitida extends Notification implements ShouldQueue
 {
     use Queueable;
 
