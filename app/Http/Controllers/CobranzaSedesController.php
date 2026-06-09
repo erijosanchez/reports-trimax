@@ -48,9 +48,10 @@ class CobranzaSedesController extends Controller
         $fechaDiaLabel = $hoy->format('d/m/Y');
 
         // Reporte del día actual (solo para sede)
-        $reporteSemanaActual = null;
-        $reporteHoyEstado    = null;
-        $plazoPasadoHoy      = false;
+        $reporteSemanaActual   = null;
+        $reporteHoyEstado      = null;
+        $plazoPasadoHoy        = false;
+        $countdownContextLabel = 'Hoy';
 
         if ($user->isSede() && $user->sede) {
             $fechaHoy = $hoy->toDateString();
@@ -74,10 +75,31 @@ class CobranzaSedesController extends Controller
                 );
             }
 
-            $reporteSemanaActual = ReporteCobranza::obtenerOCrearSemanaActual($user->id, $user->sede);
-
-            if (!$plazoPasadoHoy) {
-                $reporteHoyEstado = $reporteSemanaActual;
+            if ($plazoPasadoHoy) {
+                // Deadline passed: form and countdown target the next business day
+                $proximoDia = $hoy->copy()->addDay();
+                if ($proximoDia->dayOfWeek === Carbon::SUNDAY) {
+                    $proximoDia->addDay();
+                }
+                $fechaProximo  = $proximoDia->toDateString();
+                [$horaProx, $minProx] = ReporteCobranza::horaLimitePara($user->sede);
+                $limiteProximo = $proximoDia->copy()->setTime($horaProx, $minProx, 0);
+                $reporteSemanaActual = ReporteCobranza::firstOrCreate(
+                    ['sede' => $user->sede, 'semana_inicio' => $fechaProximo],
+                    [
+                        'user_id'        => $user->id,
+                        'semana_numero'  => (int) $proximoDia->dayOfYear,
+                        'anio'           => (int) $proximoDia->year,
+                        'semana_fin'     => $fechaProximo,
+                        'fecha_limite'   => $limiteProximo,
+                        'estado'         => 'pendiente',
+                    ]
+                );
+                $fechaLimiteTs        = $limiteProximo->timestamp * 1000;
+                $countdownContextLabel = 'Mañana';
+            } else {
+                $reporteSemanaActual = ReporteCobranza::obtenerOCrearSemanaActual($user->id, $user->sede);
+                $reporteHoyEstado    = $reporteSemanaActual;
             }
         }
 
@@ -138,6 +160,7 @@ class CobranzaSedesController extends Controller
             'fechaLimiteLabel',
             'mostrarExcepcionNota',
             'fechaReporteLabel',
+            'countdownContextLabel',
         ));
     }
 

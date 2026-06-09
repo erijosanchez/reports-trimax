@@ -91,7 +91,7 @@
                             @else
                                 <div class="mb-0 py-2 alert alert-warning">
                                     <i class="me-1 mdi mdi-clock-alert"></i>
-                                    Pendiente de envío
+                                    Pendiente — tienes hasta las <strong>{{ $fechaLimiteLabel }}</strong>
                                 </div>
                             @endif
                         @else
@@ -274,12 +274,19 @@
             <div class="col-12">
                 <div class="shadow-sm border-0 card">
                     <div class="d-flex align-items-center justify-content-between bg-white border-bottom card-header">
-                        <h5 class="mb-0 fw-bold">
-                            <i class="me-2 text-primary mdi mdi-upload"></i>
-                            @if ($reporteSemanaActual->fecha_envio_original)
-                                Editar Reporte — {{ $fechaDiaLabel }}
-                            @else
-                                Enviar Reporte — {{ $fechaDiaLabel }}
+                        <h5 class="mb-0 fw-bold d-flex align-items-center flex-wrap gap-2">
+                            <span>
+                                <i class="me-2 text-primary mdi mdi-upload"></i>
+                                @if ($reporteSemanaActual->fecha_envio_original)
+                                    Editar Reporte — {{ $fechaReporteLabel }}
+                                @else
+                                    Enviar Reporte — {{ $fechaReporteLabel }}
+                                @endif
+                            </span>
+                            @if ($plazoPasadoHoy)
+                                <span class="badge bg-warning text-dark fw-normal" style="font-size:0.72rem;">
+                                    <i class="mdi mdi-calendar-arrow-right me-1"></i>Siguiente día hábil
+                                </span>
                             @endif
                         </h5>
                         <span class="bg-light border text-dark badge">
@@ -829,7 +836,7 @@ function actualizarCountdown() {
     } else {
         display.style.color = '#2563eb';
         icon.className      = 'mdi mdi-timer-outline text-primary';
-        sub.textContent     = 'Hoy, {{ $fechaLimiteLabel }} hora Lima';
+        sub.textContent     = '{{ $countdownContextLabel }}, {{ $fechaLimiteLabel }} hora Lima';
     }
 }
 
