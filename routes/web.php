@@ -360,6 +360,7 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
         Route::patch('/{id}/aplicar',          [VoucherController::class, 'aplicar'])->name('aplicar');
         Route::delete('/{id}',                 [VoucherController::class, 'destroy'])->name('destroy');
         Route::get('/{id}/facturas',           [VoucherController::class, 'getFacturas'])->name('facturas');
+        Route::get('/{id}/archivo/{index}',    [VoucherController::class, 'servirArchivo'])->name('archivo');
     });
 
     // ── Tracking Admin ────────────────────────────────────────

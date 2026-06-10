@@ -218,13 +218,37 @@ class VoucherController extends Controller
                 'factura' => $f->factura,
                 'monto'   => $f->monto,
             ]),
-            'archivos' => collect($voucher->archivos ?? [])->map(fn($a) => [
+            'archivos' => collect($voucher->archivos ?? [])->map(fn($a, $idx) => [
                 'name' => $a['name'] ?? 'archivo',
-                'url'  => isset($a['path']) ? Storage::disk('public')->url($a['path']) : null,
+                'url'  => isset($a['path']) ? route('vouchers.archivo', ['id' => $id, 'index' => $idx]) : null,
                 'mime' => $a['mime'] ?? '',
                 'size' => isset($a['size']) ? round($a['size'] / 1024, 1) . ' KB' : '',
             ]),
         ]);
+    }
+
+    public function servirArchivo($id, $index)
+    {
+        $voucher  = Voucher::findOrFail($id);
+        $archivos = $voucher->archivos ?? [];
+
+        if (!isset($archivos[$index])) {
+            abort(404, 'Archivo no encontrado.');
+        }
+
+        $archivo = $archivos[$index];
+
+        if (Storage::disk('public')->exists($archivo['path'])) {
+            return response()->file(
+                Storage::disk('public')->path($archivo['path']),
+                [
+                    'Content-Type'        => $archivo['mime'] ?? 'application/octet-stream',
+                    'Content-Disposition' => 'inline; filename="' . $archivo['name'] . '"',
+                ]
+            );
+        }
+
+        abort(404, 'El archivo ya no está disponible.');
     }
 
     /* ── privados ──────────────────────────────────────────── */
