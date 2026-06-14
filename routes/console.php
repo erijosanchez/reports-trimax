@@ -26,10 +26,10 @@ Schedule::job(new MarcarNoEnviadosCobranzaJob)
     ->onOneServer()
     ->timezone('America/Lima');
 
-// Alerta Depósito de Efectivo: lunes–sábado 11:00 AM (Lima) — 1h antes del límite diario (12:00 PM).
-// Solo dispara correo si el usuario aún no envió el reporte de HOY (anti-spam por check interno).
+// Alerta Depósito de Efectivo: lunes–sábado 09:00 AM (Lima) — 1h antes del límite diario (10:00 AM;
+// 11:00 AM en Huanuco/Ica/Ate). Solo dispara correo si el usuario aún no envió el reporte de HOY (anti-spam por check interno).
 Schedule::job(new AlertaCobranzaVencimientoJob)
-    ->dailyAt('11:00')
+    ->dailyAt('09:00')
     ->days([ScheduleConst::MONDAY, ScheduleConst::TUESDAY, ScheduleConst::WEDNESDAY, ScheduleConst::THURSDAY, ScheduleConst::FRIDAY, ScheduleConst::SATURDAY])
     ->withoutOverlapping()
     ->onOneServer()
