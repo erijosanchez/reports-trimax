@@ -566,7 +566,8 @@
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form id="form-editar-historial" enctype="multipart/form-data">
+            <form id="form-editar-historial" enctype="multipart/form-data"
+                  style="display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden;">
                 @csrf
                 @method('PUT')
                 <input type="hidden" id="editar-historial-id">
@@ -1141,15 +1142,28 @@ async function abrirEditarHistorial(id, sede, fecha) {
                 <div class="row g-2">
                     ${archivos.map((a, idx) => `
                     <div class="col-md-4 col-sm-6" id="eh-archivo-${idx}">
-                        <div class="d-flex align-items-center gap-2 bg-light p-2 border rounded">
-                            <i class="mdi mdi-${a.es_imagen ? 'image' : 'file-document'} text-primary fs-5"></i>
-                            <div class="flex-grow-1 overflow-hidden">
-                                <div class="text-truncate small fw-semibold" title="${a.name}">${a.name}</div>
+                        <div class="border rounded overflow-hidden bg-light" style="position:relative;">
+                            ${a.es_imagen ? `
+                            <div style="height:110px;overflow:hidden;background:#f1f5f9;display:flex;align-items:center;justify-content:center;">
+                                <img src="${a.preview_url}" alt="${a.name}"
+                                     style="max-height:110px;max-width:100%;object-fit:contain;display:block;"
+                                     onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+                                <div style="display:none;height:110px;align-items:center;justify-content:center;">
+                                    <i class="mdi mdi-image-broken text-muted" style="font-size:2rem;"></i>
+                                </div>
+                            </div>` : `
+                            <div style="height:70px;display:flex;align-items:center;justify-content:center;background:#f1f5f9;">
+                                <i class="mdi mdi-file-document text-primary" style="font-size:2.5rem;"></i>
+                            </div>`}
+                            <div class="d-flex align-items-center gap-1 px-2 py-1">
+                                <div class="flex-grow-1 overflow-hidden">
+                                    <div class="text-truncate" style="font-size:11px;font-weight:600;" title="${a.name}">${a.name}</div>
+                                </div>
+                                <button type="button" class="px-1 py-0 btn-outline-danger btn btn-sm flex-shrink-0"
+                                        id="eh-btn-del-${idx}" onclick="toggleEliminarHistorial(${idx}, this)" title="Eliminar">
+                                    <i class="mdi-trash-can-outline mdi"></i>
+                                </button>
                             </div>
-                            <button type="button" class="px-1 py-0 btn-outline-danger btn btn-sm"
-                                    id="eh-btn-del-${idx}" onclick="toggleEliminarHistorial(${idx}, this)" title="Eliminar">
-                                <i class="mdi-trash-can-outline mdi"></i>
-                            </button>
                             <input type="hidden" name="eliminar_indices[]" id="eh-eliminar-${idx}" value="${idx}" disabled>
                         </div>
                     </div>`).join('')}
@@ -1163,7 +1177,7 @@ async function abrirEditarHistorial(id, sede, fecha) {
 
 function toggleEliminarHistorial(idx, btn) {
     const input = document.getElementById(`eh-eliminar-${idx}`);
-    const card  = document.getElementById(`eh-archivo-${idx}`)?.querySelector('.d-flex');
+    const card  = document.getElementById(`eh-archivo-${idx}`);
     if (!input) return;
     const marcado = input.disabled;
     input.disabled = !marcado;

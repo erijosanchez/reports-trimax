@@ -222,10 +222,9 @@ class CobranzaSedesController extends Controller
 
     public function update(Request $request, ReporteCobranza $reporte)
     {
-        $user = auth()->user();
+        $user = auth()->user()->fresh();
 
-        // Solo el usuario que creó el reporte, o admin/superadmin
-        if (!$user->isSuperAdmin() && !$user->isAdmin() && $reporte->user_id !== $user->id) {
+        if (!$user->isSuperAdmin() && !$user->isAdmin() && (int) $reporte->user_id !== (int) $user->id) {
             return response()->json(['error' => 'Sin permiso para editar este reporte.'], 403);
         }
 
