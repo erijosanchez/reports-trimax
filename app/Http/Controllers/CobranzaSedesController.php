@@ -224,7 +224,10 @@ class CobranzaSedesController extends Controller
     {
         $user = auth()->user()->fresh();
 
-        if (!$user->isSuperAdmin() && !$user->isAdmin() && (int) $reporte->user_id !== (int) $user->id) {
+        $esPropietario = (int) $reporte->user_id === (int) $user->id;
+        $esMismaSede   = $user->isSede() && $reporte->sede === $user->sede;
+
+        if (!$user->isSuperAdmin() && !$user->isAdmin() && !$esPropietario && !$esMismaSede) {
             return response()->json(['error' => 'Sin permiso para editar este reporte.'], 403);
         }
 
@@ -522,7 +525,9 @@ class CobranzaSedesController extends Controller
     private function puedeEditar(ReporteCobranza $reporte): bool
     {
         $user = auth()->user();
-        return $user->isSuperAdmin() || $user->isAdmin() || $reporte->user_id === $user->id;
+        return $user->isSuperAdmin() || $user->isAdmin()
+            || (int) $reporte->user_id === (int) $user->id
+            || ($user->isSede() && $reporte->sede === $user->sede);
     }
 
     private function getKpiDiarioData(int $mes, int $anio, ?string $sede = null): array
