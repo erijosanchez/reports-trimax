@@ -243,24 +243,34 @@ class GpsController extends Controller
     // ── GET /api/admin/mapa-vivo ──────────────────────────
     public function mapaVivo()
     {
+        // Solo motorizados con una ruta ACTIVA hoy: al finalizar la ruta
+        // (status → 'completada') dejan de aparecer en el mapa en vivo.
         $motorizados = Motorizado::where('estado', 'activo')
+            ->whereHas('rutaActivaHoy')
             ->with(['ultimaPosicion', 'rutaActivaHoy'])
             ->get();
 
-        return response()->json($motorizados->map(function ($m) {
-            $pos = $m->ultimaPosicion;
-            return [
-                'id'          => $m->id,
-                'nombre'      => $m->nombre,
-                'sede'        => $m->sede,
-                'latitud'     => $pos?->latitud,
-                'longitud'    => $pos?->longitud,
-                'velocidad'   => $pos ? round($pos->velocidad, 1) : 0,
-                'actualizado' => $pos?->capturado_en?->format('H:i:s'),
-                'en_ruta'     => $m->rutaActivaHoy !== null,
-                'distance_km' => round($m->rutaActivaHoy?->distance_km ?? 0, 2),
-            ];
-        })->filter(fn($m) => $m['latitud'])->values());
+        return response()->json(
+            $motorizados->map(function ($m) {
+                $pos = $m->ultimaPosicion;
+
+                // Sin posiciones aún no se puede ubicar en el mapa
+                if (!$pos) return null;
+
+                return [
+                    'id'          => $m->id,
+                    'nombre'      => $m->nombre,
+                    'sede'        => $m->sede,
+                    'tipo'        => $m->tipo,
+                    'latitud'     => $pos->latitud,
+                    'longitud'    => $pos->longitud,
+                    'velocidad'   => round($pos->velocidad, 1),
+                    'actualizado' => $pos->capturado_en?->setTimezone('America/Lima')->format('H:i:s'),
+                    'en_ruta'     => true,
+                    'distance_km' => round($m->rutaActivaHoy?->distance_km ?? 0, 2),
+                ];
+            })->filter()->values()
+        );
     }
 
     // ── GET /api/admin/resumen-diario ─────────────────────

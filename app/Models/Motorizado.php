@@ -12,7 +12,7 @@ class Motorizado extends Authenticatable
     use HasApiTokens, SoftDeletes, Notifiable;
 
     protected $fillable = [
-        'nombre', 'sede', 'telefono', 'email',
+        'nombre', 'sede', 'tipo', 'telefono', 'email',
         'password', 'estado',
     ];
 
@@ -22,6 +22,12 @@ class Motorizado extends Authenticatable
 
     const SEDES = [
         'LIMA', 'ICA', 'AREQUIPA', 'TRUJILLO', 'CHICLAYO', 'PIURA'
+    ];
+
+    // Tipos de repartidor: motorizado (moto) y delivery (a pie / bicicleta)
+    const TIPOS = [
+        'motorizado' => 'Motorizado',
+        'delivery'   => 'Delivery',
     ];
 
     public function rutas()

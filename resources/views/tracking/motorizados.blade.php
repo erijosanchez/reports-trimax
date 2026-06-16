@@ -87,6 +87,7 @@
                                             <th>#</th>
                                             <th>Nombre</th>
                                             <th>Sede</th>
+                                            <th>Tipo</th>
                                             <th>Teléfono</th>
                                             <th>Email (app)</th>
                                             <th>Estado</th>
@@ -99,6 +100,13 @@
                                                 <td class="text-muted small">{{ $m->id }}</td>
                                                 <td class="fw-semibold">{{ $m->nombre }}</td>
                                                 <td><span class="bg-primary badge">{{ $m->sede }}</span></td>
+                                                <td>
+                                                    @if ($m->tipo === 'delivery')
+                                                        <span class="bg-info badge"><i class="me-1 mdi mdi-bike"></i>Delivery</span>
+                                                    @else
+                                                        <span class="bg-dark badge"><i class="me-1 mdi mdi-motorbike"></i>Motorizado</span>
+                                                    @endif
+                                                </td>
                                                 <td class="small">{{ $m->telefono ?? '—' }}</td>
                                                 <td class="text-muted small">{{ $m->email }}</td>
                                                 <td>
@@ -115,6 +123,7 @@
                                                         <button class="btn-outline-warning btn btn-sm btn-editar"
                                                             data-id="{{ $m->id }}" data-nombre="{{ $m->nombre }}"
                                                             data-sede="{{ $m->sede }}"
+                                                            data-tipo="{{ $m->tipo }}"
                                                             data-telefono="{{ $m->telefono ?? '' }}"
                                                             data-email="{{ $m->email }}"
                                                             data-estado="{{ $m->estado }}">
@@ -129,7 +138,7 @@
                                             </tr>
                                         @empty
                                             <tr>
-                                                <td colspan="7" class="py-5 text-muted text-center">
+                                                <td colspan="8" class="py-5 text-muted text-center">
                                                     <i class="d-block opacity-50 mb-2 mdi mdi-motorbike mdi-36px"></i>
                                                     No hay motorizados registrados
                                                 </td>
@@ -168,6 +177,15 @@
                                     <option value="{{ $s }}">{{ $s }}</option>
                                 @endforeach
                             </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Tipo <span class="text-danger">*</span></label>
+                            <select name="tipo" class="form-select" required>
+                                @foreach (\App\Models\Motorizado::TIPOS as $val => $label)
+                                    <option value="{{ $val }}">{{ $label }}</option>
+                                @endforeach
+                            </select>
+                            <div class="form-text">Delivery: reparto a pie o en bicicleta.</div>
                         </div>
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Teléfono</label>
@@ -229,6 +247,14 @@
                             </select>
                         </div>
                         <div class="mb-3">
+                            <label class="form-label fw-semibold">Tipo <span class="text-danger">*</span></label>
+                            <select name="tipo" id="edit-tipo" class="form-select" required>
+                                @foreach (\App\Models\Motorizado::TIPOS as $val => $label)
+                                    <option value="{{ $val }}">{{ $label }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="mb-3">
                             <label class="form-label fw-semibold">Teléfono</label>
                             <input type="text" name="telefono" id="edit-telefono" class="form-control">
                         </div>
@@ -280,6 +306,7 @@
                 document.getElementById('edit-id').value = btn.dataset.id;
                 document.getElementById('edit-nombre').value = btn.dataset.nombre;
                 document.getElementById('edit-sede').value = btn.dataset.sede;
+                document.getElementById('edit-tipo').value = btn.dataset.tipo || 'motorizado';
                 document.getElementById('edit-telefono').value = btn.dataset.telefono;
                 document.getElementById('edit-email').value = btn.dataset.email;
                 document.getElementById('edit-estado').value = btn.dataset.estado;

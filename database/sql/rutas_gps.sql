@@ -10,6 +10,7 @@ CREATE TABLE motorizados (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(255) NOT NULL,
     sede VARCHAR(255) NOT NULL,
+    tipo ENUM('motorizado', 'delivery') NOT NULL DEFAULT 'motorizado',
     telefono VARCHAR(255) NULL,
     email VARCHAR(255) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,

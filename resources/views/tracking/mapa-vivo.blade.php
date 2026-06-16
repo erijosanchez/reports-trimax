@@ -189,17 +189,24 @@
             let allData = [];
             let filtroSede = '';
 
-            // ── Ícono moto pulsante ───────────────────────────────────
-            function iconoMoto(sede) {
-                const c = SEDE_COLORS[sede] || DEFAULT_COLOR;
+            // SVG por tipo de repartidor
+            const SVG_MOTO = `<svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+                <path d="M19 7c0-1.1-.9-2-2-2h-3l2 4H4l-2 3h1.3c.4-1.2 1.5-2 2.7-2s2.3.8 2.7 2h6.6c.4-1.2 1.5-2 2.7-2s2.3.8 2.7 2H22l-1-3h-2V7zM6 16.5c0 .8-.7 1.5-1.5 1.5S3 17.3 3 16.5 3.7 15 4.5 15s1.5.7 1.5 1.5zm13 0c0 .8-.7 1.5-1.5 1.5s-1.5-.7-1.5-1.5.7-1.5 1.5-1.5 1.5.7 1.5 1.5z"/>
+            </svg>`;
+            const SVG_BICI = `<svg width="22" height="22" viewBox="0 0 24 24" fill="white">
+                <path d="M15.5 5.5c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zM5 12c-2.8 0-5 2.2-5 5s2.2 5 5 5 5-2.2 5-5-2.2-5-5-5zm0 8.5c-1.9 0-3.5-1.6-3.5-3.5s1.6-3.5 3.5-3.5 3.5 1.6 3.5 3.5-1.6 3.5-3.5 3.5zm5.8-10l2.4-2.4.8.8c1.3 1.3 3 2.1 5.1 2.1V7c-1.5 0-2.7-.6-3.6-1.5l-1.9-1.9c-.5-.4-1-.6-1.6-.6s-1.1.2-1.4.6L7.8 8.4c-.4.4-.6.9-.6 1.4 0 .6.2 1.1.6 1.4L11 14v5h2v-6.2l-2.2-2.3zM19 12c-2.8 0-5 2.2-5 5s2.2 5 5 5 5-2.2 5-5-2.2-5-5-5zm0 8.5c-1.9 0-3.5-1.6-3.5-3.5s1.6-3.5 3.5-3.5 3.5 1.6 3.5 3.5-1.6 3.5-3.5 3.5z"/>
+            </svg>`;
+
+            // ── Ícono pulsante (moto o bici según tipo) ───────────────
+            function iconoMarcador(m) {
+                const c = SEDE_COLORS[m.sede] || DEFAULT_COLOR;
+                const svg = m.tipo === 'delivery' ? SVG_BICI : SVG_MOTO;
                 return L.divIcon({
                     className: '',
                     html: `<div class="moto-wrapper">
                                 <div class="moto-ring" style="background:${c}"></div>
                                 <div class="moto-icon" style="background:${c}">
-                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
-                                        <path d="M19 7c0-1.1-.9-2-2-2h-3l2 4H4l-2 3h1.3c.4-1.2 1.5-2 2.7-2s2.3.8 2.7 2h6.6c.4-1.2 1.5-2 2.7-2s2.3.8 2.7 2H22l-1-3h-2V7zM6 16.5c0 .8-.7 1.5-1.5 1.5S3 17.3 3 16.5 3.7 15 4.5 15s1.5.7 1.5 1.5zm13 0c0 .8-.7 1.5-1.5 1.5s-1.5-.7-1.5-1.5.7-1.5 1.5-1.5 1.5.7 1.5 1.5z"/>
-                                    </svg>
+                                    ${svg}
                                 </div>
                             </div>`,
                     iconSize: [48, 48],
@@ -210,9 +217,10 @@
 
             // ── Popup motorizado ──────────────────────────────────────
             function popupMoto(m) {
+                const tipoLabel = m.tipo === 'delivery' ? '🚲 Delivery' : '🏍 Motorizado';
                 return `<div style="min-width:180px;font-size:12px">
         <strong style="font-size:14px">${m.nombre}</strong><br>
-        <span class="text-muted">${m.sede}</span>
+        <span class="text-muted">${m.sede} · ${tipoLabel}</span>
         <hr style="margin:6px 0">
         <div>🏎 <b>${m.velocidad} km/h</b></div>
         <div>📍 ${m.distance_km} km hoy</div>
@@ -241,7 +249,7 @@
                         markers[m.id].setLatLng([m.latitud, m.longitud]).setPopupContent(popup);
                     } else {
                         markers[m.id] = L.marker([m.latitud, m.longitud], {
-                                icon: iconoMoto(m.sede)
+                                icon: iconoMarcador(m)
                             })
                             .bindPopup(popup, {
                                 maxWidth: 220
@@ -266,13 +274,14 @@
                     const c = SEDE_COLORS[m.sede] || DEFAULT_COLOR;
                     const vel = m.velocidad || 0;
                     const vc = vel > 60 ? '#e74c3c' : vel > 30 ? '#f39c12' : '#27ae60';
+                    const tipoIcon = m.tipo === 'delivery' ? 'mdi-bike' : 'mdi-motorbike';
                     return `
         <div class="shadow-sm mb-2 p-2 border-0 card moto-card"
              style="border-left-color:${c}!important"
              onclick="irA(${m.id})">
             <div class="d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center gap-2">
-                    <div style="width:10px;height:10px;border-radius:50%;background:${c}"></div>
+                    <i class="mdi ${tipoIcon}" style="color:${c}"></i>
                     <strong class="small">${m.nombre}</strong>
                 </div>
                 <span class="badge" style="background:${vc};font-size:10px">${vel} km/h</span>
@@ -332,7 +341,13 @@
                 });
             });
 
+            // Refresco automático cada 10s (sin recargar la página)
             cargarTodo();
-            setInterval(cargarTodo, 10000);
+            let pollId = setInterval(cargarTodo, 10000);
+
+            // Al volver a la pestaña, refresca de inmediato
+            document.addEventListener('visibilitychange', () => {
+                if (!document.hidden) cargarTodo();
+            });
         </script>
     @endpush

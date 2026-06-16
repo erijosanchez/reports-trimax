@@ -117,6 +117,7 @@ class TrackingAdminController extends Controller
         $data = $request->validate([
             'nombre'   => 'required|string|max:255',
             'sede'     => 'required|string',
+            'tipo'     => 'required|in:motorizado,delivery',
             'telefono' => 'nullable|string|max:50',
             'email'    => 'required|email|unique:motorizados,email',
             'password' => 'required|string|min:6',
@@ -137,6 +138,7 @@ class TrackingAdminController extends Controller
         $data = $request->validate([
             'nombre'   => 'required|string|max:255',
             'sede'     => 'required|string',
+            'tipo'     => 'required|in:motorizado,delivery',
             'telefono' => 'nullable|string|max:50',
             'email'    => "required|email|unique:motorizados,email,{$id}",
             'password' => 'nullable|string|min:6',
