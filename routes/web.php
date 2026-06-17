@@ -80,6 +80,8 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
 
     Route::post('/gps-location', [LocationApiController::class, 'storeGpsLocation'])
         ->name('location.store-gps'); //API gps automatico
+    Route::post('/location-permission', [LocationApiController::class, 'reportPermission'])
+        ->name('location.report-permission'); // registra estado del permiso del navegador
 
     // Dashboards
     Route::prefix('dashboards')->name('dashboards.')->group(function () {

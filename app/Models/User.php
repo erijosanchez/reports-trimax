@@ -99,6 +99,21 @@ class User extends Authenticatable
         return $this->hasMany(UserLocation::class);
     }
 
+    /**
+     * Última ubicación GPS del usuario (una sola, la más reciente).
+     *
+     * Usa ofMany() para que el eager loading traiga correctamente 1 registro
+     * POR usuario. Un `->with(['locations' => fn($q) => $q->latest()->limit(1)])`
+     * NO funciona: el limit aplica al total de la consulta, no por usuario.
+     */
+    public function latestGpsLocation()
+    {
+        return $this->hasOne(UserLocation::class)->ofMany(
+            ['created_at' => 'max'],
+            fn ($query) => $query->where('location_type', 'gps')
+        );
+    }
+
     public function activityLogs()
     {
         return $this->hasMany(UserActivityLog::class);

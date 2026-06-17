@@ -17,7 +17,12 @@
                                     <div class="d-flex align-items-center justify-content-between statistics-details">
                                         <div>
                                             <h3 class="rate-percentage"><i class="mdi mdi-map"></i> Mapa de Ubicaciones GPS</h3>
-                                            <p style="color:#666;">Seguimiento en tiempo real de ubicaciones precisas</p>
+                                            <p style="color:#666;">
+                                                Seguimiento en tiempo real de ubicaciones precisas
+                                                <small class="text-muted ms-2">
+                                                    <i class="mdi mdi-sync"></i> Actualizado: <span id="lastUpdate">—</span>
+                                                </small>
+                                            </p>
                                         </div>
                                     </div>
                                 </div>
@@ -33,7 +38,7 @@
                                                     <div class="row">
                                                         <div class="col-sm-12">
                                                             <p class="mb-1 text-white"><i class="mdi mdi-map-marker"></i> Usuarios con GPS</p>
-                                                            <h2 class="text-white">{{ $usersWithLocations->count() }}</h2>
+                                                            <h2 class="text-white" id="statTotal">{{ $usersWithLocations->count() }}</h2>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -50,7 +55,7 @@
                                                     <div class="row">
                                                         <div class="col-sm-12">
                                                             <p class="mb-1 text-white">🟢 En línea ahora</p>
-                                                            <h2 class="text-white">
+                                                            <h2 class="text-white" id="statOnline">
                                                                 {{ $usersWithLocations->where('is_online', true)->count() }}
                                                             </h2>
                                                         </div>
@@ -69,7 +74,7 @@
                                                     <div class="row">
                                                         <div class="col-sm-12">
                                                             <p class="mb-1 text-white"><i class="mdi mdi-city"></i> Ciudades</p>
-                                                            <h2 class="text-white">
+                                                            <h2 class="text-white" id="statCities">
                                                                 {{ $usersWithLocations->pluck('city')->unique()->filter()->count() }}
                                                             </h2>
                                                         </div>
@@ -254,50 +259,98 @@
             attribution: '© OpenStreetMap'
         }).addTo(map);
 
-        const locations = @json($usersWithLocations);
+        const LIVE_URL = "{{ route('admin.locations.live') }}";
+        const markersLayer = L.layerGroup().addTo(map);
+        let firstRender = true;
 
-        if (locations.length > 0) {
+        function escapeHtml(str) {
+            return String(str ?? '').replace(/[&<>"']/g, s => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            } [s]));
+        }
+
+        function popupHtml(loc) {
+            const gmaps = `https://www.google.com/maps?q=${loc.latitude},${loc.longitude}`;
+            return `
+                <div style="min-width:230px;">
+                    <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.25rem;">
+                        <span style="font-size:1.3rem;">📱</span>
+                        <strong>${escapeHtml(loc.name)}</strong>
+                        <span style="margin-left:auto;font-size:0.75rem;color:${loc.is_online ? '#28a745' : '#6c757d'};">
+                            ${loc.is_online ? '🟢 En línea' : '⚪ Offline'}
+                        </span>
+                    </div>
+                    <small style="color:#666;">${escapeHtml(loc.email)}</small>
+                    <hr style="margin:0.5rem 0;">
+                    ${escapeHtml(loc.formatted_address || loc.city || 'Ubicación no disponible')}
+                    ${loc.accuracy ? `<br><small style="color:#28a745;">🎯 Precisión: ${Math.round(loc.accuracy)}m</small>` : ''}
+                    <br><small style="color:#999;">⏰ ${escapeHtml(loc.last_seen || '')}</small>
+                    <hr style="margin:0.5rem 0;">
+                    <div style="display:flex;gap:0.5rem;">
+                        <a href="${loc.history_url}" class="btn btn-sm btn-primary" style="flex:1;">📊 Historial</a>
+                        <a href="${gmaps}" target="_blank" rel="noopener" class="btn btn-sm btn-light" style="flex:1;">🗺️ Maps</a>
+                    </div>
+                </div>`;
+        }
+
+        function render(locations) {
+            markersLayer.clearLayers();
             const bounds = [];
-            
-            locations.forEach(location => {
-                if (!location.latitude || !location.longitude) return;
-                
-                bounds.push([location.latitude, location.longitude]);
-                
-                const color = location.is_online ? '#28a745' : '#6c757d';
-                
-                const marker = L.circleMarker([location.latitude, location.longitude], {
+
+            locations.forEach(loc => {
+                if (loc.latitude == null || loc.longitude == null) return;
+                bounds.push([loc.latitude, loc.longitude]);
+
+                const color = loc.is_online ? '#28a745' : '#6c757d';
+
+                // Círculo de precisión (radio real en metros).
+                if (loc.accuracy) {
+                    L.circle([loc.latitude, loc.longitude], {
+                        radius: loc.accuracy,
+                        color: color,
+                        weight: 1,
+                        fillColor: color,
+                        fillOpacity: 0.08
+                    }).addTo(markersLayer);
+                }
+
+                L.circleMarker([loc.latitude, loc.longitude], {
                     radius: 10,
                     fillColor: color,
                     color: 'white',
                     weight: 2,
                     opacity: 1,
-                    fillOpacity: 0.8
-                }).addTo(map);
-
-                const popupContent = `
-                    <div style="min-width:220px;">
-                        <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem;">
-                            <span style="font-size:1.3rem;">📱</span>
-                            <strong>${location.name}</strong>
-                        </div>
-                        <small style="color:#666;">${location.email}</small>
-                        <hr style="margin:0.5rem 0;">
-                        ${location.formatted_address || location.city || 'Ubicación no disponible'}
-                        ${location.accuracy ? `<br><small style="color:#28a745;">Precisión: ${Math.round(location.accuracy)}m</small>` : ''}
-                        <br><small style="color:#999;">${location.last_seen}</small>
-                    </div>
-                `;
-
-                marker.bindPopup(popupContent);
+                    fillOpacity: 0.85
+                }).addTo(markersLayer).bindPopup(popupHtml(loc));
             });
 
-            if (bounds.length > 0) {
+            // Solo encuadrar la primera vez, para no "saltar" mientras el admin explora.
+            if (firstRender && bounds.length > 0) {
                 map.fitBounds(bounds, { padding: [50, 50] });
+                firstRender = false;
             }
         }
 
-        // Auto-refresh cada 60 segundos
-        setInterval(() => location.reload(), 60000);
+        function refresh() {
+            fetch(LIVE_URL, { headers: { 'Accept': 'application/json' } })
+                .then(r => r.ok ? r.json() : Promise.reject(r.status))
+                .then(data => {
+                    render(data.locations || []);
+                    const total = (data.locations || []).length;
+                    const cities = new Set((data.locations || []).map(l => l.city).filter(Boolean));
+                    document.getElementById('statTotal').textContent = total;
+                    document.getElementById('statOnline').textContent = data.online ?? 0;
+                    document.getElementById('statCities').textContent = cities.size;
+                    document.getElementById('lastUpdate').textContent = data.updated_at || '';
+                })
+                .catch(() => { /* silencioso */ });
+        }
+
+        // Render inicial con datos del servidor + refresco vía AJAX cada 60s.
+        render(@json($usersWithLocations));
+        document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString('es-PE', { hour12: false });
+        setInterval(() => {
+            if (document.visibilityState === 'visible') refresh();
+        }, 60000);
     </script>
 @endsection

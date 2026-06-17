@@ -209,10 +209,13 @@
                                                                 <!-- Coordenadas -->
                                                                 <td>
                                                                     @if($location->latitude && $location->longitude)
-                                                                        <code style="font-size:0.85rem;">
-                                                                            {{ number_format($location->latitude, 6) }},<br>
-                                                                            {{ number_format($location->longitude, 6) }}
-                                                                        </code>
+                                                                        <a href="https://www.google.com/maps?q={{ $location->latitude }},{{ $location->longitude }}"
+                                                                            target="_blank" rel="noopener" title="Ver en Google Maps">
+                                                                            <code style="font-size:0.85rem;">
+                                                                                {{ number_format($location->latitude, 6) }},<br>
+                                                                                {{ number_format($location->longitude, 6) }}
+                                                                            </code>
+                                                                        </a>
                                                                     @else
                                                                         <span class="text-muted">N/A</span>
                                                                     @endif

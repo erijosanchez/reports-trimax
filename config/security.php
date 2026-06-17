@@ -23,6 +23,9 @@ return [
 
     'session' => [
         'timeout' => env('SESSION_TIMEOUT', 3600),
+        // Captura automática de la ubicación GPS del navegador (con permiso del usuario).
         'track_location' => env('TRACK_USER_LOCATION', true),
+        // Cada cuántos segundos se reenvía la ubicación mientras navega.
+        'track_interval' => env('TRACK_USER_LOCATION_INTERVAL', 300),
     ],
 ];

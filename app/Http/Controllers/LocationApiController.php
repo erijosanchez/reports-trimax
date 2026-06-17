@@ -2,12 +2,40 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\ActivityLogService;
 use App\Services\LocationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
 class LocationApiController extends Controller
 {
+    /**
+     * Registra en la bitácora el estado del permiso de ubicación del navegador.
+     * Enfoque "suave": no bloquea la navegación, solo deja constancia de quién
+     * tiene la ubicación desactivada para poder darle seguimiento.
+     */
+    public function reportPermission(Request $request)
+    {
+        $data = $request->validate([
+            'status' => 'required|in:granted,denied,prompt,unavailable',
+        ]);
+
+        $user = auth()->user();
+
+        $map = [
+            'granted'     => ['location_permission_granted', 'Permitió el acceso a su ubicación en el navegador'],
+            'denied'      => ['location_permission_denied', 'Tiene DESACTIVADO el permiso de ubicación del navegador'],
+            'unavailable' => ['location_permission_unavailable', 'Su navegador/dispositivo no soporta geolocalización'],
+            'prompt'      => ['location_permission_prompt', 'Aún no decide el permiso de ubicación'],
+        ];
+
+        [$action, $description] = $map[$data['status']];
+
+        ActivityLogService::log($user->id, $action, 'User', $user->id, $description);
+
+        return response()->json(['ok' => true]);
+    }
+
     /**
      * Guardar ubicación GPS del navegador
      */

@@ -74,6 +74,13 @@
     <!-- End custom js for this page-->
     @yield('scripts')
     @stack('scripts')
+
+    {{-- Captura automática de ubicación GPS (si está habilitada) --}}
+    @auth
+        @if (config('security.session.track_location'))
+            @include('includes.gps-tracker')
+        @endif
+    @endauth
 </body>
 
 </html>
