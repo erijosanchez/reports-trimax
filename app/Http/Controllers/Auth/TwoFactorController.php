@@ -44,6 +44,9 @@ class TwoFactorController extends Controller
         $valid = $google2fa->verifyKey($request->secret, $request->code);
 
         if (!$valid) {
+            $user = auth()->user();
+            ActivityLogService::log($user->id, '2fa_enable_failed', 'User', $user->id, 'Código inválido al intentar habilitar 2FA', 422);
+
             return back()->withErrors(['code' => 'Código inválido']);
         }
 
@@ -73,8 +76,12 @@ class TwoFactorController extends Controller
         );
 
         if (!$valid) {
+            ActivityLogService::log($user->id, '2fa_failed', 'User', $user->id, 'Código 2FA inválido al verificar sesión', 401);
+
             return back()->withErrors(['code' => 'Código inválido']);
         }
+
+        ActivityLogService::log($user->id, '2fa_verified', 'User', $user->id, 'Verificación 2FA exitosa');
 
         session(['2fa_verified' => true]);
 

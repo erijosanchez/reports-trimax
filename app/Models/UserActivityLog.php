@@ -39,20 +39,13 @@ class UserActivityLog extends Model
         return $this->belongsTo(UserSession::class, 'session_id');
     }
 
-    public static function log($userId, $action, $resourceType = null, $resourceId = null, $description = null)
+    /**
+     * Atajo de registro. Delega en ActivityLogService para mantener una sola
+     * fuente de verdad (incluye session_id y manejo de errores con try/catch).
+     */
+    public static function log($userId, $action, $resourceType = null, $resourceId = null, $description = null, $responseStatus = null)
     {
-        return self::create([
-            'user_id' => $userId,
-            'action' => $action,
-            'resource_type' => $resourceType,
-            'resource_id' => $resourceId,
-            'description' => $description,
-            'ip_address' => request()->ip(),
-            'user_agent' => request()->userAgent(),
-            'request_method' => request()->method(),
-            'request_url' => request()->fullUrl(),
-            'created_at' => now(),
-        ]);
+        return \App\Services\ActivityLogService::log($userId, $action, $resourceType, $resourceId, $description, $responseStatus);
     }
 
     public function scopeRecent($query, $hours = 24)

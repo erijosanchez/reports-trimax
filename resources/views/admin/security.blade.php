@@ -76,11 +76,19 @@
                             </p>
                         @else
                             <div class="table-responsive">
+                                @php
+                                    $motivos = [
+                                        'unknown_user' => ['Usuario inexistente', 'badge-secondary'],
+                                        'wrong_password' => ['Contraseña incorrecta', 'badge-warning'],
+                                        'inactive_account' => ['Cuenta desactivada', 'badge-danger'],
+                                    ];
+                                @endphp
                                 <table class="table table-hover">
                                     <thead>
                                         <tr>
                                             <th>Fecha</th>
                                             <th>Email</th>
+                                            <th>Motivo</th>
                                             <th>IP</th>
                                         </tr>
                                     </thead>
@@ -89,6 +97,10 @@
                                             <tr>
                                                 <td>{{ $attempt->attempted_at->format('d/m/Y H:i:s') }}</td>
                                                 <td>{{ $attempt->email }}</td>
+                                                <td>
+                                                    @php($m = $motivos[$attempt->reason] ?? [$attempt->reason ?: 'N/D', 'badge-dark'])
+                                                    <span class="badge {{ $m[1] }}">{{ $m[0] }}</span>
+                                                </td>
                                                 <td class="text-danger">{{ $attempt->ip_address }}</td>
                                             </tr>
                                         @endforeach

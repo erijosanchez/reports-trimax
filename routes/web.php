@@ -394,6 +394,7 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
         Route::get('/api/online-status', [AdminController::class, 'onlineStatusApi'])->name('api.online-status');
         Route::get('/users', [AdminController::class, 'users'])->name('users');
         Route::get('/activity-logs', [AdminController::class, 'activityLogs'])->name('activity-logs');
+        Route::get('/activity-logs/export', [AdminController::class, 'exportActivityLogs'])->name('activity-logs.export');
         Route::get('/security', [AdminController::class, 'security'])->name('security');
         // RUTAS DE UBICACIONES
         Route::prefix('locations')->name('locations.')->group(function () {

@@ -30,8 +30,25 @@ class IpBlacklist extends Model
         });
     }
 
-    public static function blockIp(string $ip, string $reason, $duration = null): self
+    /**
+     * Indica si una IP está en la whitelist (nunca debe bloquearse).
+     */
+    public static function isWhitelisted(?string $ip): bool
     {
+        if (!$ip) {
+            return false;
+        }
+
+        return in_array($ip, config('security.ip_blacklist.whitelist', []), true);
+    }
+
+    public static function blockIp(string $ip, string $reason, $duration = null): ?self
+    {
+        // Nunca bloquear IPs de confianza (localhost / oficina).
+        if (self::isWhitelisted($ip)) {
+            return null;
+        }
+
         return self::updateOrCreate(
             ['ip_address' => $ip],
             [

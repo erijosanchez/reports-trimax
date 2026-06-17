@@ -19,6 +19,11 @@ class CheckIpBlacklistMiddleware
 
         $ip = $request->ip();
 
+        // Las IPs de confianza (localhost / oficina) nunca se bloquean.
+        if (IpBlacklist::isWhitelisted($ip)) {
+            return $next($request);
+        }
+
         $blacklisted = IpBlacklist::where('ip_address', $ip)
             ->where(function ($query) {
                 $query->whereNull('blocked_until')

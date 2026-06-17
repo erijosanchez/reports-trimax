@@ -58,3 +58,20 @@ Schedule::command('trimax:sync-asignacion-bases')
     ->everyFifteenMinutes()
     ->withoutOverlapping(20)
     ->runInBackground();
+
+// Higiene de tablas de seguridad — domingos 03:00 (Lima).
+// Purga ruido antiguo SIN tocar la bitácora de actividad (user_activity_logs),
+// que se conserva íntegra para no perder información.
+Schedule::call(function () {
+    // Intentos de login fallidos con más de 90 días.
+    \App\Models\FailedLoginAttempt::cleanup(90);
+
+    // Bloqueos de IP temporales ya expirados (los permanentes —blocked_until null— se conservan).
+    \App\Models\IpBlacklist::whereNotNull('blocked_until')
+        ->where('blocked_until', '<', now())
+        ->delete();
+})->weeklyOn(0, '03:00')
+    ->name('limpieza-seguridad')
+    ->withoutOverlapping()
+    ->onOneServer()
+    ->timezone('America/Lima');

@@ -27,9 +27,11 @@
                                             </div>
                                         </div>
                                         <div>
-                                            <button id="exportLogs" class="btn btn-success btn-sm">
-                                                <i class="mdi mdi-download me-1"></i>Exportar
-                                            </button>
+                                            <a id="exportLogs"
+                                                href="{{ route('admin.activity-logs.export', request()->query()) }}"
+                                                class="btn btn-success btn-sm">
+                                                <i class="mdi mdi-download me-1"></i>Exportar CSV
+                                            </a>
                                         </div>
                                     </div>
                                 </div>
@@ -71,6 +73,18 @@
                                                             <option value="logout"
                                                                 {{ request('action') == 'logout' ? 'selected' : '' }}>Logout
                                                             </option>
+                                                            <option value="login_failed"
+                                                                {{ request('action') == 'login_failed' ? 'selected' : '' }}>
+                                                                Login fallido</option>
+                                                            <option value="validation_failed"
+                                                                {{ request('action') == 'validation_failed' ? 'selected' : '' }}>
+                                                                Validación fallida</option>
+                                                            <option value="access_denied"
+                                                                {{ request('action') == 'access_denied' ? 'selected' : '' }}>
+                                                                Acceso denegado</option>
+                                                            <option value="server_error"
+                                                                {{ request('action') == 'server_error' ? 'selected' : '' }}>
+                                                                Error de servidor</option>
                                                             <option value="create"
                                                                 {{ request('action') == 'create' ? 'selected' : '' }}>Crear
                                                             </option>
@@ -153,7 +167,7 @@
                                                 </div>
                                                 <div>
                                                     <small class="text-muted d-block">Logins Hoy</small>
-                                                    <strong id="loginsToday">-</strong>
+                                                    <strong id="loginsToday">{{ $stats['logins_today'] }}</strong>
                                                 </div>
                                             </div>
                                         </div>
@@ -169,7 +183,7 @@
                                                 </div>
                                                 <div>
                                                     <small class="text-muted d-block">Eliminaciones</small>
-                                                    <strong id="deletesToday">-</strong>
+                                                    <strong id="deletesToday">{{ $stats['deletes_today'] }}</strong>
                                                 </div>
                                             </div>
                                         </div>
@@ -184,8 +198,24 @@
                                                     <i class="mdi mdi-account-multiple text-info mdi-24px"></i>
                                                 </div>
                                                 <div>
-                                                    <small class="text-muted d-block">Usuarios Activos</small>
-                                                    <strong id="activeUsers">-</strong>
+                                                    <small class="text-muted d-block">Usuarios Activos Hoy</small>
+                                                    <strong id="activeUsers">{{ $stats['active_users'] }}</strong>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-3 col-md-6 mb-3">
+                                    <div class="card">
+                                        <div class="card-body py-3">
+                                            <div class="d-flex align-items-center">
+                                                <div class="icon-wrapper bg-warning-subtle rounded me-3">
+                                                    <i class="mdi mdi-lock-alert text-warning mdi-24px"></i>
+                                                </div>
+                                                <div>
+                                                    <small class="text-muted d-block">Logins Fallidos Hoy</small>
+                                                    <strong id="failedToday">{{ $stats['failed_today'] }}</strong>
                                                 </div>
                                             </div>
                                         </div>
@@ -256,8 +286,10 @@
                                                                     <td>
                                                                         <span
                                                                             class="badge 
-                                                                        @if (str_contains(strtolower($log->action), 'login')) badge-success
+                                                                        @if (str_contains(strtolower($log->action), 'denied') || str_contains(strtolower($log->action), 'error') || str_contains(strtolower($log->action), 'csrf')) badge-danger
+                                                                        @elseif(str_contains(strtolower($log->action), 'fail') || str_contains(strtolower($log->action), 'blocked')) badge-warning
                                                                         @elseif(str_contains(strtolower($log->action), 'logout')) badge-secondary
+                                                                        @elseif(str_contains(strtolower($log->action), 'login')) badge-success
                                                                         @elseif(str_contains(strtolower($log->action), 'create')) badge-primary
                                                                         @elseif(str_contains(strtolower($log->action), 'delete')) badge-danger
                                                                         @elseif(str_contains(strtolower($log->action), 'update')) badge-info
@@ -354,6 +386,10 @@
 
         .bg-info-subtle {
             background-color: rgba(13, 202, 240, 0.1) !important;
+        }
+
+        .bg-warning-subtle {
+            background-color: rgba(255, 193, 7, 0.12) !important;
         }
 
         /* Table columns widths */
@@ -496,33 +532,8 @@
                 });
             });
 
-            // Export logs
-            document.getElementById('exportLogs')?.addEventListener('click', function() {
-                alert('Funcionalidad de exportación - Implementar en backend');
-            });
-
-            // Calculate quick stats from current page
-            const rows = document.querySelectorAll('tbody tr');
-            let loginsCount = 0;
-            let deletesCount = 0;
-            const uniqueUsers = new Set();
-
-            rows.forEach(row => {
-                const badge = row.querySelector('.badge');
-                const userName = row.querySelector('.fw-bold')?.textContent;
-
-                if (badge) {
-                    const action = badge.textContent.toLowerCase();
-                    if (action.includes('login')) loginsCount++;
-                    if (action.includes('delete')) deletesCount++;
-                }
-
-                if (userName) uniqueUsers.add(userName);
-            });
-
-            document.getElementById('loginsToday').textContent = loginsCount;
-            document.getElementById('deletesToday').textContent = deletesCount;
-            document.getElementById('activeUsers').textContent = uniqueUsers.size;
+            // Las estadísticas (logins/eliminaciones/usuarios/fallidos) se calculan
+            // en el servidor sobre el total del día, no sobre la página actual.
         });
     </script>
 @endsection

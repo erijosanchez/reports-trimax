@@ -9,6 +9,7 @@ use App\Models\UserSession;
 use App\Models\UserActivityLog;
 use App\Models\IpBlacklist;
 use App\Models\FailedLoginAttempt;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AdminController extends Controller
 {
@@ -95,13 +96,99 @@ class AdminController extends Controller
         return view('admin.users', compact('users', 'onlineIds', 'allUsersStatus'));
     }
 
-    public function activityLogs()
+    public function activityLogs(Request $request)
     {
-        $logs = UserActivityLog::with('user')
+        $logs = $this->buildActivityLogQuery($request)
+            ->with('user')
             ->latest()
-            ->paginate(50);
+            ->paginate(50)
+            ->withQueryString();
 
-        return view('admin.activity-logs', compact('logs'));
+        // Usuarios para el filtro (dropdown).
+        $users = User::orderBy('name')->get(['id', 'name', 'email']);
+
+        // Estadísticas reales (no calculadas en JS sobre la página actual).
+        $stats = [
+            'logins_today'  => UserActivityLog::where('action', 'login')
+                ->whereDate('created_at', today())->count(),
+            'deletes_today' => UserActivityLog::where('action', 'like', 'delete%')
+                ->whereDate('created_at', today())->count(),
+            'active_users'  => UserActivityLog::whereDate('created_at', today())
+                ->distinct('user_id')->count('user_id'),
+            'failed_today'  => UserActivityLog::where('action', 'login_failed')
+                ->whereDate('created_at', today())->count(),
+        ];
+
+        return view('admin.activity-logs', compact('logs', 'users', 'stats'));
+    }
+
+    /**
+     * Exporta los logs de actividad a CSV respetando los filtros activos.
+     */
+    public function exportActivityLogs(Request $request): StreamedResponse
+    {
+        $filename = 'logs_actividad_' . now('America/Lima')->format('Y-m-d_His') . '.csv';
+
+        $query = $this->buildActivityLogQuery($request)->with('user')->latest();
+
+        $headers = [
+            'Content-Type'        => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+        ];
+
+        return response()->streamDownload(function () use ($query) {
+            $out = fopen('php://output', 'w');
+            // BOM para que Excel reconozca UTF-8 (tildes/ñ).
+            fwrite($out, "\xEF\xBB\xBF");
+            fputcsv($out, ['Fecha/Hora', 'Usuario', 'Email', 'Acción', 'Recurso', 'Descripción', 'IP', 'Método', 'URL', 'Estado']);
+
+            $query->chunk(500, function ($rows) use ($out) {
+                foreach ($rows as $log) {
+                    fputcsv($out, [
+                        optional($log->created_at)->format('Y-m-d H:i:s'),
+                        $log->user->name ?? 'N/D',
+                        $log->user->email ?? '',
+                        $log->action,
+                        trim(($log->resource_type ?? '') . ' ' . ($log->resource_id ?? '')),
+                        $log->description,
+                        $log->ip_address,
+                        $log->request_method,
+                        $log->request_url,
+                        $log->response_status,
+                    ]);
+                }
+            });
+
+            fclose($out);
+        }, $filename, $headers);
+    }
+
+    /**
+     * Construye la query de logs aplicando los filtros del request.
+     * Compartido entre la vista paginada y la exportación CSV.
+     */
+    private function buildActivityLogQuery(Request $request)
+    {
+        return UserActivityLog::query()
+            ->when($request->filled('user_id'), fn($q) => $q->where('user_id', $request->user_id))
+            ->when($request->filled('action'), function ($q) use ($request) {
+                // Acciones completas → coincidencia exacta; grupos por verbo
+                // (create/update/delete) → prefijo (ej. create_user, delete_dashboard).
+                $exactas = ['login', 'logout', 'login_failed', 'validation_failed', 'access_denied', 'csrf_expired', 'server_error', 'action_failed'];
+                in_array($request->action, $exactas, true)
+                    ? $q->where('action', $request->action)
+                    : $q->where('action', 'like', $request->action . '%');
+            })
+            ->when($request->filled('date_from'), fn($q) => $q->whereDate('created_at', '>=', $request->date_from))
+            ->when($request->filled('date_to'), fn($q) => $q->whereDate('created_at', '<=', $request->date_to))
+            ->when($request->filled('search'), function ($q) use ($request) {
+                $term = '%' . $request->search . '%';
+                $q->where(function ($sub) use ($term) {
+                    $sub->where('description', 'like', $term)
+                        ->orWhere('ip_address', 'like', $term)
+                        ->orWhere('action', 'like', $term);
+                });
+            });
     }
 
     public function security()

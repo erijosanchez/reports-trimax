@@ -4,10 +4,10 @@ use App\Http\Middleware\CheckIpBlacklistMiddleware;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
-use App\Http\Middleware\TrackFailedLoginsMiddleware;
 use App\Http\Middleware\TrackUserActivityMiddleware;
 use App\Http\Middleware\TwoFactorVerifiedMiddleware;
 use App\Http\Middleware\PreventBackHistoryMiddleware;
+use App\Http\Middleware\LogFailedActionsMiddleware;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -17,10 +17,15 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        // Middleware global para WEB
+        // Middleware global para WEB.
+        // El registro de intentos fallidos de login se maneja directamente en
+        // LoginController (con motivo y user_id), por eso ya no se usa aquí
+        // TrackFailedLoginsMiddleware (evita doble conteo).
         $middleware->web(append: [
             CheckIpBlacklistMiddleware::class,
-            TrackFailedLoginsMiddleware::class,
+            // Registra automáticamente intentos fallidos en cualquier módulo
+            // (validaciones de formularios/uploads, accesos denegados, etc.).
+            LogFailedActionsMiddleware::class,
         ]);
 
         // Middleware global para API
