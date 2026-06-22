@@ -4,11 +4,12 @@ namespace App\Notifications;
 
 use App\Models\ReporteComentarios;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Support\Facades\Storage;
 
-class ComentariosSubmitida extends Notification
+class ComentariosSubmitida extends Notification implements ShouldQueue
 {
     use Queueable;
 

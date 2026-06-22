@@ -393,7 +393,10 @@
             <div class="col-12">
                 <div class="shadow-sm border-0 card">
                     <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 bg-white border-bottom card-header">
-                        <h5 class="mb-0 fw-bold"><i class="me-2 text-success mdi mdi-history"></i>Historial de Reportes</h5>
+                        <h5 class="mb-0 fw-bold">
+                            <i class="me-2 text-success mdi mdi-history"></i>Historial de Reportes
+                            <span id="historial-total-badge" class="ms-2 text-muted fw-normal small d-none"></span>
+                        </h5>
                         <div class="d-flex flex-wrap align-items-center gap-2">
                             <select id="filtro-sede" class="form-select-sm form-select" style="width:auto" onchange="aplicarFiltros()">
                                 <option value="">Todas las sedes</option>
@@ -424,6 +427,12 @@
                                     </td></tr>
                                 </tbody>
                             </table>
+                        </div>
+                        <div id="historial-pagination-bar" class="d-flex align-items-center justify-content-between px-3 py-2 border-top d-none">
+                            <div id="historial-info" class="text-muted small"></div>
+                            <nav>
+                                <ul id="historial-pager" class="pagination pagination-sm mb-0"></ul>
+                            </nav>
                         </div>
                     </div>
                 </div>
@@ -557,6 +566,7 @@ const ROUTES = {
 const CSRF       = document.querySelector('meta[name="csrf-token"]').content;
 const urlShow    = (id)      => `${ROUTES.base}/${id}/show`;
 const urlUpdate  = (id)      => `${ROUTES.base}/${id}`;
+const urlRevisar = (id)      => `${ROUTES.base}/${id}/revisar`;
 const urlPreview = (id, idx) => `${ROUTES.base}/${id}/preview/${idx}`;
 const urlDownload= (id, idx) => `${ROUTES.base}/${id}/download/${idx}`;
 
@@ -705,7 +715,8 @@ if (formEditar) {
 }
 
 // ── Historial ──────────────────────────────────────────────────────
-let _historialData = [];
+let _historialMeta = { current_page: 1, last_page: 1, total: 0 };
+let _filtrosPoblados = false;
 
 function badgeEstadoCaja(estado) {
     const colorMap = { en_tiempo:'success', con_atraso:'danger', pendiente:'warning', no_enviado:'danger' };
@@ -713,50 +724,67 @@ function badgeEstadoCaja(estado) {
     return `<span class="badge bg-${colorMap[estado] ?? 'secondary'}">${labelMap[estado] ?? estado}</span>`;
 }
 
-async function cargarHistorial() {
+async function cargarHistorial(page = 1) {
     const loader = document.getElementById('historial-loader');
     loader.classList.remove('d-none');
     try {
-        const data = await apiFetch(ROUTES.historial);
-        _historialData = data.data ?? [];
-        poblarFiltroSede(_historialData);
-        poblarFiltroSemana(_historialData);
-        aplicarFiltros();
+        const sede   = document.getElementById('filtro-sede')?.value ?? '';
+        const semana = document.getElementById('filtro-semana')?.value ?? '';
+        const sort   = document.getElementById('sort-fecha')?.value ?? 'desc';
+        let url = ROUTES.historial + `?page=${page}&sort=${sort}`;
+        if (sede)   url += `&sede=${encodeURIComponent(sede)}`;
+        if (semana) url += `&semana=${encodeURIComponent(semana)}`;
+        const data = await apiFetch(url);
+        _historialMeta = { current_page: data.current_page, last_page: data.last_page, total: data.total };
+        poblarFiltros(data.filtros);
+        renderHistorial(data.data ?? []);
+        renderPaginacion();
+        const badge = document.getElementById('historial-total-badge');
+        if (badge) { badge.textContent = `(${data.total} registros)`; badge.classList.remove('d-none'); }
     } catch(err) { document.getElementById('historial-body').innerHTML=`<tr><td colspan="9" class="py-3 text-danger text-center">${err.message}</td></tr>`; }
     finally { loader.classList.add('d-none'); }
 }
 
-function poblarFiltroSede(rows) {
-    const sel = document.getElementById('filtro-sede');
-    if (!sel) return;
-    const sedes = [...new Set(rows.map(r => r.sede))].sort();
-    sedes.forEach(s => { const o = document.createElement('option'); o.value = s; o.textContent = s; sel.appendChild(o); });
-}
-
-function poblarFiltroSemana(rows) {
-    const sel = document.getElementById('filtro-semana');
-    if (!sel) return;
-    const vistas = new Set();
-    [...rows].sort((a, b) => (b.semana_inicio_iso ?? '').localeCompare(a.semana_inicio_iso ?? '')).forEach(r => {
-        if (!r.semana || vistas.has(r.semana)) return;
-        vistas.add(r.semana);
-        const label = r.semana_inicio && r.semana_fin ? `${r.semana} — ${r.semana_inicio} al ${r.semana_fin}` : r.semana;
-        const o = document.createElement('option'); o.value = r.semana; o.textContent = label; sel.appendChild(o);
-    });
+function poblarFiltros(filtros) {
+    if (_filtrosPoblados || !filtros) return;
+    _filtrosPoblados = true;
+    const selSede = document.getElementById('filtro-sede');
+    if (selSede) (filtros.sedes ?? []).forEach(s => { const o = document.createElement('option'); o.value = s; o.textContent = s; selSede.appendChild(o); });
+    const selSem = document.getElementById('filtro-semana');
+    if (selSem) (filtros.semanas ?? []).forEach(w => { const o = document.createElement('option'); o.value = w.value; o.textContent = w.label; selSem.appendChild(o); });
 }
 
 function aplicarFiltros() {
-    const sede   = document.getElementById('filtro-sede')?.value ?? '';
-    const semana = document.getElementById('filtro-semana')?.value ?? '';
-    const dir    = document.getElementById('sort-fecha')?.value ?? 'desc';
-    let rows = [..._historialData];
-    if (sede)   rows = rows.filter(r => r.sede === sede);
-    if (semana) rows = rows.filter(r => r.semana === semana);
-    rows.sort((a, b) => {
-        const da = a.semana_inicio_iso ?? '', db = b.semana_inicio_iso ?? '';
-        return dir === 'asc' ? da.localeCompare(db) : db.localeCompare(da);
-    });
-    renderHistorial(rows);
+    cargarHistorial(1);
+}
+
+function renderPaginacion() {
+    const bar   = document.getElementById('historial-pagination-bar');
+    const info  = document.getElementById('historial-info');
+    const pager = document.getElementById('historial-pager');
+    if (!bar || !info || !pager) return;
+    const { current_page: cur, last_page: last, total } = _historialMeta;
+    if (last <= 1) { bar.classList.add('d-none'); return; }
+    bar.classList.remove('d-none');
+    info.textContent = `Página ${cur} de ${last} — ${total} registros`;
+    let pages = [];
+    for (let i = 1; i <= last; i++) {
+        if (i === 1 || i === last || Math.abs(i - cur) <= 1) pages.push(i);
+        else if (pages[pages.length - 1] !== '...') pages.push('...');
+    }
+    pager.innerHTML = `
+        <li class="page-item ${cur <= 1 ? 'disabled' : ''}">
+            <a class="page-link" href="#" onclick="event.preventDefault();cargarHistorial(${cur - 1})">&laquo;</a>
+        </li>
+        ${pages.map(p => p === '...'
+            ? `<li class="page-item disabled"><span class="page-link">…</span></li>`
+            : `<li class="page-item ${p === cur ? 'active' : ''}">
+                <a class="page-link" href="#" onclick="event.preventDefault();cargarHistorial(${p})">${p}</a>
+               </li>`
+        ).join('')}
+        <li class="page-item ${cur >= last ? 'disabled' : ''}">
+            <a class="page-link" href="#" onclick="event.preventDefault();cargarHistorial(${cur + 1})">&raquo;</a>
+        </li>`;
 }
 
 function renderHistorial(rows) {
@@ -770,7 +798,7 @@ function renderHistorial(rows) {
             <td class="small">${r.fecha_limite ?? '—'}</td>
             <td class="small">${r.fecha_envio ?? '<span class="text-muted">—</span>'}${r.fecha_edicion ? `<br><span class="text-warning small"><i class="mdi mdi-pencil"></i> ${r.fecha_edicion}</span>` : ''}</td>
             <td>${r.kpi !== null ? `<span class="badge bg-${r.kpi_color} fs-6">${r.kpi_label}</span>` : '<span class="text-muted">—</span>'}</td>
-            <td>${badgeEstadoCaja(r.estado)}</td>
+            <td>${badgeEstadoCaja(r.estado)}${badgeRevision(r.revision_estado)}</td>
             <td class="text-center">${r.num_archivos > 0 ? `<span class="bg-info badge">${r.num_archivos}</span>` : '0'}</td>
             <td class="text-nowrap">
                 <button class="px-2 py-0 btn-outline-success btn btn-sm" onclick="verReporte(${r.id})"><i class="mdi mdi-eye"></i></button>
@@ -779,7 +807,7 @@ function renderHistorial(rows) {
         </tr>`).join('');
 }
 
-cargarHistorial();
+cargarHistorial(1);
 
 // ── Modal Ver ──────────────────────────────────────────────────────
 async function verReporte(id) {
@@ -813,8 +841,90 @@ async function verReporte(id) {
                 <div class="col-6"><div class="text-muted text-uppercase small fw-semibold">KPI</div><span class="badge bg-${r.kpi_color} fs-6">${r.kpi_label}</span></div>
                 ${r.notas?`<div class="col-12"><div class="text-muted text-uppercase small fw-semibold">Notas</div><div class="bg-light p-2 border rounded small">${r.notas}</div></div>`:''}
             </div><hr>
-            <h6 class="mb-2 fw-semibold">Archivos adjuntos</h6>${archivosHTML}`;
+            <h6 class="mb-2 fw-semibold">Archivos adjuntos</h6>${archivosHTML}${buildRevisionHTML(r, id)}`;
     } catch(err) { body.innerHTML=`<div class="alert alert-danger">${err.message}</div>`; }
+}
+
+// ── Revisión (conforme / rechazado) ───────────────────────────────
+function badgeRevision(estado) {
+    if (estado === 'conforme')  return ' <span class="badge bg-success" title="Revisión conforme"><i class="mdi mdi-check"></i></span>';
+    if (estado === 'rechazado') return ' <span class="badge bg-danger" title="Reporte rechazado"><i class="mdi mdi-close"></i></span>';
+    return '';
+}
+
+function buildRevisionHTML(r, id) {
+    const estado = r.revision_estado;
+    let statusBadge;
+    if (estado === 'conforme')       statusBadge = '<span class="badge bg-success">Conforme</span>';
+    else if (estado === 'rechazado') statusBadge = '<span class="badge bg-danger">Rechazado</span>';
+    else                             statusBadge = '<span class="badge bg-primary">Pendiente de revisión</span>';
+
+    let html = `
+        <hr>
+        <h6 class="mb-2 fw-semibold"><i class="me-1 mdi mdi-clipboard-check-outline"></i>Revisión</h6>
+        <div class="mb-2 d-flex align-items-center gap-2">
+            ${statusBadge}
+            ${r.revision_revisor ? `<span class="text-muted small">por ${r.revision_revisor}${r.revision_at ? ' · ' + r.revision_at : ''}</span>` : ''}
+        </div>
+        ${estado === 'rechazado' && r.revision_motivo ? `<div class="mb-2 py-2 alert alert-danger small"><strong>Motivo:</strong> ${r.revision_motivo}</div>` : ''}
+    `;
+
+    if (!r.puede_revisar) return html;
+
+    html += `
+        <div class="mt-2 p-2 bg-light border rounded">
+            <div class="mb-2 text-muted small">Marca el reporte según los documentos enviados:</div>
+            <div class="mb-2" id="revision-motivo-wrap" style="display:none;">
+                <textarea id="revision-motivo" class="form-control form-control-sm" rows="2" maxlength="1000" placeholder="Motivo del rechazo (obligatorio)..."></textarea>
+            </div>
+            <div id="revision-msg" class="mb-2"></div>
+            <div class="d-flex gap-2">
+                <button class="btn btn-success btn-sm fw-bold" onclick="enviarRevision(${id}, 'conforme')">
+                    <i class="me-1 mdi mdi-check-circle"></i>Conforme
+                </button>
+                <button class="btn btn-danger btn-sm fw-bold" onclick="solicitarRechazo(${id})">
+                    <i class="me-1 mdi mdi-close-circle"></i>Rechazar
+                </button>
+            </div>
+        </div>
+    `;
+    return html;
+}
+
+function solicitarRechazo(id) {
+    const wrap = document.getElementById('revision-motivo-wrap');
+    const ta   = document.getElementById('revision-motivo');
+    const msg  = document.getElementById('revision-msg');
+    if (wrap.style.display === 'none') {
+        wrap.style.display = '';
+        ta.focus();
+        msg.innerHTML = '<div class="text-muted small">Escribe el motivo y vuelve a pulsar "Rechazar".</div>';
+        return;
+    }
+    if (!ta.value.trim()) {
+        ta.focus();
+        msg.innerHTML = '<div class="text-danger small">Indica el motivo del rechazo.</div>';
+        return;
+    }
+    enviarRevision(id, 'rechazado', ta.value.trim());
+}
+
+async function enviarRevision(id, estado, motivo = null) {
+    const msg = document.getElementById('revision-msg');
+    if (msg) msg.innerHTML = '<div class="text-muted small">Guardando…</div>';
+    try {
+        const fd = new FormData();
+        fd.append('estado', estado);
+        if (motivo) fd.append('motivo', motivo);
+        const data = await apiFetch(urlRevisar(id), { method: 'POST', body: fd });
+        if (msg) msg.innerHTML = `<div class="text-success small">${data.message}</div>`;
+        setTimeout(() => {
+            bootstrap.Modal.getInstance(document.getElementById('modal-reporte'))?.hide();
+            cargarHistorial(_historialMeta?.current_page ?? 1);
+        }, 700);
+    } catch (err) {
+        if (msg) msg.innerHTML = `<div class="text-danger small">${err.message}</div>`;
+    }
 }
 
 // ── Gráfico KPI ────────────────────────────────────────────────────

@@ -774,6 +774,7 @@ const CSRF = document.querySelector('meta[name="csrf-token"]').content;
 // Helpers de URL dinámicas
 const urlShow   = (id) => `${ROUTES.base}/${id}/show`;
 const urlUpdate = (id) => `${ROUTES.base}/${id}`;
+const urlRevisar= (id) => `${ROUTES.base}/${id}/revisar`;
 const urlPreview= (id, idx) => `${ROUTES.base}/${id}/preview/${idx}`;
 const urlDownload=(id, idx) => `${ROUTES.base}/${id}/download/${idx}`;
 
@@ -1079,7 +1080,7 @@ function renderHistorial(rows) {
                 ${r.kpi !== null ? `<span class="badge bg-${r.kpi_color} fs-6">${r.kpi_label}</span>` : '<span class="text-muted">—</span>'}
                 ${r.editado_tarde ? '<br><small class="text-warning"><i class="mdi mdi-alert"></i> Editado tarde</small>' : ''}
             </td>
-            <td>${badgeEstado(r.estado)}</td>
+            <td>${badgeEstado(r.estado)}${badgeRevision(r.revision_estado)}</td>
             <td class="text-center">
                 ${r.num_archivos > 0 ? `<span class="bg-info badge">${r.num_archivos}</span>` : '<span class="text-muted">0</span>'}
             </td>
@@ -1270,9 +1271,92 @@ async function verReporte(id) {
             <hr>
             <h6 class="mb-2 fw-semibold">Archivos adjuntos</h6>
             ${archivosHTML}
+            ${buildRevisionHTML(r, id)}
         `;
     } catch (err) {
         body.innerHTML = `<div class="alert alert-danger">${err.message}</div>`;
+    }
+}
+
+// ── Revisión (conforme / rechazado) ───────────────────────────────
+function badgeRevision(estado) {
+    if (estado === 'conforme')  return ' <span class="badge bg-success" title="Revisión conforme"><i class="mdi mdi-check"></i></span>';
+    if (estado === 'rechazado') return ' <span class="badge bg-danger" title="Reporte rechazado"><i class="mdi mdi-close"></i></span>';
+    return '';
+}
+
+function buildRevisionHTML(r, id) {
+    const estado = r.revision_estado;
+    let statusBadge;
+    if (estado === 'conforme')       statusBadge = '<span class="badge bg-success">Conforme</span>';
+    else if (estado === 'rechazado') statusBadge = '<span class="badge bg-danger">Rechazado</span>';
+    else                             statusBadge = '<span class="badge bg-primary">Pendiente de revisión</span>';
+
+    let html = `
+        <hr>
+        <h6 class="mb-2 fw-semibold"><i class="me-1 mdi mdi-clipboard-check-outline"></i>Revisión</h6>
+        <div class="mb-2 d-flex align-items-center gap-2">
+            ${statusBadge}
+            ${r.revision_revisor ? `<span class="text-muted small">por ${r.revision_revisor}${r.revision_at ? ' · ' + r.revision_at : ''}</span>` : ''}
+        </div>
+        ${estado === 'rechazado' && r.revision_motivo ? `<div class="mb-2 py-2 alert alert-danger small"><strong>Motivo:</strong> ${r.revision_motivo}</div>` : ''}
+    `;
+
+    if (!r.puede_revisar) return html;
+
+    html += `
+        <div class="mt-2 p-2 bg-light border rounded">
+            <div class="mb-2 text-muted small">Marca el reporte según los documentos enviados:</div>
+            <div class="mb-2" id="revision-motivo-wrap" style="display:none;">
+                <textarea id="revision-motivo" class="form-control form-control-sm" rows="2" maxlength="1000" placeholder="Motivo del rechazo (obligatorio)..."></textarea>
+            </div>
+            <div id="revision-msg" class="mb-2"></div>
+            <div class="d-flex gap-2">
+                <button class="btn btn-success btn-sm fw-bold" onclick="enviarRevision(${id}, 'conforme')">
+                    <i class="me-1 mdi mdi-check-circle"></i>Conforme
+                </button>
+                <button class="btn btn-danger btn-sm fw-bold" onclick="solicitarRechazo(${id})">
+                    <i class="me-1 mdi mdi-close-circle"></i>Rechazar
+                </button>
+            </div>
+        </div>
+    `;
+    return html;
+}
+
+function solicitarRechazo(id) {
+    const wrap = document.getElementById('revision-motivo-wrap');
+    const ta   = document.getElementById('revision-motivo');
+    const msg  = document.getElementById('revision-msg');
+    if (wrap.style.display === 'none') {
+        wrap.style.display = '';
+        ta.focus();
+        msg.innerHTML = '<div class="text-muted small">Escribe el motivo y vuelve a pulsar "Rechazar".</div>';
+        return;
+    }
+    if (!ta.value.trim()) {
+        ta.focus();
+        msg.innerHTML = '<div class="text-danger small">Indica el motivo del rechazo.</div>';
+        return;
+    }
+    enviarRevision(id, 'rechazado', ta.value.trim());
+}
+
+async function enviarRevision(id, estado, motivo = null) {
+    const msg = document.getElementById('revision-msg');
+    if (msg) msg.innerHTML = '<div class="text-muted small">Guardando…</div>';
+    try {
+        const fd = new FormData();
+        fd.append('estado', estado);
+        if (motivo) fd.append('motivo', motivo);
+        const data = await apiFetch(urlRevisar(id), { method: 'POST', body: fd });
+        if (msg) msg.innerHTML = `<div class="text-success small">${data.message}</div>`;
+        setTimeout(() => {
+            bootstrap.Modal.getInstance(document.getElementById('modal-reporte'))?.hide();
+            cargarHistorial(_historialMeta?.current_page ?? 1);
+        }, 700);
+    } catch (err) {
+        if (msg) msg.innerHTML = `<div class="text-danger small">${err.message}</div>`;
     }
 }
 

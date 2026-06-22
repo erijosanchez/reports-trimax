@@ -4,11 +4,12 @@ namespace App\Notifications;
 
 use App\Models\ReporteCajaChica;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Support\Facades\Storage;
 
-class CajaChicaSubmitida extends Notification
+class CajaChicaSubmitida extends Notification implements ShouldQueue
 {
     use Queueable;
 

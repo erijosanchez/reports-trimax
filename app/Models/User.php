@@ -269,6 +269,18 @@ class User extends Authenticatable
     }
 
     /**
+     * Revisar (conforme/rechazado) los reportes de sedes:
+     * - Superadmin y admin siempre.
+     * - Usuarios con permiso de productividad sedes (ej. Silvia).
+     * - Los usuarios de rol "sede" NO pueden revisar (solo ver/enviar lo suyo).
+     */
+    public function puedeRevisarReportesSedes(): bool
+    {
+        return $this->isSuperAdmin() || $this->isAdmin()
+            || (bool) $this->puede_ver_productividad_sedes;
+    }
+
+    /**
      * Ver Productivy (vista total de todas las sedes):
      * - Admin y superadmin siempre.
      * - Otros roles solo si tienen el permiso explícito.

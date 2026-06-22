@@ -299,6 +299,7 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
             Route::get('/',                       [CobranzaSedesController::class, 'index'])->name('index');
             Route::post('/',                      [CobranzaSedesController::class, 'store'])->name('store');
             Route::put('/{reporte}',              [CobranzaSedesController::class, 'update'])->name('update');
+            Route::post('/{reporte}/revisar',     [CobranzaSedesController::class, 'revisar'])->name('revisar');
             Route::get('/{reporte}/show',         [CobranzaSedesController::class, 'show'])->name('show');
             Route::get('/{reporte}/download/{index}', [CobranzaSedesController::class, 'download'])->name('download');
             Route::get('/{reporte}/preview/{index}',  [CobranzaSedesController::class, 'preview'])->name('preview');
@@ -314,6 +315,7 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
             Route::get('/',                           [CajaChicaSedesController::class, 'index'])->name('index');
             Route::post('/',                          [CajaChicaSedesController::class, 'store'])->name('store');
             Route::put('/{reporte}',                  [CajaChicaSedesController::class, 'update'])->name('update');
+            Route::post('/{reporte}/revisar',         [CajaChicaSedesController::class, 'revisar'])->name('revisar');
             Route::get('/{reporte}/show',             [CajaChicaSedesController::class, 'show'])->name('show');
             Route::get('/{reporte}/download/{index}', [CajaChicaSedesController::class, 'download'])->name('download');
             Route::get('/{reporte}/preview/{index}',  [CajaChicaSedesController::class, 'preview'])->name('preview');
@@ -328,6 +330,7 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
             Route::get('/',                           [ComentariosSedesController::class, 'index'])->name('index');
             Route::post('/',                          [ComentariosSedesController::class, 'store'])->name('store');
             Route::put('/{reporte}',                  [ComentariosSedesController::class, 'update'])->name('update');
+            Route::post('/{reporte}/revisar',         [ComentariosSedesController::class, 'revisar'])->name('revisar');
             Route::get('/{reporte}/show',             [ComentariosSedesController::class, 'show'])->name('show');
             Route::get('/{reporte}/download/{index}', [ComentariosSedesController::class, 'download'])->name('download');
             Route::get('/{reporte}/preview/{index}',  [ComentariosSedesController::class, 'preview'])->name('preview');

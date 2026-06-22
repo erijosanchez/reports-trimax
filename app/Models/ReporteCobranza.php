@@ -25,6 +25,10 @@ class ReporteCobranza extends Model
         'kpi_porcentaje',
         'editado_tarde',
         'estado',
+        'revision_estado',
+        'revision_motivo',
+        'revision_user_id',
+        'revision_at',
     ];
 
     protected $casts = [
@@ -36,6 +40,7 @@ class ReporteCobranza extends Model
         'archivos'            => 'array',
         'kpi_porcentaje'      => 'decimal:2',
         'editado_tarde'       => 'boolean',
+        'revision_at'         => 'datetime',
     ];
 
     // ── Relaciones ────────────────────────────────────────────────
@@ -43,6 +48,11 @@ class ReporteCobranza extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function revisor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'revision_user_id');
     }
 
     // Sedes con límite excepcional de 11:00 AM (resto: 10:00 AM)
@@ -94,6 +104,11 @@ class ReporteCobranza extends Model
             : $this->fecha_envio_original;
 
         $kpi = self::calcularKpi($fechaEfectiva, $this->fecha_limite);
+
+        // Penalización por rechazo en revisión: −50 puntos (mínimo 0)
+        if ($this->revision_estado === 'rechazado') {
+            $kpi = max(0.0, $kpi - 50.0);
+        }
 
         $this->kpi_porcentaje = $kpi;
         $this->estado         = $kpi >= 100 ? 'en_tiempo' : 'con_atraso';

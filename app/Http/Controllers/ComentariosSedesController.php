@@ -136,10 +136,13 @@ class ComentariosSedesController extends Controller
 
     public function update(Request $request, ReporteComentarios $reporte)
     {
-        $user = auth()->user();
+        $user = auth()->user()->fresh();
 
-        if (!$user->isSuperAdmin() && !$user->isAdmin() && $reporte->user_id !== $user->id) {
-            return response()->json(['error' => 'Sin permiso.'], 403);
+        $esPropietario = (int) $reporte->user_id === (int) $user->id;
+        $esMismaSede   = $user->isSede() && $reporte->sede === $user->sede;
+
+        if (!$user->isSuperAdmin() && !$user->isAdmin() && !$esPropietario && !$esMismaSede) {
+            return response()->json(['error' => 'Sin permiso para editar este reporte.'], 403);
         }
 
         $request->validate([
@@ -176,6 +179,15 @@ class ComentariosSedesController extends Controller
             'notas'                => $request->notas ?? $reporte->notas,
             'editado_tarde'        => $reporte->editado_tarde || $tardio,
         ]);
+
+        // Si estaba rechazado y se corrige/reenvía, vuelve a pendiente de revisión
+        if ($reporte->revision_estado === 'rechazado') {
+            $reporte->revision_estado  = null;
+            $reporte->revision_motivo  = null;
+            $reporte->revision_user_id = null;
+            $reporte->revision_at      = null;
+        }
+
         $reporte->save();
         $reporte->recalcularKpi();
 
@@ -190,6 +202,74 @@ class ComentariosSedesController extends Controller
             'tardio'  => $tardio,
             'reload'  => true,
         ]);
+    }
+
+    // ── Revisión (conforme / rechazado) ───────────────────────────
+
+    public function revisar(Request $request, ReporteComentarios $reporte)
+    {
+        $user = auth()->user();
+
+        if (!$user->puedeRevisarReportesSedes()) {
+            return response()->json(['error' => 'Sin permiso para revisar reportes.'], 403);
+        }
+
+        if (is_null($reporte->fecha_envio_original)) {
+            return response()->json(['error' => 'No se puede revisar un reporte que aún no fue enviado.'], 422);
+        }
+
+        $data = $request->validate([
+            'estado' => 'required|in:conforme,rechazado',
+            'motivo' => 'required_if:estado,rechazado|nullable|string|max:1000',
+        ], [
+            'motivo.required_if' => 'Debes indicar el motivo del rechazo.',
+        ]);
+
+        $reporte->revision_estado  = $data['estado'];
+        $reporte->revision_motivo  = $data['estado'] === 'rechazado' ? $data['motivo'] : null;
+        $reporte->revision_user_id = $user->id;
+        $reporte->revision_at      = Carbon::now('America/Lima');
+        $reporte->save();
+        $reporte->recalcularKpi();
+
+        if ($data['estado'] === 'rechazado') {
+            $this->notificarRechazo($reporte);
+        }
+
+        ActivityLogService::log(
+            $user->id, 'revisar_reporte_comentarios', 'ReporteComentarios', $reporte->id,
+            "Marcó reporte de comentarios como {$data['estado']} (sede: {$reporte->sede})"
+        );
+
+        return response()->json([
+            'success'         => true,
+            'message'         => $data['estado'] === 'conforme'
+                ? 'Reporte marcado como conforme.'
+                : 'Reporte rechazado. Se notificó a la sede.',
+            'kpi'             => $reporte->kpi_porcentaje,
+            'revision_estado' => $reporte->revision_estado,
+            'reload'          => true,
+        ]);
+    }
+
+    private function notificarRechazo(ReporteComentarios $reporte): void
+    {
+        $owner = $reporte->user;
+        if (!$owner || empty($owner->email)) {
+            return;
+        }
+        try {
+            Notification::route('mail', $owner->email)->notify(new \App\Notifications\ReporteSedeRechazado(
+                'Comentarios',
+                $reporte->sede,
+                "S{$reporte->semana_numero}/{$reporte->anio}",
+                $reporte->revision_motivo ?? '',
+                auth()->user()->name,
+                route('productividad.cobranza-sedes.comentarios.index')
+            ));
+        } catch (\Exception $e) {
+            Log::error("Notificación de rechazo (comentarios) no enviada: " . $e->getMessage());
+        }
     }
 
     // ── show ──────────────────────────────────────────────────────
@@ -221,6 +301,11 @@ class ComentariosSedesController extends Controller
             'editado_tarde' => $reporte->editado_tarde,
             'notas'         => $reporte->notas,
             'archivos'      => $archivos,
+            'revision_estado'  => $reporte->revision_estado,
+            'revision_motivo'  => $reporte->revision_motivo,
+            'revision_revisor' => $reporte->revisor?->name,
+            'revision_at'      => $reporte->revision_at?->setTimezone('America/Lima')->format('d/m/Y H:i'),
+            'puede_revisar'    => auth()->user()->puedeRevisarReportesSedes(),
         ]);
     }
 
@@ -254,14 +339,37 @@ class ComentariosSedesController extends Controller
         $user = auth()->user();
         if (!$user->puedeVerCobranzaSedes()) return response()->json(['error' => 'Sin permiso.'], 403);
 
-        $query = ReporteComentarios::with('user')->orderByDesc('anio')->orderByDesc('semana_numero');
-
+        $base = ReporteComentarios::query();
         if ($user->isSede() && !$user->isSuperAdmin() && !$user->isAdmin()) {
-            $query->where('sede', $user->sede);
+            $base->where('sede', $user->sede);
         }
 
+        // Opciones de filtro sobre el conjunto visible completo
+        $sedesDisponibles = (clone $base)->select('sede')->distinct()->orderBy('sede')->pluck('sede');
+        $semanasDisponibles = (clone $base)
+            ->select('semana_inicio', 'semana_fin', 'semana_numero', 'anio')
+            ->orderByDesc('anio')->orderByDesc('semana_numero')->get()
+            ->unique(fn($r) => "{$r->semana_numero}/{$r->anio}")
+            ->map(fn($r) => [
+                'value' => $r->semana_inicio?->toDateString(),
+                'label' => "S{$r->semana_numero}/{$r->anio}" . ($r->semana_inicio && $r->semana_fin
+                    ? " — {$r->semana_inicio->format('d/m/Y')} al {$r->semana_fin->format('d/m/Y')}" : ''),
+            ])->values();
+
+        $query = (clone $base)->with('user');
+        if ($request->filled('sede'))   $query->where('sede', $request->sede);
+        if ($request->filled('semana')) $query->whereDate('semana_inicio', $request->semana);
+
+        $dir = $request->get('sort', 'desc') === 'asc' ? 'asc' : 'desc';
+        $query->orderBy('semana_inicio', $dir)->orderBy('created_at', $dir);
+
+        $perPage = 25;
+        $page    = max(1, (int) $request->get('page', 1));
+        $total   = $query->count();
+        $items   = $query->skip(($page - 1) * $perPage)->take($perPage)->get();
+
         return response()->json([
-            'data' => $query->limit(100)->get()->map(fn($r) => [
+            'data' => $items->map(fn($r) => [
                 'id'            => $r->id,
                 'sede'          => $r->sede,
                 'semana'        => "S{$r->semana_numero}/{$r->anio}",
@@ -281,7 +389,16 @@ class ComentariosSedesController extends Controller
                 'puede_enviar_atrasado' => is_null($r->fecha_envio_original) &&
                     ($user->isSuperAdmin() || $user->isAdmin() || $r->sede === $user->sede),
                 'semana_inicio_iso'     => $r->semana_inicio?->toDateString(),
+                'revision_estado'       => $r->revision_estado,
             ]),
+            'total'        => $total,
+            'per_page'     => $perPage,
+            'current_page' => $page,
+            'last_page'    => (int) ceil($total / $perPage),
+            'filtros'      => [
+                'sedes'   => $sedesDisponibles,
+                'semanas' => $semanasDisponibles,
+            ],
         ]);
     }
 

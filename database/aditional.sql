@@ -842,3 +842,25 @@ ALTER TABLE vouchers
 ADD COLUMN archivos JSON NULL AFTER status;
 
 /* ══ FIN MÓDULO VOUCHERS ══════════════════════════════════════ */
+
+
+/* ══ validacion de reportes ══════════════════════════════════════ */
+ALTER TABLE reportes_cobranza
+    ADD COLUMN revision_estado  VARCHAR(20) NULL,
+    ADD COLUMN revision_motivo  TEXT NULL,
+    ADD COLUMN revision_user_id BIGINT UNSIGNED NULL,
+    ADD COLUMN revision_at      TIMESTAMP NULL;
+
+ALTER TABLE reportes_caja_chica
+    ADD COLUMN revision_estado  VARCHAR(20) NULL,
+    ADD COLUMN revision_motivo  TEXT NULL,
+    ADD COLUMN revision_user_id BIGINT UNSIGNED NULL,
+    ADD COLUMN revision_at      TIMESTAMP NULL;
+
+ALTER TABLE reportes_comentarios
+    ADD COLUMN revision_estado  VARCHAR(20) NULL,
+    ADD COLUMN revision_motivo  TEXT NULL,
+    ADD COLUMN revision_user_id BIGINT UNSIGNED NULL,
+    ADD COLUMN revision_at      TIMESTAMP NULL;
+
+/* ══ FIN validacion de reportes ══════════════════════════════════════ */

@@ -267,6 +267,15 @@ class CobranzaSedesController extends Controller
             'notas'                => $request->notas ?? $reporte->notas,
             'editado_tarde'        => $reporte->editado_tarde || $tardio,
         ]);
+
+        // Si estaba rechazado y se corrige/reenvía, vuelve a pendiente de revisión
+        if ($reporte->revision_estado === 'rechazado') {
+            $reporte->revision_estado  = null;
+            $reporte->revision_motivo  = null;
+            $reporte->revision_user_id = null;
+            $reporte->revision_at      = null;
+        }
+
         $reporte->save();
         $reporte->recalcularKpi();
 
@@ -284,6 +293,74 @@ class CobranzaSedesController extends Controller
             'tardio'  => $tardio,
             'reload'  => true,
         ]);
+    }
+
+    // ── Revisión (conforme / rechazado) ───────────────────────────
+
+    public function revisar(Request $request, ReporteCobranza $reporte)
+    {
+        $user = auth()->user();
+
+        if (!$user->puedeRevisarReportesSedes()) {
+            return response()->json(['error' => 'Sin permiso para revisar reportes.'], 403);
+        }
+
+        if (is_null($reporte->fecha_envio_original)) {
+            return response()->json(['error' => 'No se puede revisar un reporte que aún no fue enviado.'], 422);
+        }
+
+        $data = $request->validate([
+            'estado' => 'required|in:conforme,rechazado',
+            'motivo' => 'required_if:estado,rechazado|nullable|string|max:1000',
+        ], [
+            'motivo.required_if' => 'Debes indicar el motivo del rechazo.',
+        ]);
+
+        $reporte->revision_estado  = $data['estado'];
+        $reporte->revision_motivo  = $data['estado'] === 'rechazado' ? $data['motivo'] : null;
+        $reporte->revision_user_id = $user->id;
+        $reporte->revision_at      = Carbon::now('America/Lima');
+        $reporte->save();
+        $reporte->recalcularKpi();
+
+        if ($data['estado'] === 'rechazado') {
+            $this->notificarRechazo($reporte);
+        }
+
+        ActivityLogService::log(
+            $user->id, 'revisar_reporte_cobranza', 'ReporteCobranza', $reporte->id,
+            "Marcó reporte de cobranza como {$data['estado']} (sede: {$reporte->sede})"
+        );
+
+        return response()->json([
+            'success'         => true,
+            'message'         => $data['estado'] === 'conforme'
+                ? 'Reporte marcado como conforme.'
+                : 'Reporte rechazado. Se notificó a la sede.',
+            'kpi'             => $reporte->kpi_porcentaje,
+            'revision_estado' => $reporte->revision_estado,
+            'reload'          => true,
+        ]);
+    }
+
+    private function notificarRechazo(ReporteCobranza $reporte): void
+    {
+        $owner = $reporte->user;
+        if (!$owner || empty($owner->email)) {
+            return;
+        }
+        try {
+            Notification::route('mail', $owner->email)->notify(new \App\Notifications\ReporteSedeRechazado(
+                'Depósito de Efectivo',
+                $reporte->sede,
+                $reporte->semana_inicio?->format('d/m/Y') ?? '—',
+                $reporte->revision_motivo ?? '',
+                auth()->user()->name,
+                route('productividad.cobranza-sedes.cobranza.index')
+            ));
+        } catch (\Exception $e) {
+            Log::error("Notificación de rechazo (cobranza) no enviada: " . $e->getMessage());
+        }
     }
 
     // ── Download ──────────────────────────────────────────────────
@@ -417,6 +494,7 @@ class CobranzaSedesController extends Controller
                 'puede_editar'          => !is_null($r->fecha_envio_original) &&
                     ($user->isSuperAdmin() || $user->isAdmin() || $r->sede === $user->sede),
                 'semana_inicio_iso'     => $r->semana_inicio?->toDateString(),
+                'revision_estado'       => $r->revision_estado,
             ];
         });
 
@@ -477,6 +555,11 @@ class CobranzaSedesController extends Controller
             'notas'         => $reporte->notas,
             'archivos'      => $archivos,
             'puede_editar'  => $this->puedeEditar($reporte),
+            'revision_estado'  => $reporte->revision_estado,
+            'revision_motivo'  => $reporte->revision_motivo,
+            'revision_revisor' => $reporte->revisor?->name,
+            'revision_at'      => $reporte->revision_at?->setTimezone('America/Lima')->format('d/m/Y H:i'),
+            'puede_revisar'    => $user->puedeRevisarReportesSedes(),
         ]);
     }
 
