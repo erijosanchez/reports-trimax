@@ -14,7 +14,7 @@
         El reporte de <strong>{{ $tipo }}</strong> de la sede <strong>{{ $sede }}</strong>
         correspondiente a <strong>{{ $periodo }}</strong> fue <strong style="color:#dc2626;">RECHAZADO</strong>
         durante la revisión. Por favor corrige y vuelve a enviar los documentos.
-        <br><span style="color:#dc2626;font-weight:600;">Esto afecta el KPI del reporte (−50 puntos).</span>
+        <br><span style="color:#dc2626;font-weight:600;">Esto afecta el KPI del reporte (queda en 0%).</span>
     </p>
 
     <div class="data-card">

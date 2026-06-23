@@ -91,9 +91,9 @@ class ReporteComentarios extends Model
 
         $kpi = self::calcularKpi($fechaEfectiva, $this->fecha_limite);
 
-        // Penalización por rechazo en revisión: −50 puntos (mínimo 0)
+        // Penalización por rechazo en revisión: KPI a 0
         if ($this->revision_estado === 'rechazado') {
-            $kpi = max(0.0, $kpi - 50.0);
+            $kpi = 0.0;
         }
 
         $this->kpi_porcentaje = $kpi;
