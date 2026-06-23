@@ -59,13 +59,20 @@ class MarketingController extends Controller
 
     public function index(Request $request)
     {
-        $startDate = $request->get('start_date', now()->subDays(30)->format('Y-m-d'));
-        $endDate   = $request->get('end_date',   now()->format('Y-m-d'));
+        // Sin valores por defecto: si no se envían fechas, se usa TODA la data real.
+        $startDate = $request->get('start_date');
+        $endDate   = $request->get('end_date');
         $userId    = $request->get('user_id');
 
-        // ── Encuestas del rango ──
+        // Solo aplicamos el rango de fechas cuando se envían AMBAS fechas.
+        $hasDateRange = $startDate && $endDate;
+
+        // ── Encuestas (todas, o filtradas por rango si se pidió) ──
         $query = Survey::with('userMarketing:id,name,role,location')
-            ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
+            ->when($hasDateRange, fn($q) => $q->whereBetween('created_at', [
+                $startDate . ' 00:00:00',
+                $endDate   . ' 23:59:59',
+            ]));
 
         if ($userId) {
             $query->where('user_id', $userId);
@@ -77,7 +84,10 @@ class MarketingController extends Controller
         $stats = $this->calcStats($surveys);
 
         // ── Tendencia diaria (para el gráfico de líneas) ──
-        $dailyTrend = Survey::whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
+        $dailyTrend = Survey::when($hasDateRange, fn($q) => $q->whereBetween('created_at', [
+                $startDate . ' 00:00:00',
+                $endDate   . ' 23:59:59',
+            ]))
             ->when($userId, fn($q) => $q->where('user_id', $userId))
             ->selectRaw('DATE(created_at) as date,
                             COUNT(*) as total,
@@ -129,9 +139,12 @@ class MarketingController extends Controller
             ->orderBy('name')
             ->get(['id', 'name', 'role', 'location']);
 
-        // ── Encuestas recientes ──
+        // ── Encuestas recientes (preview de las 50 más nuevas) ──
         $recentSurveys = Survey::with('userMarketing:id,name,role,location')
-            ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
+            ->when($hasDateRange, fn($q) => $q->whereBetween('created_at', [
+                $startDate . ' 00:00:00',
+                $endDate   . ' 23:59:59',
+            ]))
             ->when($userId, fn($q, $id) => $q->where('user_id', $id))
             ->orderBy('created_at', 'desc')
             ->limit(50)
