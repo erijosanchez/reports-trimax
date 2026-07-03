@@ -72,7 +72,7 @@
                                 </div>
                                 @if ($reporteHoyEstado->sin_deposito)
                                 <div class="mb-2 py-1 alert alert-info small">
-                                    <i class="me-1 mdi mdi-cash-remove"></i>
+                                    <i class="me-1 mdi mdi-credit-card-off"></i>
                                     Registrado como <strong>Sin depósito</strong> (sin facturación en efectivo)
                                 </div>
                                 @endif
@@ -138,7 +138,7 @@
                         </div>
                         @if ($mostrarExcepcionNota)
                         <div class="mt-2 text-muted" style="font-size:11px;">
-                            <i class="mdi mdi-information-outline me-1"></i>Huanuco, Ica y Ate: límite 11:00 AM
+                            <i class="me-1 mdi-information-outline mdi"></i>Huanuco, Ica y Ate: límite 11:00 AM
                         </div>
                         @endif
                     </div>
@@ -190,8 +190,8 @@
                                                     <i class="me-1 mdi mdi-check"></i>Enviado
                                                 </span>
                                                 @if ($fila['sin_deposito'])
-                                                    <br><span class="bg-secondary badge mt-1" title="No hubo facturación en efectivo">
-                                                        <i class="me-1 mdi mdi-cash-remove"></i>Sin depósito
+                                                    <br><span class="bg-success mt-1 badge" title="No hubo facturación en efectivo">
+                                                        <i class="me-1 mdi mdi-credit-card-off"></i>Sin depósito
                                                     </span>
                                                 @endif
                                             @else
@@ -265,7 +265,7 @@
         @if (auth()->user()->isSede() && $plazoPasadoHoy && $reporteHoyEstado && is_null($reporteHoyEstado->fecha_envio_original))
         <div class="mb-4 row">
             <div class="col-12">
-                <div class="py-2 alert alert-danger mb-0">
+                <div class="mb-0 py-2 alert alert-danger">
                     <i class="me-2 mdi mdi-alert-circle"></i>
                     <strong>El plazo de hoy ({{ $fechaLimiteLabel }}) ya venció.</strong>
                     Busca en Historial el botón <strong>Enviar Atrasado</strong> para registrar tu depósito.
@@ -285,7 +285,7 @@
             <div class="col-12">
                 <div class="shadow-sm border-0 card">
                     <div class="d-flex align-items-center justify-content-between bg-white border-bottom card-header">
-                        <h5 class="mb-0 fw-bold d-flex align-items-center flex-wrap gap-2">
+                        <h5 class="d-flex flex-wrap align-items-center gap-2 mb-0 fw-bold">
                             <span>
                                 <i class="me-2 text-primary mdi mdi-upload"></i>
                                 @if ($reporteSemanaActual->fecha_envio_original)
@@ -295,8 +295,8 @@
                                 @endif
                             </span>
                             @if ($plazoPasadoHoy)
-                                <span class="badge bg-warning text-dark fw-normal" style="font-size:0.72rem;">
-                                    <i class="mdi mdi-calendar-arrow-right me-1"></i>Siguiente día hábil
+                                <span class="bg-warning text-dark badge fw-normal" style="font-size:0.72rem;">
+                                    <i class="mdi-calendar-arrow-right me-1 mdi"></i>Siguiente día hábil
                                 </span>
                             @endif
                         </h5>
@@ -417,13 +417,13 @@
                                     <button type="submit" class="btn btn-primary fw-bold" id="btn-enviar">
                                         <i class="me-1 mdi mdi-send"></i>Enviar y Registrar
                                     </button>
-                                    <button type="button" class="btn-outline-secondary btn fw-bold" id="btn-sin-deposito"
+                                    <button type="button" class="btn-outline-success btn fw-bold" id="btn-sin-deposito"
                                             onclick="abrirSinDeposito({{ $reporteSemanaActual->id }}, '{{ addslashes($reporteSemanaActual->sede) }}')">
-                                        <i class="me-1 mdi mdi-cash-remove"></i>Sin depósito
+                                        <i class="me-1 mdi mdi-credit-card-off"></i>Sin depósito
                                     </button>
                                 </div>
                                 <p class="mt-2 mb-0 text-muted small">
-                                    <i class="mdi mdi-information-outline me-1"></i>
+                                    <i class="me-1 mdi-information-outline mdi"></i>
                                     Usa <strong>Sin depósito</strong> si ese día no facturaste en efectivo (solo Yape/transferencias).
                                 </p>
                                 <div id="msg-enviar" class="mt-2"></div>
@@ -546,7 +546,7 @@
                         <div id="historial-pagination-bar" class="d-flex align-items-center justify-content-between px-3 py-2 border-top d-none">
                             <div id="historial-info" class="text-muted small"></div>
                             <nav>
-                                <ul id="historial-pager" class="pagination pagination-sm mb-0"></ul>
+                                <ul id="historial-pager" class="mb-0 pagination pagination-sm"></ul>
                             </nav>
                         </div>
                     </div>
@@ -617,7 +617,7 @@
                 <div class="modal-footer">
                     <button type="button" class="btn-secondary btn btn-sm" data-bs-dismiss="modal">Cancelar</button>
                     <button type="submit" class="btn btn-primary fw-bold btn-sm" id="btn-guardar-editar-historial">
-                        <i class="me-1 mdi mdi-content-save"></i>Guardar Cambios
+                        <i class="me-1 mdi-content-save mdi"></i>Guardar Cambios
                     </button>
                 </div>
             </form>
@@ -682,7 +682,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title fw-bold">
-                    <i class="me-2 mdi mdi-cash-remove text-secondary"></i>Registrar "Sin depósito"
+                    <i class="me-2 text-secondary mdi mdi-credit-card-off"></i>Registrar "Sin depósito"
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
@@ -692,7 +692,7 @@
                 <input type="hidden" id="sin-deposito-reporte-id">
                 <div class="modal-body">
                     <div class="mb-3 py-2 alert alert-info small">
-                        <i class="me-1 mdi mdi-information-outline"></i>
+                        <i class="me-1 mdi-information-outline mdi"></i>
                         Registra el día como <strong>sin depósito</strong> cuando no hubo facturación en efectivo
                         (solo Yape/transferencias). No se adjuntan archivos, pero cuenta como reporte cumplido.
                     </div>
@@ -1141,9 +1141,9 @@ function renderHistorial(rows) {
                 ${r.kpi !== null ? `<span class="badge bg-${r.kpi_color} fs-6">${r.kpi_label}</span>` : '<span class="text-muted">—</span>'}
                 ${r.editado_tarde ? '<br><small class="text-warning"><i class="mdi mdi-alert"></i> Editado tarde</small>' : ''}
             </td>
-            <td>${badgeEstado(r.estado)}${r.sin_deposito ? ' <span class="badge bg-secondary" title="No hubo facturación en efectivo">Sin depósito</span>' : ''}${badgeRevision(r.revision_estado)}</td>
+            <td>${badgeEstado(r.estado)}${r.sin_deposito ? ' <span class="bg-secondary badge" title="No hubo facturación en efectivo">Sin depósito</span>' : ''}${badgeRevision(r.revision_estado)}</td>
             <td class="text-center">
-                ${r.sin_deposito ? '<span class="text-muted small"><i class="mdi mdi-cash-remove"></i> N/A</span>' : (r.num_archivos > 0 ? `<span class="bg-info badge">${r.num_archivos}</span>` : '<span class="text-muted">0</span>')}
+                ${r.sin_deposito ? '<span class="text-muted small"><i class="mdi mdi-credit-card-off"></i> N/A</span>' : (r.num_archivos > 0 ? `<span class="bg-info badge">${r.num_archivos}</span>` : '<span class="text-muted">0</span>')}
             </td>
             <td class="text-nowrap">
                 <button class="px-2 py-0 btn-outline-primary btn btn-sm" onclick="verReporte(${r.id})" title="Ver detalles">
@@ -1157,8 +1157,8 @@ function renderHistorial(rows) {
                 <button class="ms-1 px-2 py-0 btn-outline-danger btn btn-sm" onclick="abrirEnviarAtrasado(${r.id},'${r.sede}')" title="Enviar reporte atrasado">
                     <i class="mdi-clock-alert-outline mdi"></i>
                 </button>
-                <button class="ms-1 px-2 py-0 btn-outline-secondary btn btn-sm" onclick="abrirSinDeposito(${r.id}, ${JSON.stringify(r.sede)})" title="Registrar sin depósito">
-                    <i class="mdi mdi-cash-remove"></i>
+                <button class="ms-1 px-2 py-0 btn-outline-success btn btn-sm" onclick="abrirSinDeposito(${r.id}, '${r.sede}')" title="Registrar sin depósito">
+                    <i class="mdi mdi-credit-card-off"></i>
                 </button>` : ''}
             </td>
         </tr>
@@ -1207,24 +1207,24 @@ async function abrirEditarHistorial(id, sede, fecha) {
                 <div class="row g-2">
                     ${archivos.map((a, idx) => `
                     <div class="col-md-4 col-sm-6" id="eh-archivo-${idx}">
-                        <div class="border rounded overflow-hidden bg-light" style="position:relative;">
+                        <div class="bg-light border rounded overflow-hidden" style="position:relative;">
                             ${a.es_imagen ? `
                             <div style="height:110px;overflow:hidden;background:#f1f5f9;display:flex;align-items:center;justify-content:center;">
                                 <img src="${a.preview_url}" alt="${a.name}"
                                      style="max-height:110px;max-width:100%;object-fit:contain;display:block;"
                                      onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
                                 <div style="display:none;height:110px;align-items:center;justify-content:center;">
-                                    <i class="mdi mdi-image-broken text-muted" style="font-size:2rem;"></i>
+                                    <i class="text-muted mdi mdi-image-broken" style="font-size:2rem;"></i>
                                 </div>
                             </div>` : `
                             <div style="height:70px;display:flex;align-items:center;justify-content:center;background:#f1f5f9;">
-                                <i class="mdi mdi-file-document text-primary" style="font-size:2.5rem;"></i>
+                                <i class="text-primary mdi mdi-file-document" style="font-size:2.5rem;"></i>
                             </div>`}
                             <div class="d-flex align-items-center gap-1 px-2 py-1">
                                 <div class="flex-grow-1 overflow-hidden">
                                     <div class="text-truncate" style="font-size:11px;font-weight:600;" title="${a.name}">${a.name}</div>
                                 </div>
-                                <button type="button" class="px-1 py-0 btn-outline-danger btn btn-sm flex-shrink-0"
+                                <button type="button" class="flex-shrink-0 px-1 py-0 btn-outline-danger btn btn-sm"
                                         id="eh-btn-del-${idx}" onclick="toggleEliminarHistorial(${idx}, this)" title="Eliminar">
                                     <i class="mdi-trash-can-outline mdi"></i>
                                 </button>
@@ -1271,7 +1271,7 @@ document.getElementById('form-editar-historial')?.addEventListener('submit', asy
         msg.innerHTML = `<div class="py-2 alert alert-danger">${err.message}</div>`;
     } finally {
         btn.disabled = false;
-        btn.innerHTML = '<i class="me-1 mdi mdi-content-save"></i>Guardar Cambios';
+        btn.innerHTML = '<i class="me-1 mdi-content-save mdi"></i>Guardar Cambios';
     }
 });
 
@@ -1329,7 +1329,7 @@ async function verReporte(id) {
                 ${r.sin_deposito ? `
                 <div class="col-12">
                     <div class="mb-0 py-2 alert alert-info small">
-                        <i class="me-1 mdi mdi-cash-remove"></i>
+                        <i class="me-1 mdi mdi-credit-card-off"></i>
                         Registrado como <strong>Sin depósito</strong> — no hubo facturación en efectivo ese día.
                     </div>
                 </div>` : ''}
@@ -1341,7 +1341,7 @@ async function verReporte(id) {
             </div>
             <hr>
             <h6 class="mb-2 fw-semibold">Archivos adjuntos</h6>
-            ${r.sin_deposito && !(r.archivos ?? []).length ? '<p class="text-muted small"><i class="mdi mdi-cash-remove me-1"></i>Sin depósito — no aplica adjuntar archivos.</p>' : archivosHTML}
+            ${r.sin_deposito && !(r.archivos ?? []).length ? '<p class="text-muted small"><i class="me-1 mdi mdi-credit-card-off"></i>Sin depósito — no aplica adjuntar archivos.</p>' : archivosHTML}
             ${buildRevisionHTML(r, id)}
         `;
     } catch (err) {
@@ -1351,22 +1351,22 @@ async function verReporte(id) {
 
 // ── Revisión (conforme / rechazado) ───────────────────────────────
 function badgeRevision(estado) {
-    if (estado === 'conforme')  return ' <span class="badge bg-success" title="Revisión conforme"><i class="mdi mdi-check"></i></span>';
-    if (estado === 'rechazado') return ' <span class="badge bg-danger" title="Reporte rechazado"><i class="mdi mdi-close"></i></span>';
+    if (estado === 'conforme')  return ' <span class="bg-success badge" title="Revisión conforme"><i class="mdi mdi-check"></i></span>';
+    if (estado === 'rechazado') return ' <span class="bg-danger badge" title="Reporte rechazado"><i class="mdi mdi-close"></i></span>';
     return '';
 }
 
 function buildRevisionHTML(r, id) {
     const estado = r.revision_estado;
     let statusBadge;
-    if (estado === 'conforme')       statusBadge = '<span class="badge bg-success">Conforme</span>';
-    else if (estado === 'rechazado') statusBadge = '<span class="badge bg-danger">Rechazado</span>';
-    else                             statusBadge = '<span class="badge bg-primary">Pendiente de revisión</span>';
+    if (estado === 'conforme')       statusBadge = '<span class="bg-success badge">Conforme</span>';
+    else if (estado === 'rechazado') statusBadge = '<span class="bg-danger badge">Rechazado</span>';
+    else                             statusBadge = '<span class="bg-primary badge">Pendiente de revisión</span>';
 
     let html = `
         <hr>
-        <h6 class="mb-2 fw-semibold"><i class="me-1 mdi mdi-clipboard-check-outline"></i>Revisión</h6>
-        <div class="mb-2 d-flex align-items-center gap-2">
+        <h6 class="mb-2 fw-semibold"><i class="me-1 mdi-clipboard-check-outline mdi"></i>Revisión</h6>
+        <div class="d-flex align-items-center gap-2 mb-2">
             ${statusBadge}
             ${r.revision_revisor ? `<span class="text-muted small">por ${r.revision_revisor}${r.revision_at ? ' · ' + r.revision_at : ''}</span>` : ''}
         </div>
@@ -1376,7 +1376,7 @@ function buildRevisionHTML(r, id) {
     if (!r.puede_revisar) return html;
 
     html += `
-        <div class="mt-2 p-2 bg-light border rounded">
+        <div class="bg-light mt-2 p-2 border rounded">
             <div class="mb-2 text-muted small">Marca el reporte según los documentos enviados:</div>
             <div class="mb-2" id="revision-motivo-wrap" style="display:none;">
                 <textarea id="revision-motivo" class="form-control form-control-sm" rows="2" maxlength="1000" placeholder="Motivo del rechazo (obligatorio)..."></textarea>
