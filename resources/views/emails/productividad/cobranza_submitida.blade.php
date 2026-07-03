@@ -57,13 +57,20 @@
                     </span>
                 </div>
             </div>
+            @if ($reporte->sin_deposito)
+            <div class="data-row">
+                <div class="data-label">Depósito</div>
+                <div class="data-value"><strong style="color:#0369a1;">SIN DEPÓSITO</strong> (no hubo facturación en efectivo)</div>
+            </div>
+            @else
             <div class="data-row">
                 <div class="data-label">Archivos adjuntos</div>
                 <div class="data-value">{{ count($reporte->archivos ?? []) }} archivo(s)</div>
             </div>
+            @endif
             @if ($reporte->notas)
             <div class="data-row">
-                <div class="data-label">Notas</div>
+                <div class="data-label">{{ $reporte->sin_deposito ? 'Motivo' : 'Notas' }}</div>
                 <div class="data-value">{{ $reporte->notas }}</div>
             </div>
             @endif

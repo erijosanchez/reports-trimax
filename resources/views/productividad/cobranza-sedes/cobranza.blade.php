@@ -70,6 +70,12 @@
                                     Reporte enviado el
                                     {{ $reporteHoyEstado->fecha_envio_original?->setTimezone('America/Lima')->format('d/m H:i') }}
                                 </div>
+                                @if ($reporteHoyEstado->sin_deposito)
+                                <div class="mb-2 py-1 alert alert-info small">
+                                    <i class="me-1 mdi mdi-cash-remove"></i>
+                                    Registrado como <strong>Sin depósito</strong> (sin facturación en efectivo)
+                                </div>
+                                @endif
                                 <div class="d-flex align-items-center">
                                     <span class="me-2 fw-bold">KPI:</span>
                                     <span class="badge bg-{{ $reporteHoyEstado->kpiColor() }} fs-6">
@@ -183,6 +189,11 @@
                                                 <span class="bg-success badge">
                                                     <i class="me-1 mdi mdi-check"></i>Enviado
                                                 </span>
+                                                @if ($fila['sin_deposito'])
+                                                    <br><span class="bg-secondary badge mt-1" title="No hubo facturación en efectivo">
+                                                        <i class="me-1 mdi mdi-cash-remove"></i>Sin depósito
+                                                    </span>
+                                                @endif
                                             @else
                                                 <span class="bg-danger badge">
                                                     <i class="me-1 mdi mdi-clock-alert"></i>Pendiente
@@ -402,9 +413,19 @@
                                               class="form-control" placeholder="Opcional..."></textarea>
                                 </div>
 
-                                <button type="submit" class="btn btn-primary fw-bold" id="btn-enviar">
-                                    <i class="me-1 mdi mdi-send"></i>Enviar y Registrar
-                                </button>
+                                <div class="d-flex flex-wrap align-items-center gap-2">
+                                    <button type="submit" class="btn btn-primary fw-bold" id="btn-enviar">
+                                        <i class="me-1 mdi mdi-send"></i>Enviar y Registrar
+                                    </button>
+                                    <button type="button" class="btn-outline-secondary btn fw-bold" id="btn-sin-deposito"
+                                            onclick="abrirSinDeposito({{ $reporteSemanaActual->id }}, '{{ addslashes($reporteSemanaActual->sede) }}')">
+                                        <i class="me-1 mdi mdi-cash-remove"></i>Sin depósito
+                                    </button>
+                                </div>
+                                <p class="mt-2 mb-0 text-muted small">
+                                    <i class="mdi mdi-information-outline me-1"></i>
+                                    Usa <strong>Sin depósito</strong> si ese día no facturaste en efectivo (solo Yape/transferencias).
+                                </p>
                                 <div id="msg-enviar" class="mt-2"></div>
                             </form>
                         @endif
@@ -655,6 +676,45 @@
     </div>
 </div>
 
+{{-- ── Modal Sin Depósito ──────────────────────────────────── --}}
+<div class="modal fade" id="modal-sin-deposito" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">
+                    <i class="me-2 mdi mdi-cash-remove text-secondary"></i>Registrar "Sin depósito"
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="form-sin-deposito">
+                @csrf
+                @method('PUT')
+                <input type="hidden" id="sin-deposito-reporte-id">
+                <div class="modal-body">
+                    <div class="mb-3 py-2 alert alert-info small">
+                        <i class="me-1 mdi mdi-information-outline"></i>
+                        Registra el día como <strong>sin depósito</strong> cuando no hubo facturación en efectivo
+                        (solo Yape/transferencias). No se adjuntan archivos, pero cuenta como reporte cumplido.
+                    </div>
+                    <p class="mb-3 small"><strong>Sede:</strong> <span id="sin-deposito-sede-label" class="text-primary fw-bold"></span></p>
+                    <div class="mb-2">
+                        <label class="form-label fw-semibold">Motivo <span class="text-danger">*</span></label>
+                        <textarea id="sin-deposito-motivo" name="motivo" rows="3" maxlength="2000"
+                                  class="form-control" placeholder="Ej: Todas las ventas del día fueron por Yape/transferencia."></textarea>
+                    </div>
+                    <div id="msg-sin-deposito"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary btn btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary fw-bold btn-sm" id="btn-confirmar-sin-deposito">
+                        <i class="me-1 mdi mdi-check"></i>Confirmar Sin Depósito
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 {{-- ── Modal Cámara ─────────────────────────────────────────── --}}
 <div class="modal fade" id="modal-camara" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
     <div class="modal-dialog modal-dialog-centered">
@@ -774,6 +834,7 @@ const CSRF = document.querySelector('meta[name="csrf-token"]').content;
 // Helpers de URL dinámicas
 const urlShow   = (id) => `${ROUTES.base}/${id}/show`;
 const urlUpdate = (id) => `${ROUTES.base}/${id}`;
+const urlSinDeposito = (id) => `${ROUTES.base}/${id}/sin-deposito`;
 const urlRevisar= (id) => `${ROUTES.base}/${id}/revisar`;
 const urlPreview= (id, idx) => `${ROUTES.base}/${id}/preview/${idx}`;
 const urlDownload=(id, idx) => `${ROUTES.base}/${id}/download/${idx}`;
@@ -1080,9 +1141,9 @@ function renderHistorial(rows) {
                 ${r.kpi !== null ? `<span class="badge bg-${r.kpi_color} fs-6">${r.kpi_label}</span>` : '<span class="text-muted">—</span>'}
                 ${r.editado_tarde ? '<br><small class="text-warning"><i class="mdi mdi-alert"></i> Editado tarde</small>' : ''}
             </td>
-            <td>${badgeEstado(r.estado)}${badgeRevision(r.revision_estado)}</td>
+            <td>${badgeEstado(r.estado)}${r.sin_deposito ? ' <span class="badge bg-secondary" title="No hubo facturación en efectivo">Sin depósito</span>' : ''}${badgeRevision(r.revision_estado)}</td>
             <td class="text-center">
-                ${r.num_archivos > 0 ? `<span class="bg-info badge">${r.num_archivos}</span>` : '<span class="text-muted">0</span>'}
+                ${r.sin_deposito ? '<span class="text-muted small"><i class="mdi mdi-cash-remove"></i> N/A</span>' : (r.num_archivos > 0 ? `<span class="bg-info badge">${r.num_archivos}</span>` : '<span class="text-muted">0</span>')}
             </td>
             <td class="text-nowrap">
                 <button class="px-2 py-0 btn-outline-primary btn btn-sm" onclick="verReporte(${r.id})" title="Ver detalles">
@@ -1095,6 +1156,9 @@ function renderHistorial(rows) {
                 ${r.puede_enviar_atrasado ? `
                 <button class="ms-1 px-2 py-0 btn-outline-danger btn btn-sm" onclick="abrirEnviarAtrasado(${r.id},'${r.sede}')" title="Enviar reporte atrasado">
                     <i class="mdi-clock-alert-outline mdi"></i>
+                </button>
+                <button class="ms-1 px-2 py-0 btn-outline-secondary btn btn-sm" onclick="abrirSinDeposito(${r.id}, ${JSON.stringify(r.sede)})" title="Registrar sin depósito">
+                    <i class="mdi mdi-cash-remove"></i>
                 </button>` : ''}
             </td>
         </tr>
@@ -1262,15 +1326,22 @@ async function verReporte(id) {
                     <div class="text-muted text-uppercase small fw-semibold">Estado</div>
                     <div>${r.estado ?? '—'}</div>
                 </div>
+                ${r.sin_deposito ? `
+                <div class="col-12">
+                    <div class="mb-0 py-2 alert alert-info small">
+                        <i class="me-1 mdi mdi-cash-remove"></i>
+                        Registrado como <strong>Sin depósito</strong> — no hubo facturación en efectivo ese día.
+                    </div>
+                </div>` : ''}
                 ${r.notas ? `
                 <div class="col-12">
-                    <div class="text-muted text-uppercase small fw-semibold">Notas</div>
+                    <div class="text-muted text-uppercase small fw-semibold">${r.sin_deposito ? 'Motivo' : 'Notas'}</div>
                     <div class="bg-light p-2 border rounded small">${r.notas}</div>
                 </div>` : ''}
             </div>
             <hr>
             <h6 class="mb-2 fw-semibold">Archivos adjuntos</h6>
-            ${archivosHTML}
+            ${r.sin_deposito && !(r.archivos ?? []).length ? '<p class="text-muted small"><i class="mdi mdi-cash-remove me-1"></i>Sin depósito — no aplica adjuntar archivos.</p>' : archivosHTML}
             ${buildRevisionHTML(r, id)}
         `;
     } catch (err) {
@@ -1617,6 +1688,34 @@ document.getElementById('form-atrasado')?.addEventListener('submit', async funct
         setTimeout(() => location.reload(), 1800);
     } catch(err) { msg.innerHTML = `<div class="py-2 alert alert-danger">${err.message}</div>`; }
     finally { btn.disabled = false; btn.innerHTML = '<i class="me-1 mdi-clock-alert-outline mdi"></i>Enviar Atrasado'; }
+});
+
+// ── Sin depósito ──────────────────────────────────────────────────
+function abrirSinDeposito(id, sede) {
+    document.getElementById('sin-deposito-reporte-id').value = id;
+    document.getElementById('sin-deposito-sede-label').textContent = sede;
+    document.getElementById('sin-deposito-motivo').value = '';
+    document.getElementById('msg-sin-deposito').innerHTML = '';
+    new bootstrap.Modal(document.getElementById('modal-sin-deposito')).show();
+}
+
+document.getElementById('form-sin-deposito')?.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btn-confirmar-sin-deposito');
+    const msg = document.getElementById('msg-sin-deposito');
+    const id  = document.getElementById('sin-deposito-reporte-id').value;
+    const motivo = document.getElementById('sin-deposito-motivo').value.trim();
+    if (!motivo) {
+        msg.innerHTML = '<div class="py-2 alert alert-danger">Debes indicar por qué no hubo depósito.</div>';
+        return;
+    }
+    btn.disabled = true; btn.innerHTML = '<span class="me-1 spinner-border spinner-border-sm"></span>Guardando...'; msg.innerHTML = '';
+    try {
+        const data = await apiFetch(urlSinDeposito(id), { method: 'POST', body: new FormData(this) });
+        msg.innerHTML = `<div class="py-2 alert alert-success">${data.message}</div>`;
+        setTimeout(() => location.reload(), 1500);
+    } catch(err) { msg.innerHTML = `<div class="py-2 alert alert-danger">${err.message}</div>`; }
+    finally { btn.disabled = false; btn.innerHTML = '<i class="me-1 mdi mdi-check"></i>Confirmar Sin Depósito'; }
 });
 
 // ── Filtros tabla Estado Sedes ────────────────────────────────────

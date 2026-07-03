@@ -124,6 +124,7 @@ class CobranzaSedesController extends Controller
                     'kpi_label'    => $reporte?->kpiLabel() ?? '—',
                     'kpi_color'    => $reporte?->kpiColor() ?? 'secondary',
                     'editado_tarde'=> $reporte?->editado_tarde ?? false,
+                    'sin_deposito' => $reporte?->sin_deposito ?? false,
                     'reporte_id'   => $reporte?->id,
                 ];
             })->unique('sede')->sortBy('sede')->values();
@@ -266,6 +267,8 @@ class CobranzaSedesController extends Controller
             'archivos'             => $archivosActuales,
             'notas'                => $request->notas ?? $reporte->notas,
             'editado_tarde'        => $reporte->editado_tarde || $tardio,
+            // Si se agregan comprobantes, deja de ser "sin depósito"
+            'sin_deposito'         => $reporte->sin_deposito && count($archivosActuales) === 0,
         ]);
 
         // Si estaba rechazado y se corrige/reenvía, vuelve a pendiente de revisión
@@ -291,6 +294,60 @@ class CobranzaSedesController extends Controller
             'kpi'     => $reporte->kpi_porcentaje,
             'estado'  => $reporte->estado,
             'tardio'  => $tardio,
+            'reload'  => true,
+        ]);
+    }
+
+    // ── Sin depósito ──────────────────────────────────────────────
+
+    /**
+     * Registra el día como "Sin depósito": la sede no facturó en efectivo
+     * (solo Yape/transferencias), por lo que no hay comprobante que subir.
+     * Cuenta como reporte cumplido (KPI según la hora, igual que un envío
+     * normal) pero sin archivos. El motivo es obligatorio y se guarda en notas.
+     */
+    public function sinDeposito(Request $request, ReporteCobranza $reporte)
+    {
+        $user = auth()->user()->fresh();
+
+        $esPropietario = (int) $reporte->user_id === (int) $user->id;
+        $esMismaSede   = $user->isSede() && $reporte->sede === $user->sede;
+
+        if (!$user->isSuperAdmin() && !$user->isAdmin() && !$esPropietario && !$esMismaSede) {
+            return response()->json(['error' => 'Sin permiso para registrar este reporte.'], 403);
+        }
+
+        if ($reporte->fecha_envio_original) {
+            return response()->json(['error' => 'Este día ya tiene un reporte registrado. Usa la opción de editar.'], 422);
+        }
+
+        $data = $request->validate([
+            'motivo' => 'required|string|max:2000',
+        ], [
+            'motivo.required' => 'Debes indicar por qué no hubo depósito.',
+        ]);
+
+        $ahora = Carbon::now('America/Lima');
+        $reporte->fill([
+            'user_id'              => $reporte->user_id ?: $user->id,
+            'fecha_envio_original' => $ahora,
+            'fecha_ultimo_envio'   => $ahora,
+            'sin_deposito'         => true,
+            'archivos'             => [],
+            'notas'                => $data['motivo'],
+        ]);
+        $reporte->save();
+        $reporte->recalcularKpi();
+
+        $this->enviarNotificaciones($reporte, false);
+
+        ActivityLogService::log(auth()->id(), 'sin_deposito_cobranza', 'ReporteCobranza', $reporte->id, "Registró día sin depósito (sede: {$reporte->sede})");
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Registrado como "Sin depósito" correctamente.',
+            'kpi'     => $reporte->kpi_porcentaje,
+            'estado'  => $reporte->estado,
             'reload'  => true,
         ]);
     }
@@ -486,6 +543,7 @@ class CobranzaSedesController extends Controller
                 'kpi_color'             => $r->kpiColor(),
                 'estado'                => $r->estado,
                 'editado_tarde'         => $r->editado_tarde,
+                'sin_deposito'          => (bool) $r->sin_deposito,
                 'num_archivos'          => count($r->archivos ?? []),
                 'notas'                 => $r->notas,
                 'usuario'               => $r->user?->name,
@@ -552,6 +610,7 @@ class CobranzaSedesController extends Controller
             'kpi_color'     => $reporte->kpiColor(),
             'estado'        => $reporte->estado,
             'editado_tarde' => $reporte->editado_tarde,
+            'sin_deposito'  => (bool) $reporte->sin_deposito,
             'notas'         => $reporte->notas,
             'archivos'      => $archivos,
             'puede_editar'  => $this->puedeEditar($reporte),

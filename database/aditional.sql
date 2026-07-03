@@ -864,3 +864,12 @@ ALTER TABLE reportes_comentarios
     ADD COLUMN revision_at      TIMESTAMP NULL;
 
 /* ══ FIN validacion de reportes ══════════════════════════════════════ */
+
+
+/* ══ Sin depósito — Depósito de Efectivo (Cobranza) ══════════════════
+   Permite que una sede registre el día como "Sin depósito" cuando no
+   facturó en efectivo (solo Yape/transferencias). No requiere archivos;
+   sí requiere un motivo (se guarda en la columna notas). */
+ALTER TABLE reportes_cobranza
+    ADD COLUMN sin_deposito TINYINT(1) NOT NULL DEFAULT 0 AFTER editado_tarde;
+/* ══ FIN Sin depósito ════════════════════════════════════════════════ */

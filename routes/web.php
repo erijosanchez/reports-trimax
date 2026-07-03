@@ -299,6 +299,7 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
             Route::get('/',                       [CobranzaSedesController::class, 'index'])->name('index');
             Route::post('/',                      [CobranzaSedesController::class, 'store'])->name('store');
             Route::put('/{reporte}',              [CobranzaSedesController::class, 'update'])->name('update');
+            Route::put('/{reporte}/sin-deposito', [CobranzaSedesController::class, 'sinDeposito'])->name('sin-deposito');
             Route::post('/{reporte}/revisar',     [CobranzaSedesController::class, 'revisar'])->name('revisar');
             Route::get('/{reporte}/show',         [CobranzaSedesController::class, 'show'])->name('show');
             Route::get('/{reporte}/download/{index}', [CobranzaSedesController::class, 'download'])->name('download');

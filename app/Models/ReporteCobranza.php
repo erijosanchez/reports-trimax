@@ -24,6 +24,7 @@ class ReporteCobranza extends Model
         'notas',
         'kpi_porcentaje',
         'editado_tarde',
+        'sin_deposito',
         'estado',
         'revision_estado',
         'revision_motivo',
@@ -40,6 +41,7 @@ class ReporteCobranza extends Model
         'archivos'            => 'array',
         'kpi_porcentaje'      => 'decimal:2',
         'editado_tarde'       => 'boolean',
+        'sin_deposito'        => 'boolean',
         'revision_at'         => 'datetime',
     ];
 
