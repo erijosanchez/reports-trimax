@@ -845,19 +845,39 @@ async function verReporte(id) {
     } catch(err) { body.innerHTML=`<div class="alert alert-danger">${err.message}</div>`; }
 }
 
-// ── Revisión (conforme / rechazado) ───────────────────────────────
+// ── Revisión (conforme / observado / rechazado) ────────────────────
 function badgeRevision(estado) {
-    if (estado === 'conforme')  return ' <span class="badge bg-success" title="Revisión conforme"><i class="mdi mdi-check"></i></span>';
-    if (estado === 'rechazado') return ' <span class="badge bg-danger" title="Reporte rechazado"><i class="mdi mdi-close"></i></span>';
+    if (estado === 'conforme')           return ' <span class="badge bg-success" title="Revisión conforme"><i class="mdi mdi-check"></i></span>';
+    if (estado === 'conforme_observado') return ' <span class="badge bg-warning text-dark" title="Conforme observado"><i class="mdi mdi-alert"></i></span>';
+    if (estado === 'rechazado')          return ' <span class="badge bg-danger" title="Reporte rechazado"><i class="mdi mdi-close"></i></span>';
     return '';
 }
 
 function buildRevisionHTML(r, id) {
     const estado = r.revision_estado;
     let statusBadge;
-    if (estado === 'conforme')       statusBadge = '<span class="badge bg-success">Conforme</span>';
-    else if (estado === 'rechazado') statusBadge = '<span class="badge bg-danger">Rechazado</span>';
-    else                             statusBadge = '<span class="badge bg-primary">Pendiente de revisión</span>';
+    if (estado === 'conforme')                statusBadge = '<span class="badge bg-success">Conforme</span>';
+    else if (estado === 'conforme_observado') statusBadge = '<span class="badge bg-warning text-dark">Conforme observado</span>';
+    else if (estado === 'rechazado')          statusBadge = '<span class="badge bg-danger">Rechazado</span>';
+    else                                      statusBadge = '<span class="badge bg-primary">Pendiente de revisión</span>';
+
+    let detalle = '';
+    if (estado === 'rechazado' && r.revision_motivo) {
+        detalle = `<div class="mb-2 py-2 alert alert-danger small"><strong>Motivo:</strong> ${r.revision_motivo}</div>`;
+    } else if (estado === 'conforme_observado') {
+        detalle = `<div class="mb-2 py-2 alert alert-warning small">${r.revision_motivo ? `<strong>Observación:</strong> ${r.revision_motivo}<br>` : ''}<strong>Penalización de KPI:</strong> −${r.revision_kpi_penalidad ?? 0}%</div>`;
+    } else if (estado === 'conforme' && r.revision_motivo) {
+        detalle = `<div class="mb-2 py-2 alert alert-success small"><strong>Comentario:</strong> ${r.revision_motivo}</div>`;
+    }
+
+    let adjuntos = '';
+    if ((r.revision_archivos ?? []).length) {
+        adjuntos = `<div class="mb-2"><div class="text-muted small mb-1">Adjuntos de la revisión:</div><div class="d-flex flex-wrap gap-1">` +
+            r.revision_archivos.map(a => a.es_imagen
+                ? `<a href="${a.preview_url}" target="_blank"><img src="${a.preview_url}" style="height:56px;border-radius:6px;border:1px solid #e2e8f0;object-fit:cover;"></a>`
+                : `<a href="${a.download_url}" class="btn btn-sm btn-outline-secondary" download><i class="mdi mdi-paperclip"></i> ${a.name}</a>`
+            ).join('') + `</div></div>`;
+    }
 
     let html = `
         <hr>
@@ -866,23 +886,39 @@ function buildRevisionHTML(r, id) {
             ${statusBadge}
             ${r.revision_revisor ? `<span class="text-muted small">por ${r.revision_revisor}${r.revision_at ? ' · ' + r.revision_at : ''}</span>` : ''}
         </div>
-        ${estado === 'rechazado' && r.revision_motivo ? `<div class="mb-2 py-2 alert alert-danger small"><strong>Motivo:</strong> ${r.revision_motivo}</div>` : ''}
+        ${detalle}${adjuntos}
     `;
 
     if (!r.puede_revisar) return html;
 
     html += `
         <div class="mt-2 p-2 bg-light border rounded">
-            <div class="mb-2 text-muted small">Marca el reporte según los documentos enviados:</div>
-            <div class="mb-2" id="revision-motivo-wrap" style="display:none;">
-                <textarea id="revision-motivo" class="form-control form-control-sm" rows="2" maxlength="1000" placeholder="Motivo del rechazo (obligatorio)..."></textarea>
+            <div class="mb-2 text-muted small">Revisa el reporte según los documentos enviados:</div>
+            <div class="mb-2">
+                <textarea id="revision-motivo" class="form-control form-control-sm" rows="2" maxlength="2000"
+                          placeholder="Comentario / motivo (obligatorio para Observado y Rechazar)..."></textarea>
+            </div>
+            <div class="mb-2" id="revision-penalidad-wrap" style="display:none;">
+                <label class="form-label small fw-semibold mb-1 d-block">Descuento de KPI por la observación:</label>
+                <div class="d-flex gap-3">
+                    <label class="small mb-0"><input type="radio" name="revision-penalidad" value="20" class="me-1">−20%</label>
+                    <label class="small mb-0"><input type="radio" name="revision-penalidad" value="50" class="me-1">−50%</label>
+                </div>
+            </div>
+            <div class="mb-2">
+                <label class="form-label small fw-semibold mb-1 d-block">Adjuntar imágenes/PDF/Excel (opcional):</label>
+                <input type="file" id="revision-archivos" class="form-control form-control-sm" multiple
+                       accept=".jpg,.jpeg,.png,.webp,.pdf,.xlsx,.xls,.csv">
             </div>
             <div id="revision-msg" class="mb-2"></div>
-            <div class="d-flex gap-2">
+            <div class="d-flex flex-wrap gap-2">
                 <button class="btn btn-success btn-sm fw-bold" onclick="enviarRevision(${id}, 'conforme')">
                     <i class="me-1 mdi mdi-check-circle"></i>Conforme
                 </button>
-                <button class="btn btn-danger btn-sm fw-bold" onclick="solicitarRechazo(${id})">
+                <button class="btn btn-warning btn-sm fw-bold text-dark" onclick="enviarRevision(${id}, 'conforme_observado')">
+                    <i class="me-1 mdi mdi-alert-circle-outline"></i>Conforme Observado
+                </button>
+                <button class="btn btn-danger btn-sm fw-bold" onclick="enviarRevision(${id}, 'rechazado')">
                     <i class="me-1 mdi mdi-close-circle"></i>Rechazar
                 </button>
             </div>
@@ -891,37 +927,37 @@ function buildRevisionHTML(r, id) {
     return html;
 }
 
-function solicitarRechazo(id) {
-    const wrap = document.getElementById('revision-motivo-wrap');
-    const ta   = document.getElementById('revision-motivo');
-    const msg  = document.getElementById('revision-msg');
-    if (wrap.style.display === 'none') {
-        wrap.style.display = '';
-        ta.focus();
-        msg.innerHTML = '<div class="text-muted small">Escribe el motivo y vuelve a pulsar "Rechazar".</div>';
-        return;
-    }
-    if (!ta.value.trim()) {
-        ta.focus();
-        msg.innerHTML = '<div class="text-danger small">Indica el motivo del rechazo.</div>';
-        return;
-    }
-    enviarRevision(id, 'rechazado', ta.value.trim());
-}
+async function enviarRevision(id, estado) {
+    const msg     = document.getElementById('revision-msg');
+    const ta      = document.getElementById('revision-motivo');
+    const penWrap = document.getElementById('revision-penalidad-wrap');
+    const motivo  = (ta?.value ?? '').trim();
+    const penSel  = document.querySelector('input[name="revision-penalidad"]:checked');
+    const penalidad = penSel ? penSel.value : null;
 
-async function enviarRevision(id, estado, motivo = null) {
-    const msg = document.getElementById('revision-msg');
+    if (estado === 'conforme_observado') {
+        if (penWrap) penWrap.style.display = '';
+        if (!motivo)    { ta?.focus(); if (msg) msg.innerHTML = '<div class="text-danger small">Escribe la observación.</div>'; return; }
+        if (!penalidad) { if (msg) msg.innerHTML = '<div class="text-danger small">Elige el descuento de KPI (−20% o −50%).</div>'; return; }
+    }
+    if (estado === 'rechazado' && !motivo) {
+        ta?.focus(); if (msg) msg.innerHTML = '<div class="text-danger small">Indica el motivo del rechazo.</div>'; return;
+    }
+
     if (msg) msg.innerHTML = '<div class="text-muted small">Guardando…</div>';
     try {
         const fd = new FormData();
         fd.append('estado', estado);
         if (motivo) fd.append('motivo', motivo);
+        if (estado === 'conforme_observado' && penalidad) fd.append('penalidad', penalidad);
+        const fileInput = document.getElementById('revision-archivos');
+        if (fileInput?.files) for (const f of fileInput.files) fd.append('archivos[]', f);
         const data = await apiFetch(urlRevisar(id), { method: 'POST', body: fd });
         if (msg) msg.innerHTML = `<div class="text-success small">${data.message}</div>`;
         setTimeout(() => {
             bootstrap.Modal.getInstance(document.getElementById('modal-reporte'))?.hide();
             cargarHistorial(_historialMeta?.current_page ?? 1);
-        }, 700);
+        }, 800);
     } catch (err) {
         if (msg) msg.innerHTML = `<div class="text-danger small">${err.message}</div>`;
     }

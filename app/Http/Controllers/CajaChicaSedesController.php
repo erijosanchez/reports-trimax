@@ -179,11 +179,18 @@ class CajaChicaSedesController extends Controller
         ]);
 
         // Si estaba rechazado y se corrige/reenvía, vuelve a pendiente de revisión
-        if ($reporte->revision_estado === 'rechazado') {
-            $reporte->revision_estado  = null;
-            $reporte->revision_motivo  = null;
-            $reporte->revision_user_id = null;
-            $reporte->revision_at      = null;
+        // Rechazado: siempre vuelve a pendiente. Conforme observado: solo si la
+        // reedición es dentro del plazo; si es tardía, se conserva la penalización.
+        $resetRevision = $reporte->revision_estado === 'rechazado'
+            || ($reporte->revision_estado === 'conforme_observado' && !$tardio);
+
+        if ($resetRevision) {
+            $reporte->revision_estado        = null;
+            $reporte->revision_motivo        = null;
+            $reporte->revision_kpi_penalidad = null;
+            $reporte->revision_archivos      = null;
+            $reporte->revision_user_id       = null;
+            $reporte->revision_at            = null;
         }
 
         $reporte->save();
@@ -217,21 +224,34 @@ class CajaChicaSedesController extends Controller
         }
 
         $data = $request->validate([
-            'estado' => 'required|in:conforme,rechazado',
-            'motivo' => 'required_if:estado,rechazado|nullable|string|max:1000',
+            'estado'     => 'required|in:conforme,conforme_observado,rechazado',
+            'motivo'     => 'required_unless:estado,conforme|nullable|string|max:2000',
+            'penalidad'  => 'required_if:estado,conforme_observado|nullable|in:20,50',
+            'archivos'   => 'nullable|array',
+            'archivos.*' => 'file|max:' . self::MAX_SIZE_KB . '|mimes:jpg,jpeg,png,webp,pdf,xlsx,xls,csv',
         ], [
-            'motivo.required_if' => 'Debes indicar el motivo del rechazo.',
+            'motivo.required_unless' => 'Debes indicar el motivo/observación.',
+            'penalidad.required_if'  => 'Debes elegir el descuento de KPI (20% o 50%).',
+            'penalidad.in'           => 'El descuento debe ser 20% o 50%.',
+            'archivos.*.mimes'       => 'Solo imágenes (JPG, PNG, WEBP), PDF o Excel/CSV.',
+            'archivos.*.max'         => 'Cada archivo no puede superar 20 MB.',
         ]);
 
-        $reporte->revision_estado  = $data['estado'];
-        $reporte->revision_motivo  = $data['estado'] === 'rechazado' ? $data['motivo'] : null;
-        $reporte->revision_user_id = $user->id;
-        $reporte->revision_at      = Carbon::now('America/Lima');
+        $reporte->revision_estado        = $data['estado'];
+        $reporte->revision_motivo        = $data['motivo'] ?? null;
+        $reporte->revision_kpi_penalidad = $data['estado'] === 'conforme_observado' ? (float) $data['penalidad'] : null;
+        $reporte->revision_user_id       = $user->id;
+        $reporte->revision_at            = Carbon::now('America/Lima');
+
+        if ($request->hasFile('archivos')) {
+            $reporte->revision_archivos = $this->guardarArchivos($request->file('archivos'), $reporte);
+        }
+
         $reporte->save();
         $reporte->recalcularKpi();
 
-        if ($data['estado'] === 'rechazado') {
-            $this->notificarRechazo($reporte);
+        if ($data['estado'] === 'rechazado' || $data['estado'] === 'conforme_observado') {
+            $this->notificarRevision($reporte, $data['estado']);
         }
 
         ActivityLogService::log(
@@ -239,18 +259,22 @@ class CajaChicaSedesController extends Controller
             "Marcó reporte de caja chica como {$data['estado']} (sede: {$reporte->sede})"
         );
 
+        $mensajes = [
+            'conforme'           => 'Reporte marcado como conforme.',
+            'conforme_observado' => 'Reporte conforme observado. KPI penalizado y notificado a la sede.',
+            'rechazado'          => 'Reporte rechazado. Se notificó a la sede.',
+        ];
+
         return response()->json([
             'success'         => true,
-            'message'         => $data['estado'] === 'conforme'
-                ? 'Reporte marcado como conforme.'
-                : 'Reporte rechazado. Se notificó a la sede.',
+            'message'         => $mensajes[$data['estado']],
             'kpi'             => $reporte->kpi_porcentaje,
             'revision_estado' => $reporte->revision_estado,
             'reload'          => true,
         ]);
     }
 
-    private function notificarRechazo(ReporteCajaChica $reporte): void
+    private function notificarRevision(ReporteCajaChica $reporte, string $estado): void
     {
         $owner = $reporte->user;
         if (!$owner || empty($owner->email)) {
@@ -263,10 +287,12 @@ class CajaChicaSedesController extends Controller
                 "S{$reporte->semana_numero}/{$reporte->anio}",
                 $reporte->revision_motivo ?? '',
                 auth()->user()->name,
-                route('productividad.cobranza-sedes.caja-chica.index')
+                route('productividad.cobranza-sedes.caja-chica.index'),
+                $estado,
+                $reporte->revision_kpi_penalidad !== null ? (float) $reporte->revision_kpi_penalidad : null
             ));
         } catch (\Exception $e) {
-            Log::error("Notificación de rechazo (caja chica) no enviada: " . $e->getMessage());
+            Log::error("Notificación de revisión (caja chica) no enviada: " . $e->getMessage());
         }
     }
 
@@ -301,9 +327,39 @@ class CajaChicaSedesController extends Controller
             'archivos'      => $archivos,
             'revision_estado'  => $reporte->revision_estado,
             'revision_motivo'  => $reporte->revision_motivo,
+            'revision_kpi_penalidad' => $reporte->revision_kpi_penalidad !== null ? (float) $reporte->revision_kpi_penalidad : null,
+            'revision_archivos'=> $this->mapRevisionArchivos($reporte),
             'revision_revisor' => $reporte->revisor?->name,
             'revision_at'      => $reporte->revision_at?->setTimezone('America/Lima')->format('d/m/Y H:i'),
             'puede_revisar'    => auth()->user()->puedeRevisarReportesSedes(),
+        ]);
+    }
+
+    /** Mapea los adjuntos de la revisión con URLs de preview/descarga. */
+    private function mapRevisionArchivos(ReporteCajaChica $reporte): array
+    {
+        return collect($reporte->revision_archivos ?? [])->map(function ($a, $i) use ($reporte) {
+            return [
+                'name'         => $a['name'] ?? 'archivo',
+                'es_imagen'    => str_starts_with($a['mime'] ?? '', 'image/'),
+                'preview_url'  => route('productividad.cobranza-sedes.caja-chica.revision-file', [$reporte->id, $i]),
+                'download_url' => route('productividad.cobranza-sedes.caja-chica.revision-file', [$reporte->id, $i]) . '?download=1',
+            ];
+        })->values()->all();
+    }
+
+    /** Sirve un adjunto de la revisión (inline por defecto, ?download=1 para bajar). */
+    public function revisionFile(ReporteCajaChica $reporte, int $index, Request $request)
+    {
+        if (!auth()->user()->puedeVerCobranzaSedes()) abort(403);
+        $archivo = ($reporte->revision_archivos ?? [])[$index] ?? null;
+        if (!$archivo || !Storage::disk('local')->exists($archivo['path'])) abort(404);
+        if ($request->boolean('download')) {
+            return Storage::disk('local')->download($archivo['path'], $archivo['name']);
+        }
+        return response()->file(Storage::disk('local')->path($archivo['path']), [
+            'Content-Type'        => $archivo['mime'] ?? 'application/octet-stream',
+            'Content-Disposition' => 'inline; filename="' . $archivo['name'] . '"',
         ]);
     }
 

@@ -304,6 +304,7 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
             Route::get('/{reporte}/show',         [CobranzaSedesController::class, 'show'])->name('show');
             Route::get('/{reporte}/download/{index}', [CobranzaSedesController::class, 'download'])->name('download');
             Route::get('/{reporte}/preview/{index}',  [CobranzaSedesController::class, 'preview'])->name('preview');
+            Route::get('/{reporte}/revision-file/{index}', [CobranzaSedesController::class, 'revisionFile'])->name('revision-file');
             Route::get('/api/historial',          [CobranzaSedesController::class, 'historial'])->name('historial');
             Route::get('/api/sedes',              [CobranzaSedesController::class, 'sedesDisponibles'])->name('sedes');
             Route::get('/api/kpi-data',           [CobranzaSedesController::class, 'kpiData'])->name('kpi-data');
@@ -320,6 +321,7 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
             Route::get('/{reporte}/show',             [CajaChicaSedesController::class, 'show'])->name('show');
             Route::get('/{reporte}/download/{index}', [CajaChicaSedesController::class, 'download'])->name('download');
             Route::get('/{reporte}/preview/{index}',  [CajaChicaSedesController::class, 'preview'])->name('preview');
+            Route::get('/{reporte}/revision-file/{index}', [CajaChicaSedesController::class, 'revisionFile'])->name('revision-file');
             Route::get('/api/historial',              [CajaChicaSedesController::class, 'historial'])->name('historial');
             Route::get('/api/kpi-data',               [CajaChicaSedesController::class, 'kpiData'])->name('kpi-data');
         });
@@ -335,6 +337,7 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
             Route::get('/{reporte}/show',             [ComentariosSedesController::class, 'show'])->name('show');
             Route::get('/{reporte}/download/{index}', [ComentariosSedesController::class, 'download'])->name('download');
             Route::get('/{reporte}/preview/{index}',  [ComentariosSedesController::class, 'preview'])->name('preview');
+            Route::get('/{reporte}/revision-file/{index}', [ComentariosSedesController::class, 'revisionFile'])->name('revision-file');
             Route::get('/api/historial',              [ComentariosSedesController::class, 'historial'])->name('historial');
             Route::get('/api/kpi-data',               [ComentariosSedesController::class, 'kpiData'])->name('kpi-data');
         });

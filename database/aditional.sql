@@ -888,3 +888,21 @@ WHERE NOT EXISTS (SELECT 1 FROM roles WHERE name = 'finanzas' AND guard_name = '
 -- SELECT r.id, 'App\\Models\\User', <USER_ID>
 -- FROM roles r WHERE r.name = 'finanzas' AND r.guard_name = 'web';
 /* ══ FIN Rol FINANZAS ════════════════════════════════════════════════ */
+
+
+/* ══ Revisión ampliada: Conforme Observado + penalización + adjuntos ══
+   - revision_estado ya admite 'conforme_observado' (VARCHAR(20)).
+   - revision_kpi_penalidad: % que se resta PROPORCIONALMENTE al KPI (20 o 50).
+   - revision_archivos: adjuntos que finanzas sube al revisar (img/pdf/excel). */
+ALTER TABLE reportes_cobranza
+    ADD COLUMN revision_kpi_penalidad DECIMAL(5,2) NULL AFTER revision_motivo,
+    ADD COLUMN revision_archivos      JSON NULL         AFTER revision_kpi_penalidad;
+
+ALTER TABLE reportes_caja_chica
+    ADD COLUMN revision_kpi_penalidad DECIMAL(5,2) NULL AFTER revision_motivo,
+    ADD COLUMN revision_archivos      JSON NULL         AFTER revision_kpi_penalidad;
+
+ALTER TABLE reportes_comentarios
+    ADD COLUMN revision_kpi_penalidad DECIMAL(5,2) NULL AFTER revision_motivo,
+    ADD COLUMN revision_archivos      JSON NULL         AFTER revision_kpi_penalidad;
+/* ══ FIN Revisión ampliada ═══════════════════════════════════════════ */

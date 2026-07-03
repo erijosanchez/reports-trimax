@@ -28,6 +28,8 @@ class ReporteCobranza extends Model
         'estado',
         'revision_estado',
         'revision_motivo',
+        'revision_kpi_penalidad',
+        'revision_archivos',
         'revision_user_id',
         'revision_at',
     ];
@@ -42,6 +44,8 @@ class ReporteCobranza extends Model
         'kpi_porcentaje'      => 'decimal:2',
         'editado_tarde'       => 'boolean',
         'sin_deposito'        => 'boolean',
+        'revision_kpi_penalidad' => 'decimal:2',
+        'revision_archivos'   => 'array',
         'revision_at'         => 'datetime',
     ];
 
@@ -107,9 +111,12 @@ class ReporteCobranza extends Model
 
         $kpi = self::calcularKpi($fechaEfectiva, $this->fecha_limite);
 
-        // Penalización por rechazo en revisión: KPI a 0
+        // Penalización por revisión de finanzas
         if ($this->revision_estado === 'rechazado') {
-            $kpi = 0.0;
+            $kpi = 0.0;                                   // rechazado → KPI a 0
+        } elseif ($this->revision_estado === 'conforme_observado' && $this->revision_kpi_penalidad) {
+            // Conforme observado → resta proporcional del KPI ya ganado
+            $kpi = round($kpi * (1 - ((float) $this->revision_kpi_penalidad / 100)), 2);
         }
 
         $this->kpi_porcentaje = $kpi;
