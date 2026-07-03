@@ -873,3 +873,18 @@ ALTER TABLE reportes_comentarios
 ALTER TABLE reportes_cobranza
     ADD COLUMN sin_deposito TINYINT(1) NOT NULL DEFAULT 0 AFTER editado_tarde;
 /* ══ FIN Sin depósito ════════════════════════════════════════════════ */
+
+
+/* ══ Rol FINANZAS ════════════════════════════════════════════════════
+   Nuevo rol Spatie. Solo super_admin, admin y finanzas pueden aprobar
+   (conforme/rechazado) los reportes de sedes. El permiso
+   puede_ver_productividad_sedes ya NO otorga la aprobación. */
+INSERT INTO roles (name, guard_name, created_at, updated_at)
+SELECT 'finanzas', 'web', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM roles WHERE name = 'finanzas' AND guard_name = 'web');
+
+-- Asignar el rol a un usuario (reemplaza el ID):
+-- INSERT INTO model_has_roles (role_id, model_type, model_id)
+-- SELECT r.id, 'App\\Models\\User', <USER_ID>
+-- FROM roles r WHERE r.name = 'finanzas' AND r.guard_name = 'web';
+/* ══ FIN Rol FINANZAS ════════════════════════════════════════════════ */

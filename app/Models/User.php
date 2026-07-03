@@ -174,6 +174,11 @@ class User extends Authenticatable
         return $this->hasRole(['sede']);
     }
 
+    public function isFinanzas(): bool
+    {
+        return $this->hasRole('finanzas');
+    }
+
     //PERMISOS ------------------------------
     public function puedeVerVentasConsolidadas(): bool
     {
@@ -265,19 +270,30 @@ class User extends Authenticatable
     public function puedeVerCobranzaSedes(): bool
     {
         return $this->isSuperAdmin() || $this->isAdmin() || $this->isSede()
+            || $this->isFinanzas()
             || $this->puede_ver_productividad_sedes;
     }
 
     /**
      * Revisar (conforme/rechazado) los reportes de sedes:
-     * - Superadmin y admin siempre.
-     * - Usuarios con permiso de productividad sedes (ej. Silvia).
+     * - Superadmin, admin y rol "finanzas" únicamente.
+     * - El permiso puede_ver_productividad_sedes YA NO otorga la aprobación
+     *   (solo sirve para ver el módulo/resúmenes).
      * - Los usuarios de rol "sede" NO pueden revisar (solo ver/enviar lo suyo).
      */
     public function puedeRevisarReportesSedes(): bool
     {
-        return $this->isSuperAdmin() || $this->isAdmin()
-            || (bool) $this->puede_ver_productividad_sedes;
+        return $this->isSuperAdmin() || $this->isAdmin() || $this->isFinanzas();
+    }
+
+    /**
+     * El rol "finanzas" tiene el permiso de ver Productividad Sedes por defecto,
+     * aunque la columna esté en 0. (El valor guardado sigue respetándose para los
+     * demás roles.)
+     */
+    public function getPuedeVerProductividadSedesAttribute($value): bool
+    {
+        return (bool) $value || $this->hasRole('finanzas');
     }
 
     /**
