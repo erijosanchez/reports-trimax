@@ -340,6 +340,7 @@ class User extends Authenticatable
     public function puedeVerVouchers(): bool
     {
         return $this->isSuperAdmin() || $this->isAdmin() || $this->isSede()
+            || $this->isFinanzas()
             || $this->id === 62
             || (bool) $this->puede_ver_vouchers;
     }

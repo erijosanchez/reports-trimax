@@ -182,11 +182,10 @@
                         Vouchers Pendientes de Aplicar
                     </h6>
                     <span class="bg-warning text-dark badge">
-                        {{ $vouchers->where('status','pendiente')->count() }} pendiente(s)
+                        {{ $pendientes->count() }} pendiente(s)
                     </span>
                 </div>
                 <div class="p-0 card-body">
-                    @php $pendientes = $vouchers->where('status','pendiente'); @endphp
                     @if($pendientes->isEmpty())
                     <div class="py-5 text-muted text-center">
                         <i class="mdi mdi-check-all" style="font-size:2rem;opacity:.3"></i>
@@ -236,19 +235,20 @@
                                 <div class="facturas-inline mt-2" id="facturas-inline-{{ $v->id }}" style="display:none">
                                     <table class="table table-bordered table-sm mt-2 mb-0" style="font-size:.82rem">
                                         <thead class="table-light">
-                                            <tr><th>Factura</th><th class="text-end">Monto</th></tr>
+                                            <tr><th>Factura</th><th>RUC</th><th class="text-end">Monto</th></tr>
                                         </thead>
                                         <tbody>
                                             @foreach($v->facturas as $f)
                                             <tr>
                                                 <td>{{ $f->factura }}</td>
+                                                <td style="font-family:'Courier New',monospace">{{ $f->ruc ?? '—' }}</td>
                                                 <td class="text-end">S/ {{ number_format($f->monto,2) }}</td>
                                             </tr>
                                             @endforeach
                                         </tbody>
                                         <tfoot>
                                             <tr class="table-light fw-bold">
-                                                <td>Total</td>
+                                                <td colspan="2">Total</td>
                                                 <td class="text-end">S/ {{ number_format($v->total,2) }}</td>
                                             </tr>
                                         </tfoot>
@@ -265,7 +265,7 @@
     </div>
 
     {{-- ══ PANEL SEDE: Crear Voucher ══ --}}
-    @else
+    @elseif($puedeCrear)
     <div class="mb-4 row">
         <div class="col-12 col-lg-7">
             <div class="card">
@@ -304,9 +304,10 @@
                                 <table class="table table-bordered table-sm mb-1" id="tabla-facturas">
                                     <thead class="table-light">
                                         <tr>
-                                            <th style="width:55%">Factura</th>
-                                            <th style="width:35%">Monto (S/)</th>
-                                            <th style="width:10%"></th>
+                                            <th style="width:35%">Factura</th>
+                                            <th style="width:30%">RUC</th>
+                                            <th style="width:27%">Monto (S/)</th>
+                                            <th style="width:8%"></th>
                                         </tr>
                                     </thead>
                                     <tbody id="tbody-facturas">
@@ -314,7 +315,7 @@
                                     </tbody>
                                     <tfoot>
                                         <tr class="total-row">
-                                            <td class="text-end">TOTAL DOCUMENTO:</td>
+                                            <td class="text-end" colspan="2">TOTAL DOCUMENTO:</td>
                                             <td colspan="2">
                                                 S/ <span id="total-display">0.00</span>
                                             </td>
@@ -385,6 +386,49 @@
     </div>
     @endif
 
+    @php $verTodo = $esSilvia || $esRevisor; @endphp
+
+    {{-- ══ KPI SEMANAL DE CONFORMIDAD ══ --}}
+    <div class="mb-4 row">
+        <div class="col-12">
+            <div class="card">
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 card-header">
+                    <h6 class="mb-0 card-title">
+                        <i class="me-2 mdi mdi-chart-line text-primary"></i>
+                        KPI Semanal de Conformidad
+                        <small class="text-muted fw-normal ms-1" style="font-size:.72rem">
+                            (promedio de vouchers revisados · últimas 8 semanas)
+                        </small>
+                    </h6>
+                    @if($verTodo)
+                    <div class="d-flex align-items-center gap-2">
+                        <label class="mb-0 text-muted small">Sede:</label>
+                        <select id="kpi-sede" class="form-select form-select-sm" style="width:auto;min-width:150px">
+                            <option value="">Todas</option>
+                        </select>
+                    </div>
+                    @endif
+                </div>
+                <div class="card-body">
+                    <div class="row align-items-center g-3">
+                        <div class="col-12 col-md-3">
+                            <div class="text-center p-3 rounded" style="background:var(--bs-tertiary-bg,#f8f9fa)">
+                                <div class="text-muted small mb-1">Semana actual</div>
+                                <div id="kpi-actual-valor" class="fw-bold" style="font-size:2rem;line-height:1">—</div>
+                                <div id="kpi-actual-detalle" class="text-muted mt-1" style="font-size:.75rem">Sin revisiones</div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-9">
+                            <div style="position:relative;height:220px">
+                                <canvas id="kpiSemanalChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     {{-- ══ HISTORIAL ══ --}}
     <div class="row">
         <div class="col-12">
@@ -393,11 +437,53 @@
                     <h6 class="mb-0 card-title">
                         <i class="me-2 mdi mdi-history"></i>
                         Historial de Vouchers
-                        @if($esSilvia)
+                        @if($verTodo)
                             <span class="bg-secondary ms-2 badge" style="font-size:.72rem">Todas las sedes</span>
                         @endif
                     </h6>
                 </div>
+
+                {{-- Filtros --}}
+                <div class="card-body border-bottom py-3">
+                    <div class="row g-2 align-items-end">
+                        @if($verTodo)
+                        <div class="col-6 col-md-3 col-lg-2">
+                            <label class="form-label small mb-1 text-muted">Sede</label>
+                            <select id="f-sede" class="form-select form-select-sm">
+                                <option value="">Todas</option>
+                            </select>
+                        </div>
+                        @endif
+                        <div class="col-6 col-md-3 col-lg-2">
+                            <label class="form-label small mb-1 text-muted">Estado</label>
+                            <select id="f-estado" class="form-select form-select-sm">
+                                <option value="">Todos</option>
+                                <option value="pendiente">Pendiente</option>
+                                <option value="aplicado">Aplicado</option>
+                            </select>
+                        </div>
+                        <div class="col-6 col-md-3 col-lg-2">
+                            <label class="form-label small mb-1 text-muted">Conformidad</label>
+                            <select id="f-conformidad" class="form-select form-select-sm">
+                                <option value="">Todas</option>
+                                <option value="sin_revisar">Pendiente rev.</option>
+                                <option value="conforme">Conforme</option>
+                                <option value="conforme_observado">Conforme observado</option>
+                                <option value="rechazado">Rechazado</option>
+                            </select>
+                        </div>
+                        <div class="col-6 col-md-3 col-lg-2">
+                            <label class="form-label small mb-1 text-muted">Fecha solicitud</label>
+                            <input type="date" id="f-fecha" class="form-control form-control-sm">
+                        </div>
+                        <div class="col-12 col-lg-2">
+                            <button id="btn-limpiar-filtros" class="btn btn-outline-secondary btn-sm w-100">
+                                <i class="mdi mdi-filter-off-outline me-1"></i>Limpiar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="p-0 card-body">
                     <div class="table-responsive">
                         <table class="table voucher-table table-hover mb-0" id="tablaHistorial">
@@ -407,92 +493,36 @@
                                     <th>Voucher</th>
                                     <th>Estado</th>
                                     <th>Sede</th>
-                                    @if($esSilvia)
+                                    @if($verTodo)
                                     <th>Solicitante</th>
                                     @endif
                                     <th class="text-end">Monto</th>
                                     <th>Solicitado</th>
                                     <th>Aplicado</th>
+                                    <th class="text-center">Demora</th>
                                     <th class="text-center">KPI</th>
                                     <th class="text-center">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody id="tbody-historial">
-                                @forelse($vouchers as $v)
-                                @php
-                                    $fin = $v->aplicado_at ?? now()->toDateString();
-                                    $kpi = $v->solicitado_at ? $v->solicitado_at->diffInDays($fin) : null;
-                                    $kpiClass = $kpi === null ? '' : ($kpi <= 3 ? 'kpi-ok' : ($kpi <= 7 ? 'kpi-warn' : 'kpi-bad'));
-                                @endphp
-                                <tr id="hrow-{{ $v->id }}" data-id="{{ $v->id }}" data-status="{{ $v->status }}">
-                                    <td class="ps-3 text-muted" style="font-size:.8rem">{{ $v->id }}</td>
-                                    <td><span class="codigo-badge">{{ $v->codigo }}</span></td>
-                                    <td>
-                                        @if($v->status === 'pendiente')
-                                            <span class="badge badge-pendiente">Pendiente</span>
-                                        @else
-                                            <span class="badge badge-aplicado">Aplicado</span>
-                                        @endif
-                                    </td>
-                                    <td><span class="sede-badge">{{ $v->sede }}</span></td>
-                                    @if($esSilvia)
-                                    <td style="font-size:.83rem">{{ $v->creator?->name ?? '—' }}</td>
-                                    @endif
-                                    <td class="text-end fw-semibold">S/ {{ number_format($v->total,2) }}</td>
-                                    <td style="font-size:.82rem;white-space:nowrap">
-                                        {{ $v->solicitado_at?->format('d/m/Y') ?? '—' }}
-                                    </td>
-                                    <td style="font-size:.82rem;white-space:nowrap">
-                                        @if($v->aplicado_at)
-                                            <span class="text-success fw-semibold">
-                                                {{ $v->aplicado_at->format('d/m/Y') }}
-                                            </span>
-                                        @else
-                                            <span class="text-muted">—</span>
-                                        @endif
-                                    </td>
-                                    <td class="text-center">
-                                        @if($kpi !== null)
-                                            <span class="{{ $kpiClass }}">{{ $kpi }}d</span>
-                                        @else
-                                            <span class="text-muted">—</span>
-                                        @endif
-                                    </td>
-                                    <td class="text-center" style="min-width:120px">
-                                        <div class="d-flex align-items-center justify-content-center gap-1">
-                                            <button class="btn-outline-secondary btn btn-sm btn-ver-detalle"
-                                                    title="Ver detalle"
-                                                    data-id="{{ $v->id }}"
-                                                    data-codigo="{{ $v->codigo }}">
-                                                <i class="mdi-eye-outline mdi"></i>
-                                            </button>
-                                            @if(!$esSilvia && $v->status === 'pendiente' && $v->created_by === auth()->id())
-                                            <button class="btn-outline-info btn btn-sm btn-reenviar"
-                                                    title="Reenviar notificación a Silvia"
-                                                    data-id="{{ $v->id }}">
-                                                <i class="mdi-email-send-outline mdi"></i>
-                                            </button>
-                                            @endif
-                                            @if($v->status === 'pendiente')
-                                            <button class="btn-outline-danger btn btn-sm btn-eliminar"
-                                                    title="Eliminar"
-                                                    data-id="{{ $v->id }}">
-                                                <i class="mdi-trash-can-outline mdi"></i>
-                                            </button>
-                                            @endif
-                                        </div>
-                                    </td>
-                                </tr>
-                                @empty
-                                <tr id="hrow-empty">
-                                    <td colspan="{{ $esSilvia ? 10 : 9 }}" class="py-5 text-muted text-center">
-                                        <i class="mdi-receipt-outline mdi" style="font-size:2rem;opacity:.3"></i>
-                                        <p class="mt-2 mb-0">No hay vouchers registrados.</p>
-                                    </td>
-                                </tr>
-                                @endforelse
+                                <tr><td colspan="{{ $verTodo ? 11 : 10 }}" class="py-5 text-center text-muted">
+                                    <div class="spinner-border spinner-border-sm text-primary"></div>
+                                </td></tr>
                             </tbody>
                         </table>
+                    </div>
+                    {{-- Paginación --}}
+                    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 px-3 py-2 border-top">
+                        <small class="text-muted" id="hist-info">—</small>
+                        <div class="d-flex align-items-center gap-2">
+                            <button id="hist-prev" class="btn btn-outline-secondary btn-sm" disabled>
+                                <i class="mdi mdi-chevron-left"></i>
+                            </button>
+                            <span class="small text-muted" id="hist-page">1 / 1</span>
+                            <button id="hist-next" class="btn btn-outline-secondary btn-sm" disabled>
+                                <i class="mdi mdi-chevron-right"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -519,14 +549,95 @@
         </div>
     </div>
 </div>
+
+{{-- ══ MODAL REVISIÓN (finanzas) ══ --}}
+@if($esRevisor)
+<div class="modal fade" id="modalRevision" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form id="formRevision" enctype="multipart/form-data" novalidate>
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="me-2 text-warning mdi mdi-clipboard-check-outline"></i>
+                        Revisar Voucher — <span id="rev-codigo"></span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="rev-msg"></div>
+                    <input type="hidden" id="rev-id" name="voucher_id">
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Resultado de la revisión <span class="text-danger">*</span></label>
+                        <div class="d-flex flex-column gap-2">
+                            <label class="d-flex align-items-center gap-2 p-2 border rounded" style="cursor:pointer">
+                                <input type="radio" name="estado" value="conforme" class="form-check-input mt-0">
+                                <span><strong class="text-success">Conforme</strong> — mantiene 100% en el KPI</span>
+                            </label>
+                            <label class="d-flex align-items-center gap-2 p-2 border rounded" style="cursor:pointer">
+                                <input type="radio" name="estado" value="conforme_observado" class="form-check-input mt-0">
+                                <span><strong class="text-warning">Conforme observado</strong> — penaliza el KPI</span>
+                            </label>
+                            <label class="d-flex align-items-center gap-2 p-2 border rounded" style="cursor:pointer">
+                                <input type="radio" name="estado" value="rechazado" class="form-check-input mt-0">
+                                <span><strong class="text-danger">Rechazado</strong> — KPI a 0%</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="mb-3" id="rev-penalidad-wrap" style="display:none">
+                        <label class="form-label fw-semibold">Descuento de KPI <span class="text-danger">*</span></label>
+                        <select name="penalidad" class="form-select" id="rev-penalidad">
+                            <option value="">Selecciona…</option>
+                            <option value="20">−20% (queda en 80%)</option>
+                            <option value="50">−50% (queda en 50%)</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">
+                            Motivo / observación <span class="text-danger" id="rev-motivo-req">*</span>
+                        </label>
+                        <textarea name="motivo" id="rev-motivo" class="form-control" rows="3"
+                                  placeholder="Describe el motivo del rechazo u observación…"></textarea>
+                    </div>
+
+                    <div class="mb-2">
+                        <label class="form-label fw-semibold">
+                            Adjuntos <span class="text-muted fw-normal">(opcional · img, PDF, Excel · máx. 20 MB c/u)</span>
+                        </label>
+                        <div class="drop-zone" id="drop-zone-rev"
+                             onclick="document.getElementById('archivos-rev').click()">
+                            <i class="mdi mdi-cloud-upload-outline" style="font-size:1.8rem;color:#94a3b8"></i>
+                            <p class="mt-1 mb-0 text-muted" style="font-size:.85rem">Arrastra o haz clic para adjuntar</p>
+                            <input type="file" id="archivos-rev" name="archivos[]" multiple class="d-none"
+                                   accept=".jpg,.jpeg,.png,.webp,.pdf,.xlsx,.xls,.csv">
+                        </div>
+                        <div id="preview-rev" class="mt-2 row g-2"></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-warning fw-bold" id="btn-rev-submit">
+                        <i class="me-1 mdi mdi-check-bold"></i>Guardar revisión
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endif
 @endsection
 
 @section('scripts')
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
 (function () {
     const CSRF   = document.querySelector('meta[name="csrf-token"]').content;
     const BASE   = '{{ url("vouchers") }}';
-    const ES_SILVIA = {{ $esSilvia ? 'true' : 'false' }};
+    const ES_SILVIA  = {{ $esSilvia ? 'true' : 'false' }};
+    const ES_REVISOR = {{ $esRevisor ? 'true' : 'false' }};
+    const VER_TODO   = {{ ($esSilvia || $esRevisor) ? 'true' : 'false' }};
 
     /* ── helpers ──────────────────────────────────────────── */
     function toast(msg, type = 'success') {
@@ -657,7 +768,8 @@
     }
 
     /* ══ PANEL SEDE: Crear voucher ══════════════════════════ */
-    if (!ES_SILVIA) {
+    const formCrear = document.getElementById('formCrear');
+    if (formCrear) {
         setupDropZone('drop-zone-crear', 'archivos-crear', 'preview-crear');
 
         let facturaIdx = 0;
@@ -672,6 +784,13 @@
                     <input type="text" class="form-control form-control-sm"
                            name="facturas[${i}][factura]"
                            placeholder="Ej: F0090" required>
+                </td>
+                <td>
+                    <input type="text" inputmode="numeric" maxlength="11"
+                           class="form-control form-control-sm ruc-input"
+                           name="facturas[${i}][ruc]"
+                           placeholder="11 dígitos" required
+                           style="font-family:'Courier New',monospace">
                 </td>
                 <td>
                     <input type="number" class="form-control form-control-sm monto-input"
@@ -702,6 +821,9 @@
 
         document.getElementById('tbody-facturas').addEventListener('input', e => {
             if (e.target.classList.contains('monto-input')) recalcTotal();
+            if (e.target.classList.contains('ruc-input')) {
+                e.target.value = e.target.value.replace(/\D/g, '').slice(0, 11);
+            }
         });
 
         document.getElementById('tbody-facturas').addEventListener('click', e => {
@@ -715,7 +837,7 @@
             recalcTotal();
         });
 
-        document.getElementById('formCrear').addEventListener('submit', async function (e) {
+        formCrear.addEventListener('submit', async function (e) {
             e.preventDefault();
             const btn = document.getElementById('btn-crear-submit');
             const msg = document.getElementById('msg-crear');
@@ -728,7 +850,6 @@
 
             setBtn(btn, true);
             try {
-                // Sync archivos acumulados al input antes de leer FormData
                 const archInput = document.getElementById('archivos-crear');
                 const dt = _acumulados['archivos-crear'];
                 if (dt) {
@@ -738,8 +859,7 @@
                 }
 
                 const fd = new FormData(this);
-
-                // Agregar archivos manualmente si FormData no los tomó
+                fd.delete('archivos[]');
                 if (dt && dt.files.length) {
                     for (const f of dt.files) fd.append('archivos[]', f);
                 }
@@ -756,16 +876,8 @@
                 addFacturaRow();
                 recalcTotal();
 
-                const v = data.voucher;
-                removeEmpty('hrow-empty');
-                const tbody = document.getElementById('tbody-historial');
-                const tr    = document.createElement('tr');
-                tr.id           = `hrow-${v.id}`;
-                tr.dataset.id   = v.id;
-                tr.dataset.status = v.status;
-                tr.innerHTML    = historialRow(v, ES_SILVIA);
-                tbody.insertAdjacentElement('afterbegin', tr);
-
+                loadHistorial(1);
+                loadKpiSemanal();
             } catch (err) {
                 msg.innerHTML = `<div class="alert alert-danger py-2">${err.message}</div>`;
             } finally {
@@ -789,23 +901,16 @@
                 const data = await apiFetch(`${BASE}/${id}/aplicar`, { method: 'PATCH', body: JSON.stringify({}) });
                 toast(data.message);
 
-                // Quitar la pending-card
                 btn.closest('.card.pending-card')?.remove();
 
-                // Actualizar fila en historial
-                const hrow = document.getElementById(`hrow-${id}`);
-                if (hrow) {
-                    hrow.dataset.status = 'aplicado';
-                    const v = data.voucher;
-                    hrow.innerHTML = historialRow(v, ES_SILVIA);
-                }
-
-                // Actualizar contador badge
                 const badgeCount = document.querySelector('.card-header .badge.bg-warning');
                 if (badgeCount) {
                     const n = parseInt(badgeCount.textContent) - 1;
                     badgeCount.textContent = `${n} pendiente(s)`;
                 }
+
+                loadHistorial(histPage);
+                loadKpiSemanal();
             } catch (err) {
                 toast(err.message, 'error');
                 setBtn(btn, false);
@@ -829,7 +934,7 @@
         try {
             const data  = await apiFetch(`${BASE}/${id}/facturas`);
             const rows  = data.facturas.map(f =>
-                `<tr><td>${f.factura}</td><td class="text-end">S/ ${f.monto}</td></tr>`
+                `<tr><td>${f.factura}</td><td style="font-family:'Courier New',monospace">${f.ruc ?? '—'}</td><td class="text-end">S/ ${f.monto}</td></tr>`
             ).join('');
             const total = data.facturas.reduce((s, f) => s + parseFloat(f.monto), 0);
 
@@ -862,34 +967,60 @@
                     </div>`;
             }
 
+            // Bloque de revisión
+            const estLabels = { conforme: 'Conforme', conforme_observado: 'Conforme observado', rechazado: 'Rechazado' };
+            let revHtml;
+            if (data.revision_estado) {
+                let adjHtml = '';
+                if (data.revision_archivos && data.revision_archivos.length) {
+                    adjHtml = '<div class="d-flex flex-wrap gap-2 mt-2">' + data.revision_archivos.map(a =>
+                        `<a href="${a.preview_url}" target="_blank" class="badge bg-light text-dark border text-decoration-none"><i class="mdi mdi-paperclip me-1"></i>${a.name}</a>`
+                    ).join('') + '</div>';
+                }
+                revHtml = `
+                    <div class="mt-3 p-3 rounded border">
+                        <div class="d-flex align-items-center flex-wrap gap-2 mb-1">
+                            <span class="fw-semibold" style="font-size:.85rem"><i class="mdi mdi-clipboard-check-outline me-1 text-muted"></i>Revisión de finanzas:</span>
+                            <span class="badge bg-${data.conformidad_color}">${estLabels[data.revision_estado] ?? data.revision_estado} · ${data.conformidad_label}</span>
+                        </div>
+                        ${data.revision_motivo ? `<div class="text-muted" style="font-size:.82rem"><strong>Motivo:</strong> ${data.revision_motivo}</div>` : ''}
+                        <div class="text-muted mt-1" style="font-size:.75rem">Por ${data.revision_revisor ?? '—'} · ${data.revision_at ?? ''}</div>
+                        ${adjHtml}
+                    </div>`;
+            } else {
+                revHtml = `<div class="mt-3 text-muted small"><i class="mdi mdi-information-outline me-1"></i>Sin revisión de finanzas aún · <span class="badge bg-dark">Pendiente rev.</span></div>`;
+            }
+
+            let revisarBtnHtml = '';
+            if (data.puede_revisar) {
+                revisarBtnHtml = `
+                    <div class="mt-3 text-end">
+                        <button class="btn btn-warning btn-sm fw-bold" data-bs-dismiss="modal"
+                                onclick="__abrirRevision('${data.id}','${data.codigo}')">
+                            <i class="mdi mdi-clipboard-check-outline me-1"></i>Revisar voucher
+                        </button>
+                    </div>`;
+            }
+
             document.getElementById('det-body').innerHTML = `
                 <table class="table table-bordered table-sm mb-0">
                     <thead class="table-light">
-                        <tr><th>Factura</th><th class="text-end">Monto</th></tr>
+                        <tr><th>Factura</th><th>RUC</th><th class="text-end">Monto</th></tr>
                     </thead>
                     <tbody>${rows}</tbody>
                     <tfoot>
                         <tr class="table-light fw-bold">
-                            <td>Total</td>
+                            <td colspan="2">Total</td>
                             <td class="text-end">S/ ${total.toFixed(2)}</td>
                         </tr>
                     </tfoot>
                 </table>
-                ${archivosHtml}`;
+                ${archivosHtml}
+                ${revHtml}
+                ${revisarBtnHtml}`;
         } catch (err) {
             document.getElementById('det-body').innerHTML =
                 `<div class="alert alert-danger">${err.message}</div>`;
-        }
-    });
-
-    /* ══ Mostrar/ocultar facturas inline (Silvia) ═══════════ */
-    document.addEventListener('click', e => {
-        // handled by btn-ver-detalle for modal; this is the inline toggle in pending cards
-        const btn = e.target.closest('.btn-ver-detalle');
-        if (!btn) return;
-        const inline = document.getElementById(`facturas-inline-${btn.dataset.id}`);
-        if (inline) {
-            inline.style.display = inline.style.display === 'none' ? 'block' : 'none';
         }
     });
 
@@ -921,71 +1052,250 @@
         try {
             await apiFetch(`${BASE}/${id}`, { method: 'DELETE', body: JSON.stringify({}) });
             toast('Voucher eliminado.');
-            const row = document.getElementById(`hrow-${id}`);
-            if (row) {
-                row.style.opacity = '0';
-                row.style.transition = 'opacity .3s';
-                setTimeout(() => row.remove(), 300);
-            }
-            // Quitar pending-card si existe
             const pendCard = document.querySelector(`.btn-aplicar[data-id="${id}"]`)?.closest('.card.pending-card');
             if (pendCard) pendCard.remove();
+            loadHistorial(histPage);
+            loadKpiSemanal();
         } catch (err) {
             toast(err.message, 'error');
             btn.disabled = false;
         }
     });
 
-    /* ── helpers de render ────────────────────────────────── */
-    function removeEmpty(id) {
-        const el = document.getElementById(id);
-        if (el) el.remove();
+    /* ══ Historial AJAX + filtros + paginación ══════════════ */
+    let histPage = 1, histLastPage = 1;
+
+    function filtrosHist() {
+        const p = new URLSearchParams();
+        const sede = document.getElementById('f-sede')?.value;
+        const est  = document.getElementById('f-estado')?.value;
+        const conf = document.getElementById('f-conformidad')?.value;
+        const fec  = document.getElementById('f-fecha')?.value;
+        if (sede) p.set('sede', sede);
+        if (est)  p.set('estado', est);
+        if (conf) p.set('conformidad', conf);
+        if (fec)  p.set('fecha', fec);
+        return p;
     }
 
-    function kpiHtml(v) {
-        if (!v.solicitado_at) return '—';
-        const cls = v.kpi <= 3 ? 'kpi-ok' : (v.kpi <= 7 ? 'kpi-warn' : 'kpi-bad');
-        return `<span class="${cls}">${v.kpi}d</span>`;
+    function demoraHtml(v) {
+        if (v.demora === null || v.demora === undefined) return '<span class="text-muted">—</span>';
+        const cls = v.demora <= 3 ? 'kpi-ok' : (v.demora <= 7 ? 'kpi-warn' : 'kpi-bad');
+        return `<span class="${cls}">${v.demora}d</span>`;
     }
 
-    function historialRow(v, esSilvia) {
+    function renderHistRow(v) {
         const aplicadoHtml = v.aplicado_at
             ? `<span class="text-success fw-semibold">${v.aplicado_at}</span>`
             : `<span class="text-muted">—</span>`;
+        const solicitanteCol = VER_TODO ? `<td style="font-size:.83rem">${v.creator_name ?? '—'}</td>` : '';
+        const revisarBtn = v.puede_revisar
+            ? `<button class="btn-outline-warning btn btn-sm btn-revisar" title="Revisar" data-id="${v.id}" data-codigo="${v.codigo}"><i class="mdi mdi-clipboard-check-outline"></i></button>` : '';
+        const reenviarBtn = v.puede_reenviar
+            ? `<button class="btn-outline-info btn btn-sm btn-reenviar" title="Reenviar" data-id="${v.id}"><i class="mdi-email-send-outline mdi"></i></button>` : '';
+        const eliminarBtn = v.puede_eliminar
+            ? `<button class="btn-outline-danger btn btn-sm btn-eliminar" title="Eliminar" data-id="${v.id}"><i class="mdi-trash-can-outline mdi"></i></button>` : '';
 
-        const silviaCols = esSilvia
-            ? `<td style="font-size:.83rem">${v.creator_name ?? '—'}</td>`
-            : '';
-
-        const reenviarBtn = !esSilvia && v.status === 'pendiente'
-            ? `<button class="btn-outline-info btn btn-sm btn-reenviar" title="Reenviar" data-id="${v.id}">
-                   <i class="mdi-email-send-outline mdi"></i></button>` : '';
-
-        const eliminarBtn = v.status === 'pendiente'
-            ? `<button class="btn-outline-danger btn btn-sm btn-eliminar" title="Eliminar" data-id="${v.id}">
-                   <i class="mdi-trash-can-outline mdi"></i></button>` : '';
-
-        return `
+        return `<tr>
             <td class="ps-3 text-muted" style="font-size:.8rem">${v.id}</td>
             <td><span class="codigo-badge">${v.codigo}</span></td>
             <td>${statusBadge(v.status)}</td>
             <td><span class="sede-badge">${v.sede}</span></td>
-            ${silviaCols}
+            ${solicitanteCol}
             <td class="text-end fw-semibold">S/ ${v.total}</td>
             <td style="font-size:.82rem;white-space:nowrap">${v.solicitado_at ?? '—'}</td>
             <td style="font-size:.82rem;white-space:nowrap">${aplicadoHtml}</td>
-            <td class="text-center">${kpiHtml(v)}</td>
+            <td class="text-center">${demoraHtml(v)}</td>
+            <td class="text-center"><span class="badge bg-${v.conformidad_color}">${v.conformidad_label}</span></td>
             <td class="text-center">
                 <div class="d-flex align-items-center justify-content-center gap-1">
-                    <button class="btn-outline-secondary btn btn-sm btn-ver-detalle" title="Ver detalle"
-                            data-id="${v.id}" data-codigo="${v.codigo}">
+                    <button class="btn-outline-secondary btn btn-sm btn-ver-detalle" title="Ver detalle" data-id="${v.id}" data-codigo="${v.codigo}">
                         <i class="mdi-eye-outline mdi"></i>
                     </button>
-                    ${reenviarBtn}
-                    ${eliminarBtn}
+                    ${revisarBtn}${reenviarBtn}${eliminarBtn}
                 </div>
-            </td>`;
+            </td>
+        </tr>`;
     }
+
+    async function loadHistorial(page = 1) {
+        const tbody = document.getElementById('tbody-historial');
+        const cols  = VER_TODO ? 11 : 10;
+        tbody.innerHTML = `<tr><td colspan="${cols}" class="py-4 text-center"><div class="spinner-border spinner-border-sm text-primary"></div></td></tr>`;
+        const p = filtrosHist();
+        p.set('page', page);
+        try {
+            const data = await apiFetch(`${BASE}/historial?${p.toString()}`);
+            histPage     = data.current_page;
+            histLastPage = data.last_page || 1;
+            if (!data.data.length) {
+                tbody.innerHTML = `<tr><td colspan="${cols}" class="py-5 text-muted text-center">
+                    <i class="mdi-receipt-outline mdi" style="font-size:2rem;opacity:.3"></i>
+                    <p class="mt-2 mb-0">No hay vouchers registrados.</p></td></tr>`;
+            } else {
+                tbody.innerHTML = data.data.map(renderHistRow).join('');
+            }
+            const desde = data.total ? (data.current_page - 1) * data.per_page + 1 : 0;
+            const hasta = Math.min(data.current_page * data.per_page, data.total);
+            document.getElementById('hist-info').textContent = `${desde}–${hasta} de ${data.total}`;
+            document.getElementById('hist-page').textContent = `${histPage} / ${histLastPage}`;
+            document.getElementById('hist-prev').disabled = histPage <= 1;
+            document.getElementById('hist-next').disabled = histPage >= histLastPage;
+        } catch (err) {
+            tbody.innerHTML = `<tr><td colspan="${cols}" class="py-4 text-center text-danger">${err.message}</td></tr>`;
+        }
+    }
+    window.__loadHistorial = () => loadHistorial(histPage);
+
+    document.getElementById('hist-prev').addEventListener('click', () => { if (histPage > 1) loadHistorial(histPage - 1); });
+    document.getElementById('hist-next').addEventListener('click', () => { if (histPage < histLastPage) loadHistorial(histPage + 1); });
+    ['f-sede', 'f-estado', 'f-conformidad', 'f-fecha'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('change', () => loadHistorial(1));
+    });
+    document.getElementById('btn-limpiar-filtros')?.addEventListener('click', () => {
+        ['f-sede', 'f-estado', 'f-conformidad', 'f-fecha'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.value = '';
+        });
+        loadHistorial(1);
+    });
+
+    /* ══ Poblado de sedes (filtro + KPI) ════════════════════ */
+    async function populateSedes() {
+        if (!VER_TODO) return;
+        try {
+            const sedes = await apiFetch(`${BASE}/sedes`);
+            const opts  = sedes.map(s => `<option value="${s}">${s}</option>`).join('');
+            document.getElementById('f-sede')?.insertAdjacentHTML('beforeend', opts);
+            document.getElementById('kpi-sede')?.insertAdjacentHTML('beforeend', opts);
+        } catch (e) { /* noop */ }
+    }
+
+    /* ══ KPI semanal de conformidad ═════════════════════════ */
+    let kpiChart = null;
+    async function loadKpiSemanal() {
+        const canvas = document.getElementById('kpiSemanalChart');
+        if (!canvas) return;
+        const sede = document.getElementById('kpi-sede')?.value || '';
+        const p = new URLSearchParams();
+        if (sede) p.set('sede', sede);
+        try {
+            const data = await apiFetch(`${BASE}/kpi-semanal?${p.toString()}`);
+
+            const valEl = document.getElementById('kpi-actual-valor');
+            const detEl = document.getElementById('kpi-actual-detalle');
+            if (data.promedio_actual === null) {
+                valEl.textContent = '—';
+                valEl.className   = 'fw-bold text-muted';
+                detEl.textContent = 'Sin revisiones esta semana';
+            } else {
+                const c = data.promedio_actual >= 100 ? 'text-success'
+                        : data.promedio_actual >= 80  ? 'text-info'
+                        : data.promedio_actual >= 50  ? 'text-warning' : 'text-danger';
+                valEl.textContent = data.promedio_actual + '%';
+                valEl.className   = 'fw-bold ' + c;
+                detEl.textContent = `${data.revisados_actual} voucher(s) revisado(s)`;
+            }
+
+            const color = v => v === null ? 'rgba(148,163,184,.4)'
+                             : v >= 100 ? 'rgba(16,185,129,.85)'
+                             : v >= 80  ? 'rgba(59,130,246,.85)'
+                             : v >= 50  ? 'rgba(234,179,8,.85)' : 'rgba(239,68,68,.85)';
+
+            if (kpiChart) kpiChart.destroy();
+            kpiChart = new Chart(canvas.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        label: 'Conformidad %',
+                        data: data.data,
+                        backgroundColor: data.data.map(color),
+                        borderRadius: 6,
+                        maxBarThickness: 46,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true, max: 100, ticks: { callback: v => v + '%' } } },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { callbacks: { label: c => c.parsed.y === null ? 'Sin datos' : c.parsed.y + '%' } }
+                    }
+                }
+            });
+        } catch (e) { /* noop */ }
+    }
+    document.getElementById('kpi-sede')?.addEventListener('change', loadKpiSemanal);
+
+    /* ══ Revisión de finanzas ═══════════════════════════════ */
+    if (ES_REVISOR) {
+        setupDropZone('drop-zone-rev', 'archivos-rev', 'preview-rev');
+        const modalRev = new bootstrap.Modal(document.getElementById('modalRevision'));
+
+        function abrirRevision(id, codigo) {
+            const form = document.getElementById('formRevision');
+            form.reset();
+            document.getElementById('rev-id').value = id;
+            document.getElementById('rev-codigo').textContent = codigo;
+            document.getElementById('rev-msg').innerHTML = '';
+            document.getElementById('rev-penalidad-wrap').style.display = 'none';
+            document.getElementById('preview-rev').innerHTML = '';
+            _acumulados['archivos-rev'] = new DataTransfer();
+            modalRev.show();
+        }
+        window.__abrirRevision = abrirRevision;
+
+        document.addEventListener('click', e => {
+            const btn = e.target.closest('.btn-revisar');
+            if (!btn) return;
+            abrirRevision(btn.dataset.id, btn.dataset.codigo);
+        });
+
+        document.querySelectorAll('#formRevision input[name="estado"]').forEach(r => {
+            r.addEventListener('change', () => {
+                const est = document.querySelector('#formRevision input[name="estado"]:checked')?.value;
+                document.getElementById('rev-penalidad-wrap').style.display = est === 'conforme_observado' ? 'block' : 'none';
+                document.getElementById('rev-motivo-req').style.display = est === 'conforme' ? 'none' : 'inline';
+            });
+        });
+
+        document.getElementById('formRevision').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const btn = document.getElementById('btn-rev-submit');
+            const msg = document.getElementById('rev-msg');
+            msg.innerHTML = '';
+
+            const est = document.querySelector('#formRevision input[name="estado"]:checked')?.value;
+            if (!est) { msg.innerHTML = '<div class="alert alert-danger py-2">Selecciona un resultado.</div>'; return; }
+
+            const id = document.getElementById('rev-id').value;
+            setBtn(btn, true);
+            try {
+                const dt = _acumulados['archivos-rev'];
+                const fd = new FormData(this);
+                fd.delete('archivos[]');
+                if (dt && dt.files.length) for (const f of dt.files) fd.append('archivos[]', f);
+
+                const data = await apiFetch(`${BASE}/${id}/revisar`, { method: 'POST', body: fd });
+                toast(data.message);
+                modalRev.hide();
+                loadHistorial(histPage);
+                loadKpiSemanal();
+            } catch (err) {
+                msg.innerHTML = `<div class="alert alert-danger py-2">${err.message}</div>`;
+            } finally {
+                setBtn(btn, false);
+            }
+        });
+    }
+
+    /* ══ Init ═══════════════════════════════════════════════ */
+    populateSedes();
+    loadHistorial(1);
+    loadKpiSemanal();
 
 })();
 </script>

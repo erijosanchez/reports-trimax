@@ -12,6 +12,7 @@ class VoucherFactura extends Model
     protected $fillable = [
         'voucher_id',
         'factura',
+        'ruc',
         'monto',
     ];
 

@@ -362,14 +362,19 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
     // Vouchers
     Route::prefix('vouchers')->name('vouchers.')->group(function () {
         Route::get('/',                        [VoucherController::class, 'index'])->name('index');
+        Route::get('/historial',               [VoucherController::class, 'historial'])->name('historial');
+        Route::get('/sedes',                   [VoucherController::class, 'sedesDisponibles'])->name('sedes');
+        Route::get('/kpi-semanal',             [VoucherController::class, 'kpiSemanal'])->name('kpiSemanal');
         Route::post('/',                       [VoucherController::class, 'store'])->name('store');
         Route::post('/{id}/factura',           [VoucherController::class, 'addFactura'])->name('addFactura');
         Route::delete('/factura/{id}',         [VoucherController::class, 'removeFactura'])->name('removeFactura');
         Route::patch('/{id}/enviar',           [VoucherController::class, 'enviarAplicar'])->name('enviar');
         Route::patch('/{id}/aplicar',          [VoucherController::class, 'aplicar'])->name('aplicar');
+        Route::post('/{id}/revisar',           [VoucherController::class, 'revisar'])->name('revisar');
         Route::delete('/{id}',                 [VoucherController::class, 'destroy'])->name('destroy');
         Route::get('/{id}/facturas',           [VoucherController::class, 'getFacturas'])->name('facturas');
         Route::get('/{id}/archivo/{index}',    [VoucherController::class, 'servirArchivo'])->name('archivo');
+        Route::get('/{id}/revision-file/{index}', [VoucherController::class, 'revisionFile'])->name('revisionFile');
     });
 
     // ── Tracking Admin ────────────────────────────────────────

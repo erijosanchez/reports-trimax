@@ -906,3 +906,20 @@ ALTER TABLE reportes_comentarios
     ADD COLUMN revision_kpi_penalidad DECIMAL(5,2) NULL AFTER revision_motivo,
     ADD COLUMN revision_archivos      JSON NULL         AFTER revision_kpi_penalidad;
 /* ══ FIN Revisión ampliada ═══════════════════════════════════════════ */
+
+/* ══ Vouchers: RUC por factura + revisión de finanzas ════════════════
+   - voucher_facturas.ruc: RUC (11 dígitos) del cliente en cada factura.
+   - vouchers.revision_*: revisión de finanzas (Conforme / Conforme
+     Observado -20/-50 / Rechazado). KPI de conformidad por voucher:
+     conforme=100%, observado=100-penalidad, rechazado=0%, sin revisar=—. */
+ALTER TABLE voucher_facturas
+    ADD COLUMN ruc VARCHAR(11) NULL AFTER factura;
+
+ALTER TABLE vouchers
+    ADD COLUMN revision_estado        VARCHAR(20)  NULL AFTER applied_by,
+    ADD COLUMN revision_motivo        TEXT         NULL AFTER revision_estado,
+    ADD COLUMN revision_kpi_penalidad DECIMAL(5,2) NULL AFTER revision_motivo,
+    ADD COLUMN revision_archivos      JSON         NULL AFTER revision_kpi_penalidad,
+    ADD COLUMN revision_user_id       BIGINT UNSIGNED NULL AFTER revision_archivos,
+    ADD COLUMN revision_at            TIMESTAMP    NULL AFTER revision_user_id;
+/* ══ FIN Vouchers: RUC + revisión ════════════════════════════════════ */
