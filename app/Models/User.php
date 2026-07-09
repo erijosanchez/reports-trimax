@@ -37,6 +37,7 @@ class User extends Authenticatable
         'puede_ver_motorizados',
         'puede_ver_retiros_ordenes',
         'puede_ver_vouchers',
+        'puede_ver_desbloqueo',
         'is_active',
         'last_login_at',
         'two_factor_secret',
@@ -72,6 +73,7 @@ class User extends Authenticatable
         'puede_ver_motorizados' => 'boolean',
         'puede_ver_retiros_ordenes' => 'boolean',
         'puede_ver_vouchers'        => 'boolean',
+        'puede_ver_desbloqueo'      => 'boolean',
         'es_gerente_general' => 'boolean',
         'last_login_at' => 'datetime',
         'two_factor_confirmed_at' => 'datetime',
@@ -348,7 +350,7 @@ class User extends Authenticatable
     public function puedeVerDesbloqueo(): bool
     {
         return $this->isSuperAdmin() || $this->isAdmin() || $this->isSede()
-            || $this->isFinanzas();
+            || $this->isFinanzas() || (bool) $this->puede_ver_desbloqueo;
     }
 
     public function getRoleName()

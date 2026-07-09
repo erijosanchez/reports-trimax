@@ -2,7 +2,12 @@
 
 @section('title', 'Desbloqueo')
 
-@php $verTodo = $esRevisor; @endphp
+@php
+    // $verTodo, $verKpiSedes, $verKpiFinanzas llegan del controller.
+    $kpiColClass = ($verKpiSedes && $verKpiFinanzas) ? 'col-lg-6' : 'col-lg-12';
+    // Columnas tabla: base 8 (#, Sede, RUC, Razón, Solicitado, Estado, KPI Sede, Acciones)
+    $histColspan = 8 + ($verTodo ? 1 : 0) + ($verKpiFinanzas ? 1 : 0);
+@endphp
 
 @push('styles')
 <style>
@@ -136,7 +141,8 @@
         </div>
         @endif
 
-        <div class="col-12 col-lg-6">
+        @if($verKpiSedes)
+        <div class="col-12 {{ $kpiColClass }}">
             <div class="h-100 card">
                 <div class="card-header">
                     <h6 class="mb-0 card-title">
@@ -156,8 +162,10 @@
                 </div>
             </div>
         </div>
+        @endif
 
-        <div class="col-12 col-lg-6">
+        @if($verKpiFinanzas)
+        <div class="col-12 {{ $kpiColClass }}">
             <div class="h-100 card">
                 <div class="card-header">
                     <h6 class="mb-0 card-title">
@@ -177,6 +185,7 @@
                 </div>
             </div>
         </div>
+        @endif
     </div>
 
     {{-- ══ HISTORIAL ══ --}}
@@ -234,12 +243,12 @@
                                     <th>Solicitado</th>
                                     <th class="text-center">Estado</th>
                                     <th class="text-center">KPI Sede</th>
-                                    <th class="text-center">KPI Finanzas</th>
+                                    @if($verKpiFinanzas)<th class="text-center">KPI Finanzas</th>@endif
                                     <th class="text-center">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody id="tbody-historial">
-                                <tr><td colspan="{{ $verTodo ? 10 : 9 }}" class="py-5 text-center text-muted">
+                                <tr><td colspan="{{ $histColspan }}" class="py-5 text-center text-muted">
                                     <div class="spinner-border spinner-border-sm text-primary"></div>
                                 </td></tr>
                             </tbody>
@@ -345,6 +354,8 @@
     const BASE       = '{{ url("desbloqueo") }}';
     const ES_REVISOR = {{ $esRevisor ? 'true' : 'false' }};
     const VER_TODO   = {{ $verTodo ? 'true' : 'false' }};
+    const VER_KPI_FINANZAS = {{ $verKpiFinanzas ? 'true' : 'false' }};
+    const HIST_COLSPAN     = {{ $histColspan }};
 
     /* ── helpers ── */
     function toast(msg, type = 'success') {
@@ -458,7 +469,7 @@
                         <span class="fw-semibold" style="font-size:.85rem"><i class="mdi mdi-clipboard-check-outline me-1 text-muted"></i>Revisión:</span>
                         ${estadoBadge(d.revision_estado)}
                         <span class="badge bg-${d.kpi_sede_color}">Sede ${d.kpi_sede_label}</span>
-                        <span class="badge bg-${d.kpi_finanzas_color}">Finanzas ${d.kpi_finanzas_label}</span>
+                        ${VER_KPI_FINANZAS ? `<span class="badge bg-${d.kpi_finanzas_color}">Finanzas ${d.kpi_finanzas_label}</span>` : ''}
                     </div>
                     ${d.revision_motivo ? `<div class="text-muted" style="font-size:.82rem"><strong>Motivo:</strong> ${d.revision_motivo}</div>` : ''}
                     <div class="text-muted mt-1" style="font-size:.75rem">Por ${d.revision_revisor ?? '—'} · ${d.revision_at ?? ''}</div>
@@ -528,7 +539,7 @@
             <td style="font-size:.82rem;white-space:nowrap">${s.creado ?? '—'}</td>
             <td class="text-center">${estadoBadge(s.revision_estado)}</td>
             <td class="text-center"><span class="badge bg-${s.kpi_sede_color}">${s.kpi_sede_label}</span></td>
-            <td class="text-center"><span class="badge bg-${s.kpi_finanzas_color}">${s.kpi_finanzas_label}</span></td>
+            ${VER_KPI_FINANZAS ? `<td class="text-center"><span class="badge bg-${s.kpi_finanzas_color}">${s.kpi_finanzas_label}</span></td>` : ''}
             <td class="text-center">
                 <div class="d-flex align-items-center justify-content-center gap-1">
                     <button class="btn-outline-secondary btn btn-sm btn-ver-detalle" title="Ver detalle" data-id="${s.id}"><i class="mdi-eye-outline mdi"></i></button>
@@ -539,7 +550,7 @@
     }
     async function loadHistorial(page = 1) {
         const tbody = document.getElementById('tbody-historial');
-        const cols = VER_TODO ? 10 : 9;
+        const cols = HIST_COLSPAN;
         tbody.innerHTML = `<tr><td colspan="${cols}" class="py-4 text-center"><div class="spinner-border spinner-border-sm text-primary"></div></td></tr>`;
         const p = filtrosHist(); p.set('page', page);
         try {
@@ -598,22 +609,25 @@
     }
     async function loadKpi() {
         const cS = document.getElementById('kpiSedesChart'), cF = document.getElementById('kpiFinanzasChart');
-        if (!cS || !cF) return;
+        if (!cS && !cF) return; // ninguno visible para este rol
         const sede = document.getElementById('kpi-sede')?.value || '';
         const p = new URLSearchParams(); if (sede) p.set('sede', sede);
         try {
             const d = await apiFetch(`${BASE}/kpi-semanal?${p.toString()}`);
-            // Resumen sede
-            const sv = document.getElementById('kpi-sede-valor'), sd = document.getElementById('kpi-sede-detalle');
-            if (d.promedio_sedes === null) { sv.textContent = '—'; sv.className = 'fw-bold text-muted'; sd.textContent = 'Sin revisiones esta semana'; }
-            else { sv.textContent = d.promedio_sedes + '%'; sv.className = 'fw-bold ' + textColor(d.promedio_sedes); sd.textContent = `${d.revisados_actual} revisada(s)`; }
-            // Resumen finanzas
-            const fv = document.getElementById('kpi-fin-valor'), fd = document.getElementById('kpi-fin-detalle');
-            if (d.promedio_finanzas === null) { fv.textContent = '—'; fv.className = 'fw-bold text-muted'; fd.textContent = 'Sin revisiones esta semana'; }
-            else { fv.textContent = d.promedio_finanzas + '%'; fv.className = 'fw-bold ' + textColor(d.promedio_finanzas); fd.textContent = `${d.revisados_actual} revisada(s)`; }
-
-            chartSedes = mkChart(chartSedes, cS, d.labels, d.sedes, 'Conformidad %');
-            chartFin   = mkChart(chartFin,   cF, d.labels, d.finanzas, 'Tiempo respuesta %');
+            // Resumen + gráfico sede (si el cuadro está visible)
+            if (cS) {
+                const sv = document.getElementById('kpi-sede-valor'), sd = document.getElementById('kpi-sede-detalle');
+                if (d.promedio_sedes === null) { sv.textContent = '—'; sv.className = 'fw-bold text-muted'; sd.textContent = 'Sin revisiones esta semana'; }
+                else { sv.textContent = d.promedio_sedes + '%'; sv.className = 'fw-bold ' + textColor(d.promedio_sedes); sd.textContent = `${d.revisados_actual} revisada(s)`; }
+                chartSedes = mkChart(chartSedes, cS, d.labels, d.sedes, 'Conformidad %');
+            }
+            // Resumen + gráfico finanzas (si el cuadro está visible)
+            if (cF) {
+                const fv = document.getElementById('kpi-fin-valor'), fd = document.getElementById('kpi-fin-detalle');
+                if (d.promedio_finanzas === null) { fv.textContent = '—'; fv.className = 'fw-bold text-muted'; fd.textContent = 'Sin revisiones esta semana'; }
+                else { fv.textContent = d.promedio_finanzas + '%'; fv.className = 'fw-bold ' + textColor(d.promedio_finanzas); fd.textContent = `${d.revisados_actual} revisada(s)`; }
+                chartFin = mkChart(chartFin, cF, d.labels, d.finanzas, 'Tiempo respuesta %');
+            }
         } catch (e) {}
     }
     document.getElementById('kpi-sede')?.addEventListener('change', loadKpi);

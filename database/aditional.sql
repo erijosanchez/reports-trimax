@@ -811,6 +811,10 @@ ALTER TABLE users
 ADD COLUMN puede_ver_vouchers TINYINT(1) NOT NULL DEFAULT 0
 AFTER puede_ver_retiros_ordenes;
 
+ALTER TABLE users
+ADD COLUMN puede_ver_desbloqueo TINYINT(1) NOT NULL DEFAULT 0
+AFTER puede_ver_vouchers;
+
 CREATE TABLE vouchers (
     id INT AUTO_INCREMENT PRIMARY KEY,
     codigo VARCHAR(50) NOT NULL,

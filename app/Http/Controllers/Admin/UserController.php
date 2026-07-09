@@ -76,6 +76,8 @@ class UserController extends Controller
             'puede_ver_retiros_ordenes',
             // Vouchers
             'puede_ver_vouchers',
+            // Desbloqueo de clientes
+            'puede_ver_desbloqueo',
         ];
     }
 

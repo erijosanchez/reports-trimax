@@ -29,9 +29,12 @@ class DesbloqueoController extends Controller
         }
 
         return view('desbloqueo.index', [
-            'esRevisor'  => $user->puedeRevisarReportesSedes(),
-            'puedeCrear' => $user->isSede() || $user->isSuperAdmin() || $user->isAdmin(),
-            'sedUsuario' => $user->sede,
+            'esRevisor'      => $user->puedeRevisarReportesSedes(),
+            'puedeCrear'     => $user->isSede() || $user->isSuperAdmin() || $user->isAdmin(),
+            'verTodo'        => $this->verTodo($user),
+            'verKpiSedes'    => !$user->isFinanzas(),  // finanzas no ve el cuadro KPI Sedes
+            'verKpiFinanzas' => !$user->isSede(),      // sede no ve KPI Finanzas (cuadro + columna)
+            'sedUsuario'     => $user->sede,
         ]);
     }
 
@@ -364,7 +367,8 @@ class DesbloqueoController extends Controller
 
     private function verTodo(User $user): bool
     {
-        return $user->isSuperAdmin() || $user->isAdmin() || $user->isFinanzas();
+        return $user->isSuperAdmin() || $user->isAdmin() || $user->isFinanzas()
+            || (!$user->isSede() && (bool) $user->puede_ver_desbloqueo);
     }
 
     private function puedeVer(SolicitudDesbloqueo $s, User $user): bool

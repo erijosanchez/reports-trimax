@@ -316,7 +316,7 @@
             <li class="nav-item">
                 <a class="nav-link {{ request()->routeIs('desbloqueo.*') ? 'active' : '' }}"
                     href="{{ route('desbloqueo.index') }}">
-                    <i class="mdi mdi-lock-open-variant-outline menu-icon"></i>
+                    <i class="mdi mdi-lock-open menu-icon"></i>
                     <span class="menu-title">Desbloqueo</span>
                 </a>
             </li>
