@@ -738,12 +738,10 @@
                 </div>`;
             preview.appendChild(col);
         }
-        // Sync al input real
-        const input = document.getElementById(inputId);
-        if (input) {
-            const dt2 = _acumulados[inputId];
-            Object.defineProperty(input, 'files', { value: dt2.files, writable: true });
-        }
+        // Los archivos se conservan en _acumulados[inputId] y se leen desde ahí
+        // al enviar (FormData). NO se sincroniza a input.files: hacerlo con
+        // Object.defineProperty sobrescribe el accessor nativo y congela el input,
+        // impidiendo volver a seleccionar archivos hasta refrescar la página.
     }
 
     function quitarArchivo(idx, inputId, previewId) {
@@ -850,13 +848,7 @@
 
             setBtn(btn, true);
             try {
-                const archInput = document.getElementById('archivos-crear');
                 const dt = _acumulados['archivos-crear'];
-                if (dt) {
-                    const dt2 = new DataTransfer();
-                    for (const f of dt.files) dt2.items.add(f);
-                    Object.defineProperty(archInput, 'files', { value: dt2.files, writable: true });
-                }
 
                 const fd = new FormData(this);
                 fd.delete('archivos[]');
