@@ -345,6 +345,12 @@ class User extends Authenticatable
             || (bool) $this->puede_ver_vouchers;
     }
 
+    public function puedeVerDesbloqueo(): bool
+    {
+        return $this->isSuperAdmin() || $this->isAdmin() || $this->isSede()
+            || $this->isFinanzas();
+    }
+
     public function getRoleName()
     {
         if ($this->isSuperAdmin()) return 'Super Admin';

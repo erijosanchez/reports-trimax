@@ -225,9 +225,10 @@
             $tieneAccesoProducitvy     = $user->puedeAccederProducitvy();
             $tieneAccesoRetirosOrdenes = $user->puedeVerRetirosOrdenes();
             $tieneAccesoVouchers       = $user->puedeVerVouchers();
+            $tieneAccesoDesbloqueo     = $user->puedeVerDesbloqueo();
         @endphp
 
-        @if ($tieneAccesoProductividad || $tieneAccesoProducitvy || $tieneAccesoRetirosOrdenes || $tieneAccesoVouchers)
+        @if ($tieneAccesoProductividad || $tieneAccesoProducitvy || $tieneAccesoRetirosOrdenes || $tieneAccesoVouchers || $tieneAccesoDesbloqueo)
             <li class="nav-item nav-category">PRODUCTIVIDAD SEDES</li>
 
             @if ($tieneAccesoProductividad)
@@ -306,6 +307,17 @@
                     href="{{ route('vouchers.index') }}">
                     <i class="mdi mdi-receipt menu-icon"></i>
                     <span class="menu-title">Vouchers</span>
+                </a>
+            </li>
+            @endif
+
+            {{-- Desbloqueo --}}
+            @if ($tieneAccesoDesbloqueo)
+            <li class="nav-item">
+                <a class="nav-link {{ request()->routeIs('desbloqueo.*') ? 'active' : '' }}"
+                    href="{{ route('desbloqueo.index') }}">
+                    <i class="mdi mdi-lock-open-variant-outline menu-icon"></i>
+                    <span class="menu-title">Desbloqueo</span>
                 </a>
             </li>
             @endif

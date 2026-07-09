@@ -923,3 +923,33 @@ ALTER TABLE vouchers
     ADD COLUMN revision_user_id       BIGINT UNSIGNED NULL AFTER revision_archivos,
     ADD COLUMN revision_at            TIMESTAMP    NULL AFTER revision_user_id;
 /* ══ FIN Vouchers: RUC + revisión ════════════════════════════════════ */
+
+
+/* ══ Módulo Desbloqueo de clientes ═══════════════════════════════════
+   Las sedes solicitan el desbloqueo de clientes (RUC, Razón Social,
+   comentarios). Finanzas revisa (Conforme / Conforme Observado -20/-50 /
+   Rechazado). KPI doble:
+   - Sede:     conforme=100, observado=100-penalidad, rechazado=0.
+   - Finanzas: rechazado/observado=100; conforme según tiempo de respuesta
+               (≤1h=100, ≤2h=75, ≤3h=50, >3h=0). */
+CREATE TABLE IF NOT EXISTS solicitudes_desbloqueo (
+    id                     BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    user_id                BIGINT UNSIGNED NOT NULL,
+    sede                   VARCHAR(255) NOT NULL,
+    ruc                    VARCHAR(11)  NOT NULL,
+    razon_social           VARCHAR(255) NOT NULL,
+    comentarios            TEXT NULL,
+    revision_estado        VARCHAR(20)  NULL,
+    revision_motivo        TEXT NULL,
+    revision_kpi_penalidad DECIMAL(5,2) NULL,
+    revision_archivos      JSON NULL,
+    revision_user_id       BIGINT UNSIGNED NULL,
+    revision_at            TIMESTAMP NULL,
+    created_at             TIMESTAMP NULL,
+    updated_at             TIMESTAMP NULL,
+    PRIMARY KEY (id),
+    KEY idx_desbloqueo_sede (sede),
+    KEY idx_desbloqueo_estado (revision_estado),
+    KEY idx_desbloqueo_created (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/* ══ FIN Módulo Desbloqueo ═══════════════════════════════════════════ */

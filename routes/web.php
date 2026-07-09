@@ -29,6 +29,7 @@ use App\Http\Controllers\Tracking\TrackingAdminController;
 use App\Http\Controllers\ProductivyController;
 use App\Http\Controllers\RetiroOrdenController;
 use App\Http\Controllers\VoucherController;
+use App\Http\Controllers\DesbloqueoController;
 
 // ============================================================
 // RUTAS PARA LARAVEL 11
@@ -375,6 +376,19 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
         Route::get('/{id}/facturas',           [VoucherController::class, 'getFacturas'])->name('facturas');
         Route::get('/{id}/archivo/{index}',    [VoucherController::class, 'servirArchivo'])->name('archivo');
         Route::get('/{id}/revision-file/{index}', [VoucherController::class, 'revisionFile'])->name('revisionFile');
+    });
+
+    // Desbloqueo de clientes
+    Route::prefix('desbloqueo')->name('desbloqueo.')->group(function () {
+        Route::get('/',                           [DesbloqueoController::class, 'index'])->name('index');
+        Route::get('/historial',                  [DesbloqueoController::class, 'historial'])->name('historial');
+        Route::get('/sedes',                      [DesbloqueoController::class, 'sedesDisponibles'])->name('sedes');
+        Route::get('/kpi-semanal',                [DesbloqueoController::class, 'kpiSemanal'])->name('kpiSemanal');
+        Route::post('/',                          [DesbloqueoController::class, 'store'])->name('store');
+        Route::get('/{id}',                       [DesbloqueoController::class, 'show'])->name('show');
+        Route::post('/{id}/revisar',              [DesbloqueoController::class, 'revisar'])->name('revisar');
+        Route::delete('/{id}',                    [DesbloqueoController::class, 'destroy'])->name('destroy');
+        Route::get('/{id}/revision-file/{index}', [DesbloqueoController::class, 'revisionFile'])->name('revisionFile');
     });
 
     // ── Tracking Admin ────────────────────────────────────────
