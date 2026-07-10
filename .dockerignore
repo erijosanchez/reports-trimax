@@ -1,0 +1,38 @@
+# Symlink absoluto que rompe el build context en Windows
+# (invalid file request public/storage). En runtime lo provee el volumen.
+public/storage
+
+# Control de versiones y config del editor
+.git
+.gitignore
+.github
+.vscode
+.idea
+.fleet
+.nova
+.zed
+.claude
+
+# Dependencias que NO necesita la imagen PHP (no se corre npm/vite en el build)
+node_modules
+
+# Entorno y secretos (se proveen por volumen/entorno en runtime)
+.env
+.env.*
+
+# Caches y logs regenerables
+storage/logs/*.log
+storage/framework/cache/data/*
+storage/framework/sessions/*
+storage/framework/views/*.php
+storage/debugbar
+bootstrap/cache/*.php
+
+# Artefactos varios
+*.log
+.phpunit.result.cache
+.phpunit.cache
+Homestead.json
+Homestead.yaml
+Thumbs.db
+.DS_Store
