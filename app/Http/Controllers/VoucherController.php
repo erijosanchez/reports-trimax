@@ -43,13 +43,37 @@ class VoucherController extends Controller
                 ->get();
         }
 
+        // Límites reales de subida del servidor (para validar en el front antes de
+        // enviar y no perder el envío). Se calculan desde el php.ini efectivo.
+        $maxUploadFiles = (int) ini_get('max_file_uploads');
+        $postMax        = $this->iniAObytes(ini_get('post_max_size'));
+        // Margen de 2 MB para los campos del formulario (código, facturas, csrf…).
+        $maxUploadTotal = max(1024 * 1024, $postMax - 2 * 1024 * 1024);
+
         return view('vouchers.index', [
-            'esSilvia'   => $esSilvia,
-            'esRevisor'  => $esRevisor,
-            'puedeCrear' => $puedeCrear,
-            'pendientes' => $pendientes,
-            'sedUsuario' => $user->sede,
+            'esSilvia'       => $esSilvia,
+            'esRevisor'      => $esRevisor,
+            'puedeCrear'     => $puedeCrear,
+            'pendientes'     => $pendientes,
+            'sedUsuario'     => $user->sede,
+            'maxUploadFiles' => $maxUploadFiles ?: 20,
+            'maxUploadTotal' => $maxUploadTotal,
         ]);
+    }
+
+    /** Convierte un valor de php.ini tipo "40M"/"2G"/"512K" a bytes. */
+    private function iniAObytes(?string $valor): int
+    {
+        $valor = trim((string) $valor);
+        if ($valor === '') return 0;
+        $num  = (int) $valor;
+        $unidad = strtolower(substr($valor, -1));
+        return match ($unidad) {
+            'g'     => $num * 1024 * 1024 * 1024,
+            'm'     => $num * 1024 * 1024,
+            'k'     => $num * 1024,
+            default => (int) $valor,
+        };
     }
 
     public function store(Request $request)

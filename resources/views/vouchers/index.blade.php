@@ -354,6 +354,7 @@
                                        accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.xlsx,.xls,.csv">
                             </div>
                             <div id="preview-crear" class="mt-2 row g-2"></div>
+                            <div id="peso-crear" class="mt-2 small text-muted" style="display:none"></div>
                         </div>
 
                         <button type="submit" class="w-100 btn btn-primary" id="btn-crear-submit">
@@ -614,6 +615,7 @@
                                    accept=".jpg,.jpeg,.png,.webp,.pdf,.xlsx,.xls,.csv">
                         </div>
                         <div id="preview-rev" class="mt-2 row g-2"></div>
+                        <div id="peso-rev" class="mt-2 small text-muted" style="display:none"></div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -638,6 +640,10 @@
     const ES_SILVIA  = {{ $esSilvia ? 'true' : 'false' }};
     const ES_REVISOR = {{ $esRevisor ? 'true' : 'false' }};
     const VER_TODO   = {{ ($esSilvia || $esRevisor) ? 'true' : 'false' }};
+
+    // Límites reales del servidor (php.ini) para validar antes de enviar.
+    const MAX_UPLOAD_FILES = {{ $maxUploadFiles ?? 20 }};
+    const MAX_UPLOAD_TOTAL = {{ $maxUploadTotal ?? (38 * 1024 * 1024) }};
 
     /* ── helpers ──────────────────────────────────────────── */
     function toast(msg, type = 'success') {
@@ -697,20 +703,94 @@
             zone.classList.add('dragover');
         });
         zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
-        zone.addEventListener('drop', e => {
+        zone.addEventListener('drop', async e => {
             e.preventDefault();
             zone.classList.remove('dragover');
-            agregarArchivos(e.dataTransfer.files, inputId, preview);
+            await agregarArchivos(e.dataTransfer.files, inputId, preview);
         });
-        input.addEventListener('change', () => {
-            agregarArchivos(input.files, inputId, preview);
+        input.addEventListener('change', async () => {
+            await agregarArchivos(input.files, inputId, preview);
             input.value = '';
         });
     }
 
-    function agregarArchivos(newFiles, inputId, preview) {
+    /* ── Compresión de imágenes en el navegador ──
+       Foto de celular (1.5-4 MB) → JPEG ~400 KB, legible para un recibo.
+       PDFs/Excel/GIF y las imágenes ya livianas pasan tal cual. Si algo falla
+       (formato raro tipo HEIC), se devuelve el archivo original sin romper. */
+    async function compressImage(file, { maxDim = 1800, quality = 0.72, skipUnderKB = 500 } = {}) {
+        if (!file.type.startsWith('image/')) return file;
+        if (file.type === 'image/gif')       return file;
+        if (file.size <= skipUnderKB * 1024)  return file;
+        try {
+            const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
+            const scale  = Math.min(1, maxDim / Math.max(bitmap.width, bitmap.height));
+            const w = Math.max(1, Math.round(bitmap.width  * scale));
+            const h = Math.max(1, Math.round(bitmap.height * scale));
+            const canvas = document.createElement('canvas');
+            canvas.width = w; canvas.height = h;
+            canvas.getContext('2d').drawImage(bitmap, 0, 0, w, h);
+            if (bitmap.close) bitmap.close();
+            const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', quality));
+            if (!blob || blob.size >= file.size) return file; // si no mejora, original
+            const nombre = file.name.replace(/\.[^.]+$/, '') + '.jpg';
+            return new File([blob], nombre, { type: 'image/jpeg', lastModified: Date.now() });
+        } catch (e) {
+            return file;
+        }
+    }
+
+    const pesoElId = inputId => 'peso-' + inputId.replace('archivos-', '');
+    const fmtMB    = bytes => (bytes / 1048576).toFixed(1) + ' MB';
+
+    function pesoTotal(inputId) {
+        const files = _acumulados[inputId] ? _acumulados[inputId].files : [];
+        let total = 0;
+        for (const f of files) total += f.size;
+        return { n: files.length, total };
+    }
+
+    function updatePeso(inputId) {
+        const el = document.getElementById(pesoElId(inputId));
+        if (!el) return;
+        const { n, total } = pesoTotal(inputId);
+        if (n === 0) { el.style.display = 'none'; return; }
+        el.style.display = '';
+        const over  = n > MAX_UPLOAD_FILES || total > MAX_UPLOAD_TOTAL;
+        const cerca = n > MAX_UPLOAD_FILES * 0.8 || total > MAX_UPLOAD_TOTAL * 0.8;
+        el.className = 'mt-2 small ' + (over ? 'text-danger fw-semibold' : cerca ? 'text-warning fw-semibold' : 'text-muted');
+        let msg = `<i class="mdi mdi-paperclip me-1"></i>Archivos: ${n}/${MAX_UPLOAD_FILES} · Peso total: ${fmtMB(total)} / ${fmtMB(MAX_UPLOAD_TOTAL)}`;
+        if (n > MAX_UPLOAD_FILES)      msg += ` — demasiados archivos (máx ${MAX_UPLOAD_FILES})`;
+        else if (total > MAX_UPLOAD_TOTAL) msg += ` — supera el peso permitido`;
+        el.innerHTML = msg;
+    }
+
+    /** Devuelve un mensaje de error si la subida excede los límites, o null si está ok. */
+    function validarSubida(inputId) {
+        const { n, total } = pesoTotal(inputId);
+        if (n > MAX_UPLOAD_FILES) {
+            return `Tienes ${n} archivos y el servidor acepta un máximo de ${MAX_UPLOAD_FILES}. Quita algunos o pide a soporte subir el límite (max_file_uploads).`;
+        }
+        if (total > MAX_UPLOAD_TOTAL) {
+            return `El peso total (${fmtMB(total)}) supera el límite del servidor (${fmtMB(MAX_UPLOAD_TOTAL)}). Quita o reduce archivos antes de enviar.`;
+        }
+        return null;
+    }
+
+    async function agregarArchivos(newFiles, inputId, preview) {
+        const arr = Array.from(newFiles);
+        if (!arr.length) return;
         const dt = _acumulados[inputId];
-        for (const f of newFiles) dt.items.add(f);
+        const el = document.getElementById(pesoElId(inputId));
+        if (el) {
+            el.style.display = '';
+            el.className = 'mt-2 small text-muted';
+            el.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Procesando archivos…';
+        }
+        for (const f of arr) {
+            const procesado = await compressImage(f);
+            dt.items.add(procesado);
+        }
         renderPreview(dt.files, preview, inputId);
     }
 
@@ -742,6 +822,7 @@
         // al enviar (FormData). NO se sincroniza a input.files: hacerlo con
         // Object.defineProperty sobrescribe el accessor nativo y congela el input,
         // impidiendo volver a seleccionar archivos hasta refrescar la página.
+        updatePeso(inputId);
     }
 
     function quitarArchivo(idx, inputId, previewId) {
@@ -759,8 +840,8 @@
         input.type  = 'file';
         input.accept= 'image/*';
         input.capture = 'environment';
-        input.onchange = () => {
-            agregarArchivos(input.files, inputId, document.getElementById(previewId));
+        input.onchange = async () => {
+            await agregarArchivos(input.files, inputId, document.getElementById(previewId));
         };
         input.click();
     }
@@ -846,6 +927,12 @@
                 return;
             }
 
+            const errSubida = validarSubida('archivos-crear');
+            if (errSubida) {
+                msg.innerHTML = `<div class="alert alert-danger py-2">${errSubida}</div>`;
+                return;
+            }
+
             setBtn(btn, true);
             try {
                 const dt = _acumulados['archivos-crear'];
@@ -864,6 +951,7 @@
                 document.getElementById('tbody-facturas').innerHTML = '';
                 document.getElementById('preview-crear').innerHTML = '';
                 _acumulados['archivos-crear'] = new DataTransfer();
+                updatePeso('archivos-crear');
                 facturaIdx = 0;
                 addFacturaRow();
                 recalcTotal();
@@ -1236,6 +1324,7 @@
             document.getElementById('rev-penalidad-wrap').style.display = 'none';
             document.getElementById('preview-rev').innerHTML = '';
             _acumulados['archivos-rev'] = new DataTransfer();
+            updatePeso('archivos-rev');
             modalRev.show();
         }
         window.__abrirRevision = abrirRevision;
@@ -1262,6 +1351,9 @@
 
             const est = document.querySelector('#formRevision input[name="estado"]:checked')?.value;
             if (!est) { msg.innerHTML = '<div class="alert alert-danger py-2">Selecciona un resultado.</div>'; return; }
+
+            const errSubidaRev = validarSubida('archivos-rev');
+            if (errSubidaRev) { msg.innerHTML = `<div class="alert alert-danger py-2">${errSubidaRev}</div>`; return; }
 
             const id = document.getElementById('rev-id').value;
             setBtn(btn, true);
