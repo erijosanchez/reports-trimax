@@ -957,3 +957,11 @@ CREATE TABLE IF NOT EXISTS solicitudes_desbloqueo (
     KEY idx_desbloqueo_created (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /* ══ FIN Módulo Desbloqueo ═══════════════════════════════════════════ */
+
+
+/* ══ Desbloqueo: adjuntos obligatorios del solicitante ════════════════
+   La sede debe adjuntar al menos un archivo (imagen, PDF o Excel/CSV)
+   como sustento al crear la solicitud de desbloqueo. */
+ALTER TABLE solicitudes_desbloqueo
+    ADD COLUMN archivos JSON NULL AFTER comentarios;
+/* ══ FIN Desbloqueo: adjuntos obligatorios ═══════════════════════════ */

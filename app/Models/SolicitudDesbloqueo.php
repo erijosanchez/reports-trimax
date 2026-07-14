@@ -15,6 +15,7 @@ class SolicitudDesbloqueo extends Model
         'ruc',
         'razon_social',
         'comentarios',
+        'archivos',
         'revision_estado',
         'revision_motivo',
         'revision_kpi_penalidad',
@@ -25,6 +26,7 @@ class SolicitudDesbloqueo extends Model
 
     protected $casts = [
         'revision_kpi_penalidad' => 'decimal:2',
+        'archivos'               => 'array',
         'revision_archivos'      => 'array',
         'revision_at'            => 'datetime',
         'created_at'             => 'datetime',

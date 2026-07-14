@@ -52,18 +52,27 @@ class DesbloqueoController extends Controller
             'ruc'          => 'required|digits:11',
             'razon_social' => 'required|string|max:255',
             'comentarios'  => 'nullable|string|max:2000',
+            'archivos'     => 'required|array|min:1',
+            'archivos.*'   => 'file|max:' . self::MAX_SIZE_KB . '|mimes:' . self::MIMES,
         ], [
             'ruc.required'          => 'El RUC es obligatorio.',
             'ruc.digits'            => 'El RUC debe tener exactamente 11 dígitos.',
             'razon_social.required' => 'La razón social es obligatoria.',
+            'archivos.required'     => 'Debes adjuntar al menos un archivo de sustento.',
+            'archivos.min'          => 'Debes adjuntar al menos un archivo de sustento.',
+            'archivos.*.mimes'      => 'Solo imágenes (JPG, PNG, WEBP), PDF o Excel/CSV.',
+            'archivos.*.max'        => 'Cada archivo no puede superar 20 MB.',
         ]);
+
+        $sede = $user->sede ?? 'SIN SEDE';
 
         $solicitud = SolicitudDesbloqueo::create([
             'user_id'      => $user->id,
-            'sede'         => $user->sede ?? 'SIN SEDE',
+            'sede'         => $sede,
             'ruc'          => trim($data['ruc']),
             'razon_social' => trim($data['razon_social']),
             'comentarios'  => $data['comentarios'] ?? null,
+            'archivos'     => $this->guardarArchivos($request->file('archivos'), $sede),
         ]);
 
         $this->notificarCreacion($solicitud->load('user'));
@@ -146,6 +155,12 @@ class DesbloqueoController extends Controller
             return response()->json(['success' => false, 'message' => 'No autorizado.'], 403);
         }
 
+        foreach ($solicitud->archivos ?? [] as $a) {
+            if (!empty($a['path'])) {
+                Storage::disk('public')->delete($a['path']);
+            }
+        }
+
         $solicitud->delete();
 
         return response()->json(['success' => true, 'message' => 'Solicitud eliminada.']);
@@ -168,6 +183,7 @@ class DesbloqueoController extends Controller
             'ruc'                    => $solicitud->ruc,
             'razon_social'           => $solicitud->razon_social,
             'comentarios'            => $solicitud->comentarios,
+            'archivos'               => $this->mapArchivos($solicitud, 'archivos', 'desbloqueo.file'),
             'solicitante'            => $solicitud->user?->name,
             'creado'                 => $solicitud->created_at?->setTimezone('America/Lima')->format('d/m/Y H:i'),
             'kpi_sede_label'         => $solicitud->kpiSedeLabel(),
@@ -179,23 +195,35 @@ class DesbloqueoController extends Controller
             'revision_kpi_penalidad' => $solicitud->revision_kpi_penalidad !== null ? (float) $solicitud->revision_kpi_penalidad : null,
             'revision_revisor'       => $solicitud->revisor?->name,
             'revision_at'            => $solicitud->revision_at?->setTimezone('America/Lima')->format('d/m/Y H:i'),
-            'revision_archivos'      => $this->mapRevisionArchivos($solicitud),
+            'revision_archivos'      => $this->mapArchivos($solicitud, 'revision_archivos', 'desbloqueo.revisionFile'),
             'puede_revisar'          => $user->puedeRevisarReportesSedes() && is_null($solicitud->revision_estado),
         ]);
     }
 
-    private function mapRevisionArchivos(SolicitudDesbloqueo $s): array
+    private function mapArchivos(SolicitudDesbloqueo $s, string $campo, string $ruta): array
     {
-        return collect($s->revision_archivos ?? [])->map(function ($a, $i) use ($s) {
+        return collect($s->{$campo} ?? [])->map(function ($a, $i) use ($s, $ruta) {
             return [
                 'name'        => $a['name'] ?? 'archivo',
                 'es_imagen'   => str_starts_with($a['mime'] ?? '', 'image/'),
-                'preview_url' => route('desbloqueo.revisionFile', ['id' => $s->id, 'index' => $i]),
+                'preview_url' => route($ruta, ['id' => $s->id, 'index' => $i]),
             ];
         })->values()->all();
     }
 
+    /** Adjuntos de sustento que sube la sede al crear la solicitud. */
+    public function file($id, int $index, Request $request)
+    {
+        return $this->servirArchivo($id, $index, 'archivos', $request);
+    }
+
+    /** Adjuntos que sube finanzas al revisar. */
     public function revisionFile($id, int $index, Request $request)
+    {
+        return $this->servirArchivo($id, $index, 'revision_archivos', $request);
+    }
+
+    private function servirArchivo($id, int $index, string $campo, Request $request)
     {
         $user      = auth()->user();
         $solicitud = SolicitudDesbloqueo::findOrFail($id);
@@ -204,7 +232,7 @@ class DesbloqueoController extends Controller
             abort(403);
         }
 
-        $archivo = ($solicitud->revision_archivos ?? [])[$index] ?? null;
+        $archivo = ($solicitud->{$campo} ?? [])[$index] ?? null;
         if (!$archivo || !Storage::disk('public')->exists($archivo['path'])) {
             abort(404, 'Archivo no encontrado.');
         }

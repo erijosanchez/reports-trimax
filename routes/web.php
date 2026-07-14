@@ -388,6 +388,7 @@ Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back
         Route::get('/{id}',                       [DesbloqueoController::class, 'show'])->name('show');
         Route::post('/{id}/revisar',              [DesbloqueoController::class, 'revisar'])->name('revisar');
         Route::delete('/{id}',                    [DesbloqueoController::class, 'destroy'])->name('destroy');
+        Route::get('/{id}/file/{index}',          [DesbloqueoController::class, 'file'])->name('file');
         Route::get('/{id}/revision-file/{index}', [DesbloqueoController::class, 'revisionFile'])->name('revisionFile');
     });
 

@@ -85,7 +85,7 @@
                 </div>
                 <div class="card-body">
                     <div id="msg-crear"></div>
-                    <form id="formCrear" novalidate>
+                    <form id="formCrear" enctype="multipart/form-data" novalidate>
                         @csrf
                         <div class="mb-3">
                             <label class="form-label fw-semibold" for="c-ruc">RUC <span class="text-danger">*</span></label>
@@ -103,6 +103,18 @@
                             <textarea class="form-control" id="c-coment" name="comentarios" rows="3"
                                       placeholder="Motivo del desbloqueo, contexto, etc. (opcional)"></textarea>
                         </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">
+                                Sustento <span class="text-danger">*</span>
+                                <span class="text-muted fw-normal">(img, PDF, Excel · máx. 20 MB c/u)</span>
+                            </label>
+                            <div class="drop-zone" id="drop-zone-crear" onclick="document.getElementById('archivos-crear').click()">
+                                <i class="mdi mdi-cloud-upload-outline" style="font-size:1.8rem;color:#94a3b8"></i>
+                                <p class="mt-1 mb-0 text-muted" style="font-size:.85rem">Arrastra o haz clic para adjuntar</p>
+                                <input type="file" id="archivos-crear" name="archivos[]" multiple class="d-none" accept=".jpg,.jpeg,.png,.webp,.pdf,.xlsx,.xls,.csv">
+                            </div>
+                            <div id="preview-crear" class="mt-2 row g-2"></div>
+                        </div>
                         <button type="submit" class="w-100 btn btn-primary" id="btn-crear-submit">
                             <i class="me-2 mdi mdi-send"></i>Enviar solicitud a finanzas
                         </button>
@@ -118,6 +130,7 @@
                 <div class="card-body">
                     <ol class="mb-0" style="font-size:.88rem;line-height:1.8">
                         <li>Ingresa el <strong>RUC</strong> y la <strong>razón social</strong> del cliente a desbloquear.</li>
+                        <li>Adjunta <strong>al menos un archivo de sustento</strong> (obligatorio): imagen, PDF o Excel.</li>
                         <li>Agrega comentarios si es necesario.</li>
                         <li>Finanzas recibe la notificación y revisa tu solicitud.</li>
                         <li>Recibirás un correo con el resultado (conforme, observado o rechazado).</li>
@@ -427,6 +440,7 @@
     /* ══ Crear solicitud ══ */
     const formCrear = document.getElementById('formCrear');
     if (formCrear) {
+        setupDropZone('drop-zone-crear', 'archivos-crear', 'preview-crear');
         document.getElementById('c-ruc').addEventListener('input', e => {
             e.target.value = e.target.value.replace(/\D/g, '').slice(0, 11);
         });
@@ -435,12 +449,21 @@
             const btn = document.getElementById('btn-crear-submit');
             const msg = document.getElementById('msg-crear');
             msg.innerHTML = '';
+            const dt = _acumulados['archivos-crear'];
+            if (!dt || !dt.files.length) {
+                msg.innerHTML = '<div class="alert alert-danger py-2">Debes adjuntar al menos un archivo de sustento.</div>';
+                return;
+            }
             setBtn(btn, true);
             try {
                 const fd = new FormData(this);
+                fd.delete('archivos[]');
+                for (const f of dt.files) fd.append('archivos[]', f);
                 const data = await apiFetch(BASE, { method: 'POST', body: fd });
                 toast(data.message);
                 this.reset();
+                _acumulados['archivos-crear'] = new DataTransfer();
+                document.getElementById('preview-crear').innerHTML = '';
                 loadHistorial(1);
                 loadKpi();
             } catch (err) {
@@ -457,11 +480,15 @@
         new bootstrap.Modal(document.getElementById('modalDetalle')).show();
         try {
             const d = await apiFetch(`${BASE}/${btn.dataset.id}`);
-            let adjHtml = '';
-            if (d.revision_archivos && d.revision_archivos.length) {
-                adjHtml = '<div class="d-flex flex-wrap gap-2 mt-2">' + d.revision_archivos.map(a =>
-                    `<a href="${a.preview_url}" target="_blank" class="badge bg-light text-dark border text-decoration-none"><i class="mdi mdi-paperclip me-1"></i>${a.name}</a>`).join('') + '</div>';
-            }
+            const chips = arr => '<div class="d-flex flex-wrap gap-2 mt-2">' + arr.map(a =>
+                `<a href="${a.preview_url}" target="_blank" class="badge bg-light text-dark border text-decoration-none"><i class="mdi ${a.es_imagen ? 'mdi-image-outline' : 'mdi-paperclip'} me-1"></i>${a.name}</a>`).join('') + '</div>';
+            const adjHtml = (d.revision_archivos && d.revision_archivos.length) ? chips(d.revision_archivos) : '';
+            const sustentoHtml = (d.archivos && d.archivos.length)
+                ? `<div class="mt-3">
+                       <div class="fw-semibold mb-1" style="font-size:.85rem"><i class="mdi mdi-file-document-outline me-1 text-muted"></i>Sustento de la sede</div>
+                       ${chips(d.archivos)}
+                   </div>`
+                : '';
             let revHtml;
             if (d.revision_estado) {
                 revHtml = `<div class="mt-3 p-3 rounded border">
@@ -491,6 +518,7 @@
                     <dt class="col-4 text-muted">Solicitado</dt><dd class="col-8">${d.creado ?? '—'}</dd>
                     ${d.comentarios ? `<dt class="col-4 text-muted">Comentarios</dt><dd class="col-8">${d.comentarios}</dd>` : ''}
                 </dl>
+                ${sustentoHtml}
                 ${revHtml}
                 ${revisarBtn}`;
         } catch (err) {
