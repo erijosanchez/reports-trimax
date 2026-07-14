@@ -18,14 +18,13 @@ use Illuminate\Support\Str;
 
 class VoucherController extends Controller
 {
-    private const SILVIA_ID    = 62;
     private const MAX_SIZE_KB  = 20480;
     private const MIMES        = 'jpg,jpeg,png,gif,webp,xlsx,xls,csv,pdf';
 
     public function index()
     {
-        $user     = auth()->user();
-        $esSilvia = $user->id === self::SILVIA_ID;
+        $user         = auth()->user();
+        $puedeAplicar = $user->isFinanzas();
 
         if (!$user->puedeVerVouchers()) {
             abort(403, 'No tienes permiso para acceder a Vouchers.');
@@ -34,13 +33,13 @@ class VoucherController extends Controller
         $esRevisor = $user->puedeRevisarReportesSedes();
         $puedeCrear = $user->isSede() || $user->isSuperAdmin() || $user->isAdmin();
 
-        // Panel de pendientes de Silvia (solo ella)
+        // Panel de pendientes de aplicar (solo finanzas)
         $pendientes = collect();
-        if ($esSilvia) {
+        if ($puedeAplicar) {
             $pendientes = Voucher::with(['creator', 'facturas'])
                 ->where('status', 'pendiente')
                 ->latest()
-                ->get();
+                ->paginate(20, ['*'], 'pendientes');
         }
 
         // Límites reales de subida del servidor (para validar en el front antes de
@@ -51,7 +50,7 @@ class VoucherController extends Controller
         $maxUploadTotal = max(1024 * 1024, $postMax - 2 * 1024 * 1024);
 
         return view('vouchers.index', [
-            'esSilvia'       => $esSilvia,
+            'puedeAplicar'   => $puedeAplicar,
             'esRevisor'      => $esRevisor,
             'puedeCrear'     => $puedeCrear,
             'pendientes'     => $pendientes,
@@ -228,8 +227,8 @@ class VoucherController extends Controller
 
     public function aplicar($id)
     {
-        if (auth()->id() !== self::SILVIA_ID) {
-            return response()->json(['success' => false, 'message' => 'Solo Silvia puede aplicar vouchers.'], 403);
+        if (!auth()->user()->isFinanzas()) {
+            return response()->json(['success' => false, 'message' => 'Solo el equipo de Finanzas puede aplicar vouchers.'], 403);
         }
 
         $voucher = Voucher::with(['creator', 'facturas'])->findOrFail($id);
@@ -454,8 +453,8 @@ class VoucherController extends Controller
 
         $query = Voucher::with(['creator', 'aplicador']);
 
-        // Sede solo ve lo suyo; Silvia/admin/finanzas ven todo
-        $verTodo = $user->id === self::SILVIA_ID || $user->isSuperAdmin() || $user->isAdmin() || $user->isFinanzas();
+        // Sede solo ve lo suyo; admin/finanzas ven todo
+        $verTodo = $user->isSuperAdmin() || $user->isAdmin() || $user->isFinanzas();
         if (!$verTodo) {
             $query->where('sede', $user->sede);
         }
@@ -525,7 +524,7 @@ class VoucherController extends Controller
             return response()->json([], 403);
         }
         $query = Voucher::selectRaw('DISTINCT sede')->orderBy('sede');
-        $verTodo = $user->id === self::SILVIA_ID || $user->isSuperAdmin() || $user->isAdmin() || $user->isFinanzas();
+        $verTodo = $user->isSuperAdmin() || $user->isAdmin() || $user->isFinanzas();
         if (!$verTodo) {
             $query->where('sede', $user->sede);
         }
@@ -545,7 +544,7 @@ class VoucherController extends Controller
             return response()->json(['error' => 'Sin permiso.'], 403);
         }
 
-        $verTodo    = $user->id === self::SILVIA_ID || $user->isSuperAdmin() || $user->isAdmin() || $user->isFinanzas();
+        $verTodo    = $user->isSuperAdmin() || $user->isAdmin() || $user->isFinanzas();
         $sedeFiltro = $verTodo ? $request->get('sede') : $user->sede;
 
         $hoy    = Carbon::now('America/Lima');

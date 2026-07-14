@@ -171,8 +171,8 @@
 
     <div id="vchr-toast"></div>
 
-    {{-- ══ PANEL SILVIA: Vouchers Pendientes ══ --}}
-    @if($esSilvia)
+    {{-- ══ PANEL FINANZAS: Vouchers Pendientes ══ --}}
+    @if($puedeAplicar)
     <div class="mb-4 row">
         <div class="col-12">
             <div class="card">
@@ -182,7 +182,7 @@
                         Vouchers Pendientes de Aplicar
                     </h6>
                     <span class="bg-warning text-dark badge">
-                        {{ $pendientes->count() }} pendiente(s)
+                        {{ $pendientes->total() }} pendiente(s)
                     </span>
                 </div>
                 <div class="p-0 card-body">
@@ -195,7 +195,7 @@
                     <div class="d-flex flex-column gap-3 p-3">
                         @foreach($pendientes as $v)
                         @php
-                            $kpi = $v->solicitado_at ? $v->solicitado_at->diffInDays(now()) : null;
+                            $kpi = $v->solicitado_at ? round($v->solicitado_at->diffInDays(now()), 2) : null;
                         @endphp
                         <div class="mb-0 card pending-card">
                             <div class="py-3 card-body">
@@ -258,6 +258,11 @@
                         </div>
                         @endforeach
                     </div>
+                    @if($pendientes->hasPages())
+                    <div class="px-3 pb-3">
+                        {{ $pendientes->withQueryString()->links() }}
+                    </div>
+                    @endif
                     @endif
                 </div>
             </div>
@@ -387,7 +392,7 @@
     </div>
     @endif
 
-    @php $verTodo = $esSilvia || $esRevisor; @endphp
+    @php $verTodo = $puedeAplicar || $esRevisor; @endphp
 
     {{-- ══ KPI SEMANAL DE CONFORMIDAD ══ --}}
     <div class="mb-4 row">
@@ -637,9 +642,9 @@
 (function () {
     const CSRF   = document.querySelector('meta[name="csrf-token"]').content;
     const BASE   = '{{ url("vouchers") }}';
-    const ES_SILVIA  = {{ $esSilvia ? 'true' : 'false' }};
+    const PUEDE_APLICAR = {{ $puedeAplicar ? 'true' : 'false' }};
     const ES_REVISOR = {{ $esRevisor ? 'true' : 'false' }};
-    const VER_TODO   = {{ ($esSilvia || $esRevisor) ? 'true' : 'false' }};
+    const VER_TODO   = {{ ($puedeAplicar || $esRevisor) ? 'true' : 'false' }};
 
     // Límites reales del servidor (php.ini) para validar antes de enviar.
     const MAX_UPLOAD_FILES = {{ $maxUploadFiles ?? 20 }};
@@ -966,8 +971,8 @@
         });
     }
 
-    /* ══ SILVIA: Aplicar voucher ════════════════════════════ */
-    if (ES_SILVIA) {
+    /* ══ FINANZAS: Aplicar voucher ════════════════════════════ */
+    if (PUEDE_APLICAR) {
         document.addEventListener('click', async e => {
             const btn = e.target.closest('.btn-aplicar');
             if (!btn) return;
