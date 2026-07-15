@@ -59,6 +59,14 @@ Schedule::command('trimax:sync-asignacion-bases')
     ->withoutOverlapping(20)
     ->runInBackground();
 
+// Marca acuerdos comerciales vencidos — diario 00:10 (Lima).
+// Reemplaza la escritura por request que antes hacía el listado de acuerdos.
+Schedule::command('acuerdos:marcar-vencidos')
+    ->dailyAt('00:10')
+    ->withoutOverlapping()
+    ->onOneServer()
+    ->timezone('America/Lima');
+
 // Higiene de tablas de seguridad — domingos 03:00 (Lima).
 // Purga ruido antiguo SIN tocar la bitácora de actividad (user_activity_logs),
 // que se conserva íntegra para no perder información.

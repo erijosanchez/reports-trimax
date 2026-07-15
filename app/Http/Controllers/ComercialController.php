@@ -266,21 +266,50 @@ class ComercialController extends Controller
                 $query->where(function ($q) use ($buscar) {
                     $q->where('numero_acuerdo', 'like', "%{$buscar}%")
                         ->orWhere('razon_social', 'like', "%{$buscar}%")
-                        ->orWhere('ruc', 'like', "%{$buscar}%");
+                        ->orWhere('ruc', 'like', "%{$buscar}%")
+                        ->orWhere('consultor', 'like', "%{$buscar}%")
+                        ->orWhere('acuerdo_comercial', 'like', "%{$buscar}%")
+                        ->orWhere('ciudad', 'like', "%{$buscar}%");
                 });
             }
 
-            $acuerdos = $query->orderBy('created_at', 'desc')->get();
-
-            foreach ($acuerdos as $acuerdo) {
-                $acuerdo->actualizarEstado();
+            // Modo "todos" (sin paginar): lo usan los gráficos de la pestaña Estadísticas.
+            if ($request->boolean('todos')) {
+                $todos = $query->orderBy('created_at', 'desc')->get();
+                return response()->json([
+                    'success'   => true,
+                    'data'      => $todos,
+                    'is_sede'   => $user->isSede(),
+                    'sede_name' => $user->sede ?? null,
+                ]);
             }
 
+            // Estadísticas agregadas (respetan los filtros activos), calculadas en BD.
+            $base = clone $query;
+            $stats = [
+                'total'      => (clone $base)->count(),
+                'vigentes'   => (clone $base)->where('estado', 'Vigente')->count(),
+                'pendientes' => (clone $base)->where('estado', 'Solicitado')->count(),
+                'vencidos'   => (clone $base)->where('estado', 'Vencido')->count(),
+            ];
+
+            $perPage  = (int) $request->input('per_page', 20);
+            $acuerdos = $query->orderBy('created_at', 'desc')->paginate($perPage);
+
             return response()->json([
-                'success' => true,
-                'data' => $acuerdos,
-                'is_sede' => $user->isSede(),
-                'sede_name' => $user->sede ?? null
+                'success'    => true,
+                'data'       => $acuerdos->items(),
+                'pagination' => [
+                    'current_page' => $acuerdos->currentPage(),
+                    'last_page'    => $acuerdos->lastPage(),
+                    'per_page'     => $acuerdos->perPage(),
+                    'total'        => $acuerdos->total(),
+                    'from'         => $acuerdos->firstItem(),
+                    'to'           => $acuerdos->lastItem(),
+                ],
+                'stats'      => $stats,
+                'is_sede'    => $user->isSede(),
+                'sede_name'  => $user->sede ?? null,
             ]);
         } catch (\Exception $e) {
             \Log::error('Error en obtenerAcuerdos: ' . $e->getMessage());
@@ -767,13 +796,9 @@ class ComercialController extends Controller
     public function obtenerUsuariosCreadores()
     {
         try {
-            $usuarios = AcuerdoComercial::with('creador')
-                ->get()
-                ->pluck('creador')
-                ->unique('id')
-                ->filter()
-                ->sortBy('name')
-                ->values();
+            $usuarios = User::whereIn('id', AcuerdoComercial::query()->select('user_id')->distinct())
+                ->orderBy('name')
+                ->get(['id', 'name', 'email']);
 
             return response()->json([
                 'success' => true,

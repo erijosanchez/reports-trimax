@@ -865,10 +865,12 @@
 @section('scripts')
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
-        let acuerdosData = [];
-        let acuerdosActuales = [];
+        let acuerdosData = [];        // solo los registros de la página actual (server-side)
+        let acuerdosActuales = [];    // alias de la página actual (compatibilidad de render)
         let currentPage = 1;
-        const PER_PAGE = 20;
+        let paginationMeta = null;    // {current_page, last_page, per_page, total, from, to}
+        let acuerdosChartData = null; // dataset completo, cargado bajo demanda para los gráficos
+        let PER_PAGE = 20;
         const userEmail = "{{ Auth::user()->email }}";
         const canValidate = userEmail === 'planeamiento.comercial@trimaxperu.com';
         const canApprove = userEmail === 'smonopoli@trimaxperu.com';
@@ -1068,7 +1070,7 @@
         /**
          * Cargar acuerdos
          */
-        function cargarAcuerdos() {
+        function cargarAcuerdos(pagina = 1) {
             $('#loadingSpinner').show();
             $('#errorMessage').hide();
             $('#tablaContainer').hide();
@@ -1076,20 +1078,36 @@
             $.ajax({
                 url: "{{ route('comercial.acuerdos.obtener') }}",
                 method: 'GET',
+                data: {
+                    page: pagina,
+                    per_page: PER_PAGE,
+                    usuario: $('#filtroUsuario').val() || '',
+                    sede: $('#filtroSede').val() || '',
+                    estado: $('#filtroEstado').val() || '',
+                    buscar: ($('#buscarGeneral').val() || '').trim()
+                },
                 success: function(response) {
                     if (response.success) {
-                        acuerdosData = response.data;
-                        console.log('✅ Acuerdos cargados:', acuerdosData.length);
+                        acuerdosData = response.data || [];
+                        acuerdosActuales = acuerdosData;
+                        paginationMeta = response.pagination || null;
+                        currentPage = paginationMeta ? paginationMeta.current_page : 1;
+                        console.log('✅ Acuerdos (página) cargados:', acuerdosData.length,
+                            'de', paginationMeta ? paginationMeta.total : '?');
 
                         if (response.is_sede) {
                             $('#filtroUsuario').closest('.col-md-3').hide();
                             $('#filtroSede').closest('.col-md-3').hide();
-                            $('.btn-wrapper h3').append(
-                                ` <small class="text-muted fs-6">(${response.sede_name})</small>`);
+                            // Añadir la etiqueta de sede una sola vez (esta función ahora se
+                            // ejecuta en cada filtro/página, así que evitamos duplicarla).
+                            if (!$('#sedeNameLabel').length) {
+                                $('.btn-wrapper h3').append(
+                                    ` <small id="sedeNameLabel" class="text-muted fs-6">(${response.sede_name})</small>`);
+                            }
                         }
 
-                        actualizarEstadisticas();
-                        renderizarTabla();
+                        actualizarEstadisticas(response.stats);
+                        renderizarPagina();
 
                         $('#loadingSpinner').hide();
                         $('#tablaContainer').show();
@@ -1113,93 +1131,25 @@
          * Aplicar filtros
          */
         function aplicarFiltros() {
-            $('#loadingSpinner').show();
-            $('#errorMessage').hide();
-            $('#tablaContainer').hide();
-
-            const filtroUsuario = $('#filtroUsuario').val();
-            const filtroSede = $('#filtroSede').val();
-            const filtroEstado = $('#filtroEstado').val();
-            const busqueda = $('#buscarGeneral').val().toLowerCase().trim();
-
-            let acuerdosFiltrados = acuerdosData;
-
-            // Filtro por usuario
-            if (filtroUsuario) {
-                acuerdosFiltrados = acuerdosFiltrados.filter(a =>
-                    a.creador && a.creador.id == filtroUsuario
-                );
-            }
-
-            // Filtro por sede
-            if (filtroSede) {
-                acuerdosFiltrados = acuerdosFiltrados.filter(a =>
-                    a.sede === filtroSede
-                );
-            }
-
-            // Filtro por estado
-            if (filtroEstado) {
-                acuerdosFiltrados = acuerdosFiltrados.filter(a =>
-                    a.estado === filtroEstado
-                );
-            }
-
-            // Búsqueda general (flexible)
-            if (busqueda) {
-                acuerdosFiltrados = acuerdosFiltrados.filter(a => {
-                    const numero = (a.numero_acuerdo || '').toLowerCase();
-                    const ruc = (a.ruc || '').toLowerCase();
-                    const razon = (a.razon_social || '').toLowerCase();
-                    const consultor = (a.consultor || '').toLowerCase();
-                    const acuerdo = (a.acuerdo_comercial || '').toLowerCase();
-                    const ciudad = (a.ciudad || '').toLowerCase();
-
-                    return numero.includes(busqueda) ||
-                        ruc.includes(busqueda) ||
-                        razon.includes(busqueda) ||
-                        consultor.includes(busqueda) ||
-                        acuerdo.includes(busqueda) ||
-                        ciudad.includes(busqueda);
-                });
-            }
-
-            // Actualizar estadísticas con los filtrados, luego restaurar
-            const acuerdosOriginal = acuerdosData;
-            acuerdosData = acuerdosFiltrados;
-            actualizarEstadisticas();
-            acuerdosData = acuerdosOriginal;
-
-            // Paginar sobre los datos filtrados
-            acuerdosActuales = [...acuerdosFiltrados];
-            currentPage = 1;
-            renderizarPagina();
-
-            $('#loadingSpinner').hide();
-            $('#tablaContainer').show();
+            // El filtrado ahora es server-side: recargamos desde la página 1.
+            cargarAcuerdos(1);
         }
 
         /**
-         * Actualizar estadísticas
+         * Actualizar estadísticas (vienen calculadas del servidor y respetan los filtros)
          */
-        function actualizarEstadisticas() {
-            const total = acuerdosData.length;
-            const vigentes = acuerdosData.filter(a => a.estado === 'Vigente').length;
-            const pendientes = acuerdosData.filter(a => a.estado === 'Solicitado').length;
-            const vencidos = acuerdosData.filter(a => a.estado === 'Vencido').length;
-
-            $('#totalAcuerdos').text(total);
-            $('#acuerdosVigentes').text(vigentes);
-            $('#acuerdosPendientes').text(pendientes);
-            $('#acuerdosVencidos').text(vencidos);
+        function actualizarEstadisticas(stats) {
+            stats = stats || { total: 0, vigentes: 0, pendientes: 0, vencidos: 0 };
+            $('#totalAcuerdos').text(stats.total ?? 0);
+            $('#acuerdosVigentes').text(stats.vigentes ?? 0);
+            $('#acuerdosPendientes').text(stats.pendientes ?? 0);
+            $('#acuerdosVencidos').text(stats.vencidos ?? 0);
         }
 
         /**
-         * Renderizar tabla (captura datos actuales y va a página 1)
+         * Renderizar tabla (compatibilidad: la página ya viene del servidor)
          */
         function renderizarTabla() {
-            acuerdosActuales = [...acuerdosData];
-            currentPage = 1;
             renderizarPagina();
         }
 
@@ -1210,12 +1160,12 @@
             $('#checkTodos').prop('checked', false).prop('indeterminate', false);
             $('#barraSeleccion').addClass('d-none').removeClass('d-flex');
 
-            const inicio = (currentPage - 1) * PER_PAGE;
-            const paginados = acuerdosActuales.slice(inicio, inicio + PER_PAGE);
+            const inicioNum = (paginationMeta && paginationMeta.from) ? paginationMeta.from : 1;
+            const paginados = acuerdosData; // ya es la página actual (server-side)
 
             let html = '';
 
-            if (acuerdosActuales.length === 0) {
+            if (!paginados || paginados.length === 0) {
                 html = `
                 <tr>
                     <td colspan="17" class="py-5 text-center">
@@ -1226,7 +1176,7 @@
             `;
             } else {
                 paginados.forEach((acuerdo, index) => {
-                    const numFila = inicio + index + 1;
+                    const numFila = inicioNum + index;
                     const badgeEstado = obtenerBadgeEstado(acuerdo.estado);
                     const badgeValidado = obtenerBadgeAprobacion(acuerdo.validado);
                     const badgeAprobado = obtenerBadgeAprobacion(acuerdo.aprobado);
@@ -1328,16 +1278,16 @@
          * Renderizar controles de paginación
          */
         function renderizarPaginacion() {
-            const total = acuerdosActuales.length;
-            const totalPaginas = Math.ceil(total / PER_PAGE);
+            const total = paginationMeta ? paginationMeta.total : 0;
+            const totalPaginas = paginationMeta ? paginationMeta.last_page : 1;
 
             if (total === 0) {
                 $('#paginacionContainer').html('');
                 return;
             }
 
-            const inicio = (currentPage - 1) * PER_PAGE + 1;
-            const fin = Math.min(currentPage * PER_PAGE, total);
+            const inicio = paginationMeta.from || 0;
+            const fin = paginationMeta.to || 0;
 
             let html = `<div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
                 <small class="text-muted">Mostrando <strong>${inicio}–${fin}</strong> de <strong>${total}</strong> acuerdo(s)</small>
@@ -1384,10 +1334,9 @@
          */
         function irAPagina(e, pagina) {
             e.preventDefault();
-            const totalPaginas = Math.ceil(acuerdosActuales.length / PER_PAGE);
-            if (pagina < 1 || pagina > totalPaginas) return;
-            currentPage = pagina;
-            renderizarPagina();
+            const totalPaginas = paginationMeta ? paginationMeta.last_page : 1;
+            if (pagina < 1 || pagina > totalPaginas || pagina === currentPage) return;
+            cargarAcuerdos(pagina);
             $('html, body').animate({ scrollTop: $('#tablaAcuerdos').offset().top - 120 }, 200);
         }
 
@@ -2177,7 +2126,8 @@
             if (chartsInicializados) return;
             chartsInicializados = true;
 
-            const data = acuerdosData;
+            // Dataset completo cargado bajo demanda (no la página actual de la tabla).
+            const data = acuerdosChartData || [];
 
             /* ---- 1. Ranking usuarios ---- */
             const porUsuario = {};
@@ -2387,9 +2337,26 @@
             });
         }
 
-        // Inicializar gráficos al cambiar al tab de Estadísticas
+        // Inicializar gráficos al cambiar al tab de Estadísticas.
+        // Los gráficos necesitan el dataset completo; se carga una sola vez bajo demanda.
         document.getElementById('tabEstadisticasLink')?.addEventListener('shown.bs.tab', function () {
-            inicializarGraficos();
+            if (chartsInicializados) return;
+            if (acuerdosChartData) { inicializarGraficos(); return; }
+
+            $.ajax({
+                url: "{{ route('comercial.acuerdos.obtener') }}",
+                method: 'GET',
+                data: { todos: 1 },
+                success: function(response) {
+                    if (response.success) {
+                        acuerdosChartData = response.data || [];
+                        inicializarGraficos();
+                    }
+                },
+                error: function(xhr) {
+                    console.error('Error al cargar datos de gráficos:', xhr);
+                }
+            });
         });
     </script>
 @endsection

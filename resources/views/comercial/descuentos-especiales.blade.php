@@ -773,10 +773,12 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
     <script>
-        let descuentosData = [];
-        let descuentosActuales = [];
+        let descuentosData = [];        // solo los registros de la página actual (server-side)
+        let descuentosActuales = [];    // alias de la página actual (compatibilidad de render)
         let currentPage = 1;
-        const PER_PAGE = 20;
+        let paginationMeta = null;      // {current_page, last_page, per_page, total, from, to}
+        let descuentosChartData = null; // dataset completo, cargado bajo demanda para los gráficos
+        let PER_PAGE = 20;
         const userEmail = "{{ Auth::user()->email }}";
         const canAplicar = userEmail === 'auditor.junior@trimaxperu.com';
         const canApprove = userEmail === 'smonopoli@trimaxperu.com' || userEmail ===
@@ -867,7 +869,7 @@
         /**
          * Cargar descuentos
          */
-        function cargarDescuentos() {
+        function cargarDescuentos(pagina = 1) {
             $('#loadingSpinner').show();
             $('#errorMessage').hide();
             $('#tablaContainer').hide();
@@ -875,13 +877,26 @@
             $.ajax({
                 url: "{{ route('comercial.descuentos.obtener') }}",
                 method: 'GET',
+                data: {
+                    page: pagina,
+                    per_page: PER_PAGE,
+                    usuario: $('#filtroUsuario').val() || '',
+                    sede: $('#filtroSede').val() || '',
+                    aplicado: $('#filtroAplicado').val() || '',
+                    aprobado: $('#filtroAprobado').val() || '',
+                    buscar: ($('#buscarGeneral').val() || '').trim()
+                },
                 success: function(response) {
                     if (response.success) {
-                        descuentosData = response.data;
-                        console.log('✅ Descuentos cargados:', descuentosData.length);
+                        descuentosData = response.data || [];
+                        descuentosActuales = descuentosData;
+                        paginationMeta = response.pagination || null;
+                        currentPage = paginationMeta ? paginationMeta.current_page : 1;
+                        console.log('✅ Descuentos (página) cargados:', descuentosData.length,
+                            'de', paginationMeta ? paginationMeta.total : '?');
 
-                        actualizarEstadisticas();
-                        renderizarTabla();
+                        actualizarEstadisticas(response.stats);
+                        renderizarPagina();
 
                         $('#loadingSpinner').hide();
                         $('#tablaContainer').show();
@@ -902,99 +917,25 @@
          * Aplicar filtros
          */
         function aplicarFiltros() {
-            $('#loadingSpinner').show();
-            $('#errorMessage').hide();
-            $('#tablaContainer').hide();
-
-            const filtroUsuario = $('#filtroUsuario').val();
-            const filtroSede = $('#filtroSede').val();
-            const filtroAplicado = $('#filtroAplicado').val(); // 🔥 CAMBIO
-            const filtroAprobado = $('#filtroAprobado').val();
-            const busqueda = $('#buscarGeneral').val().toLowerCase().trim();
-
-            let descuentosFiltrados = descuentosData;
-
-            if (filtroUsuario) {
-                descuentosFiltrados = descuentosFiltrados.filter(d =>
-                    d.creador && d.creador.id == filtroUsuario
-                );
-            }
-
-            if (filtroSede) {
-                descuentosFiltrados = descuentosFiltrados.filter(d =>
-                    d.sede === filtroSede
-                );
-            }
-
-            // 🔥 CAMBIO: Filtro por aplicado
-            if (filtroAplicado) {
-                descuentosFiltrados = descuentosFiltrados.filter(d =>
-                    d.aplicado === filtroAplicado
-                );
-            }
-
-            if (filtroAprobado) {
-                descuentosFiltrados = descuentosFiltrados.filter(d =>
-                    d.aprobado === filtroAprobado
-                );
-            }
-
-            if (busqueda) {
-                descuentosFiltrados = descuentosFiltrados.filter(d => {
-                    const numero = (d.numero_descuento || '').toLowerCase();
-                    const ruc = (d.ruc || '').toLowerCase();
-                    const razon = (d.razon_social || '').toLowerCase();
-                    const consultor = (d.consultor || '').toLowerCase();
-                    const descuento = (d.descuento_especial || '').toLowerCase();
-                    const ciudad = (d.ciudad || '').toLowerCase();
-                    const numFactura = (d.numero_factura || '').toLowerCase();
-                    const numOrden = (d.numero_orden || '').toLowerCase();
-
-                    return numero.includes(busqueda) ||
-                        ruc.includes(busqueda) ||
-                        razon.includes(busqueda) ||
-                        consultor.includes(busqueda) ||
-                        descuento.includes(busqueda) ||
-                        ciudad.includes(busqueda) ||
-                        numFactura.includes(busqueda) ||
-                        numOrden.includes(busqueda);
-                });
-            }
-
-            const descuentosOriginal = descuentosData;
-            descuentosData = descuentosFiltrados;
-            actualizarEstadisticas();
-            descuentosData = descuentosOriginal;
-
-            descuentosActuales = [...descuentosFiltrados];
-            currentPage = 1;
-            renderizarPagina();
-
-            $('#loadingSpinner').hide();
-            $('#tablaContainer').show();
+            // El filtrado ahora es server-side: recargamos desde la página 1.
+            cargarDescuentos(1);
         }
 
         /**
-         * Actualizar estadísticas
+         * Actualizar estadísticas (vienen calculadas del servidor y respetan los filtros)
          */
-        function actualizarEstadisticas() {
-            const total = descuentosData.length;
-            const aprobados = descuentosData.filter(d => d.aplicado === 'Aprobado' && d.aprobado === 'Aprobado').length;
-            const pendientes = descuentosData.filter(d => d.aplicado === 'Pendiente' || d.aprobado === 'Pendiente').length;
-            const rechazados = descuentosData.filter(d => d.aplicado === 'Rechazado' || d.aprobado === 'Rechazado').length;
-
-            $('#totalDescuentos').text(total);
-            $('#descuentosAprobados').text(aprobados);
-            $('#descuentosPendientes').text(pendientes);
-            $('#descuentosRechazados').text(rechazados);
+        function actualizarEstadisticas(stats) {
+            stats = stats || { total: 0, aprobados: 0, pendientes: 0, rechazados: 0 };
+            $('#totalDescuentos').text(stats.total ?? 0);
+            $('#descuentosAprobados').text(stats.aprobados ?? 0);
+            $('#descuentosPendientes').text(stats.pendientes ?? 0);
+            $('#descuentosRechazados').text(stats.rechazados ?? 0);
         }
 
         /**
-         * Renderizar tabla (captura datos actuales y va a página 1)
+         * Renderizar tabla (compatibilidad: la página ya viene del servidor)
          */
         function renderizarTabla() {
-            descuentosActuales = [...descuentosData];
-            currentPage = 1;
             renderizarPagina();
         }
 
@@ -1002,11 +943,11 @@
          * Renderizar la página actual
          */
         function renderizarPagina() {
-            const inicio = (currentPage - 1) * PER_PAGE;
-            const paginados = descuentosActuales.slice(inicio, inicio + PER_PAGE);
+            const inicioNum = (paginationMeta && paginationMeta.from) ? paginationMeta.from : 1;
+            const paginados = descuentosData; // ya es la página actual (server-side)
             let html = '';
 
-            if (descuentosActuales.length === 0) {
+            if (!paginados || paginados.length === 0) {
                 html = `
                     <tr>
                         <td colspan="20" class="py-5 text-center">
@@ -1017,7 +958,7 @@
                 `;
             } else {
                 paginados.forEach((descuento, index) => {
-                    const numFila = inicio + index + 1;
+                    const numFila = inicioNum + index;
                     const badgeAplicado = obtenerBadgeAprobacion(descuento.aplicado);
                     const badgeAprobado = obtenerBadgeAprobacion(descuento.aprobado);
 
@@ -1112,13 +1053,13 @@
          * Renderizar controles de paginación
          */
         function renderizarPaginacion() {
-            const total = descuentosActuales.length;
-            const totalPaginas = Math.ceil(total / PER_PAGE);
+            const total = paginationMeta ? paginationMeta.total : 0;
+            const totalPaginas = paginationMeta ? paginationMeta.last_page : 1;
 
             if (total === 0) { $('#paginacionContainer').html(''); return; }
 
-            const inicio = (currentPage - 1) * PER_PAGE + 1;
-            const fin = Math.min(currentPage * PER_PAGE, total);
+            const inicio = paginationMeta.from || 0;
+            const fin = paginationMeta.to || 0;
 
             let html = `<div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
                 <small class="text-muted">Mostrando <strong>${inicio}–${fin}</strong> de <strong>${total}</strong> descuento(s)</small>
@@ -1152,10 +1093,9 @@
 
         function irAPagina(e, pagina) {
             e.preventDefault();
-            const totalPaginas = Math.ceil(descuentosActuales.length / PER_PAGE);
-            if (pagina < 1 || pagina > totalPaginas) return;
-            currentPage = pagina;
-            renderizarPagina();
+            const totalPaginas = paginationMeta ? paginationMeta.last_page : 1;
+            if (pagina < 1 || pagina > totalPaginas || pagina === currentPage) return;
+            cargarDescuentos(pagina);
             $('html, body').animate({ scrollTop: $('#tablaDescuentos').offset().top - 120 }, 200);
         }
 
@@ -1794,7 +1734,8 @@
             if (chartsDescInicializados) return;
             chartsDescInicializados = true;
 
-            const data = descuentosData;
+            // Dataset completo cargado bajo demanda (no la página actual de la tabla).
+            const data = descuentosChartData || [];
 
             /* ---- 1. Ranking consultores ---- */
             const porConsultor = {};
@@ -2040,23 +1981,66 @@
             });
         }
 
+        // Los gráficos necesitan el dataset completo; se carga una sola vez bajo demanda.
         document.getElementById('tabEstadisticasDescLink')?.addEventListener('shown.bs.tab', function () {
-            inicializarGraficosDesc();
+            if (chartsDescInicializados) return;
+            if (descuentosChartData) { inicializarGraficosDesc(); return; }
+
+            $.ajax({
+                url: "{{ route('comercial.descuentos.obtener') }}",
+                method: 'GET',
+                data: { todos: 1 },
+                success: function(response) {
+                    if (response.success) {
+                        descuentosChartData = response.data || [];
+                        inicializarGraficosDesc();
+                    }
+                },
+                error: function(xhr) {
+                    console.error('Error al cargar datos de gráficos:', xhr);
+                }
+            });
         });
 
         function exportarExcel() {
-            const datos = descuentosActuales;
+            // Con paginación server-side, la página actual solo tiene ~20 filas.
+            // Traemos TODOS los registros que cumplen los filtros activos antes de exportar.
+            $.ajax({
+                url: "{{ route('comercial.descuentos.obtener') }}",
+                method: 'GET',
+                data: {
+                    todos: 1,
+                    usuario: $('#filtroUsuario').val() || '',
+                    sede: $('#filtroSede').val() || '',
+                    aplicado: $('#filtroAplicado').val() || '',
+                    aprobado: $('#filtroAprobado').val() || '',
+                    buscar: ($('#buscarGeneral').val() || '').trim()
+                },
+                beforeSend: function() {
+                    Swal.fire({ title: 'Generando Excel...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                },
+                success: function(response) {
+                    const datos = (response && response.data) || [];
+                    if (!datos.length) {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Sin datos',
+                            text: 'No hay descuentos para exportar con los filtros actuales.',
+                            confirmButtonColor: '#3B82F6'
+                        });
+                        return;
+                    }
+                    construirExcelDescuentos(datos);
+                    Swal.close();
+                },
+                error: function(xhr) {
+                    Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo generar el Excel.', confirmButtonColor: '#dc3545' });
+                    console.error(xhr);
+                }
+            });
+        }
 
-            if (!datos || datos.length === 0) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Sin datos',
-                    text: 'No hay descuentos para exportar con los filtros actuales.',
-                    confirmButtonColor: '#3B82F6'
-                });
-                return;
-            }
-
+        function construirExcelDescuentos(datos) {
             const filas = datos.map((d, i) => ({
                 '#': i + 1,
                 'N° Descuento': d.numero_descuento || '',

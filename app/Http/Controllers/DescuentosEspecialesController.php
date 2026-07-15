@@ -85,11 +85,40 @@ class DescuentosEspecialesController extends Controller
                 });
             }
 
-            $descuentos = $query->orderBy('created_at', 'desc')->get();
+            // Modo "todos" (sin paginar): lo usan los gráficos de la pestaña Estadísticas.
+            if ($request->boolean('todos')) {
+                $todos = $query->orderBy('created_at', 'desc')->get();
+                return response()->json(['success' => true, 'data' => $todos]);
+            }
+
+            // Estadísticas agregadas (respetan los filtros activos), calculadas en BD.
+            $base  = clone $query;
+            $stats = [
+                'total'      => (clone $base)->count(),
+                'aprobados'  => (clone $base)->where('aplicado', 'Aprobado')->where('aprobado', 'Aprobado')->count(),
+                'pendientes' => (clone $base)->where(function ($q) {
+                    $q->where('aplicado', 'Pendiente')->orWhere('aprobado', 'Pendiente');
+                })->count(),
+                'rechazados' => (clone $base)->where(function ($q) {
+                    $q->where('aplicado', 'Rechazado')->orWhere('aprobado', 'Rechazado');
+                })->count(),
+            ];
+
+            $perPage    = (int) $request->input('per_page', 20);
+            $descuentos = $query->orderBy('created_at', 'desc')->paginate($perPage);
 
             return response()->json([
-                'success' => true,
-                'data' => $descuentos
+                'success'    => true,
+                'data'       => $descuentos->items(),
+                'pagination' => [
+                    'current_page' => $descuentos->currentPage(),
+                    'last_page'    => $descuentos->lastPage(),
+                    'per_page'     => $descuentos->perPage(),
+                    'total'        => $descuentos->total(),
+                    'from'         => $descuentos->firstItem(),
+                    'to'           => $descuentos->lastItem(),
+                ],
+                'stats'      => $stats,
             ]);
         } catch (\Exception $e) {
             \Log::error('Error en obtenerDescuentos: ' . $e->getMessage());
@@ -613,13 +642,9 @@ class DescuentosEspecialesController extends Controller
     public function obtenerUsuariosCreadores()
     {
         try {
-            $usuarios = DescuentoEspecial::with('creador')
-                ->get()
-                ->pluck('creador')
-                ->unique('id')
-                ->filter()
-                ->sortBy('name')
-                ->values();
+            $usuarios = User::whereIn('id', DescuentoEspecial::query()->select('user_id')->distinct())
+                ->orderBy('name')
+                ->get(['id', 'name', 'email']);
 
             return response()->json([
                 'success' => true,
