@@ -239,8 +239,14 @@ class VoucherController extends Controller
             'aplicado_at' => now()->toDateString(),
         ]);
 
+        // El correo va síncrono por SMTP (Gmail gratis); si falla no debe tumbar
+        // la aplicación del voucher, que ya quedó guardada arriba.
         if ($voucher->creator) {
-            $voucher->creator->notify(new VoucherAplicado($voucher->fresh()));
+            try {
+                $voucher->creator->notify(new VoucherAplicado($voucher->fresh()));
+            } catch (\Exception $e) {
+                Log::error("Notificación de voucher aplicado no enviada ({$voucher->codigo}): " . $e->getMessage());
+            }
         }
 
         return response()->json([

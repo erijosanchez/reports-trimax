@@ -86,8 +86,17 @@ class DescuentosEspecialesController extends Controller
             }
 
             // Modo "todos" (sin paginar): lo usan los gráficos de la pestaña Estadísticas.
+            // Los gráficos solo necesitan estas 4 columnas, así que evitamos traer las
+            // relaciones, archivos_adjuntos y demás para que la carga sea liviana.
             if ($request->boolean('todos')) {
-                $todos = $query->orderBy('created_at', 'desc')->get();
+                $todos = $query->setEagerLoads([])
+                    ->get(['consultor', 'created_at', 'sede', 'descuento_especial'])
+                    ->map(fn($d) => [
+                        'consultor'          => $d->consultor,
+                        'created_at'         => optional($d->created_at)->toIso8601String(),
+                        'sede'               => $d->sede,
+                        'descuento_especial' => $d->descuento_especial,
+                    ]);
                 return response()->json(['success' => true, 'data' => $todos]);
             }
 

@@ -274,8 +274,17 @@ class ComercialController extends Controller
             }
 
             // Modo "todos" (sin paginar): lo usan los gráficos de la pestaña Estadísticas.
+            // Los gráficos solo necesitan estas 4 columnas, así que evitamos traer las
+            // relaciones, archivos_adjuntos y demás para que la carga sea liviana.
             if ($request->boolean('todos')) {
-                $todos = $query->orderBy('created_at', 'desc')->get();
+                $todos = $query->setEagerLoads([])
+                    ->get(['consultor', 'created_at', 'sede', 'tipo_promocion'])
+                    ->map(fn($a) => [
+                        'consultor'      => $a->consultor,
+                        'created_at'     => optional($a->created_at)->toIso8601String(),
+                        'sede'           => $a->sede,
+                        'tipo_promocion' => $a->tipo_promocion,
+                    ]);
                 return response()->json([
                     'success'   => true,
                     'data'      => $todos,

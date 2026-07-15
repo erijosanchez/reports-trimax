@@ -281,7 +281,7 @@
                                             <h6 class="mb-3 text-primary">
                                                 <i class="mdi mdi-account-star"></i> Ranking de Descuentos por Consultor
                                             </h6>
-                                            <div style="position:relative; height:320px;">
+                                            <div id="chartDescUsuariosWrap" style="position:relative; height:320px;">
                                                 <canvas id="chartDescUsuarios"></canvas>
                                             </div>
                                         </div>
@@ -1744,6 +1744,10 @@
                 porConsultor[n] = (porConsultor[n] || 0) + 1;
             });
             const consultoresSort = Object.entries(porConsultor).sort((a,b) => b[1]-a[1]);
+            // Altura dinámica: más consultores => card más alto, para que no se apretujen.
+            const alturaConsultores = Math.max(320, consultoresSort.length * 26);
+            const wrapConsultores = document.getElementById('chartDescUsuariosWrap');
+            if (wrapConsultores) wrapConsultores.style.height = alturaConsultores + 'px';
             crearGraficoDesc('chartDescUsuarios', {
                 type: 'bar',
                 data: {
