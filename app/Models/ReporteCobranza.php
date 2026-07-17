@@ -61,8 +61,26 @@ class ReporteCobranza extends Model
         return $this->belongsTo(User::class, 'revision_user_id');
     }
 
-    // Sedes con límite excepcional de 11:00 AM (resto: 10:00 AM)
+    // Sedes con límite excepcional de 11:00 AM (resto: 10:00 AM). Sin tildes: comparar vía esSedeLimite11().
     const SEDES_LIMITE_11 = ['HUANUCO', 'ICA', 'ATE'];
+
+    /** Normaliza la sede para comparar: la BD guarda 'HUÁNUCO' con tilde (ver Admin\UserController::getSedes). */
+    public static function normalizarSede(?string $sede): string
+    {
+        if ($sede === null || $sede === '') {
+            return '';
+        }
+
+        return strtr(mb_strtoupper(trim($sede), 'UTF-8'), [
+            'Á' => 'A', 'É' => 'E', 'Í' => 'I', 'Ó' => 'O', 'Ú' => 'U', 'Ü' => 'U',
+        ]);
+    }
+
+    /** Indica si la sede tiene el límite excepcional de 11:00 AM. */
+    public static function esSedeLimite11(?string $sede): bool
+    {
+        return in_array(self::normalizarSede($sede), self::SEDES_LIMITE_11, true);
+    }
 
     // ── KPI ───────────────────────────────────────────────────────
 
@@ -150,7 +168,7 @@ class ReporteCobranza extends Model
     /** Devuelve [hora, minuto] del límite para la sede dada. */
     public static function horaLimitePara(?string $sede): array
     {
-        if ($sede && in_array($sede, self::SEDES_LIMITE_11)) {
+        if (self::esSedeLimite11($sede)) {
             return [11, 0];
         }
         return [10, 0];
