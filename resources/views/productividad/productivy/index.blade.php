@@ -153,7 +153,7 @@
 
             {{-- Depósitos KPI --}}
             @php $c = $kpiColor($avgDepositos); @endphp
-            <div class="col-lg-3 col-md-6">
+            <div class="col-xl col-lg-4 col-md-6">
                 <div class="shadow-sm border-0 h-100 card kpi-stat-card" style="border-left:4px solid {{ $c }} !important">
                     <div class="position-relative p-4 overflow-hidden card-body">
                         <div class="top-0 position-absolute p-3 end-0 kpi-icon">
@@ -171,7 +171,7 @@
 
             {{-- Caja Chica KPI --}}
             @php $c = $kpiColor($avgCajaChica); @endphp
-            <div class="col-lg-3 col-md-6">
+            <div class="col-xl col-lg-4 col-md-6">
                 <div class="shadow-sm border-0 h-100 card kpi-stat-card" style="border-left:4px solid {{ $c }} !important">
                     <div class="position-relative p-4 overflow-hidden card-body">
                         <div class="top-0 position-absolute p-3 end-0 kpi-icon">
@@ -189,7 +189,7 @@
 
             {{-- Comentarios KPI --}}
             @php $c = $kpiColor($avgComentarios); @endphp
-            <div class="col-lg-3 col-md-6">
+            <div class="col-xl col-lg-4 col-md-6">
                 <div class="shadow-sm border-0 h-100 card kpi-stat-card" style="border-left:4px solid {{ $c }} !important">
                     <div class="position-relative p-4 overflow-hidden card-body">
                         <div class="top-0 position-absolute p-3 end-0 kpi-icon">
@@ -205,9 +205,27 @@
                 </div>
             </div>
 
+            {{-- Órdenes KPI --}}
+            @php $c = $kpiColor($avgOrdenes); @endphp
+            <div class="col-xl col-lg-4 col-md-6">
+                <div class="shadow-sm border-0 h-100 card kpi-stat-card" style="border-left:4px solid {{ $c }} !important">
+                    <div class="position-relative p-4 overflow-hidden card-body">
+                        <div class="top-0 position-absolute p-3 end-0 kpi-icon">
+                            <i class="mdi mdi-cart-outline" style="color:{{ $c }}"></i>
+                        </div>
+                        <p class="mb-1 text-muted text-uppercase small fw-semibold">KPI Órdenes</p>
+                        <h2 class="mb-0 fw-bold" style="color:{{ $c }}">{{ $avgOrdenes }}%</h2>
+                        <div class="mt-2 kpi-progress" style="background:rgba(0,0,0,.07)">
+                            <div class="kpi-progress" style="background:{{ $c }};width:{{ $avgOrdenes }}%"></div>
+                        </div>
+                        <p class="mt-2 mb-0 text-muted small">% órdenes antes de 5pm</p>
+                    </div>
+                </div>
+            </div>
+
             {{-- Productivy General --}}
             @php $c = $kpiColor($avgProductivy); @endphp
-            <div class="col-lg-3 col-md-6">
+            <div class="col-xl col-lg-4 col-md-6">
                 <div class="shadow-sm border-0 h-100 card kpi-stat-card" style="border-left:4px solid {{ $c }} !important">
                     <div class="position-relative p-4 overflow-hidden card-body">
                         <div class="top-0 position-absolute p-3 end-0 kpi-icon">
@@ -218,7 +236,7 @@
                         <div class="mt-2 kpi-progress" style="background:rgba(0,0,0,.07)">
                             <div class="kpi-progress" style="background:{{ $c }};width:{{ $avgProductivy }}%;transition:width .6s ease"></div>
                         </div>
-                        <p class="mt-2 mb-0 text-muted small">Promedio (Dep + CC + Com) / 3</p>
+                        <p class="mt-2 mb-0 text-muted small">Promedio (Dep + CC + Com + Órd) / 4</p>
                     </div>
                 </div>
             </div>
@@ -234,7 +252,7 @@
                         <h6 class="mb-0 fw-bold">
                             <i class="mdi-table me-1 mdi"></i>Detalle por Sede
                         </h6>
-                        <p class="mb-0 text-muted small">{{ $totalSedes }} sedes · Productivy = promedio KPI (Dep + CC + Com) / 3</p>
+                        <p class="mb-0 text-muted small">{{ $totalSedes }} sedes · Productivy = promedio KPI (Dep + CC + Com + Órd) / 4</p>
                     </div>
                     <div class="d-flex flex-wrap align-items-center gap-2">
                         {{-- Leyenda depósitos --}}
@@ -262,6 +280,10 @@
                                 </th>
                                 <th style="min-width:160px">Caja Chica</th>
                                 <th style="min-width:160px">Comentarios</th>
+                                <th style="min-width:150px">
+                                    <i class="me-1 mdi mdi-cart-outline" style="color:#7367f0"></i>Órdenes
+                                    <span class="ms-1 text-muted fw-normal" style="font-size:.68rem">(antes 5pm)</span>
+                                </th>
                                 <th style="min-width:130px">
                                     <i class="me-1 mdi mdi-trophy-variant" style="color:#7367f0"></i>Productivy
                                 </th>
@@ -335,6 +357,18 @@
                                     @endif
                                 </td>
 
+                                {{-- Órdenes: % antes de 5pm + antes/total --}}
+                                <td>
+                                    <span class="px-3 py-2 rounded-pill badge fw-bold"
+                                          style="background:{{ $kpiBg($row['ord_kpi']) }};color:inherit;border:1px solid {{ $kpiBorder($row['ord_kpi']) }}">
+                                        <i class="mdi mdi-cart-outline me-1 {{ $kpiCls($row['ord_kpi']) }}"></i>
+                                        <span class="{{ $kpiCls($row['ord_kpi']) }} fw-bold">{{ $row['ord_kpi'] }}%</span>
+                                    </span>
+                                    <div class="mt-1 text-muted" style="font-size:.72rem">
+                                        {{ $row['ord_antes'] }}/{{ $row['ord_total'] }} órd · antes 5pm
+                                    </div>
+                                </td>
+
                                 {{-- Productivy --}}
                                 <td>
                                     <span class="pvy-badge {{ $pvyCls }}">
@@ -345,7 +379,7 @@
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="6" class="py-5 text-muted text-center">
+                                <td colspan="7" class="py-5 text-muted text-center">
                                     <i class="d-block mb-2 mdi-information-outline mdi fs-4"></i>
                                     No hay datos para esta semana
                                 </td>

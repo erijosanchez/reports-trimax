@@ -11,6 +11,24 @@ use Illuminate\Http\Request;
 
 class ProductivyController extends Controller
 {
+    /** Usuarios de prueba excluidos (mismo criterio que Órdenes x Usuario) */
+    private const USUARIOS_EXCLUIDOS = [
+        'JAIME RL AREQUIPA', 'JAIME RL ATE', 'JAIME RL CAILLOMA', 'JAIME RL COMAS',
+        'JAIME RL HUANUCO', 'JAIME RL LINCE', 'JAIME RL NAPO', 'JAIME RL SJM',
+        'Juan Loayza Pacheco', 'Juan  Loayza Pacheco',
+        'Rafael Mendez', 'Rafael ML', 'RUTH VASQUEZ ALCÁNTARA',
+    ];
+
+    /** Normaliza nombre de sede: MAYÚSCULAS + sin tildes (HUÁNUCO = HUANUCO) */
+    private function normSede(?string $s): string
+    {
+        $s = mb_strtoupper(trim((string) $s), 'UTF-8');
+        return strtr($s, [
+            'Á' => 'A', 'É' => 'E', 'Í' => 'I', 'Ó' => 'O', 'Ú' => 'U',
+            'Ü' => 'U', 'Ñ' => 'N',
+        ]);
+    }
+
     public function index(Request $request)
     {
         $user = auth()->user();
@@ -75,6 +93,32 @@ class ProductivyController extends Controller
             ->get()
             ->keyBy('sede');
 
+        // Órdenes de la semana por sede (antes de 5pm vs total)
+        // Mismo criterio de hora que Órdenes x Usuario: hora < 17 = antes de 5pm.
+        $ordenesRaw = \Illuminate\Support\Facades\DB::table('ordenes_historico')
+            ->whereNotNull('nombre_usuario')
+            ->where('nombre_usuario', '!=', '')
+            ->whereNotIn('nombre_usuario', self::USUARIOS_EXCLUIDOS)
+            ->whereBetween('fecha_orden', [$weekStart->toDateString(), $weekEnd->toDateString()])
+            ->selectRaw("
+                descripcion_sede,
+                SUM(CASE WHEN CAST(SUBSTRING_INDEX(TRIM(COALESCE(hora_orden,'')), ':', 1) AS UNSIGNED) < 17 THEN 1 ELSE 0 END) as antes_5pm,
+                COUNT(*) as total
+            ")
+            ->groupBy('descripcion_sede')
+            ->get();
+
+        // Mapa por sede normalizada → ['antes' => x, 'total' => y]
+        $ordenesPorSede = [];
+        foreach ($ordenesRaw as $o) {
+            $key = $this->normSede($o->descripcion_sede);
+            if ($key === '') {
+                continue;
+            }
+            $ordenesPorSede[$key]['antes'] = ($ordenesPorSede[$key]['antes'] ?? 0) + (int) $o->antes_5pm;
+            $ordenesPorSede[$key]['total'] = ($ordenesPorSede[$key]['total'] ?? 0) + (int) $o->total;
+        }
+
         $tableData = [];
 
         foreach ($sedes as $sede) {
@@ -112,14 +156,23 @@ class ProductivyController extends Controller
             $ccKpi  = round((float) ($cc->kpi_porcentaje  ?? 0), 1);
             $comKpi = round((float) ($com->kpi_porcentaje ?? 0), 1);
 
-            // Productivy = promedio de los 3 KPIs (igual peso a cada categoría)
-            $productivy = round(($depKpi + $ccKpi + $comKpi) / 3, 1);
+            // Órdenes: % antes de 5pm sobre el total de la sede en la semana
+            $ord      = $ordenesPorSede[$this->normSede($sede)] ?? ['antes' => 0, 'total' => 0];
+            $ordAntes = (int) ($ord['antes'] ?? 0);
+            $ordTotal = (int) ($ord['total'] ?? 0);
+            $ordKpi   = $ordTotal > 0 ? round($ordAntes / $ordTotal * 100, 1) : 0;
+
+            // Productivy = promedio de los 4 KPIs (igual peso a cada categoría)
+            $productivy = round(($depKpi + $ccKpi + $comKpi + $ordKpi) / 4, 1);
 
             $tableData[] = [
                 'sede'         => $sede,
                 'depositos'    => $depEnviados,
                 'dep_kpi'      => $depKpi,
                 'dias'         => $diasIndicadores,
+                'ord_kpi'      => $ordKpi,
+                'ord_antes'    => $ordAntes,
+                'ord_total'    => $ordTotal,
                 'cc_enviada'   => $cc && !is_null($cc->fecha_envio_original),
                 'cc_kpi'       => $ccKpi,
                 'cc_fecha'     => ($cc && !is_null($cc->fecha_envio_original))
@@ -143,6 +196,7 @@ class ProductivyController extends Controller
         $avgDepositos  = $totalSedes > 0 ? round(array_sum(array_column($tableData, 'dep_kpi'))  / $totalSedes, 1) : 0;
         $avgCajaChica  = $totalSedes > 0 ? round(array_sum(array_column($tableData, 'cc_kpi'))   / $totalSedes, 1) : 0;
         $avgComentarios = $totalSedes > 0 ? round(array_sum(array_column($tableData, 'com_kpi')) / $totalSedes, 1) : 0;
+        $avgOrdenes    = $totalSedes > 0 ? round(array_sum(array_column($tableData, 'ord_kpi')) / $totalSedes, 1) : 0;
         $ccEnviadas    = count(array_filter($tableData, fn($r) => $r['cc_enviada']));
         $comEnviados   = count(array_filter($tableData, fn($r) => $r['com_enviados']));
         $avgProductivy = $totalSedes > 0 ? round(array_sum(array_column($tableData, 'productivy')) / $totalSedes, 1) : 0;
@@ -151,7 +205,7 @@ class ProductivyController extends Controller
             'tableData', 'semana', 'anio', 'weekStart', 'weekEnd',
             'isCurrentWeek', 'isFutureWeek',
             'prevSemana', 'prevAnio', 'nextSemana', 'nextAnio',
-            'totalSedes', 'avgDepositos', 'avgCajaChica', 'avgComentarios',
+            'totalSedes', 'avgDepositos', 'avgCajaChica', 'avgComentarios', 'avgOrdenes',
             'ccEnviadas', 'comEnviados', 'avgProductivy',
             'diasSemana', 'sedeFilter'
         ));
