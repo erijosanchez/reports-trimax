@@ -437,14 +437,17 @@ class LeadTimeController extends Controller
         }
 
         $filtered = array_filter($records, function ($record) use ($year, $month) {
-            $time = $record['TIME'] ?? '';
-            if (empty($time)) return false;
-            try {
-                $date = Carbon::parse($time);
-                return $date->year == $year && $date->month == $month;
-            } catch (\Exception $e) {
-                return false;
+            // Las pendientes no tienen fecha de entrega: se ubican en el mes de
+            // su LEAD_TIME y solo entran las que el Sheet ya marcó atrasadas.
+            // Las que siguen dentro de plazo todavía no se pueden evaluar.
+            if ($this->esPendiente($record)) {
+                $conclusion = strtoupper(trim($record['CONCLUSION'] ?? ''));
+                if ($conclusion !== 'FUERA DE TIEMPO') return false;
             }
+
+            $fecha = $this->fechaDePeriodo($record);
+
+            return $fecha && $fecha->year == $year && $fecha->month == $month;
         });
 
         $filtered = array_values($filtered);
@@ -466,11 +469,16 @@ class LeadTimeController extends Controller
         $resultados   = [];
         $totalGeneral = count($filtered);
 
+        // Se cuentan por separado: hay registros con CONCLUSION no evaluable
+        // (ej. 'SIN DATOS') que no son ni en tiempo ni atrasados.
         $totalEnTiempo = 0;
+        $totalFuera    = 0;
         foreach ($filtered as $record) {
             $conclusion = strtoupper(trim($record['CONCLUSION'] ?? ''));
             if ($conclusion === 'DENTRO DE TIEMPO' || $conclusion === 'EN TIEMPO') {
                 $totalEnTiempo++;
+            } elseif ($conclusion === 'FUERA DE TIEMPO') {
+                $totalFuera++;
             }
         }
 
@@ -547,7 +555,7 @@ class LeadTimeController extends Controller
                     'solicitado'      => $record['SOLICITADO'] ?? '',
                     'lead_time'       => $record['LEAD_TIME'] ?? '',
                     'time'            => $record['TIME'] ?? '',
-                    'atraso'          => intval($record['ATRASO'] ?? 0),
+                    'atraso'          => -$this->diasDeAtraso($record),
                     'conclusion'      => $record['CONCLUSION'] ?? '',
                 ];
             }
@@ -562,7 +570,7 @@ class LeadTimeController extends Controller
                 'total'           => $totalGeneral,
                 'porcentaje'      => $porcentajeGeneral,
                 'total_en_tiempo' => $totalEnTiempo,
-                'total_fuera'     => $totalGeneral - $totalEnTiempo,
+                'total_fuera'     => $totalFuera,
             ],
             'categorias'        => $resultados,
             'ordenes_atrasadas' => $ordenesAtrasadas,
@@ -570,7 +578,59 @@ class LeadTimeController extends Controller
     }
 
     /**
-     * Clasificar registros según CONCLUSION y ATRASO
+     * Una orden está pendiente cuando todavía no tiene fecha de entrega:
+     * la columna TIME trae el centinela 'PENDIENTE' en vez de una fecha.
+     */
+    private function esPendiente($record): bool
+    {
+        $time = strtoupper(trim($record['TIME'] ?? ''));
+        return $time === '' || $time === 'PENDIENTE';
+    }
+
+    /**
+     * Fecha con la que se ubica una orden dentro de un período: la de entrega
+     * (TIME), o la comprometida (LEAD_TIME) mientras siga pendiente.
+     */
+    private function fechaDePeriodo($record): ?Carbon
+    {
+        $valor = $this->esPendiente($record)
+            ? ($record['LEAD_TIME'] ?? '')
+            : ($record['TIME'] ?? '');
+
+        $valor = trim((string) $valor);
+        if ($valor === '') return null;
+
+        try {
+            return Carbon::parse($valor);
+        } catch (\Exception $e) {
+            return null;
+        }
+    }
+
+    /**
+     * Días de atraso, siempre positivos.
+     *
+     * Para las pendientes se recalculan desde el LEAD_TIME hasta hoy, porque
+     * la columna ATRASO del Sheet queda congelada y subestima el atraso real.
+     * Para las entregadas se respeta el valor de la hoja.
+     */
+    private function diasDeAtraso($record): int
+    {
+        if (!$this->esPendiente($record)) {
+            return max(1, abs(intval($record['ATRASO'] ?? 0)));
+        }
+
+        try {
+            $fechaLead = Carbon::parse(trim($record['LEAD_TIME'] ?? ''));
+        } catch (\Exception $e) {
+            return max(1, abs(intval($record['ATRASO'] ?? 0)));
+        }
+
+        return max(1, (int) $fechaLead->diffInDays(Carbon::today()));
+    }
+
+    /**
+     * Clasificar registros según CONCLUSION y días de atraso
      */
     private function clasificarRegistros($registros)
     {
@@ -578,13 +638,11 @@ class LeadTimeController extends Controller
 
         foreach ($registros as $record) {
             $conclusion = strtoupper(trim($record['CONCLUSION'] ?? ''));
-            $atraso = intval($record['ATRASO'] ?? 0);
 
             if ($conclusion === 'DENTRO DE TIEMPO' || $conclusion === 'EN TIEMPO') {
                 $label = $this->getLabelDentroTiempo($record);
             } elseif ($conclusion === 'FUERA DE TIEMPO') {
-                $diasAtraso = abs($atraso);
-                if ($diasAtraso === 0) $diasAtraso = 1;
+                $diasAtraso = $this->diasDeAtraso($record);
 
                 if ($diasAtraso === 1) {
                     $label = 'Después de 1 día';
