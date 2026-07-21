@@ -182,13 +182,16 @@ class LeadTimeController extends Controller
 
         $filtered = [];
         foreach ($records as $rec) {
-            $time = trim($rec['TIME'] ?? '');
-            if (empty($time) || strtoupper($time) === 'PENDIENTE') continue;
-            try {
-                $d = Carbon::parse($time);
-            } catch (\Exception $e) {
-                continue;
+            // Mismo criterio que el dashboard mensual: las pendientes se ubican
+            // por su LEAD_TIME y solo entran las que el Sheet ya marcó atrasadas.
+            if ($this->esPendiente($rec)) {
+                $conclusion = strtoupper(trim($rec['CONCLUSION'] ?? ''));
+                if ($conclusion !== 'FUERA DE TIEMPO') continue;
             }
+
+            $d = $this->fechaDePeriodo($rec);
+            if (!$d) continue;
+
             if ($d->year != $year || $d->month > $month) continue;
             $filtered[] = $rec;
             if ($d->month == $month) {
@@ -261,13 +264,9 @@ class LeadTimeController extends Controller
         $mesesMap   = [];
 
         foreach ($filtered as $rec) {
-            $time = $rec['TIME'] ?? '';
-            if (empty($time)) continue;
-            try {
-                $d = Carbon::parse($time);
-            } catch (\Exception $e) {
-                continue;
-            }
+            $d = $this->fechaDePeriodo($rec);
+            if (!$d) continue;
+
             $semNum = (int) $d->format('W');
             $mesNum = (int) $d->month;
             if (!isset($semanasMap[$semNum])) {
