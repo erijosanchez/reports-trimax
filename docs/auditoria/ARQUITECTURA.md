@@ -1,0 +1,393 @@
+# Auditoría de arquitectura — reports-trimax
+
+**Fecha:** 2026-07-24
+**Alcance:** capa de aplicación PHP (`app/`, `routes/`, `resources/views/`)
+**Stack:** Laravel 12 · PHP 8.2 · Blade · MySQL 8 · Redis
+**Estado del sistema:** en producción con datos reales (65 usuarios, 874 vouchers)
+
+> Documento vivo. Actualízalo cuando se corrija un hallazgo.
+> Para Docker, red y `.env`, ver [INFRAESTRUCTURA.md](INFRAESTRUCTURA.md).
+
+---
+
+## Resumen ejecutivo
+
+El sistema **funciona y está bien estructurado en lo esencial**: hay capa de
+servicios, Policies, Form Requests, jobs, comandos, middleware propio y uso
+correcto de Redis para sesiones y colas. No es un proyecto improvisado.
+
+La deuda se concentra en **tres puntos**, y todos son del mismo tipo: lógica que
+debería estar centralizada y está copiada a mano en decenas de sitios.
+
+| # | Hallazgo | Severidad | Esfuerzo |
+|---|---|---|---|
+| A1 | 212 decisiones de autorización dispersas en controladores y vistas | **Alta** | Medio |
+| A2 | 90 listados sin paginación sobre tablas transaccionales | **Alta** | Medio |
+| A3 | Solo 5 transacciones para escrituras multi-tabla | **Alta** | Bajo |
+| A4 | 10 controladores >400 LOC (el mayor, 1799) | Media | Alto |
+| A5 | 75 validaciones inline vs 6 Form Requests | Media | Medio |
+| A6 | Pipeline Vite configurado pero inutilizado; 46 MB de assets en git | Media | Medio |
+| A7 | 3 controladores muertos + `routes/auth.php` vacío importando 5 clases inexistentes | Baja | Bajo |
+| A8 | Suite de tests solo cubre el scaffolding de Breeze | Media | Alto |
+
+**Métricas base**
+
+| Métrica | Valor |
+|---|---|
+| LOC en `app/` | 21 985 |
+| LOC en `resources/views/` | 44 045 |
+| Controladores | 41 |
+| Modelos | 30 |
+| Servicios | 10 |
+| Rutas web | 219 |
+| Tests | 9 archivos (todos scaffolding) |
+
+La proporción llama la atención: **el doble de código en vistas que en toda la
+aplicación**. Es consecuencia de A6.
+
+---
+
+## A1 · Autorización dispersa — Severidad alta
+
+### Qué pasa
+
+La autenticación está bien: casi todas las rutas viven dentro de un grupo
+`Route::middleware(['auth', ...])` en `routes/web.php:76`. No hay rutas de
+negocio abiertas.
+
+El problema es la **autorización**. `User` expone ~20 helpers ad-hoc
+(`app/Models/User.php:149-286`): `isAdmin()`, `isSede()`, `isSuperAdmin()`,
+`puedeVerCobranzaSedes()`, `puedeRevisarReportesSedes()`, etc. Esos helpers se
+invocan a mano por todas partes:
+
+| Lugar | Ocurrencias |
+|---|---|
+| `->isSede()` en controladores | 51 |
+| `->isSuperAdmin()` en controladores | 48 |
+| `->isAdmin()` en controladores | 47 |
+| `->isConsultor()` en controladores | 2 |
+| Helpers de rol en vistas Blade | 64 |
+| **Total** | **212** |
+
+Mientras tanto existen tres Policies (`DashboardPolicy`, `FilePolicy`,
+`UserPolicy`) que **solo se invocan 6 veces** en 41 controladores. Y solo 3 de
+219 rutas usan `middleware('role:...')` — las dos secciones de admin.
+
+### Por qué importa
+
+El filtro por sede es una **frontera de datos**, no cosmética. En
+`CobranzaSedesController.php:43-64` se decide con `$user->isSede() && $user->sede`
+qué sede ve el usuario. Ese mismo criterio está reescrito a mano en 18
+controladores. Basta que un método nuevo olvide la comprobación para que un
+usuario de una sede vea datos de otra, y nada en el código lo impide: no hay un
+punto único que falle en voz alta.
+
+Es deuda de tipo silencioso — no rompe nada hoy, y por eso crece.
+
+### Corrección propuesta
+
+**No** reescribir los 212 sitios. El camino incremental:
+
+1. **Centralizar el filtro de sede en un Global Scope**, que es donde debe vivir:
+
+```php
+// app/Models/Scopes/SedeScope.php
+class SedeScope implements Scope
+{
+    public function apply(Builder $builder, Model $model): void
+    {
+        $user = auth()->user();
+        if ($user && $user->isSede() && $user->sede) {
+            $builder->where($model->getTable().'.sede', $user->sede);
+        }
+    }
+}
+```
+
+Aplicado en los modelos con datos por sede (`ReporteCobranza`, `Voucher`,
+`ReporteCajaChica`, `ReporteComentarios`), el filtro pasa a ser el
+comportamiento por defecto y hay que pedir explícitamente saltárselo
+(`withoutGlobalScope`) — el fallo se vuelve visible en vez de silencioso.
+
+2. **Mover los `puedeVerX()` a Gates**, registrados en un solo sitio:
+
+```php
+// app/Providers/AuthServiceProvider.php
+Gate::define('ver-cobranza-sedes', fn (User $u) => $u->puedeVerCobranzaSedes());
+```
+
+Así las vistas usan `@can('ver-cobranza-sedes')` y los controladores
+`$this->authorize('ver-cobranza-sedes')`. Los helpers de `User` siguen
+existiendo — se convierten en el detalle de implementación del Gate, no en la
+API que consume todo el sistema.
+
+3. **Migrar módulo por módulo**, empezando por el de mayor exposición
+   (Vouchers o Cobranza). No hay que tocar los 41 controladores para obtener el
+   beneficio.
+
+---
+
+## A2 · Listados sin paginación — Severidad alta
+
+### Qué pasa
+
+```
+->get()       90 ocurrencias en controladores
+->paginate()  14 ocurrencias
+```
+
+Seis de cada siete listados traen la tabla completa a memoria de PHP.
+
+### Por qué importa
+
+Sobre tablas que crecen sin techo (`ordenes_historico`, `vouchers` — ya con 874
+filas y 1830 facturas asociadas —, `ventas`, `user_activity_logs`) esto degrada
+de forma no lineal. El `memory_limit` está en **1024 MB**
+(`docker/php/uploads.ini`), un valor que sugiere que ya se chocó contra este
+problema y se subió el límite en vez de paginar. Eso compra tiempo, no lo
+resuelve.
+
+### Corrección propuesta
+
+Auditar los 90 `->get()` y clasificarlos:
+
+- **Catálogo corto y acotado** (sedes, roles, tipos) → dejar como está.
+- **Tabla transaccional** → `->paginate(50)`, o `->cursor()` / `->chunk()` si
+  alimenta una exportación.
+- **Exportaciones Excel/PDF** → `maatwebsite/excel` soporta
+  `FromQuery` + `WithChunkReading`; es el cambio de mayor impacto y menor riesgo.
+
+Priorizar por tamaño de tabla, no por orden alfabético.
+
+---
+
+## A3 · Escrituras sin transacción — Severidad alta
+
+### Qué pasa
+
+Solo **5** usos de `DB::transaction` / `DB::beginTransaction` en todo `app/`,
+frente a flujos que claramente escriben en más de una tabla:
+
+- Vouchers: cabecera `vouchers` + N filas en `voucher_facturas` (1830 registros
+  actuales, ~2 facturas por voucher).
+- Requerimientos: `requerimientos_personal` + `requerimiento_historial`.
+- Revisiones de finanzas: actualización de estado + registro de actividad.
+
+### Por qué importa
+
+Un fallo a mitad de operación deja el registro cabecera sin sus detalles, o al
+revés. No hay error visible: queda un dato inconsistente que aparece semanas
+después en un reporte que no cuadra.
+
+### Corrección propuesta
+
+Es el hallazgo de **mejor relación impacto/esfuerzo** de todo el documento.
+Envolver el método, sin reestructurar nada:
+
+```php
+DB::transaction(function () use ($request, $voucher) {
+    $voucher->save();
+    $voucher->facturas()->createMany($request->validated()['facturas']);
+    ActivityLogService::registrar(...);
+});
+```
+
+Empezar por `VoucherController` y `RequerimientoPersonalController`.
+
+---
+
+## A4 · Controladores gordos — Severidad media
+
+**10 controladores superan 400 LOC:**
+
+| Controlador | LOC |
+|---|---|
+| `ComercialController` | 1799 |
+| `LeadTimeController` | 976 |
+| `CobranzaSedesController` | 816 |
+| `DescuentosEspecialesController` | 776 |
+| `VoucherController` | 667 |
+| `RequerimientoPersonalController` | 660 |
+| `ComentariosSedesController` | 572 |
+| `CajaChicaSedesController` | 570 |
+| `DesbloqueoController` | 457 |
+| `UserMarketingController` | 426 |
+
+`ComercialController` concentra por sí solo el 8 % del código de `app/`.
+
+La capa de servicios existe (10 servicios, `AsignacionBasesService` con 522 LOC
+bien encapsuladas) — el patrón está establecido, simplemente no se aplicó de
+forma consistente.
+
+### Corrección propuesta
+
+**No refactorizar en bloque.** Regla de oro para este proyecto: se extrae
+servicio cuando ya se va a tocar el módulo por otra razón. Un refactor de 1799
+líneas sin tests que lo respalden (ver A8) es riesgo puro.
+
+Orden sugerido, y solo cuando toque trabajar en cada uno:
+`ComercialController` → `ComercialReportService` + `AcuerdosService`; luego
+`LeadTimeController` → `LeadTimeService`.
+
+---
+
+## A5 · Validación inline — Severidad media
+
+**75** `$request->validate()` / `Validator::make()` en controladores, contra
+**6** Form Requests existentes (`ProfileUpdateRequest`, `FileUploadRequest`,
+`StoreUserRequest`, `StoreDashboardRequest`, `UpdateUserRequest`,
+`Auth/LoginRequest`).
+
+Concentración: `ComercialController` (10), `DescuentosEspecialesController` (9),
+`RequerimientoPersonalController` (6), `CobranzaSedesController` (4).
+
+El costo real es la duplicación entre `store()` y `update()`: las reglas
+divergen con el tiempo y aparecen bugs donde crear acepta algo que editar
+rechaza.
+
+### Corrección propuesta
+
+Extraer Form Request solo donde las reglas **se repiten** o pasan de ~5 campos.
+Convención de ubicación ya establecida en el repo: subcarpeta por dominio
+(`app/Http/Requests/Auth/LoginRequest.php`).
+
+> Nota: `LoginRequest` ya fue movido de `app/Http/Requests/` a
+> `app/Http/Requests/Auth/` para corregir una violación de PSR-4. No revertir.
+
+---
+
+## A6 · Pipeline de frontend inutilizado — Severidad media
+
+### Qué pasa
+
+El proyecto tiene `vite.config.js`, `tailwind.config.js`, `postcss.config.js`,
+`package.json` y `resources/css/app.css` + `resources/js/app.js`. Pero:
+
+- `@vite(...)` se usa en **2 vistas** de 108: `welcome.blade.php` y
+  `layouts/guest.blade.php` — ninguna del sistema real.
+- `public/build/` **no existe**: nunca se ejecutó `npm run build`.
+- Las 106 vistas restantes cargan un template Bootstrap estático desde
+  `public/assets/`: **46 MB en 1644 archivos, todos versionados en git**.
+- **53 vistas** llevan JavaScript inline. Las mayores:
+  `comercial/acuerdos.blade.php` (2362 LOC),
+  `comercial/descuentos-especiales.blade.php` (2091 LOC).
+
+### Por qué importa
+
+Explica los 44 045 LOC de vistas. Sin build no hay minificación, ni cache
+busting real (se usa `?v=1784912239` a mano), ni forma de compartir código JS
+entre pantallas: se copia y pega. Y los 46 MB inflan cada `clone` y cada
+contexto de build de Docker.
+
+### Corrección propuesta
+
+Hay dos caminos legítimos y conviene **elegir uno explícitamente**, porque el
+estado actual es el peor de los dos mundos: se paga el mantenimiento de la
+config de Vite sin recibir ningún beneficio.
+
+**Opción A — asumir el template estático (bajo esfuerzo).**
+Eliminar `vite.config.js`, `tailwind.config.js`, `postcss.config.js`,
+`package.json` y `resources/js|css`. Extraer el JS repetido de las vistas a
+`public/assets/js/modules/*.js`. Documentar que el frontend es estático.
+Recomendada si no hay plan de modernizar el frontend.
+
+**Opción B — activar Vite (alto esfuerzo, mejor destino).**
+Mover `public/assets` fuera de git, migrar `layouts/app.blade.php` a `@vite`,
+e ir moviendo el JS inline a módulos. Requiere agregar `npm ci && npm run build`
+al `Dockerfile` (ver INFRAESTRUCTURA.md, I2).
+
+Sea cual sea, **el JS inline de las 53 vistas debe salir de Blade**. Ese trabajo
+sirve en ambos caminos y puede empezar ya.
+
+---
+
+## A7 · Código huérfano y scaffolding roto — Severidad baja
+
+### Controladores sin referencia
+
+Verificado contra `app/`, `routes/` y `resources/`:
+
+| Archivo | Diagnóstico |
+|---|---|
+| `app/Http/Controllers/AuthController.php` | **Muerto.** Cero referencias. Duplica a `Auth/LoginController`, que es el que las rutas usan (`web.php:48-54`). |
+| `app/Http/Controllers/ProfileController.php` | **Muerto.** Cero referencias. |
+| `app/Http/Controllers/Admin/UserAccessController.php` | **Muerto.** No aparece en `routes/`. |
+
+Dos controladores de login conviviendo es el tipo de ambigüedad que hace que
+alguien parchee el archivo equivocado durante un incidente de seguridad.
+
+### `routes/auth.php` — scaffolding vacío que apunta a clases inexistentes
+
+`routes/web.php:446` hace `require __DIR__ . '/auth.php'`. Ese archivo:
+
+- Define **0 rutas**. Son 14 líneas de `use` y nada más.
+- Importa **5 controladores que no existen** en el proyecto:
+  `AuthenticatedSessionController`, `EmailVerificationNotificationController`,
+  `EmailVerificationPromptController`, `NewPasswordController`,
+  `VerifyEmailController`.
+
+No provoca error porque en PHP un `use` no dispara el autoload si la clase nunca
+se instancia. Es residuo de Laravel Breeze: la autenticación real se resolvió a
+mano en `web.php:43-54` con `Auth/LoginController`, y el archivo de Breeze quedó
+vaciado de rutas pero todavía enlazado.
+
+El riesgo es de lectura, no de ejecución: quien abra `routes/auth.php` buscando
+las rutas de autenticación concluirá que el proyecto usa Breeze estándar, y no
+es así.
+
+### Corrección propuesta
+
+1. Eliminar `AuthController.php`, `ProfileController.php` y
+   `Admin/UserAccessController.php`.
+2. Eliminar `routes/auth.php` y su `require` en `web.php:446`, o dejarlo con un
+   comentario que explique que la autenticación vive en `web.php`.
+3. Revisar si `tests/Feature/Auth/*` y `tests/Feature/ProfileTest.php` siguen
+   teniendo sentido: prueban el flujo de Breeze, no el real (ver A8).
+
+---
+
+## A8 · Cobertura de tests — Severidad media
+
+9 archivos de test, **todos scaffolding de Laravel Breeze**
+(`AuthenticationTest`, `RegistrationTest`, `PasswordResetTest`,
+`ProfileTest`, `ExampleTest`…).
+
+**Cero tests** sobre la lógica de negocio: cálculo de KPI de cobranza, ventanas
+de hora límite por sede, flujo de revisión de vouchers, sincronización con
+Google Sheets, asignación de bases.
+
+Esto es lo que bloquea A4: no se puede refactorizar con confianza un controlador
+de 1799 líneas sin una red que avise si algo cambió de comportamiento.
+
+### Corrección propuesta
+
+No perseguir un porcentaje de cobertura. Escribir tests **de característica**
+sobre las reglas de negocio que ya causaron incidentes:
+
+- `ReporteCobranza::horaLimitePara($sede)` — hubo un bug de hora límite en la
+  sede Huánuco (commit `9ea05b5`).
+- Cálculo de `kpi_porcentaje` y `editado_tarde`.
+- Filtro por sede: **un usuario de sede A no debe ver datos de sede B** — es el
+  test que convierte A1 en algo verificable.
+
+Ese último es el más valioso del documento: hace que la frontera de datos deje
+de depender de que nadie olvide una comprobación.
+
+---
+
+## Plan sugerido
+
+Ordenado por relación impacto/esfuerzo, no por severidad:
+
+| Orden | Acción | Hallazgo | Esfuerzo |
+|---|---|---|---|
+| 1 | Envolver escrituras multi-tabla en `DB::transaction` | A3 | Bajo |
+| 2 | Eliminar `AuthController` muerto | A7 | Bajo |
+| 3 | Test de frontera de datos por sede | A8 | Bajo |
+| 4 | Paginar exportaciones y listados de tablas grandes | A2 | Medio |
+| 5 | `SedeScope` + Gates en un módulo piloto | A1 | Medio |
+| 6 | Decidir Opción A u B de frontend | A6 | Medio |
+| 7 | Extraer servicios al tocar cada módulo | A4, A5 | Alto |
+
+Los tres primeros se pueden hacer en una sesión y reducen el riesgo real.
+Del 5 en adelante conviene un módulo piloto antes de generalizar.
