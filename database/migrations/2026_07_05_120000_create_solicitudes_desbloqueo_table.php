@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('ruc', 11);
             $table->string('razon_social');
             $table->text('comentarios')->nullable();
+            $table->json('archivos')->nullable(); // adjuntos de sustento (S1: disco 'local')
 
             // Revisión de finanzas
             $table->string('revision_estado', 20)->nullable(); // conforme | conforme_observado | rechazado

@@ -157,7 +157,7 @@ class DesbloqueoController extends Controller
 
         foreach ($solicitud->archivos ?? [] as $a) {
             if (!empty($a['path'])) {
-                Storage::disk('public')->delete($a['path']);
+                Storage::disk('local')->delete($a['path']);
             }
         }
 
@@ -233,13 +233,13 @@ class DesbloqueoController extends Controller
         }
 
         $archivo = ($solicitud->{$campo} ?? [])[$index] ?? null;
-        if (!$archivo || !Storage::disk('public')->exists($archivo['path'])) {
+        if (!$archivo || !Storage::disk('local')->exists($archivo['path'])) {
             abort(404, 'Archivo no encontrado.');
         }
         if ($request->boolean('download')) {
-            return Storage::disk('public')->download($archivo['path'], $archivo['name']);
+            return Storage::disk('local')->download($archivo['path'], $archivo['name']);
         }
-        return response()->file(Storage::disk('public')->path($archivo['path']), [
+        return response()->file(Storage::disk('local')->path($archivo['path']), [
             'Content-Type'        => $archivo['mime'] ?? 'application/octet-stream',
             'Content-Disposition' => 'inline; filename="' . $archivo['name'] . '"',
         ]);
@@ -411,7 +411,7 @@ class DesbloqueoController extends Controller
 
         foreach ($archivos as $file) {
             $ext  = $file->getClientOriginalExtension();
-            $path = $file->storeAs($dir, Str::uuid() . '.' . $ext, 'public');
+            $path = $file->storeAs($dir, Str::uuid() . '.' . $ext, 'local');
 
             $guardados[] = [
                 'name' => $file->getClientOriginalName(),

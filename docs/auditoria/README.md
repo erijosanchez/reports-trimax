@@ -60,15 +60,22 @@ unificar la imagen de horizon/scheduler y borrar el código muerto.
 
 ---
 
-## Dos advertencias que aplican a cualquier trabajo en este repo
-
-**No corras `php artisan migrate`.** El esquema viene de un backup que no está
-versionado y el registro de migraciones está desincronizado: dos migraciones sin
-guardas fallarían. Ver [I4](INFRAESTRUCTURA.md#i4--deriva-de-migraciones--severidad-alta--activo).
+## Una advertencia que aplica a cualquier trabajo en este repo
 
 **No devuelvas MySQL a 3306 ni phpMyAdmin a 8080.** Esos puertos los ocupa el
 stack Apollo (`globalmega`) en esta misma máquina. Los remapeos a 3307 y 8090
 son deliberados.
+
+> **Actualizado 2026-07-27 — I4 cerrado del todo.** La advertencia de no correr
+> `php artisan migrate` ya no aplica: se generaron migraciones `Schema::create`
+> guardadas (`hasTable`/`hasColumn`) para las 28 tablas que llegaron con el
+> backup sin migración propia, más el fix de las 2 que sí existían pero sin
+> guarda. Se validó con una copia descartable de la base (mismo esquema +
+> mismas filas de `migrations`) que `migrate` no genera ningún `CREATE`/`ALTER`
+> real, y luego se corrió `php artisan migrate --force` sobre la base real:
+> 22/22 migraciones en `Ran`, filas intactas (65 usuarios, 874 vouchers, 1830
+> facturas — mismos conteos que reportaba esta auditoría). Detalle completo en
+> [I4](INFRAESTRUCTURA.md#i4--deriva-de-migraciones--severidad-alta--activo).
 
 ---
 

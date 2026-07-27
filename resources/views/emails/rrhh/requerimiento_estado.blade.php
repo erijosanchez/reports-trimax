@@ -91,7 +91,7 @@
             <strong>{{ $requerimiento->codigo }}</strong>.
         </p>
         <div class="highlight-box">
-            📌 {!! $extra !!}
+            📌 {{ $extra }}
         </div>
     @endif
 

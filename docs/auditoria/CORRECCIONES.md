@@ -1,8 +1,26 @@
 # Listado maestro de correcciones — reports-trimax
 
-**Fecha:** 2026-07-24
+**Fecha:** 2026-07-24 (actualizado 2026-07-25 con 2 hallazgos nuevos)
 **Origen:** consolidación de las cuatro auditorías
-**Total:** 34 correcciones · 14 de severidad alta o crítica
+**Total:** 36 correcciones · 16 de severidad alta o crítica
+
+> **2026-07-25 — dos hallazgos nuevos, descubiertos al escribir tests y
+> revisar el código de la Ronda 1** (ver [SEGURIDAD.md](SEGURIDAD.md)):
+> **[S9](SEGURIDAD.md#s9--blade-no-escapa-nada--severidad-crítica)** —
+> `Blade::setEchoFormat('%s')` desactiva el auto-escape de `{{ }}` en las 108
+> vistas de la app (crítica, invalida el conteo de "3 salidas XSS" de este
+> documento) — y
+> **[S10](SEGURIDAD.md#s10--vouchercontroller-sin-control-de-permiso-en-dos-endpoints--severidad-alta)**
+> — `VoucherController::servirArchivo()`/`getFacturas()` sin ningún chequeo de
+> permiso (alta). Ninguno de los dos está corregido todavía; ambos quedan
+> pendientes de decisión.
+
+> **2026-07-27 — I4 cerrado del todo.** Se generaron migraciones para las 28
+> tablas que llegaron con el backup sin ninguna migración de creación, y se
+> aplicó `php artisan migrate --force` sobre la base real tras validarlo en una
+> copia descartable (0 diferencias de esquema). Detalle en
+> [I4](INFRAESTRUCTURA.md#i4--deriva-de-migraciones--severidad-alta--activo).
+> La advertencia de "no corras migrate" del `README.md` ya no aplica.
 
 Todas las correcciones detectadas, **ordenadas de mayor a menor prioridad**, con
 el documento del que proviene cada una. El detalle técnico, el porqué y el
@@ -49,12 +67,19 @@ el despliegue. Si solo se va a hacer una tanda, que sea esta:
 
 | # | Corrección | Origen | Tiempo |
 |---|---|---|---|
-| 4 | Middleware de cabeceras de seguridad HTTP | 🔒 S3 | ~30 min |
-| 8 | `CACHE_STORE=redis` — la caché escribe en MySQL | ⚙️ I1 | Minutos |
-| 9 | Sincronizar el registro de `migrations` | ⚙️ I4 | Minutos |
-| 12 | `{!! $extra !!}` → `{{ $extra }}` en el correo de RRHH | 🔒 S6 | Minutos |
-| 17 | `horizon`/`scheduler` reutilizando `image: trimax-app` | ⚙️ I5 | Minutos |
+| 4 | ✅ Middleware de cabeceras de seguridad HTTP | 🔒 S3 | ~30 min |
+| 8 | ✅ `CACHE_STORE=redis` — la caché escribe en MySQL | ⚙️ I1 | Minutos |
+| 9 | ✅ Sincronizar el registro de `migrations` | ⚙️ I4 | Minutos |
+| 12 | ✅ `{!! $extra !!}` → `{{ $extra }}` en el correo de RRHH | 🔒 S6 | Minutos |
+| 17 | ✅ `horizon`/`scheduler` reutilizando `image: trimax-app` | ⚙️ I5 | Minutos |
 | 24 | Borrar 3 controladores muertos y `routes/auth.php` | 🏗️ A7 | ~30 min |
+
+**Resuelto 2026-07-25** (ronda 1): #1 (S1), #4 (S3), #8 (I1), #9 (I4), #12 (S6), #17
+(I5), más un hallazgo de infra no documentado en la auditoría original — drift
+de puertos en `docker-compose.yml` (`mysql`/`phpmyadmin` declaraban 3306/8080
+pero los contenedores reales corrían en 3307/8090) — corregido junto con I5 al
+tocar el mismo archivo. Detalle de cada cambio en `SEGURIDAD.md` e
+`INFRAESTRUCTURA.md`.
 
 ---
 
@@ -64,15 +89,15 @@ el despliegue. Si solo se va a hacer una tanda, que sea esta:
 
 | # | Corrección | Origen | ID | Severidad | Esfuerzo |
 |---|---|---|---|---|---|
-| 1 | Mover los adjuntos de vouchers y desbloqueos al disco `local` y migrar los ya subidos — hoy nginx los sirve sin autenticación | 🔒 Seguridad | [S1](SEGURIDAD.md#s1--adjuntos-financieros-servidos-sin-autenticación--severidad-crítica) | **Crítica** | ~2 h |
+| 1 | ✅ Mover los adjuntos de vouchers y desbloqueos al disco `local` y migrar los ya subidos — hoy nginx los sirve sin autenticación | 🔒 Seguridad | [S1](SEGURIDAD.md#s1--adjuntos-financieros-servidos-sin-autenticación--severidad-crítica) | **Crítica** | ~2 h |
 | 2 | `composer update`: 49 vulnerabilidades en 17 paquetes (2 críticas, 10 altas) | 🔒 Seguridad | [S2](SEGURIDAD.md#s2--dependencias-vulnerables--severidad-alta) | Alta | ~3 h |
 | 3 | Despublicar Redis y poner phpMyAdmin y Redis Commander tras perfil — hoy phpMyAdmin entra como root sin pedir credenciales | ⚙️ Infra | [I3](INFRAESTRUCTURA.md#i3--servicios-de-datos-expuestos--severidad-alta) | Alta | ~1 h |
-| 4 | Middleware de cabeceras de seguridad (`X-Frame-Options`, `nosniff`, `Referrer-Policy`) | 🔒 Seguridad | [S3](SEGURIDAD.md#s3--sin-cabeceras-de-seguridad-http--severidad-alta) | Alta | ~30 min |
+| 4 | ✅ Middleware de cabeceras de seguridad (`X-Frame-Options`, `nosniff`, `Referrer-Policy`) | 🔒 Seguridad | [S3](SEGURIDAD.md#s3--sin-cabeceras-de-seguridad-http--severidad-alta) | Alta | ~30 min |
 | 5 | Sacar las credenciales literales del `docker-compose.yml` a `env_file` | ⚙️ Infra | [I2](INFRAESTRUCTURA.md#i2--credenciales-literales-en-el-compose--severidad-alta) | Alta | ~1 h |
 | 6 | Decidir sobre el 2FA: activarlo por rol o retirarlo — está construido, nunca aplicado, 0 de 65 usuarios | 🔒 Seguridad | [S4](SEGURIDAD.md#s4--2fa-construido-pero-nunca-activado--severidad-alta) | Alta | Decisión + ~4 h |
 | 7 | Centralizar la frontera de datos por sede en un Global Scope + Gates — hoy son 212 comprobaciones a mano | 🏗️ Arquitectura | [A1](ARQUITECTURA.md#a1--autorización-dispersa--severidad-alta) | Alta | Medio |
-| 8 | `CACHE_STORE=redis`: la clave `CACHE_DRIVER` es de Laravel 10 y se ignora, así que la caché escribe en MySQL | ⚙️ Infra | [I1](INFRAESTRUCTURA.md#i1--la-caché-va-a-mysql-no-a-redis--severidad-alta--activo) | Alta | Minutos |
-| 9 | Sincronizar el registro de `migrations` con el esquema real — `php artisan migrate` hoy fallaría | ⚙️ Infra | [I4](INFRAESTRUCTURA.md#i4--deriva-de-migraciones--severidad-alta--activo) | Alta | Minutos |
+| 8 | ✅ `CACHE_STORE=redis`: la clave `CACHE_DRIVER` es de Laravel 10 y se ignora, así que la caché escribe en MySQL | ⚙️ Infra | [I1](INFRAESTRUCTURA.md#i1--la-caché-va-a-mysql-no-a-redis--severidad-alta--activo) | Alta | Minutos |
+| 9 | ✅ Sincronizar el registro de `migrations` con el esquema real — `php artisan migrate` hoy fallaría | ⚙️ Infra | [I4](INFRAESTRUCTURA.md#i4--deriva-de-migraciones--severidad-alta--activo) | Alta | Minutos |
 | 10 | Envolver en `DB::transaction` las escrituras multi-tabla (vouchers, requerimientos) | 🏗️ Arquitectura | [A3](ARQUITECTURA.md#a3--escrituras-sin-transacción--severidad-alta) | Alta | Bajo |
 | 11 | Paginar los 90 listados que traen la tabla completa a memoria | 🏗️ Arquitectura | [A2](ARQUITECTURA.md#a2--listados-sin-paginación--severidad-alta) | Alta | Medio |
 
@@ -80,12 +105,12 @@ el despliegue. Si solo se va a hacer una tanda, que sea esta:
 
 | # | Corrección | Origen | ID | Severidad | Esfuerzo |
 |---|---|---|---|---|---|
-| 12 | Escapar `$extra` en el correo de requerimientos — entra texto de usuario sin filtrar | 🔒 Seguridad | [S6](SEGURIDAD.md#s6--inyección-de-html-en-el-correo-de-requerimientos--severidad-media) | Media | Minutos |
+| 12 | ✅ Escapar `$extra` en el correo de requerimientos — entra texto de usuario sin filtrar | 🔒 Seguridad | [S6](SEGURIDAD.md#s6--inyección-de-html-en-el-correo-de-requerimientos--severidad-media) | Media | Minutos |
 | 13 | `SESSION_SECURE_COOKIE=true` en entornos con HTTPS | 🔒 Seguridad | [S5](SEGURIDAD.md#s5--cookie-de-sesión-sin-flag-secure--severidad-media) | Media | Minutos |
 | 14 | Checklist de despliegue: `APP_ENV=production`, `APP_DEBUG=false`, caches de config y rutas | ⚙️ Infra | [I8](INFRAESTRUCTURA.md#i8--configuración-de-entorno--severidad-media) | Media | ~1 h |
 | 15 | Endurecer la política de contraseñas (`min:8` sin complejidad; `min:6` en motorizados) | 🔒 Seguridad | [S7](SEGURIDAD.md#s7--política-de-contraseñas-débil--severidad-media) | Media | ~1 h |
 | 16 | Verificar propiedad en la descarga de adjuntos, no solo el permiso de rol | 🔒 Seguridad | [S8](SEGURIDAD.md#s8--descarga-de-adjuntos-sin-verificar-propiedad--severidad-media) | Media | Medio |
-| 17 | `horizon` y `scheduler` reutilizando `image: trimax-app` — hoy duplican 2.5 GB y pueden divergir de versión | ⚙️ Infra | [I5](INFRAESTRUCTURA.md#i5--imágenes-duplicadas--severidad-media--activo) | Media | Minutos |
+| 17 | ✅ `horizon` y `scheduler` reutilizando `image: trimax-app` — hoy duplican 2.5 GB y pueden divergir de versión | ⚙️ Infra | [I5](INFRAESTRUCTURA.md#i5--imágenes-duplicadas--severidad-media--activo) | Media | Minutos |
 | 18 | `healthcheck` en app, nginx y horizon + `depends_on: condition: service_healthy` | ⚙️ Infra | [I7](INFRAESTRUCTURA.md#i7--healthchecks-incompletos--severidad-media) | Media | ~1 h |
 | 19 | `composer install` y cacheo de capas en el `Dockerfile` — la imagen no es autónoma | ⚙️ Infra | [I6](INFRAESTRUCTURA.md#i6--la-imagen-no-es-autónoma--severidad-media) | Media | ~2 h |
 | 20 | Extraer Form Requests donde las reglas se repiten (75 validaciones inline vs 6 Form Requests) | 🏗️ Arquitectura | [A5](ARQUITECTURA.md#a5--validación-inline--severidad-media) | Media | Medio |
@@ -157,5 +182,6 @@ también el documento de origen.
 
 | Lista | Correcciones | Estado | Fecha |
 |---|---|---|---|
-| Principal | 1–26 | Pendiente | — |
+| Principal | 1, 4, 8, 9, 12, 17 | ✅ Resuelto | 2026-07-25 |
+| Principal | 2, 3, 5, 6, 7, 10, 11, 13–16, 18–26 | Pendiente | — |
 | Frontend | F-1–F-8 | Pendiente | — |

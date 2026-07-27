@@ -21,11 +21,11 @@ excepción es I1, que es un bug real degradando rendimiento ahora mismo.
 
 | # | Hallazgo | Severidad | Estado |
 |---|---|---|---|
-| I1 | `CACHE_DRIVER` obsoleto: la caché va a MySQL, no a Redis | **Alta** | Activo |
+| I1 | `CACHE_DRIVER` obsoleto: la caché va a MySQL, no a Redis | **Alta** | ✅ Resuelto 2026-07-25 |
 | I2 | Credenciales literales en `docker-compose.yml` | **Alta** | Riesgo de despliegue |
 | I3 | Redis, phpMyAdmin y Redis Commander expuestos sin protección | **Alta** | Riesgo de despliegue |
-| I4 | Deriva entre el registro de migraciones y el esquema real | **Alta** | Activo |
-| I5 | `horizon` y `scheduler` reconstruyen la imagen: 2.5 GB duplicados | Media | Activo |
+| I4 | Deriva entre el registro de migraciones y el esquema real | **Alta** | ✅ Resuelto 2026-07-25 |
+| I5 | `horizon` y `scheduler` reconstruyen la imagen: 2.5 GB duplicados | Media | ✅ Resuelto 2026-07-25 |
 | I6 | `Dockerfile` sin `composer install`; imagen no autónoma | Media | Activo |
 | I7 | Sin `healthcheck` en app, nginx, horizon ni scheduler | Media | Activo |
 | I8 | `APP_DEBUG=true` / `APP_ENV=local` | Media | Riesgo de despliegue |
@@ -57,6 +57,12 @@ acceso desde fuera.
 ---
 
 ## I1 · La caché va a MySQL, no a Redis — Severidad alta · **Activo**
+
+> ✅ **Resuelto 2026-07-25.** `.env`: eliminada la línea `CACHE_DRIVER=redis`
+> (obsoleta) y `CACHE_STORE=database` → `CACHE_STORE=redis`. Verificado con
+> `php artisan tinker --execute="echo config('cache.default');"` → `redis`.
+> No hizo falta `config:clear` para que tomara efecto (no había config cacheada
+> en `bootstrap/cache/`), pero se corrió igual por higiene.
 
 ### Qué pasa
 
@@ -199,6 +205,45 @@ Se levantan solo cuando se necesitan: `docker compose --profile tools up -d`.
 
 ## I4 · Deriva de migraciones — Severidad alta · **Activo**
 
+> ✅ **Resuelto 2026-07-25.** Verificado el estado real antes de insertar (la
+> tabla tenía 4 filas, batch máximo 2 — no 3 como hubiera asumido un batch
+> fijo). Insertadas las 8 filas faltantes con `batch = 3`. `php artisan
+> migrate:status` confirma las 8 como `Ran`, ninguna `Pending`. No se corrió
+> `php artisan migrate` en ningún momento. Queda como curiosidad, no como
+> pendiente: la fila original `id=4` sigue apuntando a
+> `2026_04_27_172251_create_personal_access_tokens_table` (el timestamp del
+> backup, que no corresponde a ningún archivo del repo) — es un residuo
+> inofensivo, Laravel ya no la necesita porque la fila `id=8` con el nombre de
+> archivo real (`2026_04_26_221449_...`) es la que cuenta.
+
+> ✅ **Ampliado y cerrado del todo — 2026-07-27.** Lo de arriba (2026-07-25)
+> solo sincronizaba el registro de las 8 migraciones que ya existían en el
+> repo. Al escribir tests de feature se descubrió que **28 tablas más no
+> tenían ninguna migración de creación** (`ai_interactions`, `descuentos_especiales`,
+> `requerimientos_personal`, `ventas`, `users_marketing`, etc. — la lista
+> completa en los 8 archivos `2026_07_2*_create_*.php`), y que
+> `add_gps_fields_to_user_locations_table` alteraba una tabla que ninguna
+> migración creaba. Se generaron migraciones `Schema::create` guardadas
+> (`hasTable`) a partir de un volcado real (`mysqldump --no-data`) para las 28,
+> más la creación completa de `user_locations`.
+>
+> Antes de tocar la base real se validó con una **copia descartable**: se
+> clonaron el esquema completo y las filas de `migrations` a una base temporal
+> en el mismo MySQL, se corrió `php artisan migrate --force` de verdad ahí, y
+> un diff de tablas/columnas antes-vs-después dio **0 diferencias**. Con esa
+> prueba en mano, se corrió `migrate --force` sobre `reports_trimax`: 22/22
+> migraciones en `Ran`, sin ningún `CREATE`/`ALTER` real (todas las nuevas son
+> no-op ahí), y los conteos de filas quedaron intactos (65 usuarios, 874
+> vouchers, 1830 facturas). El registro de `migrations` ahora refleja el
+> esquema real por completo — la advertencia de "no corras migrate" del
+> `README.md` ya no aplica.
+>
+> Nota aparte, no bloqueante: `--pretend` no sirve para verificar migraciones
+> guardadas en este proyecto — también simula las `SELECT` de
+> `Schema::hasTable()`/`hasColumn()`, así que los guards siempre parecen
+> fallar (muestra `CREATE TABLE` aunque la tabla ya exista). Para confirmar de
+> verdad hace falta una copia descartable como la de arriba.
+
 ### Qué pasa
 
 El esquema proviene de un backup SQL que **no está en el repositorio**. La tabla
@@ -251,6 +296,30 @@ backup manual.
 ---
 
 ## I5 · Imágenes duplicadas — Severidad media · **Activo**
+
+> ✅ **Resuelto 2026-07-25.** `horizon` y `scheduler` en `docker-compose.yml`
+> cambiados de `build: {context: ., dockerfile: Dockerfile}` a
+> `image: trimax-app`. Aplicado con `docker compose up -d --no-deps horizon
+> scheduler` — ambos recreados y verificados corriendo sobre la imagen
+> `trimax-app` (`docker ps` confirma), Horizon arrancó limpio
+> ("Horizon started successfully" en logs). Las imágenes viejas
+> `reports-trimax-horizon` y `reports-trimax-scheduler` (2.5 GB) quedaron en
+> disco sin usarse — se pueden borrar con `docker image prune` cuando
+> convenga, no se hizo automáticamente para no tocar nada fuera de lo pedido.
+>
+> **Hallazgo adicional detectado al tocar este archivo (no estaba en la
+> auditoría original):** `docker-compose.yml` declaraba `mysql: 3306:3306` y
+> `phpmyadmin: 8080:80`, pero los contenedores realmente en ejecución ya
+> corrían en 3307 y 8090 (ver "Mapa del entorno" arriba) — el archivo
+> versionado nunca reflejó esos remapeos, probablemente porque se arrancaron
+> con otra configuración que después no se volvió a versionar. Un
+> `docker compose down && up` desde el archivo tal como estaba habría
+> intentado tomar 3306/8080, chocando con `globalmega-mysql` y
+> `globalmega-tomcat`. Corregido en el mismo cambio: `docker-compose.yml` ahora
+> declara `3307:3306` y `8090:80`. Como el archivo quedó coincidiendo
+> exactamente con lo que ya corría, `docker compose up -d --no-deps mysql
+> phpmyadmin` no necesitó recrear ningún contenedor — cero downtime,
+> verificado con `docker ps` (ambos "Up 25 hours", sin reinicio).
 
 ### Qué pasa
 

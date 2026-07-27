@@ -267,7 +267,7 @@ class VoucherController extends Controller
 
         foreach ($voucher->archivos ?? [] as $archivo) {
             if (!empty($archivo['path'])) {
-                Storage::disk('public')->delete($archivo['path']);
+                Storage::disk('local')->delete($archivo['path']);
             }
         }
 
@@ -332,9 +332,9 @@ class VoucherController extends Controller
 
         $archivo = $archivos[$index];
 
-        if (Storage::disk('public')->exists($archivo['path'])) {
+        if (Storage::disk('local')->exists($archivo['path'])) {
             return response()->file(
-                Storage::disk('public')->path($archivo['path']),
+                Storage::disk('local')->path($archivo['path']),
                 [
                     'Content-Type'        => $archivo['mime'] ?? 'application/octet-stream',
                     'Content-Disposition' => 'inline; filename="' . $archivo['name'] . '"',
@@ -435,13 +435,13 @@ class VoucherController extends Controller
         }
         $voucher = Voucher::findOrFail($id);
         $archivo = ($voucher->revision_archivos ?? [])[$index] ?? null;
-        if (!$archivo || !Storage::disk('public')->exists($archivo['path'])) {
+        if (!$archivo || !Storage::disk('local')->exists($archivo['path'])) {
             abort(404, 'Archivo no encontrado.');
         }
         if ($request->boolean('download')) {
-            return Storage::disk('public')->download($archivo['path'], $archivo['name']);
+            return Storage::disk('local')->download($archivo['path'], $archivo['name']);
         }
-        return response()->file(Storage::disk('public')->path($archivo['path']), [
+        return response()->file(Storage::disk('local')->path($archivo['path']), [
             'Content-Type'        => $archivo['mime'] ?? 'application/octet-stream',
             'Content-Disposition' => 'inline; filename="' . $archivo['name'] . '"',
         ]);
@@ -620,7 +620,7 @@ class VoucherController extends Controller
         foreach ($archivos as $file) {
             $ext    = $file->getClientOriginalExtension();
             $nombre = $file->getClientOriginalName();
-            $path   = $file->storeAs($dir, Str::uuid() . '.' . $ext, 'public');
+            $path   = $file->storeAs($dir, Str::uuid() . '.' . $ext, 'local');
 
             $guardados[] = [
                 'name' => $nombre,
