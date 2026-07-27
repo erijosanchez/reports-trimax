@@ -22,7 +22,7 @@ debería estar centralizada y está copiada a mano en decenas de sitios.
 | # | Hallazgo | Severidad | Esfuerzo |
 |---|---|---|---|
 | A1 | 212 decisiones de autorización dispersas en controladores y vistas | **Alta** | 🟡 Piloto 2026-07-27 (Vouchers) |
-| A2 | 90 listados sin paginación sobre tablas transaccionales | **Alta** | Medio |
+| A2 | 90 listados sin paginación sobre tablas transaccionales | **Alta** | 🟡 Piloto 2026-07-27 (2 tablas más grandes auditadas) |
 | A3 | Solo 5 transacciones para escrituras multi-tabla | **Alta** | ✅ Resuelto 2026-07-27 (Voucher, Desbloqueo, Requerimientos) |
 | A4 | 10 controladores >400 LOC (el mayor, 1799) | Media | Alto |
 | A5 | 75 validaciones inline vs 6 Form Requests | Media | Medio |
@@ -170,6 +170,62 @@ API que consume todo el sistema.
 ---
 
 ## A2 · Listados sin paginación — Severidad alta
+
+> 🟡 **Piloto auditado 2026-07-27** en las dos tablas más grandes de la base
+> (`asignacion_bases`, 159 429 filas; `ordenes_historico`, 143 573 filas),
+> siguiendo el criterio de esta misma sección: "priorizar por tamaño de
+> tabla, no por orden alfabético". No se auditaron los otros ~80 sitios en
+> los 21 controladores restantes — quedan pendientes, con menor riesgo por
+> tratarse de tablas más chicas.
+>
+> **Resultado, con más matices de lo que sugiere el conteo de "90 `->get()`":**
+>
+> - **`asignacion_bases`** (`AsignacionBasesService.php`, 9 usos) — **sin
+>   problema real**. Los 9 son agregaciones `GROUP BY`/`SUM` filtradas por
+>   `anio`/`mes` y cacheadas 30 min con `Cache::remember()`. El resultado que
+>   llega a PHP está acotado por días/meses/productos, no por las 159K filas
+>   de la tabla. No hay nada que paginar: son datasets para gráficos, no
+>   listados.
+> - **`OrdenesXUsuarioController`** — **sin problema real**. Mismo patrón:
+>   agregaciones acotadas, y el único listado fila-por-fila
+>   (`data()`, tabla detallada) ya está paginado a mano
+>   (`->offset()->limit()->get()` + `count()` aparte, línea 133-140) — el
+>   patrón correcto, solo que sin usar el helper `->paginate()` de Laravel.
+> - **`ComercialController::exportarExcel()`** — **sin problema real**. Ya
+>   usa `->chunk(1000, ...)` con `response()->stream()`, exactamente el
+>   patrón que recomienda esta sección para exportaciones.
+> - **`ComercialController::obtenerOrdenesRecientes()`** — acotado a 2000
+>   filas máximo pase lo que pase (`min($limite, 2000)`), no es paginación
+>   real pero tampoco es un riesgo de memoria — no se tocó.
+> - **`ComercialController::obtenerOrdenes()` — el único hallazgo real.**
+>   `if ($limite > 0) { $query->limit($limite); }` dispara con `limite=0`
+>   como un *unbounded query* a propósito: `resources/views/comercial/consulta-orden.blade.php:598-604`
+>   manda `limite: 0` deliberadamente (comentario en el propio JS: "sin
+>   límite, trae TODOS los registros"), con un timeout de AJAX de 120
+>   segundos y un contador de "tiempo de carga" visible para el usuario — el
+>   equipo ya sabe que es lento y lo viene tolerando. El resultado completo
+>   se carga en un array de JavaScript y se pagina **del lado del cliente**
+>   en el navegador (`ordenesData`, `currentPage`, `renderizarTabla()`).
+>
+>   **No se aplicó ningún cambio aquí** — se decidió explícitamente dejarlo
+>   documentado en vez de tocarlo, porque:
+>   1. Es una función deliberada (no un bug accidental) que el equipo ya
+>      usa y tolera en su forma actual.
+>   2. El arreglo correcto no es solo de backend: hay que mover la
+>      paginación al servidor (`page`/`per_page` en `obtenerOrdenes()`,
+>      mismo patrón que ya usa bien `OrdenesXUsuarioController::data()`) *y*
+>      cambiar el JS de `consulta-orden.blade.php` para pedir página por
+>      página en vez de todo de una vez — un cambio de UX que no se puede
+>      verificar sin un navegador real.
+>   3. Acotar solo el backend sin avisar al frontend (ej. tope duro de 5000)
+>      haría que el botón "cargar histórico completo" mostrara datos
+>      incompletos sin que el usuario se entere — peor que el problema
+>      actual.
+>
+>   **Recomendación para cuando se aborde:** convertir `obtenerOrdenes()` a
+>   paginación real (`page`/`per_page`, igual que `OrdenesXUsuarioController::data()`)
+>   y cambiar el botón "Cargar histórico completo" por scroll infinito o
+>   "cargar más", probando en navegador antes de desplegar.
 
 ### Qué pasa
 
