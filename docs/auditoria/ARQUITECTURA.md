@@ -23,7 +23,7 @@ debería estar centralizada y está copiada a mano en decenas de sitios.
 |---|---|---|---|
 | A1 | 212 decisiones de autorización dispersas en controladores y vistas | **Alta** | 🟡 Piloto 2026-07-27 (Vouchers) |
 | A2 | 90 listados sin paginación sobre tablas transaccionales | **Alta** | Medio |
-| A3 | Solo 5 transacciones para escrituras multi-tabla | **Alta** | Bajo |
+| A3 | Solo 5 transacciones para escrituras multi-tabla | **Alta** | ✅ Resuelto 2026-07-27 (Voucher, Desbloqueo, Requerimientos) |
 | A4 | 10 controladores >400 LOC (el mayor, 1799) | Media | Alto |
 | A5 | 75 validaciones inline vs 6 Form Requests | Media | Medio |
 | A6 | Pipeline Vite configurado pero inutilizado; 46 MB de assets en git | Media | Medio |
@@ -204,6 +204,36 @@ Priorizar por tamaño de tabla, no por orden alfabético.
 ---
 
 ## A3 · Escrituras sin transacción — Severidad alta
+
+> ✅ **Resuelto 2026-07-27** para los tres flujos nombrados abajo. Envueltos
+> tal como sugiere esta sección — "sin reestructurar nada" — salvo un ajuste
+> puntual: donde el método hacía `update()/create() → notificar por correo →
+> ActivityLogService::log()`, el `log()` se movió antes de la notificación y
+> ambos quedaron dentro de la misma transacción; la notificación (I/O de red)
+> se dejó fuera para no sostener la conexión de BD abierta durante el envío.
+>
+> - **`VoucherController`**: `store()` (voucher + N facturas),
+>   `addFactura()`/`removeFactura()` (factura + recálculo de `total` +
+>   reseteo de revisión), `revisar()` (`save()` + registro de actividad).
+> - **`DesbloqueoController`**: `store()` (`create()` + registro de
+>   actividad), `revisar()` (`save()` + registro de actividad).
+> - **`RequerimientoPersonalController`**: `actualizarEstado()`,
+>   `asignarResponsable()`, `registrarEtapa()`, `actualizarInfoRrhh()` y
+>   `firmar()` — todos con el mismo patrón `update()`/`create()` +
+>   `registrarHistorial()` (+ `ActivityLogService::log()` donde aplica). Su
+>   `store()` ya tenía `DB::transaction` desde antes (una de las 5 originales).
+>
+> No se tocó `UserMarketingController` (usa `DB::beginTransaction()` manual,
+> ya envuelto, fuera del alcance de esta ronda) ni el resto de controladores
+> con escrituras multi-tabla que no se nombraban aquí.
+>
+> Suite completa corrida después: mismo resultado de siempre (las pruebas de
+> Vouchers/Desbloqueo pasan por el mismo camino que estos métodos, así que
+> ejercitan la reordenación sin que se rompiera nada). No se forzó un fallo a
+> mitad de transacción para probar el rollback en sí (`DB::transaction` es
+> comportamiento estándar de Laravel, no un mecanismo nuevo que necesite
+> reprobarse) — la cobertura nueva confirma que el camino feliz sigue
+> produciendo el mismo resultado tras envolver y reordenar.
 
 ### Qué pasa
 

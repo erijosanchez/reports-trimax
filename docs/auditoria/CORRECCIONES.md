@@ -114,7 +114,7 @@ tocar el mismo archivo. Detalle de cada cambio en `SEGURIDAD.md` e
 | 7 | 🟡 Centralizar la frontera de datos por sede en un Global Scope + Gates — hoy son 212 comprobaciones a mano (piloto en Vouchers, resto pendiente) | 🏗️ Arquitectura | [A1](ARQUITECTURA.md#a1--autorización-dispersa--severidad-alta) | Alta | Medio |
 | 8 | ✅ `CACHE_STORE=redis`: la clave `CACHE_DRIVER` es de Laravel 10 y se ignora, así que la caché escribe en MySQL | ⚙️ Infra | [I1](INFRAESTRUCTURA.md#i1--la-caché-va-a-mysql-no-a-redis--severidad-alta--activo) | Alta | Minutos |
 | 9 | ✅ Sincronizar el registro de `migrations` con el esquema real — `php artisan migrate` hoy fallaría | ⚙️ Infra | [I4](INFRAESTRUCTURA.md#i4--deriva-de-migraciones--severidad-alta--activo) | Alta | Minutos |
-| 10 | Envolver en `DB::transaction` las escrituras multi-tabla (vouchers, requerimientos) | 🏗️ Arquitectura | [A3](ARQUITECTURA.md#a3--escrituras-sin-transacción--severidad-alta) | Alta | Bajo |
+| 10 | ✅ Envolver en `DB::transaction` las escrituras multi-tabla (vouchers, requerimientos) | 🏗️ Arquitectura | [A3](ARQUITECTURA.md#a3--escrituras-sin-transacción--severidad-alta) | Alta | Bajo |
 | 11 | Paginar los 90 listados que traen la tabla completa a memoria | 🏗️ Arquitectura | [A2](ARQUITECTURA.md#a2--listados-sin-paginación--severidad-alta) | Alta | Medio |
 
 ### Prioridad media
@@ -203,5 +203,6 @@ también el documento de origen.
 | Principal | 2 (S2), 6 (S4) | ✅ Resuelto | 2026-07-27 |
 | Principal | 3 (I3), 5 (I2) | ✅ Resuelto | 2026-07-27 |
 | Principal | 7 (A1) | 🟡 Piloto (Vouchers) | 2026-07-27 |
-| Principal | 10, 11, 13–16, 18–26 | Pendiente | — |
+| Principal | 10 (A3) | ✅ Resuelto | 2026-07-27 |
+| Principal | 11, 13–16, 18–26 | Pendiente | — |
 | Frontend | F-1–F-8 | Pendiente | — |

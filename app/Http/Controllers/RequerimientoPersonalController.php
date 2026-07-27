@@ -210,22 +210,24 @@ class RequerimientoPersonalController extends Controller
         $estadoAnterior = $requerimiento->estado;
         $estadoNuevo    = $request->estado;
 
-        $requerimiento->update([
-            'estado'       => $estadoNuevo,
-            'fecha_cierre' => in_array($estadoNuevo, [
-                RequerimientoPersonal::ESTADO_CONTRATADO,
-                RequerimientoPersonal::ESTADO_CANCELADO
-            ]) ? now() : null,
-        ]);
+        DB::transaction(function () use ($requerimiento, $estadoNuevo, $estadoAnterior) {
+            $requerimiento->update([
+                'estado'       => $estadoNuevo,
+                'fecha_cierre' => in_array($estadoNuevo, [
+                    RequerimientoPersonal::ESTADO_CONTRATADO,
+                    RequerimientoPersonal::ESTADO_CANCELADO
+                ]) ? now() : null,
+            ]);
 
-        $this->registrarHistorial(
-            $requerimiento,
-            'cambio_estado',
-            "Estado cambiado a {$estadoNuevo}",
-            null,
-            $estadoAnterior,
-            $estadoNuevo
-        );
+            $this->registrarHistorial(
+                $requerimiento,
+                'cambio_estado',
+                "Estado cambiado a {$estadoNuevo}",
+                null,
+                $estadoAnterior,
+                $estadoNuevo
+            );
+        });
 
         $this->notificarDestinatarios(
             $requerimiento,
@@ -251,35 +253,37 @@ class RequerimientoPersonalController extends Controller
 
         $estadoAnterior = $requerimiento->estado;
 
-        $requerimiento->update([
-            'responsable_rh_id'      => $request->responsable_rh_id,
-            'responsable_rh_externo' => $request->responsable_rh_externo,
-            'estado'                 => RequerimientoPersonal::ESTADO_EN_PROCESO, // ← Cambia automáticamente
-        ]);
-
         $nombre = $request->responsable_rh_id
             ? User::find($request->responsable_rh_id)->name
             : $request->responsable_rh_externo;
 
-        // Registrar asignación en historial
-        $this->registrarHistorial(
-            $requerimiento,
-            'asignacion_rh',
-            "Responsable RH asignado: {$nombre}",
-            "Se asignó a {$nombre} como responsable del proceso de selección."
-        );
+        DB::transaction(function () use ($requerimiento, $request, $estadoAnterior, $nombre) {
+            $requerimiento->update([
+                'responsable_rh_id'      => $request->responsable_rh_id,
+                'responsable_rh_externo' => $request->responsable_rh_externo,
+                'estado'                 => RequerimientoPersonal::ESTADO_EN_PROCESO, // ← Cambia automáticamente
+            ]);
 
-        // Si cambió de Pendiente a En Proceso, registrar ese cambio también
-        if ($estadoAnterior === RequerimientoPersonal::ESTADO_PENDIENTE) {
+            // Registrar asignación en historial
             $this->registrarHistorial(
                 $requerimiento,
-                'cambio_estado',
-                'Requerimiento pasó a En Proceso',
-                'El estado cambió automáticamente al asignar un responsable RH.',
-                $estadoAnterior,
-                RequerimientoPersonal::ESTADO_EN_PROCESO
+                'asignacion_rh',
+                "Responsable RH asignado: {$nombre}",
+                "Se asignó a {$nombre} como responsable del proceso de selección."
             );
-        }
+
+            // Si cambió de Pendiente a En Proceso, registrar ese cambio también
+            if ($estadoAnterior === RequerimientoPersonal::ESTADO_PENDIENTE) {
+                $this->registrarHistorial(
+                    $requerimiento,
+                    'cambio_estado',
+                    'Requerimiento pasó a En Proceso',
+                    'El estado cambió automáticamente al asignar un responsable RH.',
+                    $estadoAnterior,
+                    RequerimientoPersonal::ESTADO_EN_PROCESO
+                );
+            }
+        });
 
         // Notificar al responsable interno asignado
         if ($request->responsable_rh_id) {
@@ -327,13 +331,20 @@ class RequerimientoPersonalController extends Controller
         $tipoEtapa = $request->tipo_etapa;
         $etiqueta  = RequerimientoPersonal::ETAPAS[$tipoEtapa];
 
-        // Para nota libre usamos 'nota', para el resto el tipo exacto
-        $this->registrarHistorial(
-            $requerimiento,
-            $tipoEtapa,
-            $etiqueta,
-            $request->descripcion
-        );
+        // Para nota libre usamos 'nota', para el resto el tipo exacto.
+        // registrarHistorial() + el registro de actividad van en la misma
+        // transacción (A3); la notificación queda fuera para no sostener la
+        // conexión de BD abierta durante el I/O de red.
+        DB::transaction(function () use ($requerimiento, $tipoEtapa, $etiqueta, $request) {
+            $this->registrarHistorial(
+                $requerimiento,
+                $tipoEtapa,
+                $etiqueta,
+                $request->descripcion
+            );
+
+            ActivityLogService::log(Auth::id(), 'register_etapa_requerimiento', 'RequerimientoPersonal', $requerimiento->id, "Registró etapa '{$etiqueta}' en requerimiento {$requerimiento->codigo}");
+        });
 
         // Notificar al solicitante sobre el avance
         try {
@@ -349,8 +360,6 @@ class RequerimientoPersonalController extends Controller
         } catch (\Exception $e) {
             \Log::warning('No se pudo enviar notificación de etapa: ' . $e->getMessage());
         }
-
-        ActivityLogService::log(Auth::id(), 'register_etapa_requerimiento', 'RequerimientoPersonal', $requerimiento->id, "Registró etapa '{$etiqueta}' en requerimiento {$requerimiento->codigo}");
 
         return back()->with('success', "Etapa \"{$etiqueta}\" registrada correctamente.");
     }
@@ -406,21 +415,23 @@ class RequerimientoPersonalController extends Controller
             'beneficios'                  => 'nullable|string|max:1000',
         ]);
 
-        $requerimiento->update($request->only([
-            'fecha_estimada_contratacion',
-            'tipo_contrato',
-            'duracion_contrato',
-            'remuneracion_prevista',
-            'horario_trabajo',
-            'beneficios',
-        ]));
+        DB::transaction(function () use ($requerimiento, $request) {
+            $requerimiento->update($request->only([
+                'fecha_estimada_contratacion',
+                'tipo_contrato',
+                'duracion_contrato',
+                'remuneracion_prevista',
+                'horario_trabajo',
+                'beneficios',
+            ]));
 
-        $this->registrarHistorial(
-            $requerimiento,
-            'nota',
-            'Información RRHH actualizada',
-            'Se actualizó la sección de información de RRHH del formulario.'
-        );
+            $this->registrarHistorial(
+                $requerimiento,
+                'nota',
+                'Información RRHH actualizada',
+                'Se actualizó la sección de información de RRHH del formulario.'
+            );
+        });
 
         return back()->with('success', 'Información de RRHH guardada correctamente.');
     }
@@ -444,27 +455,28 @@ class RequerimientoPersonalController extends Controller
             return back()->with('error', 'Este espacio ya fue firmado.');
         }
 
-        $requerimiento->update([
-            "firma_{$rol}_data"   => $user->firma_imagen,
-            "firma_{$rol}_at"     => now(),
-            "firma_{$rol}_nombre" => $user->name . ($user->cargo ? ' - ' . $user->cargo : ''),
-        ]);
-
         $etiquetas = [
             'solicitante' => 'Responsable de Área Solicitante',
             'rrhh'        => 'Responsable de Recursos Humanos',
             'gerente'     => 'Gerente General',
         ];
 
-        $this->registrarHistorial(
-            $requerimiento,
-            'nota',
-            "Firmado por {$etiquetas[$rol]}",
-            $user->name . ' firmó el formulario como ' . $etiquetas[$rol] . '.'
-        );
+        DB::transaction(function () use ($requerimiento, $rol, $user, $etiquetas) {
+            $requerimiento->update([
+                "firma_{$rol}_data"   => $user->firma_imagen,
+                "firma_{$rol}_at"     => now(),
+                "firma_{$rol}_nombre" => $user->name . ($user->cargo ? ' - ' . $user->cargo : ''),
+            ]);
 
-        $etiquetaRol = $etiquetas[$rol];
-        ActivityLogService::log(Auth::id(), 'sign_requerimiento', 'RequerimientoPersonal', $requerimiento->id, "Firmó requerimiento {$requerimiento->codigo} como {$etiquetaRol}");
+            $this->registrarHistorial(
+                $requerimiento,
+                'nota',
+                "Firmado por {$etiquetas[$rol]}",
+                $user->name . ' firmó el formulario como ' . $etiquetas[$rol] . '.'
+            );
+
+            ActivityLogService::log(Auth::id(), 'sign_requerimiento', 'RequerimientoPersonal', $requerimiento->id, "Firmó requerimiento {$requerimiento->codigo} como {$etiquetas[$rol]}");
+        });
 
         return back()->with('success', 'Firmado correctamente.');
     }

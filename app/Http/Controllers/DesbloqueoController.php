@@ -9,6 +9,7 @@ use App\Notifications\DesbloqueoRevisado;
 use App\Services\ActivityLogService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -66,18 +67,25 @@ class DesbloqueoController extends Controller
 
         $sede = $user->sede ?? 'SIN SEDE';
 
-        $solicitud = SolicitudDesbloqueo::create([
-            'user_id'      => $user->id,
-            'sede'         => $sede,
-            'ruc'          => trim($data['ruc']),
-            'razon_social' => trim($data['razon_social']),
-            'comentarios'  => $data['comentarios'] ?? null,
-            'archivos'     => $this->guardarArchivos($request->file('archivos'), $sede),
-        ]);
+        // create() + registro de actividad en la misma transacción (A3); la
+        // notificación queda fuera para no sostener la conexión de BD
+        // abierta durante el I/O de red.
+        $solicitud = DB::transaction(function () use ($request, $user, $data, $sede) {
+            $solicitud = SolicitudDesbloqueo::create([
+                'user_id'      => $user->id,
+                'sede'         => $sede,
+                'ruc'          => trim($data['ruc']),
+                'razon_social' => trim($data['razon_social']),
+                'comentarios'  => $data['comentarios'] ?? null,
+                'archivos'     => $this->guardarArchivos($request->file('archivos'), $sede),
+            ]);
+
+            ActivityLogService::log($user->id, 'crear_desbloqueo', 'SolicitudDesbloqueo', $solicitud->id, "Solicitó desbloqueo RUC {$solicitud->ruc} (sede: {$solicitud->sede})");
+
+            return $solicitud;
+        });
 
         $this->notificarCreacion($solicitud->load('user'));
-
-        ActivityLogService::log($user->id, 'crear_desbloqueo', 'SolicitudDesbloqueo', $solicitud->id, "Solicitó desbloqueo RUC {$solicitud->ruc} (sede: {$solicitud->sede})");
 
         return response()->json([
             'success' => true,
@@ -121,11 +129,13 @@ class DesbloqueoController extends Controller
             $solicitud->revision_archivos = $this->guardarArchivos($request->file('archivos'), $solicitud->sede ?? 'GENERAL');
         }
 
-        $solicitud->save();
+        DB::transaction(function () use ($solicitud, $user, $data) {
+            $solicitud->save();
+
+            ActivityLogService::log($user->id, 'revisar_desbloqueo', 'SolicitudDesbloqueo', $solicitud->id, "Revisó desbloqueo RUC {$solicitud->ruc} como {$data['estado']}");
+        });
 
         $this->notificarRevision($solicitud);
-
-        ActivityLogService::log($user->id, 'revisar_desbloqueo', 'SolicitudDesbloqueo', $solicitud->id, "Revisó desbloqueo RUC {$solicitud->ruc} como {$data['estado']}");
 
         $mensajes = [
             'conforme'           => 'Solicitud marcada como conforme (aprobada).',
