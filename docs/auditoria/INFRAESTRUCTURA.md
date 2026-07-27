@@ -56,7 +56,7 @@ acceso desde fuera.
 
 ---
 
-## I1 · La caché va a MySQL, no a Redis — Severidad alta · **Activo**
+## I1 · La caché va a MySQL, no a Redis — Severidad alta · ✅ Resuelto
 
 > ✅ **Resuelto 2026-07-25.** `.env`: eliminada la línea `CACHE_DRIVER=redis`
 > (obsoleta) y `CACHE_STORE=database` → `CACHE_STORE=redis`. Verificado con
@@ -241,7 +241,7 @@ Se levantan solo cuando se necesitan: `docker compose --profile tools up -d`.
 
 ---
 
-## I4 · Deriva de migraciones — Severidad alta · **Activo**
+## I4 · Deriva de migraciones — Severidad alta · ✅ Resuelto
 
 > ✅ **Resuelto 2026-07-25.** Verificado el estado real antes de insertar (la
 > tabla tenía 4 filas, batch máximo 2 — no 3 como hubiera asumido un batch
@@ -333,7 +333,7 @@ backup manual.
 
 ---
 
-## I5 · Imágenes duplicadas — Severidad media · **Activo**
+## I5 · Imágenes duplicadas — Severidad media · ✅ Resuelto
 
 > ✅ **Resuelto 2026-07-25.** `horizon` y `scheduler` en `docker-compose.yml`
 > cambiados de `build: {context: ., dockerfile: Dockerfile}` a

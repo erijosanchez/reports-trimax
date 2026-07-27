@@ -75,7 +75,7 @@ son deliberados.
 > real, y luego se corrió `php artisan migrate --force` sobre la base real:
 > 22/22 migraciones en `Ran`, filas intactas (65 usuarios, 874 vouchers, 1830
 > facturas — mismos conteos que reportaba esta auditoría). Detalle completo en
-> [I4](INFRAESTRUCTURA.md#i4--deriva-de-migraciones--severidad-alta--activo).
+> [I4](INFRAESTRUCTURA.md#i4--deriva-de-migraciones--severidad-alta--resuelto).
 
 ---
 

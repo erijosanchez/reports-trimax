@@ -25,7 +25,7 @@
 > tablas que llegaron con el backup sin ninguna migración de creación, y se
 > aplicó `php artisan migrate --force` sobre la base real tras validarlo en una
 > copia descartable (0 diferencias de esquema). Detalle en
-> [I4](INFRAESTRUCTURA.md#i4--deriva-de-migraciones--severidad-alta--activo).
+> [I4](INFRAESTRUCTURA.md#i4--deriva-de-migraciones--severidad-alta--resuelto).
 > La advertencia de "no corras migrate" del `README.md` ya no aplica.
 
 > ✅ **2026-07-27 — Ronda 2 completa: S2 y S4 resueltos.** `composer update
@@ -112,8 +112,8 @@ tocar el mismo archivo. Detalle de cada cambio en `SEGURIDAD.md` e
 | 5 | ✅ Sacar las credenciales literales del `docker-compose.yml` a `env_file` | ⚙️ Infra | [I2](INFRAESTRUCTURA.md#i2--credenciales-literales-en-el-compose--severidad-alta) | Alta | ~1 h |
 | 6 | ✅ Decidir sobre el 2FA: activarlo por rol o retirarlo — está construido, nunca aplicado, 0 de 65 usuarios | 🔒 Seguridad | [S4](SEGURIDAD.md#s4--2fa-construido-pero-nunca-activado--severidad-alta) | Alta | Decisión + ~4 h |
 | 7 | 🟡 Centralizar la frontera de datos por sede en un Global Scope + Gates — hoy son 212 comprobaciones a mano (piloto en Vouchers, resto pendiente) | 🏗️ Arquitectura | [A1](ARQUITECTURA.md#a1--autorización-dispersa--severidad-alta) | Alta | Medio |
-| 8 | ✅ `CACHE_STORE=redis`: la clave `CACHE_DRIVER` es de Laravel 10 y se ignora, así que la caché escribe en MySQL | ⚙️ Infra | [I1](INFRAESTRUCTURA.md#i1--la-caché-va-a-mysql-no-a-redis--severidad-alta--activo) | Alta | Minutos |
-| 9 | ✅ Sincronizar el registro de `migrations` con el esquema real — `php artisan migrate` hoy fallaría | ⚙️ Infra | [I4](INFRAESTRUCTURA.md#i4--deriva-de-migraciones--severidad-alta--activo) | Alta | Minutos |
+| 8 | ✅ `CACHE_STORE=redis`: la clave `CACHE_DRIVER` es de Laravel 10 y se ignora, así que la caché escribe en MySQL | ⚙️ Infra | [I1](INFRAESTRUCTURA.md#i1--la-caché-va-a-mysql-no-a-redis--severidad-alta--resuelto) | Alta | Minutos |
+| 9 | ✅ Sincronizar el registro de `migrations` con el esquema real — `php artisan migrate` hoy fallaría | ⚙️ Infra | [I4](INFRAESTRUCTURA.md#i4--deriva-de-migraciones--severidad-alta--resuelto) | Alta | Minutos |
 | 10 | ✅ Envolver en `DB::transaction` las escrituras multi-tabla (vouchers, requerimientos) | 🏗️ Arquitectura | [A3](ARQUITECTURA.md#a3--escrituras-sin-transacción--severidad-alta) | Alta | Bajo |
 | 11 | 🟡 Paginar los 90 listados que traen la tabla completa a memoria — piloto en las 2 tablas más grandes, 1 hallazgo real documentado sin aplicar | 🏗️ Arquitectura | [A2](ARQUITECTURA.md#a2--listados-sin-paginación--severidad-alta) | Alta | Medio |
 
@@ -125,8 +125,8 @@ tocar el mismo archivo. Detalle de cada cambio en `SEGURIDAD.md` e
 | 13 | ✅ `SESSION_SECURE_COOKIE=true` en entornos con HTTPS | 🔒 Seguridad | [S5](SEGURIDAD.md#s5--cookie-de-sesión-sin-flag-secure--severidad-media) | Media | Minutos |
 | 14 | ✅ Checklist de despliegue: `APP_ENV=production`, `APP_DEBUG=false`, caches de config y rutas | ⚙️ Infra | [I8](INFRAESTRUCTURA.md#i8--configuración-de-entorno--severidad-media) | Media | ~1 h |
 | 15 | ✅ Endurecer la política de contraseñas (`min:8` sin complejidad; `min:6` en motorizados) | 🔒 Seguridad | [S7](SEGURIDAD.md#s7--política-de-contraseñas-débil--severidad-media) | Media | ~1 h |
-| 16 | Verificar propiedad en la descarga de adjuntos, no solo el permiso de rol | 🔒 Seguridad | [S8](SEGURIDAD.md#s8--descarga-de-adjuntos-sin-verificar-propiedad--severidad-media) | Media | Medio |
-| 17 | ✅ `horizon` y `scheduler` reutilizando `image: trimax-app` — hoy duplican 2.5 GB y pueden divergir de versión | ⚙️ Infra | [I5](INFRAESTRUCTURA.md#i5--imágenes-duplicadas--severidad-media--activo) | Media | Minutos |
+| 16 | 🟡 Verificar propiedad en la descarga de adjuntos, no solo el permiso de rol — parcial como efecto lateral de #7 (Vouchers) | 🔒 Seguridad | [S8](SEGURIDAD.md#s8--descarga-de-adjuntos-sin-verificar-propiedad--severidad-media) | Media | Medio |
+| 17 | ✅ `horizon` y `scheduler` reutilizando `image: trimax-app` — hoy duplican 2.5 GB y pueden divergir de versión | ⚙️ Infra | [I5](INFRAESTRUCTURA.md#i5--imágenes-duplicadas--severidad-media--resuelto) | Media | Minutos |
 | 18 | `healthcheck` en app, nginx y horizon + `depends_on: condition: service_healthy` | ⚙️ Infra | [I7](INFRAESTRUCTURA.md#i7--healthchecks-incompletos--severidad-media) | Media | ~1 h |
 | 19 | `composer install` y cacheo de capas en el `Dockerfile` — la imagen no es autónoma | ⚙️ Infra | [I6](INFRAESTRUCTURA.md#i6--la-imagen-no-es-autónoma--severidad-media) | Media | ~2 h |
 | 20 | Extraer Form Requests donde las reglas se repiten (75 validaciones inline vs 6 Form Requests) | 🏗️ Arquitectura | [A5](ARQUITECTURA.md#a5--validación-inline--severidad-media) | Media | Medio |
@@ -206,5 +206,6 @@ también el documento de origen.
 | Principal | 10 (A3) | ✅ Resuelto | 2026-07-27 |
 | Principal | 11 (A2) | 🟡 Piloto (auditado, 1 hallazgo documentado sin aplicar) | 2026-07-27 |
 | Principal | 13 (S5), 14 (I8), 15 (S7) | ✅ Resuelto | 2026-07-27 |
-| Principal | 16, 18–26 | Pendiente | — |
+| Principal | 16 (S8) | 🟡 Parcial (efecto lateral de #7) | 2026-07-27 |
+| Principal | 18–26 | Pendiente | — |
 | Frontend | F-1–F-8 | Pendiente | — |
