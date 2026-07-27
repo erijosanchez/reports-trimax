@@ -130,7 +130,7 @@ tocar el mismo archivo. Detalle de cada cambio en `SEGURIDAD.md` e
 | 18 | ✅ `healthcheck` en app, nginx y horizon + `depends_on: condition: service_healthy` | ⚙️ Infra | [I7](INFRAESTRUCTURA.md#i7--healthchecks-incompletos--severidad-media) | Media | ~1 h |
 | 19 | ✅ `composer install` y cacheo de capas en el `Dockerfile` — la imagen no es autónoma | ⚙️ Infra | [I6](INFRAESTRUCTURA.md#i6--la-imagen-no-es-autónoma--severidad-media) | Media | ~2 h |
 | 20 | Extraer Form Requests donde las reglas se repiten (75 validaciones inline vs 6 Form Requests) | 🏗️ Arquitectura | [A5](ARQUITECTURA.md#a5--validación-inline--severidad-media) | Media | Medio |
-| 21 | Tests de las reglas de negocio, empezando por la frontera de datos por sede | 🏗️ Arquitectura | [A8](ARQUITECTURA.md#a8--cobertura-de-tests--severidad-media) | Media | Alto |
+| 21 | 🟡 Tests de las reglas de negocio, empezando por la frontera de datos por sede — piloto: hora límite Huánuco, KPI de cobranza, frontera de sede | 🏗️ Arquitectura | [A8](ARQUITECTURA.md#a8--cobertura-de-tests--severidad-media) | Media | Alto |
 | 22 | 🔴 Decidir el destino del frontend: asumir el template estático o activar Vite — planteado 2026-07-27, se eligió diferir la decisión | 🏗️ Arquitectura | [A6](ARQUITECTURA.md#a6--pipeline-de-frontend-inutilizado--severidad-media) | Media | Medio |
 | 23 | Extraer servicios de los 10 controladores que superan 400 LOC | 🏗️ Arquitectura | [A4](ARQUITECTURA.md#a4--controladores-gordos--severidad-media) | Media | Alto |
 
@@ -209,5 +209,6 @@ también el documento de origen.
 | Principal | 16 (S8) | 🟡 Parcial (efecto lateral de #7) | 2026-07-27 |
 | Principal | 22 (A6) | 🔴 Diferido a propósito (decisión de producto) | 2026-07-27 |
 | Principal | 18 (I7), 19 (I6), 24 (A7), 25 (I9), 26 (I10) | ✅ Resuelto | 2026-07-27 |
-| Principal | 20, 21, 23 | Pendiente | — |
+| Principal | 21 (A8) | 🟡 Piloto (Cobranza) | 2026-07-27 |
+| Principal | 20, 23 | Pendiente | — |
 | Frontend | F-1–F-8 | Pendiente | — |

@@ -522,6 +522,15 @@ falta una campaña aparte.
 > sin más verificación de propiedad. Eso requeriría una regla de negocio
 > distinta (ej. "finanzas solo ve lo que le fue asignado a revisar"), que no
 > estaba definida ni se inventó aquí.
+>
+> **Mismo patrón encontrado en otro controlador — 2026-07-27, sin
+> corregir.** Al escribir tests de A8 (`ARQUITECTURA.md`) se encontró que
+> `CobranzaSedesController::download()`, `show()` y `preview()` tienen
+> exactamente este problema: comprueban `puedeVerCobranzaSedes()` (rol) pero
+> no `$reporte->sede === $user->sede`. Un usuario de sede con el permiso
+> genérico podría leer el adjunto de depósito de otra sede cambiando el
+> `{reporte}` de la URL. No se tocó — misma decisión pendiente que el resto
+> de este hallazgo.
 
 `VoucherController::revisionFile()` comprueba permiso de rol, pero no relación
 con el recurso:

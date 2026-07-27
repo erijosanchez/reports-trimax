@@ -28,7 +28,7 @@ debería estar centralizada y está copiada a mano en decenas de sitios.
 | A5 | 75 validaciones inline vs 6 Form Requests | Media | Medio |
 | A6 | Pipeline Vite configurado pero inutilizado; 46 MB de assets en git | Media | Diferido a propósito 2026-07-27 |
 | A7 | 3 controladores muertos + `routes/auth.php` vacío importando 5 clases inexistentes | Baja | ✅ Resuelto 2026-07-27 |
-| A8 | Suite de tests solo cubre el scaffolding de Breeze | Media | Alto |
+| A8 | Suite de tests solo cubre el scaffolding de Breeze | Media | 🟡 Piloto 2026-07-27 |
 
 **Métricas base**
 
@@ -532,6 +532,47 @@ sobre las reglas de negocio que ya causaron incidentes:
 
 Ese último es el más valioso del documento: hace que la frontera de datos deje
 de depender de que nadie olvide una comprobación.
+
+> 🟡 **Piloto aplicado 2026-07-27** — los tres puntos exactos que nombra esta
+> sección, no cobertura general (sigue sin perseguirse un %).
+>
+> - **`tests/Unit/Models/ReporteCobranzaTest.php`** — `horaLimitePara()`,
+>   `esSedeLimite11()`, `normalizarSede()` y `calcularKpi()`. Cubre
+>   explícitamente el caso del bug real: `esSedeLimite11('HUÁNUCO')` (con
+>   tilde, como se guarda en la BD) debe dar `true` — antes de `9ea05b5` esa
+>   comparación fallaba porque `SEDES_LIMITE_11` no lleva tildes.
+> - **`tests/Feature/ReporteCobranzaRecalcularKpiTest.php`** — `recalcularKpi()`:
+>   sin envío → `no_enviado`; usa `fecha_envio_original` o
+>   `fecha_ultimo_envio` según `editado_tarde`; `revision_estado=rechazado`
+>   fuerza el KPI a 0; `conforme_observado` aplica la penalidad proporcional.
+>   Al escribirlo se encontró que `recalcularKpi()` corta a `kpi=0` /
+>   `no_enviado` si `fecha_ultimo_envio` es nula, **sin importar** si
+>   `fecha_envio_original` tiene valor — dos de los tests fallaron al
+>   principio por no setear ese campo, no por un bug del código. Quedó
+>   documentado en los propios tests (comentario en la línea que lo setea)
+>   para que no vuelva a sorprender.
+> - **`tests/Feature/CobranzaSedesFronteraDeSedeTest.php`** — el test que
+>   "convierte A1 en algo verificable", pero para un módulo **sin** `SedeScope`
+>   todavía: `CobranzaSedesController::historial()` sigue filtrando a mano
+>   (`$query->where('sede', $user->sede)`), y este test protege que ese
+>   filtro no se rompa sin que nadie lo note. Confirma que sede solo ve lo
+>   suyo y finanzas ve todo.
+>
+> **Hallazgo al escribir el tercero, no corregido:** `CobranzaSedesController::download()`,
+> `show()` y `preview()` comprueban `puedeVerCobranzaSedes()` (permiso de
+> rol) pero no `$reporte->sede === $user->sede` — mismo patrón que S8
+> (`SEGURIDAD.md`), en un controlador distinto al que ya se investigó ahí.
+> Un usuario de sede con el permiso genérico podría leer el adjunto de
+> depósito de otra sede cambiando el `{reporte}` de la URL. No se corrigió
+> en esta ronda — es una decisión de la misma familia que S8 (¿el permiso es
+> "ve su sede" o "ve todas"?), no un fix mecánico.
+>
+> Suite completa después de esto: 1 fallo (`Tests\Feature\ExampleTest`,
+> scaffolding genérico sin relación — ver A7), 49 pasan.
+>
+> **Sigue pendiente, sin tocar:** cobertura del flujo de revisión de
+> vouchers y de la sincronización con Google Sheets — A8 no se agotó, sigue
+> siendo trabajo abierto tal como aclara esta sección.
 
 ---
 
