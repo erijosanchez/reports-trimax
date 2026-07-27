@@ -25,9 +25,9 @@ y mecanismos de defensa construidos pero nunca activados.
 | # | Hallazgo | Severidad | Explotable hoy | Estado |
 |---|---|---|---|---|
 | S1 | Adjuntos financieros servidos sin autenticación | **Crítica** | Sí | ✅ Resuelto 2026-07-25 |
-| S2 | 49 vulnerabilidades en dependencias (2 críticas, 10 altas) | **Alta** | Parcial | Pendiente |
+| S2 | 49 vulnerabilidades en dependencias (2 críticas, 10 altas) | **Alta** | Parcial | ✅ Resuelto 2026-07-27 |
 | S3 | Ninguna cabecera de seguridad HTTP | **Alta** | Sí | ✅ Resuelto 2026-07-25 |
-| S4 | 2FA implementado pero nunca aplicado; 0 de 65 usuarios | **Alta** | — | Pendiente (decisión tomada: activar por rol) |
+| S4 | 2FA implementado pero nunca aplicado; 0 de 65 usuarios | **Alta** | — | ✅ Resuelto 2026-07-27 (activado por rol) |
 | S5 | Cookie de sesión sin flag `Secure` | Media | Al desplegar con HTTPS | Pendiente |
 | S6 | Inyección de HTML en correo de requerimientos | Media | Sí (usuario privilegiado) | ✅ Resuelto 2026-07-25 |
 | S7 | Política de contraseñas débil | Media | Sí | Pendiente |
@@ -116,6 +116,47 @@ y ya funciona.
 ---
 
 ## S2 · Dependencias vulnerables — Severidad alta
+
+> ✅ **Resuelto 2026-07-27.** `google/apiclient` estaba fijado a la versión
+> exacta `2.16` (sin caret) en `composer.json`, y esa versión exige
+> `firebase/php-jwt ~6.0` — un rango que cae **completo** dentro de la
+> advisory de baja severidad `PKSA-y2cr-5h3j-g3ys` (`<7.0.0`). Composer ya no
+> resuelve a una versión con advisory conocida por defecto, así que
+> `composer update` se negaba a correr. Se relajó el constraint a
+> `^2.16` (mismo criterio que el resto de dependencias del proyecto — no es
+> un downgrade de rigor, simplemente estaba innecesariamente fijado a un
+> patch exacto), lo que permitió a Composer subir a `google/apiclient
+> v2.19.4`, que ya pide `firebase/php-jwt ^7.0` (fuera de la advisory).
+>
+> Con ese único cambio de constraint, `composer update --with-all-dependencies`
+> corrió limpio y actualizó 60 paquetes dentro de sus majors ya declarados
+> (`laravel/framework` v12.40.1 → v12.64.0, `dompdf` v3.1.5 → v3.1.6,
+> `phpoffice/phpspreadsheet` 1.30.2 → 1.30.6, `guzzlehttp/guzzle` 7.10 →
+> 7.15.2, `symfony/mime` y el resto de symfony/* a sus últimos patch/minor,
+> etc.). `composer audit` después del update:
+> **"No security vulnerability advisories found."** — 49 → 0.
+>
+> Apareció una dependencia nueva no pedida directamente:
+> `laravel/sentinel v1.1.0`, requerida por `laravel/horizon v5.48.1`
+> (`composer why laravel/sentinel` lo confirma). Viene del repositorio
+> oficial `github.com/laravel/sentinel`, MIT, primera release 2026-03-24 —
+> se investigó porque el nombre no es de un paquete conocido, pero al venir
+> del propio org de Laravel como dependencia directa de Horizon no hay nada
+> irregular.
+>
+> **Validación manual (checklist de esta misma sección) antes de dar por
+> cerrado:**
+> - **Excel**: `AcuerdosComercialesExport` generado con `Excel::store()` —
+>   archivo válido de 86 KB, sin excepciones.
+> - **PDF**: `Pdf::loadView('rrhh.requerimientos.pdf', ...)` con un
+>   requerimiento real — PDF válido generado, sin excepciones.
+> - **Correo**: `RequerimientoEstadoActualizado` con `Notification::fake()`,
+>   `toMail()->render()` — HTML de ~13 KB renderizado sin excepciones, mismo
+>   pipeline que usan `symfony/mailer`/`symfony/mime` recién actualizados.
+>
+> Se corrió la suite completa después: mismos resultados que antes del
+> update (los tests propios en verde, las fallas de `Auth/*`/`ProfileTest`
+> son las mismas de siempre, sin relación — ver A7).
 
 ### Qué pasa
 
@@ -252,6 +293,32 @@ consecuencia de esa deuda, y se resuelve cuando el JS salga de Blade.
 ---
 
 ## S4 · 2FA construido pero nunca activado — Severidad alta
+
+> ✅ **Resuelto 2026-07-27 — activado por rol** (decisión tomada: solo
+> `super_admin`, `admin` y `finanzas`, quienes aprueban movimientos de
+> dinero). `TwoFactorVerifiedMiddleware` ahora exige 2FA únicamente a esos
+> tres roles:
+>
+> ```php
+> private function requiere2fa($user): bool
+> {
+>     return $user->isSuperAdmin() || $user->isAdmin() || $user->isFinanzas();
+> }
+> ```
+>
+> Si el usuario de esos roles no tiene 2FA habilitado (`two_factor_confirmed_at`
+> nulo), se le redirige a `/2fa/setup` (alta obligatoria) en vez de dejarlo
+> pasar — antes la falta de este paso era exactamente el hueco: la
+> funcionalidad existía pero nunca forzaba el alta. Si ya lo tiene habilitado
+> pero no verificó la sesión actual, va a `/2fa/verify`. El resto de roles no
+> se ve afectado. Se agregó `2fa.verified` al grupo principal de rutas
+> autenticadas (`routes/web.php:76`); las rutas `/2fa/*` quedan fuera de ese
+> grupo para no generar un loop de redirecciones.
+>
+> Cubierto con `tests/Feature/TwoFactorEnforcementTest.php` (7 casos): los
+> tres roles obligados sin 2FA van a `setup`, con 2FA sin verificar en sesión
+> van a `verify`, con sesión verificada pasan, un rol no obligado (`sede`)
+> pasa sin 2FA, y no hay loop al acceder a `/2fa/setup` directamente.
 
 ### Qué pasa
 

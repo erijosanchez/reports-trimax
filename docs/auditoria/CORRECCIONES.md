@@ -28,6 +28,16 @@
 > [I4](INFRAESTRUCTURA.md#i4--deriva-de-migraciones--severidad-alta--activo).
 > La advertencia de "no corras migrate" del `README.md` ya no aplica.
 
+> ✅ **2026-07-27 — Ronda 2 completa: S2 y S4 resueltos.** `composer update
+> --with-all-dependencies` corrido tras destrabar un constraint innecesariamente
+> fijado (`google/apiclient`); `composer audit` pasó de 49 advisories a
+> **0**. Validado a mano: exportación Excel, generación de PDF y envío de
+> correo (`Notification::fake()` + render) sin excepciones. 2FA activado por
+> rol para `super_admin`/`admin`/`finanzas`, con alta obligatoria si no lo
+> tienen configurado, cubierto con 7 tests de regresión. Detalle completo en
+> [S2](SEGURIDAD.md#s2--dependencias-vulnerables--severidad-alta) y
+> [S4](SEGURIDAD.md#s4--2fa-construido-pero-nunca-activado--severidad-alta).
+
 Todas las correcciones detectadas, **ordenadas de mayor a menor prioridad**, con
 el documento del que proviene cada una. El detalle técnico, el porqué y el
 código de cada corrección están en su documento de origen — aquí solo está la
@@ -96,11 +106,11 @@ tocar el mismo archivo. Detalle de cada cambio en `SEGURIDAD.md` e
 | # | Corrección | Origen | ID | Severidad | Esfuerzo |
 |---|---|---|---|---|---|
 | 1 | ✅ Mover los adjuntos de vouchers y desbloqueos al disco `local` y migrar los ya subidos — hoy nginx los sirve sin autenticación | 🔒 Seguridad | [S1](SEGURIDAD.md#s1--adjuntos-financieros-servidos-sin-autenticación--severidad-crítica) | **Crítica** | ~2 h |
-| 2 | `composer update`: 49 vulnerabilidades en 17 paquetes (2 críticas, 10 altas) | 🔒 Seguridad | [S2](SEGURIDAD.md#s2--dependencias-vulnerables--severidad-alta) | Alta | ~3 h |
+| 2 | ✅ `composer update`: 49 vulnerabilidades en 17 paquetes (2 críticas, 10 altas) | 🔒 Seguridad | [S2](SEGURIDAD.md#s2--dependencias-vulnerables--severidad-alta) | Alta | ~3 h |
 | 3 | Despublicar Redis y poner phpMyAdmin y Redis Commander tras perfil — hoy phpMyAdmin entra como root sin pedir credenciales | ⚙️ Infra | [I3](INFRAESTRUCTURA.md#i3--servicios-de-datos-expuestos--severidad-alta) | Alta | ~1 h |
 | 4 | ✅ Middleware de cabeceras de seguridad (`X-Frame-Options`, `nosniff`, `Referrer-Policy`) | 🔒 Seguridad | [S3](SEGURIDAD.md#s3--sin-cabeceras-de-seguridad-http--severidad-alta) | Alta | ~30 min |
 | 5 | Sacar las credenciales literales del `docker-compose.yml` a `env_file` | ⚙️ Infra | [I2](INFRAESTRUCTURA.md#i2--credenciales-literales-en-el-compose--severidad-alta) | Alta | ~1 h |
-| 6 | Decidir sobre el 2FA: activarlo por rol o retirarlo — está construido, nunca aplicado, 0 de 65 usuarios | 🔒 Seguridad | [S4](SEGURIDAD.md#s4--2fa-construido-pero-nunca-activado--severidad-alta) | Alta | Decisión + ~4 h |
+| 6 | ✅ Decidir sobre el 2FA: activarlo por rol o retirarlo — está construido, nunca aplicado, 0 de 65 usuarios | 🔒 Seguridad | [S4](SEGURIDAD.md#s4--2fa-construido-pero-nunca-activado--severidad-alta) | Alta | Decisión + ~4 h |
 | 7 | Centralizar la frontera de datos por sede en un Global Scope + Gates — hoy son 212 comprobaciones a mano | 🏗️ Arquitectura | [A1](ARQUITECTURA.md#a1--autorización-dispersa--severidad-alta) | Alta | Medio |
 | 8 | ✅ `CACHE_STORE=redis`: la clave `CACHE_DRIVER` es de Laravel 10 y se ignora, así que la caché escribe en MySQL | ⚙️ Infra | [I1](INFRAESTRUCTURA.md#i1--la-caché-va-a-mysql-no-a-redis--severidad-alta--activo) | Alta | Minutos |
 | 9 | ✅ Sincronizar el registro de `migrations` con el esquema real — `php artisan migrate` hoy fallaría | ⚙️ Infra | [I4](INFRAESTRUCTURA.md#i4--deriva-de-migraciones--severidad-alta--activo) | Alta | Minutos |
@@ -190,5 +200,6 @@ también el documento de origen.
 |---|---|---|---|
 | Principal | 1, 4, 8, 9, 12, 17 | ✅ Resuelto | 2026-07-25 |
 | Principal | S9, S10 (no numeradas, ver recuadro arriba) | ✅ Resuelto | 2026-07-27 |
-| Principal | 2, 3, 5, 6, 7, 10, 11, 13–16, 18–26 | Pendiente | — |
+| Principal | 2 (S2), 6 (S4) | ✅ Resuelto | 2026-07-27 |
+| Principal | 3, 5, 7, 10, 11, 13–16, 18–26 | Pendiente | — |
 | Frontend | F-1–F-8 | Pendiente | — |

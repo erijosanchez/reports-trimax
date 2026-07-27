@@ -73,7 +73,7 @@ Route::middleware('auth:web')->prefix('ai')->group(function () {
 });
 
 // Protected Routes (Auth + Track + Prevent Back)
-Route::middleware(['auth', 'throttle:dashboard', 'track.activity', 'prevent.back'])->group(function () {
+Route::middleware(['auth', '2fa.verified', 'throttle:dashboard', 'track.activity', 'prevent.back'])->group(function () {
 
     // Home
     Route::get('/home', [HomeController::class, 'index'])->name('home');
