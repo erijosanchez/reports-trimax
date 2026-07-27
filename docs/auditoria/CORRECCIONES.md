@@ -107,7 +107,7 @@ tocar el mismo archivo. Detalle de cada cambio en `SEGURIDAD.md` e
 |---|---|---|---|---|---|
 | 1 | ✅ Mover los adjuntos de vouchers y desbloqueos al disco `local` y migrar los ya subidos — hoy nginx los sirve sin autenticación | 🔒 Seguridad | [S1](SEGURIDAD.md#s1--adjuntos-financieros-servidos-sin-autenticación--severidad-crítica) | **Crítica** | ~2 h |
 | 2 | ✅ `composer update`: 49 vulnerabilidades en 17 paquetes (2 críticas, 10 altas) | 🔒 Seguridad | [S2](SEGURIDAD.md#s2--dependencias-vulnerables--severidad-alta) | Alta | ~3 h |
-| 3 | Despublicar Redis y poner phpMyAdmin y Redis Commander tras perfil — hoy phpMyAdmin entra como root sin pedir credenciales | ⚙️ Infra | [I3](INFRAESTRUCTURA.md#i3--servicios-de-datos-expuestos--severidad-alta) | Alta | ~1 h |
+| 3 | ✅ Despublicar Redis y poner phpMyAdmin y Redis Commander tras perfil — hoy phpMyAdmin entra como root sin pedir credenciales | ⚙️ Infra | [I3](INFRAESTRUCTURA.md#i3--servicios-de-datos-expuestos--severidad-alta) | Alta | ~1 h |
 | 4 | ✅ Middleware de cabeceras de seguridad (`X-Frame-Options`, `nosniff`, `Referrer-Policy`) | 🔒 Seguridad | [S3](SEGURIDAD.md#s3--sin-cabeceras-de-seguridad-http--severidad-alta) | Alta | ~30 min |
 | 5 | Sacar las credenciales literales del `docker-compose.yml` a `env_file` | ⚙️ Infra | [I2](INFRAESTRUCTURA.md#i2--credenciales-literales-en-el-compose--severidad-alta) | Alta | ~1 h |
 | 6 | ✅ Decidir sobre el 2FA: activarlo por rol o retirarlo — está construido, nunca aplicado, 0 de 65 usuarios | 🔒 Seguridad | [S4](SEGURIDAD.md#s4--2fa-construido-pero-nunca-activado--severidad-alta) | Alta | Decisión + ~4 h |
@@ -201,5 +201,6 @@ también el documento de origen.
 | Principal | 1, 4, 8, 9, 12, 17 | ✅ Resuelto | 2026-07-25 |
 | Principal | S9, S10 (no numeradas, ver recuadro arriba) | ✅ Resuelto | 2026-07-27 |
 | Principal | 2 (S2), 6 (S4) | ✅ Resuelto | 2026-07-27 |
-| Principal | 3, 5, 7, 10, 11, 13–16, 18–26 | Pendiente | — |
+| Principal | 3 (I3) | ✅ Resuelto | 2026-07-27 |
+| Principal | 5, 7, 10, 11, 13–16, 18–26 | Pendiente | — |
 | Frontend | F-1–F-8 | Pendiente | — |

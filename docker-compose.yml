@@ -65,15 +65,15 @@ services:
     image: redis:7-alpine
     container_name: trimax_redis
     restart: unless-stopped
-    ports:
-      - "6379:6379"
+    # Sin publicar: solo accesible dentro de trimax-network ("redis:6379").
+    # Para depurar desde el host: docker exec -it trimax_redis redis-cli -a "$REDIS_PASSWORD"
     volumes:
       - redis_data:/data
-    command: redis-server --appendonly yes
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
     networks:
       - trimax-network
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "--no-auth-warning", "ping"]
       interval: 10s
       timeout: 3s
       retries: 3
@@ -114,31 +114,34 @@ services:
       - redis
       - app
 
-  # phpMyAdmin (Opcional)
+  # phpMyAdmin (Opcional) — no arranca con "docker compose up -d" a secas.
+  # Usar: docker compose --profile tools up -d
   phpmyadmin:
     image: phpmyadmin:latest
     container_name: trimax_phpmyadmin
     restart: unless-stopped
+    profiles: ["tools"]
     ports:
       - "8090:80"
     environment:
       PMA_HOST: mysql
-      PMA_USER: root
-      PMA_PASSWORD: root
+      # Sin PMA_USER/PMA_PASSWORD: pide credenciales, ya no entra como root
+      # sin login.
     networks:
       - trimax-network
     depends_on:
       - mysql
 
-  # Redis Commander (Opcional)
+  # Redis Commander (Opcional) — mismo profile que phpMyAdmin.
   redis-commander:
     image: rediscommander/redis-commander:latest
     container_name: trimax_redis_commander
     restart: unless-stopped
+    profiles: ["tools"]
     ports:
       - "8081:8081"
     environment:
-      REDIS_HOSTS: local:redis:6379
+      REDIS_HOSTS: local:redis:6379:0:${REDIS_PASSWORD}
     networks:
       - trimax-network
     depends_on:

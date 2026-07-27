@@ -23,7 +23,7 @@ excepción es I1, que es un bug real degradando rendimiento ahora mismo.
 |---|---|---|---|
 | I1 | `CACHE_DRIVER` obsoleto: la caché va a MySQL, no a Redis | **Alta** | ✅ Resuelto 2026-07-25 |
 | I2 | Credenciales literales en `docker-compose.yml` | **Alta** | Riesgo de despliegue |
-| I3 | Redis, phpMyAdmin y Redis Commander expuestos sin protección | **Alta** | Riesgo de despliegue |
+| I3 | Redis, phpMyAdmin y Redis Commander expuestos sin protección | **Alta** | ✅ Resuelto 2026-07-27 |
 | I4 | Deriva entre el registro de migraciones y el esquema real | **Alta** | ✅ Resuelto 2026-07-25 |
 | I5 | `horizon` y `scheduler` reconstruyen la imagen: 2.5 GB duplicados | Media | ✅ Resuelto 2026-07-25 |
 | I6 | `Dockerfile` sin `composer install`; imagen no autónoma | Media | Activo |
@@ -149,6 +149,25 @@ cambiarse.
 ---
 
 ## I3 · Servicios de datos expuestos — Severidad alta
+
+> ✅ **Resuelto 2026-07-27.** `redis` ya no publica puerto al host (solo
+> accesible dentro de `trimax-network` vía `redis:6379`) y corre con
+> `--requirepass` usando un `REDIS_PASSWORD` nuevo generado y puesto en
+> `.env` (antes `null`). `phpmyadmin` y `redis-commander` pasaron a
+> `profiles: ["tools"]` — ya no arrancan con `docker compose up -d`, hace
+> falta `docker compose --profile tools up -d` a propósito. Se quitaron
+> `PMA_USER`/`PMA_PASSWORD` del compose: phpMyAdmin ahora pide credenciales
+> reales en vez de entrar como root sin login (verificado: el formulario de
+> login aparece). `redis-commander` se actualizó a
+> `REDIS_HOSTS: local:redis:6379:0:${REDIS_PASSWORD}` para poder seguir
+> conectando con el password nuevo (verificado en logs: conexión exitosa).
+>
+> Al reiniciar `redis` con el nuevo `requirepass`, Horizon perdió la conexión
+> vieja (`horizon:status` marcó "inactivo") — no se reconecta solo, hubo que
+> `docker compose restart horizon scheduler` para que tomaran el `.env`
+> nuevo. Volvió a quedar "Horizon is running" sin perder jobs (cola en Redis
+> con persistencia AOF, no se vació). Suite de tests y `/login`, `/up`
+> verificados después: mismo resultado de siempre.
 
 ### Qué pasa
 
