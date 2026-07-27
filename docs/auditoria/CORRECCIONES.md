@@ -140,7 +140,7 @@ tocar el mismo archivo. Detalle de cada cambio en `SEGURIDAD.md` e
 |---|---|---|---|---|---|
 | 24 | ✅ Borrar 3 controladores muertos y `routes/auth.php` (vacío, importa 5 clases inexistentes) | 🏗️ Arquitectura | [A7](ARQUITECTURA.md#a7--código-huérfano-y-scaffolding-roto--severidad-baja) | Baja | ~30 min |
 | 25 | ✅ Quitar nginx y supervisor del `Dockerfile` — se instalan y nunca se usan | ⚙️ Infra | [I9](INFRAESTRUCTURA.md#i9--peso-muerto-en-la-imagen--severidad-baja) | Baja | Minutos |
-| 26 | Límites de memoria y CPU por contenedor | ⚙️ Infra | [I10](INFRAESTRUCTURA.md#i10--sin-límites-de-recursos--severidad-baja) | Baja | ~30 min |
+| 26 | ✅ Límites de memoria y CPU por contenedor | ⚙️ Infra | [I10](INFRAESTRUCTURA.md#i10--sin-límites-de-recursos--severidad-baja) | Baja | ~30 min |
 
 ---
 
@@ -208,6 +208,6 @@ también el documento de origen.
 | Principal | 13 (S5), 14 (I8), 15 (S7) | ✅ Resuelto | 2026-07-27 |
 | Principal | 16 (S8) | 🟡 Parcial (efecto lateral de #7) | 2026-07-27 |
 | Principal | 22 (A6) | 🔴 Diferido a propósito (decisión de producto) | 2026-07-27 |
-| Principal | 18 (I7), 19 (I6), 24 (A7), 25 (I9) | ✅ Resuelto | 2026-07-27 |
-| Principal | 20, 21, 23, 26 | Pendiente | — |
+| Principal | 18 (I7), 19 (I6), 24 (A7), 25 (I9), 26 (I10) | ✅ Resuelto | 2026-07-27 |
+| Principal | 20, 21, 23 | Pendiente | — |
 | Frontend | F-1–F-8 | Pendiente | — |

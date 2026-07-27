@@ -30,7 +30,7 @@ excepción es I1, que es un bug real degradando rendimiento ahora mismo.
 | I7 | Sin `healthcheck` en app, nginx, horizon ni scheduler | Media | ✅ Resuelto 2026-07-27 |
 | I8 | `APP_DEBUG=true` / `APP_ENV=local` | Media | ✅ Resuelto 2026-07-27 |
 | I9 | `Dockerfile` instala nginx y supervisor que nunca se usan | Baja | ✅ Resuelto 2026-07-27 |
-| I10 | Sin límites de recursos por contenedor | Baja | Riesgo de despliegue |
+| I10 | Sin límites de recursos por contenedor | Baja | ✅ Resuelto 2026-07-27 |
 
 ---
 
@@ -564,6 +564,26 @@ nada, ya que PHP-FPM escribe a stdout.
 ---
 
 ## I10 · Sin límites de recursos — Severidad baja
+
+> ✅ **Resuelto 2026-07-27.** `deploy.resources.limits` agregado a los 8
+> servicios, dimensionado según el uso real de cada uno (no un valor único
+> copiado a todos): `app`/`mysql` 2G/2cpu (workers PHP dinámicos y datos
+> reales respectivamente), `horizon` 1G/1cpu (`config/horizon.php` limita a
+> 3 procesos en `local`), `redis` 512M/1cpu, `scheduler`/`nginx`/`phpmyadmin`/
+> `redis-commander` 256-512M/0.5cpu (procesos ligeros u ocasionales).
+>
+> `docker compose config -q` validó la sintaxis antes de aplicar.
+> `docker compose up -d` recreó todos los contenedores (incluidos `mysql` y
+> `redis`, porque el límite de recursos es parte de su configuración
+> también) — verificado sin pérdida de datos (65 usuarios intactos tras el
+> restart) y los 5 servicios con healthcheck volvieron a `healthy`.
+> Confirmado con `docker inspect` que el límite quedó realmente aplicado a
+> nivel de Docker (`HostConfig.Memory`/`NanoCpus`), no solo declarado en el
+> YAML.
+>
+> Como ya aclaraba esta sección: es contención, no solución — la causa real
+> de que una consulta pueda intentar consumir mucha RAM sigue siendo A2
+> (piloteado, no cerrado del todo esta sesión).
 
 Ningún servicio declara `deploy.resources.limits`. Con `memory_limit = 1024M`
 en PHP (ver ARQUITECTURA.md, A2) y varios workers de Horizon, una consulta sin
