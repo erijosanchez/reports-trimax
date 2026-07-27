@@ -32,8 +32,8 @@ y mecanismos de defensa construidos pero nunca activados.
 | S6 | Inyección de HTML en correo de requerimientos | Media | Sí (usuario privilegiado) | ✅ Resuelto 2026-07-25 |
 | S7 | Política de contraseñas débil | Media | Sí | Pendiente |
 | S8 | Descarga de adjuntos sin verificar propiedad | Media | Sí | Pendiente |
-| S9 | `Blade::setEchoFormat('%s')` desactiva el auto-escape de `{{ }}` en toda la app | **Crítica** | Sí | Pendiente — descubierto 2026-07-25 al escribir tests para S6 |
-| S10 | `VoucherController::servirArchivo()` y `getFacturas()` sin ningún control de permiso | Alta | Sí | Pendiente — descubierto 2026-07-25 en revisión de S1 |
+| S9 | `Blade::setEchoFormat('%s')` desactiva el auto-escape de `{{ }}` en toda la app | **Crítica** | Sí | ✅ Resuelto 2026-07-27 |
+| S10 | `VoucherController::servirArchivo()` y `getFacturas()` sin ningún control de permiso | Alta | Sí | ✅ Resuelto 2026-07-27 |
 
 ---
 
@@ -435,6 +435,28 @@ aplicaría el filtro también a este `findOrFail`.
 
 ## S9 · Blade no escapa nada — Severidad crítica
 
+> ✅ **Resuelto 2026-07-27.** Antes de quitar la línea se auditó el codebase
+> buscando usos que dependieran a propósito de este comportamiento para
+> imprimir HTML: sin editores WYSIWYG ni columnas de HTML enriquecido en la
+> base, sin PHP que arme strings HTML para pasarlos a una vista, sin bloques
+> `@php` dentro de Blade que construyan HTML. Los `{{ }}` dentro de
+> `<script>` (rutas, `csrf_token()`, `Auth::id()`, `auth()->user()->sede`)
+> solo llevan datos escalares sin caracteres especiales — no se rompen con el
+> escape por defecto.
+>
+> Se eliminó `Blade::setEchoFormat('%s')` de `AppServiceProvider.php:33`, se
+> limpió la caché de vistas compiladas (`view:clear`) y se compilaron las 108
+> vistas de una sola vez con `view:cache` para confirmar que ninguna tiene un
+> error de sintaxis — 0 errores. `RequerimientoEstadoEmailEscapingTest` (el
+> test que documentó este hallazgo) pasa ahora en verde. `/login` y `/up`
+> siguen respondiendo 200 sin nada en los logs.
+>
+> Con esto los `{!! !!}` explícitos vuelven a ser la única forma de imprimir
+> HTML sin escapar en la app — que es como se supone que debe funcionar
+> Blade. Reemplaza la fila "XSS en vistas" de
+> [Verificado y correcto](#verificado-y-correcto): ya es cierto que solo 3
+> salidas (ahora ninguna, con S6 también resuelto) usan `{!! !!}`.
+
 > **Descubierto 2026-07-25** al escribir un test de regresión para S6
 > (`tests/Unit/Emails/RequerimientoEstadoEmailEscapingTest.php`). El test
 > falló pese a que el código fuente ya usa `{{ $extra }}` — la investigación
@@ -489,12 +511,23 @@ línea siga activa** — quedó demostrado con el test que falla en
    ver ARQUITECTURA.md A6) tras el cambio.
 
 Dado el alcance (toca las 108 vistas a la vez, cambia el comportamiento de
-seguridad de renderizado en todo el sistema), **no se aplicó en esta sesión**
-— requiere su propia ronda de verificación antes de tocar producción.
+seguridad de renderizado en todo el sistema), se auditó primero y se aplicó
+después de confirmar que ningún lugar dependía a propósito del bug — ver el
+recuadro de arriba.
 
 ---
 
 ## S10 · `VoucherController` sin control de permiso en dos endpoints — Severidad alta
+
+> ✅ **Resuelto 2026-07-27.** Agregado `if (!auth()->user()->puedeVerVouchers())
+> { abort(403); }` en `servirArchivo()` (antes del `Voucher::findOrFail()`) y
+> el equivalente en JSON en `getFacturas()`, igual patrón que ya usan
+> `revisionFile()`, `revisar()` y `destroy()` en el mismo archivo. Cubierto
+> con 2 tests de regresión nuevos en `VoucherAttachmentDiskTest.php`: un
+> usuario sin rol relevante (`consultor`, sin `puede_ver_vouchers`) recibe 403
+> tanto al intentar descargar el archivo de otro como al pedir sus facturas.
+> No cierra la frontera por sede (sigue siendo S8/A1) — solo cierra el acceso
+> a usuarios sin ningún permiso sobre vouchers.
 
 > **Descubierto 2026-07-25** en la revisión de los cambios de S1.
 
@@ -581,7 +614,7 @@ seguridad sin esta sección invita a asumir lo peor de lo que no menciona:
 | **Rate limiting** | `throttle:login` en el POST de login, `throttle:dashboard` en el grupo autenticado, `throttle:uploads` en subidas. |
 | **Secretos en el repositorio** | `.env` en `.gitignore` y no rastreado. Sin claves, certificados ni credenciales versionados. (Las del `docker-compose.yml` sí: INFRAESTRUCTURA.md, I2.) |
 | **Hash de contraseñas** | `Hash::make` / bcrypt. Sin hashes propios ni MD5/SHA1. |
-| **XSS en vistas** | ⚠️ **Esta fila era incorrecta.** Se basaba en contar usos de `{!! !!}`, pero `{{ }}` tampoco escapa en esta app — ver [S9](#s9--blade-no-escapa-nada-severidad-crítica). El hallazgo real de "3 salidas sin escapar" queda invalidado: el universo real es mucho mayor. |
+| **XSS en vistas** | Era incorrecta hasta el 2026-07-27: se basaba en contar `{!! !!}` sin saber que `{{ }}` tampoco escapaba (ver [S9](#s9--blade-no-escapa-nada--severidad-crítica), ya resuelto). Ahora sí es cierta: 108 vistas auditadas, sin editores WYSIWYG ni HTML construido a mano, `{{ }}` vuelve a escapar por defecto y los únicos `{!! !!}` que quedan (`$alertText` con textos fijos, `json_encode($responsableMap)`) ya estaban verificados como seguros. |
 | **Validación de subidas** | Todas las rutas de subida declaran `mimes:` y `max:`. Nombres reescritos a UUID, sin usar el nombre original en disco. |
 | **Cifrado de sesión** | `SESSION_ENCRYPT=true`, `http_only`, `same_site=lax`. |
 | **Bloqueo por IP** | `CheckIpBlacklistMiddleware` global en web y api; registro de intentos fallidos con motivo y usuario. |

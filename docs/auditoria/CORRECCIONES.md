@@ -12,8 +12,14 @@
 > documento) — y
 > **[S10](SEGURIDAD.md#s10--vouchercontroller-sin-control-de-permiso-en-dos-endpoints--severidad-alta)**
 > — `VoucherController::servirArchivo()`/`getFacturas()` sin ningún chequeo de
-> permiso (alta). Ninguno de los dos está corregido todavía; ambos quedan
-> pendientes de decisión.
+> permiso (alta).
+>
+> ✅ **Ambos resueltos 2026-07-27** (ver detalle en cada sección de
+> SEGURIDAD.md). S9: se auditaron las 108 vistas antes de quitar el override
+> — sin editores WYSIWYG, sin HTML armado a mano en PHP ni en Blade — y se
+> confirmó que ninguna dependía a propósito del bug. S10: agregado el mismo
+> chequeo `puedeVerVouchers()` que ya usan `revisionFile()`/`revisar()`, con 2
+> tests de regresión nuevos.
 
 > **2026-07-27 — I4 cerrado del todo.** Se generaron migraciones para las 28
 > tablas que llegaron con el backup sin ninguna migración de creación, y se
@@ -183,5 +189,6 @@ también el documento de origen.
 | Lista | Correcciones | Estado | Fecha |
 |---|---|---|---|
 | Principal | 1, 4, 8, 9, 12, 17 | ✅ Resuelto | 2026-07-25 |
+| Principal | S9, S10 (no numeradas, ver recuadro arriba) | ✅ Resuelto | 2026-07-27 |
 | Principal | 2, 3, 5, 6, 7, 10, 11, 13–16, 18–26 | Pendiente | — |
 | Frontend | F-1–F-8 | Pendiente | — |

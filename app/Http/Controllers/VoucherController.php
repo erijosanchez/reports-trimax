@@ -278,8 +278,13 @@ class VoucherController extends Controller
 
     public function getFacturas($id)
     {
+        $user = auth()->user();
+
+        if (!$user->puedeVerVouchers()) {
+            return response()->json(['error' => 'Sin permiso.'], 403);
+        }
+
         $voucher = Voucher::with(['facturas', 'revisor'])->findOrFail($id);
-        $user    = auth()->user();
 
         return response()->json([
             'id'       => $voucher->id,
@@ -323,6 +328,10 @@ class VoucherController extends Controller
 
     public function servirArchivo($id, $index)
     {
+        if (!auth()->user()->puedeVerVouchers()) {
+            abort(403);
+        }
+
         $voucher  = Voucher::findOrFail($id);
         $archivos = $voucher->archivos ?? [];
 
