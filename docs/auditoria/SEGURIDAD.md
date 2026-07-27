@@ -28,7 +28,7 @@ y mecanismos de defensa construidos pero nunca activados.
 | S2 | 49 vulnerabilidades en dependencias (2 críticas, 10 altas) | **Alta** | Parcial | ✅ Resuelto 2026-07-27 |
 | S3 | Ninguna cabecera de seguridad HTTP | **Alta** | Sí | ✅ Resuelto 2026-07-25 |
 | S4 | 2FA implementado pero nunca aplicado; 0 de 65 usuarios | **Alta** | — | ✅ Resuelto 2026-07-27 (activado por rol) |
-| S5 | Cookie de sesión sin flag `Secure` | Media | Al desplegar con HTTPS | Pendiente |
+| S5 | Cookie de sesión sin flag `Secure` | Media | Al desplegar con HTTPS | ✅ Resuelto 2026-07-27 |
 | S6 | Inyección de HTML en correo de requerimientos | Media | Sí (usuario privilegiado) | ✅ Resuelto 2026-07-25 |
 | S7 | Política de contraseñas débil | Media | Sí | Pendiente |
 | S8 | Descarga de adjuntos sin verificar propiedad | Media | Sí | 🟡 Parcial 2026-07-27 (ver nota) |
@@ -374,6 +374,14 @@ Lo que no conviene es dejarlo como está.
 ---
 
 ## S5 · Cookie de sesión sin flag `Secure` — Severidad media
+
+> ✅ **Resuelto 2026-07-27.** `SESSION_SECURE_COOKIE=false` explícito en
+> `.env` (antes indefinida) — esta máquina sirve por HTTP, así que `true`
+> aquí rompería la sesión. Documentado en `docs/DEPLOYMENT.md` como parte
+> del checklist de despliegue (junto con I8): pasar a `true` únicamente en
+> el entorno que ya sirva por HTTPS. Agregado también a `.env.example` con
+> el mismo comentario. Verificado con `curl -sI`: la cookie sigue sin
+> `Secure` en local, como corresponde.
 
 `SESSION_SECURE_COOKIE` no está definida en `.env`, así que `config/session.php:172`
 resuelve a `null` y la cookie viaja sin el flag:

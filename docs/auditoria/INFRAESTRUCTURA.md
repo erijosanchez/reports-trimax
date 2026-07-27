@@ -28,7 +28,7 @@ excepción es I1, que es un bug real degradando rendimiento ahora mismo.
 | I5 | `horizon` y `scheduler` reconstruyen la imagen: 2.5 GB duplicados | Media | ✅ Resuelto 2026-07-25 |
 | I6 | `Dockerfile` sin `composer install`; imagen no autónoma | Media | Activo |
 | I7 | Sin `healthcheck` en app, nginx, horizon ni scheduler | Media | Activo |
-| I8 | `APP_DEBUG=true` / `APP_ENV=local` | Media | Riesgo de despliegue |
+| I8 | `APP_DEBUG=true` / `APP_ENV=local` | Media | ✅ Resuelto 2026-07-27 |
 | I9 | `Dockerfile` instala nginx y supervisor que nunca se usan | Baja | Activo |
 | I10 | Sin límites de recursos por contenedor | Baja | Riesgo de despliegue |
 
@@ -464,6 +464,16 @@ el arranque en frío deja de ser una carrera.
 ---
 
 ## I8 · Configuración de entorno — Severidad media
+
+> ✅ **Resuelto 2026-07-27.** Creado `docs/DEPLOYMENT.md`: checklist de
+> despliegue con las variables que deben cambiar en producción
+> (`APP_ENV`, `APP_DEBUG`, `APP_URL`, `LOG_LEVEL`, `SESSION_SECURE_COOKIE` —
+> S5 —, credenciales de `DB_PASSWORD`/`MYSQL_ROOT_PASSWORD`/`REDIS_PASSWORD`),
+> los tres `artisan *:cache` a correr antes de servir tráfico, la nota de
+> que `migrate --force` ya es seguro (I4), consideraciones de puertos/Docker
+> (I2/I3), y de dónde sale la credencial de Google Sheets (Service Account
+> de Google Cloud del proyecto de Trimax — no hay más detalle que documentar
+> desde este repo, hay que pedirla a quien administra esa cuenta).
 
 ```ini
 APP_ENV=local
