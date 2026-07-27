@@ -196,4 +196,24 @@ class UserController extends Controller
 
         return back()->with('success', "Usuario {$userName} eliminado exitosamente.");
     }
+
+    /**
+     * Reinicia el 2FA de un usuario bloqueado (perdió el teléfono y se
+     * quedó sin códigos de recuperación). Sin esto no había ninguna forma
+     * de recuperar el acceso salvo un UPDATE directo en la base.
+     */
+    public function resetTwoFactor($id)
+    {
+        $user = User::findOrFail($id);
+
+        $user->update([
+            'two_factor_secret'         => null,
+            'two_factor_confirmed_at'   => null,
+            'two_factor_recovery_codes' => null,
+        ]);
+
+        ActivityLogService::log(Auth::id(), 'admin_reset_2fa', 'User', $user->id, "Reinició el 2FA de {$user->name} ({$user->email})");
+
+        return back()->with('success', "2FA de {$user->name} reiniciado. Deberá configurarlo de nuevo en su próximo ingreso.");
+    }
 }

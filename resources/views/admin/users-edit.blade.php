@@ -791,6 +791,33 @@
                                     </div>
                                 </div>
 
+                                @if ($user->hasTwoFactorEnabled() && $user->id !== auth()->id())
+                                    <div class="grid-margin col-lg-12 stretch-card">
+                                        <div class="card">
+                                            <div class="card-body">
+                                                <h5 class="mb-3">
+                                                    <i class="me-2 mdi-shield-key-outline mdi"></i>
+                                                    Seguridad
+                                                </h5>
+                                                <p class="mb-3 text-muted small">
+                                                    Este usuario tiene 2FA habilitado. Si perdió el acceso a su
+                                                    app de autenticación y también agotó sus códigos de
+                                                    recuperación, puedes reiniciarlo aquí. Deberá configurarlo
+                                                    de nuevo en su próximo ingreso.
+                                                </p>
+                                                <form method="POST"
+                                                    action="{{ route('admin.users.reset-2fa', $user->id) }}">
+                                                    @csrf
+                                                    <button type="submit" class="w-100 btn btn-outline-warning"
+                                                        onclick="return confirm('¿Reiniciar el 2FA de {{ $user->name }}?\n\nDeberá configurarlo de nuevo en su próximo ingreso.')">
+                                                        <i class="me-1 mdi mdi-shield-refresh-outline"></i>Resetear 2FA
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endif
+
                                 <div class="grid-margin col-lg-12 stretch-card">
                                     @if (auth()->user()->isSuperAdmin() &&
                                             $user->id !== auth()->id() &&

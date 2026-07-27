@@ -59,6 +59,7 @@ Route::post('/logout', [LoginController::class, 'logout'])
 Route::middleware(['auth'])->prefix('2fa')->name('2fa.')->group(function () {
     Route::get('/setup', [TwoFactorController::class, 'show'])->name('setup');
     Route::post('/enable', [TwoFactorController::class, 'enable'])->name('enable');
+    Route::get('/recovery-codes', [TwoFactorController::class, 'recoveryCodes'])->name('recovery-codes');
     Route::get('/verify', [TwoFactorController::class, 'show'])->name('verify');
     Route::post('/verify', [TwoFactorController::class, 'verify']);
     Route::post('/disable', [TwoFactorController::class, 'disable'])->name('disable');
@@ -440,6 +441,7 @@ Route::middleware(['auth', '2fa.verified', 'throttle:dashboard', 'track.activity
         Route::get('/users/{id}/edit', [UserController::class, 'edit'])->name('users.edit');
         Route::put('/users/{id}', [UserController::class, 'update'])->name('users.update');
         Route::delete('/users/{id}', [UserController::class, 'destroy'])->name('users.destroy');
+        Route::post('/users/{id}/reset-2fa', [UserController::class, 'resetTwoFactor'])->name('users.reset-2fa');
     });
 });
 

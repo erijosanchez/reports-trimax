@@ -319,6 +319,44 @@ consecuencia de esa deuda, y se resuelve cuando el JS salga de Blade.
 > tres roles obligados sin 2FA van a `setup`, con 2FA sin verificar en sesión
 > van a `verify`, con sesión verificada pasan, un rol no obligado (`sede`)
 > pasa sin 2FA, y no hay loop al acceder a `/2fa/setup` directamente.
+>
+> **Seguimiento 2026-07-27 — el alta estaba rota en la práctica.** Al activar
+> el enforcement de arriba, un usuario reportó que la pantalla de `/2fa/setup`
+> no mostraba nada usable. Causa raíz: el QR se armaba contra
+> `chart.googleapis.com` (API de Image Charts de Google, dada de baja hace
+> años — devuelve 404). Nadie podía completar el alta obligatoria; en la
+> práctica el gate quedaba bloqueando sin dar forma de pasar. Además no
+> existía ningún mecanismo de recuperación si alguien perdía el teléfono.
+> Se corrigieron las tres piezas juntas:
+>
+> - **QR local**: se agregó `bacon/bacon-qr-code` (SVG puro, sin ImageMagick
+>   ni llamadas externas) y se usa `PragmaRX\Google2FAQRCode\Google2FA` en vez
+>   de armar la URL de Google a mano. El secreto ya no viaja a un tercero.
+> - **Códigos de recuperación**: la columna `two_factor_recovery_codes` existía
+>   desde el principio pero nunca se poblaba. Ahora, al habilitar 2FA, se
+>   generan 8 códigos de un solo uso (`XXXX-XXXX`), se muestran una única vez
+>   en `/2fa/recovery-codes` (vía sesión flash, nunca recuperables después
+>   porque solo se guarda el hash) y se pueden canjear en `/2fa/verify` como
+>   alternativa al código TOTP.
+> - **Reset por admin**: si un usuario pierde el teléfono *y* los códigos de
+>   recuperación, no había ninguna vía de acceso salvo un `UPDATE` directo en
+>   la base. Se agregó `POST /admin/users/{id}/reset-2fa`
+>   (`UserController::resetTwoFactor`, solo `super_admin`/`admin`) que limpia
+>   `two_factor_secret`, `two_factor_confirmed_at` y
+>   `two_factor_recovery_codes` — el usuario vuelve a pasar por el alta en su
+>   próximo ingreso.
+>
+> De paso se encontró y corrigió que `Google2FA::verifyKey()` lanza
+> `Google2FAException` (no devuelve `false`) si el secreto guardado no tiene
+> formato base32 válido — sin el `try/catch`, un secreto corrupto tumbaba la
+> verificación con un 500 en vez de mostrar "código inválido".
+>
+> Cubierto con `tests/Feature/TwoFactorSetupAndRecoveryTest.php` (8 casos):
+> QR local sin rastro de `chart.googleapis.com`, generación y hasheo de los 8
+> códigos, la página de códigos redirige a `home` sin sesión flash, un código
+> de recuperación válido deja pasar y se consume una sola vez, un secreto
+> corrupto no tumba la petición, deshabilitar 2FA borra también los códigos,
+> y el reset de admin funciona (y solo para `super_admin`/`admin`).
 
 ### Qué pasa
 
