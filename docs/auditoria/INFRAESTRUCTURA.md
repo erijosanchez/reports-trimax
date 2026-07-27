@@ -27,7 +27,7 @@ excepción es I1, que es un bug real degradando rendimiento ahora mismo.
 | I4 | Deriva entre el registro de migraciones y el esquema real | **Alta** | ✅ Resuelto 2026-07-25 |
 | I5 | `horizon` y `scheduler` reconstruyen la imagen: 2.5 GB duplicados | Media | ✅ Resuelto 2026-07-25 |
 | I6 | `Dockerfile` sin `composer install`; imagen no autónoma | Media | Activo |
-| I7 | Sin `healthcheck` en app, nginx, horizon ni scheduler | Media | Activo |
+| I7 | Sin `healthcheck` en app, nginx, horizon ni scheduler | Media | ✅ Resuelto 2026-07-27 |
 | I8 | `APP_DEBUG=true` / `APP_ENV=local` | Media | ✅ Resuelto 2026-07-27 |
 | I9 | `Dockerfile` instala nginx y supervisor que nunca se usan | Baja | Activo |
 | I10 | Sin límites de recursos por contenedor | Baja | Riesgo de despliegue |
@@ -431,6 +431,25 @@ frontend (ver ARQUITECTURA.md, A6), aquí es donde entra
 ---
 
 ## I7 · Healthchecks incompletos — Severidad media
+
+> ✅ **Resuelto 2026-07-27.** `app`: healthcheck vía `cgi-fcgi` contra
+> `ping.path = /ping` (agregado a `docker/php/www.conf`) — requiere
+> `libfcgi-bin` en el Dockerfile (provee el binario `cgi-fcgi`), sin pasar
+> por el framework. `nginx`: `wget --spider http://127.0.0.1/up` (con
+> `127.0.0.1` explícito — `localhost` resuelve primero a `::1` dentro del
+> contenedor y nginx no escucha en IPv6, así que fallaba). `horizon`:
+> `php artisan horizon:status | grep -q running`.
+>
+> `depends_on` pasó de arranque a disponibilidad
+> (`condition: service_healthy`) en `app` (espera mysql+redis),
+> `nginx`/`horizon`/`scheduler` (esperan `app`). Verificado con
+> `docker compose up -d`: el log de arranque muestra la secuencia real
+> — mysql/redis healthy → app espera, arranca y se pone healthy → recién
+> ahí horizon/nginx/scheduler arrancan. Los 4 servicios de la app
+> (`app`, `nginx`, `horizon`) quedan `healthy`; `scheduler` no tiene
+> healthcheck propio — es un `while true` de shell sin un endpoint o
+> comando de estado natural para chequear, así que se dejó sin uno (sí se
+> corrigió su `depends_on`, que es la parte que evita la carrera real).
 
 `mysql` y `redis` tienen `healthcheck`; `app`, `nginx`, `horizon` y `scheduler`
 no. Y los `depends_on` son de arranque, no de disponibilidad:

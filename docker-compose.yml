@@ -18,9 +18,17 @@ services:
       - 8.8.4.4
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD-SHELL", "SCRIPT_NAME=/ping SCRIPT_FILENAME=/ping REQUEST_METHOD=GET cgi-fcgi -bind -connect 127.0.0.1:9000 | grep -q pong"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
     depends_on:
-      - mysql
-      - redis
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   # Nginx Web Server
   nginx:
@@ -34,8 +42,15 @@ services:
       - ./docker/nginx:/etc/nginx/conf.d
     networks:
       - trimax-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1/up"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
     depends_on:
-      - app
+      app:
+        condition: service_healthy
 
   # MySQL Database
   mysql:
@@ -89,10 +104,19 @@ services:
     command: php artisan horizon
     networks:
       - trimax-network
+    healthcheck:
+      test: ["CMD-SHELL", "php artisan horizon:status | grep -q running"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
     depends_on:
-      - mysql
-      - redis
-      - app
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      app:
+        condition: service_healthy
 
   # Laravel Scheduler (Cron)
   scheduler:
@@ -110,9 +134,12 @@ services:
     networks:
       - trimax-network
     depends_on:
-      - mysql
-      - redis
-      - app
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      app:
+        condition: service_healthy
 
   # phpMyAdmin (Opcional) — no arranca con "docker compose up -d" a secas.
   # Usar: docker compose --profile tools up -d

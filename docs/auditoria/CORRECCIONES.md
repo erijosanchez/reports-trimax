@@ -127,7 +127,7 @@ tocar el mismo archivo. Detalle de cada cambio en `SEGURIDAD.md` e
 | 15 | ✅ Endurecer la política de contraseñas (`min:8` sin complejidad; `min:6` en motorizados) | 🔒 Seguridad | [S7](SEGURIDAD.md#s7--política-de-contraseñas-débil--severidad-media) | Media | ~1 h |
 | 16 | 🟡 Verificar propiedad en la descarga de adjuntos, no solo el permiso de rol — parcial como efecto lateral de #7 (Vouchers) | 🔒 Seguridad | [S8](SEGURIDAD.md#s8--descarga-de-adjuntos-sin-verificar-propiedad--severidad-media) | Media | Medio |
 | 17 | ✅ `horizon` y `scheduler` reutilizando `image: trimax-app` — hoy duplican 2.5 GB y pueden divergir de versión | ⚙️ Infra | [I5](INFRAESTRUCTURA.md#i5--imágenes-duplicadas--severidad-media--resuelto) | Media | Minutos |
-| 18 | `healthcheck` en app, nginx y horizon + `depends_on: condition: service_healthy` | ⚙️ Infra | [I7](INFRAESTRUCTURA.md#i7--healthchecks-incompletos--severidad-media) | Media | ~1 h |
+| 18 | ✅ `healthcheck` en app, nginx y horizon + `depends_on: condition: service_healthy` | ⚙️ Infra | [I7](INFRAESTRUCTURA.md#i7--healthchecks-incompletos--severidad-media) | Media | ~1 h |
 | 19 | `composer install` y cacheo de capas en el `Dockerfile` — la imagen no es autónoma | ⚙️ Infra | [I6](INFRAESTRUCTURA.md#i6--la-imagen-no-es-autónoma--severidad-media) | Media | ~2 h |
 | 20 | Extraer Form Requests donde las reglas se repiten (75 validaciones inline vs 6 Form Requests) | 🏗️ Arquitectura | [A5](ARQUITECTURA.md#a5--validación-inline--severidad-media) | Media | Medio |
 | 21 | Tests de las reglas de negocio, empezando por la frontera de datos por sede | 🏗️ Arquitectura | [A8](ARQUITECTURA.md#a8--cobertura-de-tests--severidad-media) | Media | Alto |
@@ -208,5 +208,6 @@ también el documento de origen.
 | Principal | 13 (S5), 14 (I8), 15 (S7) | ✅ Resuelto | 2026-07-27 |
 | Principal | 16 (S8) | 🟡 Parcial (efecto lateral de #7) | 2026-07-27 |
 | Principal | 22 (A6) | 🔴 Diferido a propósito (decisión de producto) | 2026-07-27 |
-| Principal | 18–21, 23–26 | Pendiente | — |
+| Principal | 18 (I7) | ✅ Resuelto | 2026-07-27 |
+| Principal | 19–21, 23–26 | Pendiente | — |
 | Frontend | F-1–F-8 | Pendiente | — |
