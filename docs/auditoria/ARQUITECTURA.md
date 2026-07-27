@@ -27,7 +27,7 @@ debería estar centralizada y está copiada a mano en decenas de sitios.
 | A4 | 10 controladores >400 LOC (el mayor, 1799) | Media | Alto |
 | A5 | 75 validaciones inline vs 6 Form Requests | Media | Medio |
 | A6 | Pipeline Vite configurado pero inutilizado; 46 MB de assets en git | Media | Diferido a propósito 2026-07-27 |
-| A7 | 3 controladores muertos + `routes/auth.php` vacío importando 5 clases inexistentes | Baja | Bajo |
+| A7 | 3 controladores muertos + `routes/auth.php` vacío importando 5 clases inexistentes | Baja | ✅ Resuelto 2026-07-27 |
 | A8 | Suite de tests solo cubre el scaffolding de Breeze | Media | Alto |
 
 **Métricas base**
@@ -482,6 +482,27 @@ es así.
    comentario que explique que la autenticación vive en `web.php`.
 3. Revisar si `tests/Feature/Auth/*` y `tests/Feature/ProfileTest.php` siguen
    teniendo sentido: prueban el flujo de Breeze, no el real (ver A8).
+
+> ✅ **Resuelto 2026-07-27**, las tres acciones. Verificado antes de borrar
+> que los 3 controladores seguían sin ninguna referencia externa (`grep` solo
+> encontraba su propia declaración de clase). Eliminado `routes/auth.php` y
+> su `require` en `web.php:446`, reemplazado por un comentario que explica
+> dónde vive la autenticación real. `php artisan route:list` sigue
+> funcionando (268 rutas) sin errores.
+>
+> Punto 3 — y esto fue lo más valioso del hallazgo —: `tests/Feature/Auth/*`
+> (6 archivos) y `tests/Feature/ProfileTest.php` **no tenían sentido y se
+> borraron**. No es una zona gris: prueban rutas (`/register`,
+> `/forgot-password`, `/profile`, verificación de email) que literalmente no
+> existen en esta app, porque `routes/auth.php` — el archivo que las
+> registraría — definía **0 rutas**. No eran tests fallando por un bug; eran
+> tests de un flujo que nunca se implementó. Esto explica **los 22 tests que
+> fallaban desde el arranque de esta sesión** en cada ronda anterior (S1, S2,
+> A1, etc.) — no eran regresiones de nada de lo tocado hoy, sino este mismo
+> scaffolding muerto. Tras borrarlos: 22 fallos → 1 (`Tests\Feature\ExampleTest`,
+> el scaffolding genérico de Laravel que espera `GET /` → 200 pero la app
+> redirige a `/login` por diseño — no está en el alcance de A7, se dejó sin
+> tocar).
 
 ---
 

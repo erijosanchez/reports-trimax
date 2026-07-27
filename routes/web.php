@@ -443,4 +443,6 @@ Route::middleware(['auth', '2fa.verified', 'throttle:dashboard', 'track.activity
     });
 });
 
-require __DIR__ . '/auth.php';
+// La autenticación real vive arriba (Auth\LoginController, líneas 43-56) —
+// routes/auth.php era scaffolding de Breeze sin rutas propias, importando
+// además 5 controladores que no existen en el proyecto. Eliminado (A7).
