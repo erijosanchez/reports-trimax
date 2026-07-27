@@ -26,7 +26,7 @@ debería estar centralizada y está copiada a mano en decenas de sitios.
 | A3 | Solo 5 transacciones para escrituras multi-tabla | **Alta** | ✅ Resuelto 2026-07-27 (Voucher, Desbloqueo, Requerimientos) |
 | A4 | 10 controladores >400 LOC (el mayor, 1799) | Media | Alto |
 | A5 | 75 validaciones inline vs 6 Form Requests | Media | Medio |
-| A6 | Pipeline Vite configurado pero inutilizado; 46 MB de assets en git | Media | Medio |
+| A6 | Pipeline Vite configurado pero inutilizado; 46 MB de assets en git | Media | Diferido a propósito 2026-07-27 |
 | A7 | 3 controladores muertos + `routes/auth.php` vacío importando 5 clases inexistentes | Baja | Bajo |
 | A8 | Suite de tests solo cubre el scaffolding de Breeze | Media | Alto |
 
@@ -385,6 +385,17 @@ Convención de ubicación ya establecida en el repo: subcarpeta por dominio
 ---
 
 ## A6 · Pipeline de frontend inutilizado — Severidad media
+
+> 🔴 **Diferido a propósito — 2026-07-27.** Se confirmó que el diagnóstico
+> sigue exacto (`public/build/` sigue sin existir, 46 MB / 1644 archivos en
+> `public/assets/`, solo 2 de 108 vistas usan `@vite`) y se planteó la
+> decisión al equipo: Opción A (asumir estático, bajo esfuerzo) vs. Opción B
+> (activar Vite, alto esfuerzo pero mejor destino) vs. dejarlo pendiente. Se
+> eligió **dejarlo pendiente** — no se tomó la decisión de producto todavía,
+> y tampoco se adelantó la extracción del JS inline (que serviría para
+> cualquiera de los dos caminos), para no invertir esfuerzo en un trabajo de
+> alcance grande (52 vistas, ~12 724 líneas) sin la decisión de fondo tomada.
+> Queda exactamente como estaba: sin tocar.
 
 ### Qué pasa
 
