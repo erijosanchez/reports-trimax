@@ -126,4 +126,34 @@ class VoucherAttachmentDiskTest extends TestCase
             ->getJson(route('vouchers.facturas', ['id' => $voucher->id]))
             ->assertForbidden();
     }
+
+    /**
+     * Cubre parte de S8 (SEGURIDAD.md): revisionFile() usa
+     * Voucher::findOrFail(), que ahora aplica SedeScope (A1) — un usuario de
+     * sede de OTRA sede ya no puede leer el adjunto de revisión de finanzas
+     * de un voucher ajeno, aunque tenga el permiso genérico de vouchers.
+     */
+    public function test_usuario_de_otra_sede_no_puede_leer_el_adjunto_de_revision(): void
+    {
+        Storage::fake('local');
+        Storage::disk('local')->put('vouchers/revision/fake.pdf', 'contenido');
+
+        $voucher = Voucher::create([
+            'codigo'            => 'V-005',
+            'sede'              => 'Lima',
+            'status'            => 'pendiente',
+            'total'             => 100,
+            'revision_archivos' => [[
+                'name' => 'revision.pdf',
+                'path' => 'vouchers/revision/fake.pdf',
+                'mime' => 'application/pdf',
+            ]],
+        ]);
+
+        $otraSede = $this->sedeUser('Huánuco');
+
+        $this->actingAs($otraSede)
+            ->get(route('vouchers.revisionFile', ['id' => $voucher->id, 'index' => 0]))
+            ->assertNotFound();
+    }
 }

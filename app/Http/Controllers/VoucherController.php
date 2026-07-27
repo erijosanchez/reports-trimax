@@ -11,6 +11,7 @@ use App\Notifications\ReporteSedeRechazado;
 use App\Services\ActivityLogService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
@@ -26,7 +27,11 @@ class VoucherController extends Controller
         $user         = auth()->user();
         $puedeAplicar = $user->isFinanzas();
 
-        if (!$user->puedeVerVouchers()) {
+        // Piloto de A1 (ARQUITECTURA.md): mismo chequeo que antes
+        // ($user->puedeVerVouchers()), ahora a través del Gate registrado en
+        // AuthServiceProvider — el helper de User sigue siendo el detalle de
+        // implementación.
+        if (Gate::denies('ver-vouchers')) {
             abort(403, 'No tienes permiso para acceder a Vouchers.');
         }
 

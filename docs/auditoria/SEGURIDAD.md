@@ -31,7 +31,7 @@ y mecanismos de defensa construidos pero nunca activados.
 | S5 | Cookie de sesión sin flag `Secure` | Media | Al desplegar con HTTPS | Pendiente |
 | S6 | Inyección de HTML en correo de requerimientos | Media | Sí (usuario privilegiado) | ✅ Resuelto 2026-07-25 |
 | S7 | Política de contraseñas débil | Media | Sí | Pendiente |
-| S8 | Descarga de adjuntos sin verificar propiedad | Media | Sí | Pendiente |
+| S8 | Descarga de adjuntos sin verificar propiedad | Media | Sí | 🟡 Parcial 2026-07-27 (ver nota) |
 | S9 | `Blade::setEchoFormat('%s')` desactiva el auto-escape de `{{ }}` en toda la app | **Crítica** | Sí | ✅ Resuelto 2026-07-27 |
 | S10 | `VoucherController::servirArchivo()` y `getFacturas()` sin ningún control de permiso | Alta | Sí | ✅ Resuelto 2026-07-27 |
 
@@ -478,6 +478,21 @@ falta una campaña aparte.
 ---
 
 ## S8 · Descarga de adjuntos sin verificar propiedad — Severidad media
+
+> 🟡 **Parcialmente resuelto 2026-07-27, como efecto lateral de A1.** Al
+> aplicar `SedeScope` a `Voucher` (piloto de A1), `Voucher::findOrFail($id)`
+> en `revisionFile()` (línea de abajo) ahora filtra automáticamente por sede
+> — un usuario con rol `sede` de una sede distinta a la del voucher recibe
+> 404 en vez de leer el adjunto. Verificado con
+> `tests/Feature/VoucherAttachmentDiskTest.php::test_usuario_de_otra_sede_no_puede_leer_el_adjunto_de_revision`.
+>
+> Sigue **sin resolver** el resto del hallazgo: finanzas/admin/super_admin no
+> están restringidos por `SedeScope` (a propósito — sí deben ver todas las
+> sedes), así que dentro de ese grupo de roles cualquiera con
+> `puedeVerVouchers()` sigue pudiendo leer el adjunto de cualquier voucher
+> sin más verificación de propiedad. Eso requeriría una regla de negocio
+> distinta (ej. "finanzas solo ve lo que le fue asignado a revisar"), que no
+> estaba definida ni se inventó aquí.
 
 `VoucherController::revisionFile()` comprueba permiso de rol, pero no relación
 con el recurso:

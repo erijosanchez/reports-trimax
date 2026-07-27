@@ -21,7 +21,7 @@ debería estar centralizada y está copiada a mano en decenas de sitios.
 
 | # | Hallazgo | Severidad | Esfuerzo |
 |---|---|---|---|
-| A1 | 212 decisiones de autorización dispersas en controladores y vistas | **Alta** | Medio |
+| A1 | 212 decisiones de autorización dispersas en controladores y vistas | **Alta** | 🟡 Piloto 2026-07-27 (Vouchers) |
 | A2 | 90 listados sin paginación sobre tablas transaccionales | **Alta** | Medio |
 | A3 | Solo 5 transacciones para escrituras multi-tabla | **Alta** | Bajo |
 | A4 | 10 controladores >400 LOC (el mayor, 1799) | Media | Alto |
@@ -48,6 +48,48 @@ aplicación**. Es consecuencia de A6.
 ---
 
 ## A1 · Autorización dispersa — Severidad alta
+
+> 🟡 **Piloto aplicado 2026-07-27, no migración completa** — el enfoque
+> incremental que ya recomendaba esta sección. No se tocaron los 212 sitios;
+> se construyó la base y se probó en un solo módulo (Vouchers, el sugerido
+> aquí mismo).
+>
+> **Hallazgo adicional al implementar esto:** `app/Providers/AuthServiceProvider.php`
+> existía completo — las 3 Policies, un `Gate::before` que da acceso total a
+> `super_admin` — pero **nunca estuvo registrado en `bootstrap/providers.php`**,
+> así que nada de eso corría nunca. Pasó desapercibido porque los únicos 6
+> `$this->authorize()` del código son sobre `Dashboard`, que resuelve su
+> Policy por convención de nombre sin necesitar el provider; `FilePolicy`
+> (para `UploadedFile`, no sigue la convención de nombre) y `UserPolicy` no
+> los invoca nada hoy, así que su ausencia nunca causó un síntoma visible. Se
+> registró el provider — sin riesgo, porque no cambia ningún comportamiento
+> ya observable (Dashboard seguía funcionando igual, File/User Policies no
+> las usa nadie todavía).
+>
+> **1. `SedeScope`** (`app/Models/Scopes/SedeScope.php`) — exactamente el
+> código propuesto más abajo. Aplicado a `Voucher` vía `booted()`. Verificado
+> contra los 874 vouchers reales: un usuario de sede (Huánuco) pasó de ver
+> 874 a ver solo sus 8; admin/finanzas siguen viendo los 874. Escape hatch
+> (`Voucher::withoutGlobalScope(SedeScope::class)`) probado y funcionando.
+>
+> **2. Gates** en el `AuthServiceProvider` ya activo:
+> `Gate::define('ver-vouchers', ...)` y `Gate::define('revisar-vouchers', ...)`,
+> envolviendo los helpers existentes sin cambiar su lógica. Un único punto de
+> `VoucherController::index()` migrado de `$user->puedeVerVouchers()` a
+> `Gate::denies('ver-vouchers')` como demostración del patrón — el resto del
+> controlador (y los otros 40) se queda como está, a migrar módulo por
+> módulo cuando se toque cada uno por otra razón, tal como recomienda esta
+> sección.
+>
+> Cubierto con `tests/Feature/SedeScopeTest.php` (6 casos): sede solo ve lo
+> suyo, `findOrFail` de otra sede da 404, finanzas/super_admin ven todo, el
+> escape hatch funciona, y el Gate refleja el helper. Es el test que "hace
+> que la frontera de datos deje de depender de que nadie olvide una
+> comprobación" que pide A8.
+>
+> **Modelos candidatos para el mismo patrón, no aplicado todavía:**
+> `SolicitudDesbloqueo`, `ReporteCobranza`, `ReporteCajaChica`,
+> `ReporteComentarios` — mismo nombre de columna `sede`, mismo criterio.
 
 ### Qué pasa
 

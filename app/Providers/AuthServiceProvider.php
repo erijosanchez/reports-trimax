@@ -30,5 +30,13 @@ class AuthServiceProvider extends ServiceProvider
 
             return null;
         });
+
+        // Piloto de A1 (ARQUITECTURA.md): los helpers de User siguen
+        // existiendo, se convierten en el detalle de implementación del
+        // Gate en vez de la API que consume todo el sistema. Controladores
+        // y vistas pueden usar $this->authorize('ver-vouchers') / @can(...)
+        // en vez de llamar al helper directamente.
+        Gate::define('ver-vouchers', fn (User $u) => $u->puedeVerVouchers());
+        Gate::define('revisar-vouchers', fn (User $u) => $u->puedeRevisarReportesSedes());
     }
 }
