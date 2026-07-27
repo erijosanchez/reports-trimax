@@ -212,3 +212,4 @@ también el documento de origen.
 | Principal | 21 (A8) | 🟡 Piloto (Cobranza) | 2026-07-27 |
 | Principal | 20, 23 | Pendiente | — |
 | Frontend | F-1–F-8 | Pendiente | — |
+| Extra (no numerada) | Mensajes de validación en inglés (`APP_LOCALE=en`, sin `lang/es/`) | ✅ Resuelto | 2026-07-27 |
