@@ -30,7 +30,7 @@ y mecanismos de defensa construidos pero nunca activados.
 | S4 | 2FA implementado pero nunca aplicado; 0 de 65 usuarios | **Alta** | — | ✅ Resuelto 2026-07-27 (activado por rol) |
 | S5 | Cookie de sesión sin flag `Secure` | Media | Al desplegar con HTTPS | ✅ Resuelto 2026-07-27 |
 | S6 | Inyección de HTML en correo de requerimientos | Media | Sí (usuario privilegiado) | ✅ Resuelto 2026-07-25 |
-| S7 | Política de contraseñas débil | Media | Sí | Pendiente |
+| S7 | Política de contraseñas débil | Media | Sí | ✅ Resuelto 2026-07-27 |
 | S8 | Descarga de adjuntos sin verificar propiedad | Media | Sí | 🟡 Parcial 2026-07-27 (ver nota) |
 | S9 | `Blade::setEchoFormat('%s')` desactiva el auto-escape de `{{ }}` en toda la app | **Crítica** | Sí | ✅ Resuelto 2026-07-27 |
 | S10 | `VoucherController::servirArchivo()` y `getFacturas()` sin ningún control de permiso | Alta | Sí | ✅ Resuelto 2026-07-27 |
@@ -459,6 +459,27 @@ Las otras dos salidas sin escapar del proyecto se revisaron y **son seguras**:
 ---
 
 ## S7 · Política de contraseñas débil — Severidad media
+
+> ✅ **Resuelto 2026-07-27.** `Password::min(10)->letters()->numbers()->uncompromised()`
+> aplicado en los 4 puntos reales de creación/edición de contraseña:
+> `Admin\UserController::store()` y `update()`, y
+> `Tracking\TrackingAdminController::storeMotorizado()`/`updateMotorizado()`.
+>
+> **Hallazgo al aplicar el fix:** `StoreUserRequest` (la tabla de abajo la
+> señala como el punto de creación de usuarios) es **código huérfano** —
+> nunca se inyecta en ningún controlador. `Admin\UserController::store()`
+> valida con su propio array de reglas inline (`$request->validate($rules)`),
+> duplicando lo que se supone que hace el Form Request. Se corrigió el punto
+> real (`UserController`), y también `StoreUserRequest` por consistencia
+> (si algún día se conecta, ya tendrá la regla correcta) — pero sigue sin
+> usarse. Es el mismo patrón de A5 (75 validaciones inline vs 6 Form
+> Requests): aquí uno de los 6 "existentes" ni siquiera está conectado.
+>
+> Cubierto con `tests/Feature/PasswordPolicyTest.php` (5 casos, con
+> `Http::fake()` para no golpear la API real de HaveIBeenPwned): rechaza
+> contraseñas cortas y sin números en ambos puntos, acepta una fuerte en
+> ambos. No fuerza rotación de las contraseñas existentes — eso requiere una
+> campaña aparte, como ya aclaraba esta sección.
 
 | Punto de creación | Regla |
 |---|---|

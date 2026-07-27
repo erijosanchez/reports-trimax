@@ -124,7 +124,7 @@ tocar el mismo archivo. Detalle de cada cambio en `SEGURIDAD.md` e
 | 12 | ✅ Escapar `$extra` en el correo de requerimientos — entra texto de usuario sin filtrar | 🔒 Seguridad | [S6](SEGURIDAD.md#s6--inyección-de-html-en-el-correo-de-requerimientos--severidad-media) | Media | Minutos |
 | 13 | ✅ `SESSION_SECURE_COOKIE=true` en entornos con HTTPS | 🔒 Seguridad | [S5](SEGURIDAD.md#s5--cookie-de-sesión-sin-flag-secure--severidad-media) | Media | Minutos |
 | 14 | ✅ Checklist de despliegue: `APP_ENV=production`, `APP_DEBUG=false`, caches de config y rutas | ⚙️ Infra | [I8](INFRAESTRUCTURA.md#i8--configuración-de-entorno--severidad-media) | Media | ~1 h |
-| 15 | Endurecer la política de contraseñas (`min:8` sin complejidad; `min:6` en motorizados) | 🔒 Seguridad | [S7](SEGURIDAD.md#s7--política-de-contraseñas-débil--severidad-media) | Media | ~1 h |
+| 15 | ✅ Endurecer la política de contraseñas (`min:8` sin complejidad; `min:6` en motorizados) | 🔒 Seguridad | [S7](SEGURIDAD.md#s7--política-de-contraseñas-débil--severidad-media) | Media | ~1 h |
 | 16 | Verificar propiedad en la descarga de adjuntos, no solo el permiso de rol | 🔒 Seguridad | [S8](SEGURIDAD.md#s8--descarga-de-adjuntos-sin-verificar-propiedad--severidad-media) | Media | Medio |
 | 17 | ✅ `horizon` y `scheduler` reutilizando `image: trimax-app` — hoy duplican 2.5 GB y pueden divergir de versión | ⚙️ Infra | [I5](INFRAESTRUCTURA.md#i5--imágenes-duplicadas--severidad-media--activo) | Media | Minutos |
 | 18 | `healthcheck` en app, nginx y horizon + `depends_on: condition: service_healthy` | ⚙️ Infra | [I7](INFRAESTRUCTURA.md#i7--healthchecks-incompletos--severidad-media) | Media | ~1 h |
@@ -205,6 +205,6 @@ también el documento de origen.
 | Principal | 7 (A1) | 🟡 Piloto (Vouchers) | 2026-07-27 |
 | Principal | 10 (A3) | ✅ Resuelto | 2026-07-27 |
 | Principal | 11 (A2) | 🟡 Piloto (auditado, 1 hallazgo documentado sin aplicar) | 2026-07-27 |
-| Principal | 13 (S5), 14 (I8) | ✅ Resuelto | 2026-07-27 |
-| Principal | 15, 16, 18–26 | Pendiente | — |
+| Principal | 13 (S5), 14 (I8), 15 (S7) | ✅ Resuelto | 2026-07-27 |
+| Principal | 16, 18–26 | Pendiente | — |
 | Frontend | F-1–F-8 | Pendiente | — |

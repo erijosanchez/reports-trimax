@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rules\Password;
 
 class StoreUserRequest extends FormRequest
 {
@@ -16,7 +17,7 @@ class StoreUserRequest extends FormRequest
         return [
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
-            'password' => 'required|string|min:8|confirmed',
+            'password' => ['required', 'confirmed', Password::min(10)->letters()->numbers()->uncompromised()],
             'role' => 'required|exists:roles,name',
         ];
     }
@@ -28,8 +29,9 @@ class StoreUserRequest extends FormRequest
             'email.required' => 'El email es obligatorio',
             'email.unique' => 'Este email ya está registrado',
             'password.required' => 'La contraseña es obligatoria',
-            'password.min' => 'La contraseña debe tener al menos 8 caracteres',
+            'password.min' => 'La contraseña debe tener al menos 10 caracteres, con letras y números',
             'password.confirmed' => 'Las contraseñas no coinciden',
+            'password.uncompromised' => 'Esta contraseña apareció en una filtración de datos conocida. Elige otra.',
             'role.required' => 'Debe seleccionar un rol',
         ];
     }
