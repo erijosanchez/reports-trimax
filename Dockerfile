@@ -15,13 +15,7 @@ RUN apt-get update && apt-get install -y \
     zip \
     unzip \
     libfcgi-bin \
-    supervisor \
-    nginx \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
-
-# Crear directorio para logs PHP-FPM
-RUN mkdir -p /var/log/php-fpm && \
-    chown -R www-data:www-data /var/log/php-fpm
 
 # Instalar extensiones PHP
 RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip

@@ -29,7 +29,7 @@ excepción es I1, que es un bug real degradando rendimiento ahora mismo.
 | I6 | `Dockerfile` sin `composer install`; imagen no autónoma | Media | ✅ Resuelto 2026-07-27 |
 | I7 | Sin `healthcheck` en app, nginx, horizon ni scheduler | Media | ✅ Resuelto 2026-07-27 |
 | I8 | `APP_DEBUG=true` / `APP_ENV=local` | Media | ✅ Resuelto 2026-07-27 |
-| I9 | `Dockerfile` instala nginx y supervisor que nunca se usan | Baja | Activo |
+| I9 | `Dockerfile` instala nginx y supervisor que nunca se usan | Baja | ✅ Resuelto 2026-07-27 |
 | I10 | Sin límites de recursos por contenedor | Baja | Riesgo de despliegue |
 
 ---
@@ -537,6 +537,20 @@ view:cache`.
 ---
 
 ## I9 · Peso muerto en la imagen — Severidad baja
+
+> ✅ **Resuelto 2026-07-27.** Quitados `nginx` y `supervisor` de la línea
+> `apt-get install` del Dockerfile. Verificado tras el build: ni `nginx` ni
+> `supervisord` existen dentro del contenedor `app` (`which` devuelve
+> "no encontrado" para ambos), y el resto del stack sigue healthy.
+>
+> También se corrigió lo que esta misma sección menciona de paso: se
+> comprobó que `/var/log/php-fpm/www-error.log` en efecto no existía nunca
+> (`cat` daba "No such file or directory"). Se cambió
+> `php_admin_value[error_log]` en `docker/php/www.conf` de esa ruta a
+> `/proc/self/fd/2` (mismo criterio que ya usa `slowlog` en el propio
+> archivo) y se quitó el `mkdir -p /var/log/php-fpm` del Dockerfile.
+> Verificado con `docker logs trimax_app`: los logs de PHP-FPM (arranque,
+> accesos, el propio healthcheck `/ping`) ya aparecen ahí.
 
 El `Dockerfile` instala `nginx` y `supervisor` dentro de la imagen de PHP-FPM,
 pero **ninguno se usa**: nginx corre en su propio contenedor
