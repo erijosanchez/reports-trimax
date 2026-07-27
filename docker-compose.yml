@@ -46,16 +46,16 @@ services:
     ports:
       - "3307:3306"
     environment:
-      MYSQL_DATABASE: reports_trimax
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_USER: trimax
-      MYSQL_PASSWORD: trimax123
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
     volumes:
       - mysql_data:/var/lib/mysql
     networks:
       - trimax-network
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
       interval: 10s
       timeout: 5s
       retries: 5

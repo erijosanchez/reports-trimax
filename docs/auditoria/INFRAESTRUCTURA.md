@@ -22,7 +22,7 @@ excepción es I1, que es un bug real degradando rendimiento ahora mismo.
 | # | Hallazgo | Severidad | Estado |
 |---|---|---|---|
 | I1 | `CACHE_DRIVER` obsoleto: la caché va a MySQL, no a Redis | **Alta** | ✅ Resuelto 2026-07-25 |
-| I2 | Credenciales literales en `docker-compose.yml` | **Alta** | Riesgo de despliegue |
+| I2 | Credenciales literales en `docker-compose.yml` | **Alta** | ✅ Resuelto 2026-07-27 |
 | I3 | Redis, phpMyAdmin y Redis Commander expuestos sin protección | **Alta** | ✅ Resuelto 2026-07-27 |
 | I4 | Deriva entre el registro de migraciones y el esquema real | **Alta** | ✅ Resuelto 2026-07-25 |
 | I5 | `horizon` y `scheduler` reconstruyen la imagen: 2.5 GB duplicados | Media | ✅ Resuelto 2026-07-25 |
@@ -111,6 +111,25 @@ base de datos puede dejarse configurada como *fallback*, pero no como `default`.
 ---
 
 ## I2 · Credenciales literales en el compose — Severidad alta
+
+> ✅ **Resuelto 2026-07-27.** Las de `phpmyadmin` (`PMA_USER`/`PMA_PASSWORD`)
+> ya se habían quitado al resolver I3. Para `mysql`, en vez de un
+> `.env.docker` aparte (como sugería originalmente esta sección) se
+> reutilizó el mismo `.env` de Laravel — ya estaba en `.gitignore` y
+> `docker-compose.yml` ya lee variables de ese mismo archivo por defecto
+> (confirmado antes con `REDIS_PASSWORD` en I3), así que no hacía falta un
+> segundo archivo. `MYSQL_DATABASE`, `MYSQL_USER` y `MYSQL_PASSWORD` ahora
+> son `${DB_DATABASE}`/`${DB_USERNAME}`/`${DB_PASSWORD}` (los mismos que ya
+> usa Laravel para conectarse) y se agregó `MYSQL_ROOT_PASSWORD` al `.env`
+> (variable que solo consume el contenedor, Laravel no la lee). El
+> healthcheck también se actualizó (`-p${MYSQL_ROOT_PASSWORD}`). Se
+> documentaron ambas en `.env.example` sin valores reales.
+>
+> `docker compose config` confirmó que los valores resueltos son idénticos a
+> los literales anteriores (mismas credenciales reales, solo cambia de dónde
+> se leen), y `docker compose up -d --no-deps mysql` no necesitó recrear el
+> contenedor — cero downtime, datos intactos (65 usuarios verificados
+> después).
 
 ### Qué pasa
 
