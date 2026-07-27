@@ -26,7 +26,7 @@ excepción es I1, que es un bug real degradando rendimiento ahora mismo.
 | I3 | Redis, phpMyAdmin y Redis Commander expuestos sin protección | **Alta** | ✅ Resuelto 2026-07-27 |
 | I4 | Deriva entre el registro de migraciones y el esquema real | **Alta** | ✅ Resuelto 2026-07-25 |
 | I5 | `horizon` y `scheduler` reconstruyen la imagen: 2.5 GB duplicados | Media | ✅ Resuelto 2026-07-25 |
-| I6 | `Dockerfile` sin `composer install`; imagen no autónoma | Media | Activo |
+| I6 | `Dockerfile` sin `composer install`; imagen no autónoma | Media | ✅ Resuelto 2026-07-27 |
 | I7 | Sin `healthcheck` en app, nginx, horizon ni scheduler | Media | ✅ Resuelto 2026-07-27 |
 | I8 | `APP_DEBUG=true` / `APP_ENV=local` | Media | ✅ Resuelto 2026-07-27 |
 | I9 | `Dockerfile` instala nginx y supervisor que nunca se usan | Baja | Activo |
@@ -392,6 +392,25 @@ Idéntico para `scheduler`. Una sola imagen, una sola versión del código.
 ---
 
 ## I6 · La imagen no es autónoma — Severidad media
+
+> ✅ **Resuelto 2026-07-27.** `composer.json`/`composer.lock` se copian
+> antes que el resto del código y `composer install --no-dev --no-scripts
+> --no-autoloader --prefer-dist` corre ahí — solo se reinstala si cambian
+> esos dos archivos, aprovechando el cache de capas. Después del `COPY`
+> completo, `composer dump-autoload --optimize` genera el autoloader ya con
+> todo el código presente, y un `chown -R` final homogeneiza el dueño de
+> `vendor/` (creado como root) con el resto de `/var/www`.
+>
+> Build validado end-to-end: 60 paquetes instalados sin errores, autoload
+> optimizado (45 074 clases). En este entorno de desarrollo el bind mount
+> (`volumes: ./:/var/www`) sigue tapando el `vendor/` de la imagen con el
+> del host apenas arranca el contenedor — verificado comparando el
+> `composer.lock` visto desde dentro del contenedor contra el del host
+> (idéntico) — así que **no hay ningún cambio de comportamiento en
+> desarrollo**. Lo que cambia es que la imagen ya no depende de ese bind
+> mount para tener `vendor/`: queda lista para desplegarse sola en otro
+> servidor o publicarse en un registry, que era el problema real de este
+> hallazgo.
 
 ### Qué pasa
 

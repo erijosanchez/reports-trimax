@@ -44,8 +44,20 @@ RUN mkdir -p /home/$user/.composer && \
 # Configurar directorio de trabajo
 WORKDIR /var/www
 
-# Copiar archivos del proyecto
+# Dependencias primero (I6): solo se reinstalan si cambia composer.json o
+# composer.lock, aprovechando el cache de capas de Docker. Con esto la
+# imagen queda autonoma — no depende de un `composer install` manual en el
+# host ni del bind mount de desarrollo para tener vendor/.
+COPY composer.json composer.lock ./
+RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist
+
+# Copiar el resto del proyecto
 COPY --chown=$user:$user . /var/www
+
+# Autoload optimizado ahora que ya está todo el código, y homogeneizar
+# dueño de vendor/ (creado como root en el paso anterior) con el resto.
+RUN composer dump-autoload --optimize && \
+    chown -R $user:$user /var/www
 
 # Cambiar al usuario creado
 USER $user
