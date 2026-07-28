@@ -2,12 +2,24 @@
 
 namespace App\Models;
 
+use App\Models\Scopes\SedeScope;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class SolicitudDesbloqueo extends Model
 {
     protected $table = 'solicitudes_desbloqueo';
+
+    /**
+     * Piloto de A1 (ARQUITECTURA.md): frontera de datos por sede como
+     * comportamiento por defecto, no una comprobación manual que se puede
+     * olvidar. Para saltárselo a propósito:
+     * SolicitudDesbloqueo::withoutGlobalScope(SedeScope::class).
+     */
+    protected static function booted(): void
+    {
+        static::addGlobalScope(new SedeScope());
+    }
 
     protected $fillable = [
         'user_id',

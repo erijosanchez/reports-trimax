@@ -83,6 +83,13 @@ class DesbloqueoAttachmentDiskTest extends TestCase
             ->assertOk();
     }
 
+    /**
+     * Cubre parte de S8/A1 (SEGURIDAD.md/ARQUITECTURA.md): servirArchivo()
+     * usa SolicitudDesbloqueo::findOrFail(), que ahora aplica SedeScope (A1)
+     * — un usuario de OTRA sede ya no encuentra la solicitud ajena, así que
+     * el chequeo de permiso explícito del controlador nunca llega a correr
+     * y la respuesta pasa de 403 a 404 (mismo cambio que en Vouchers).
+     */
     public function test_a_different_sede_cannot_download_the_attachment(): void
     {
         Storage::fake('local');
@@ -101,6 +108,6 @@ class DesbloqueoAttachmentDiskTest extends TestCase
 
         $this->actingAs($otraSede)
             ->get(route('desbloqueo.file', ['id' => $solicitud->id, 'index' => 0]))
-            ->assertForbidden();
+            ->assertNotFound();
     }
 }
