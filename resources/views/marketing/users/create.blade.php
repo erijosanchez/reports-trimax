@@ -288,23 +288,18 @@
 
             // Function to toggle location field
             function toggleLocationField() {
-                console.log('Role selected:', roleSelect.value); // Debug
-
                 if (roleSelect.value === 'sede') {
                     locationField.style.display = 'block';
                     locationInput.required = true;
-                    console.log('Showing location field'); // Debug
                 } else {
                     locationField.style.display = 'none';
                     locationInput.required = false;
                     locationInput.value = '';
-                    console.log('Hiding location field'); // Debug
                 }
             }
 
             // Event listener for role change
             roleSelect.addEventListener('change', function() {
-                console.log('Change event triggered'); // Debug
                 toggleLocationField();
             });
 

@@ -50,6 +50,64 @@ ejecución**, sin fijar versiones ni verificar integridad.
 
 ## F1 · Terceros desde CDN sin integridad ni versión — Severidad alta
 
+> ✅ **Resuelto 2026-07-27** (junto con F4, que comparte causa y arreglo).
+> Chart.js 4.4.0, SweetAlert2 y Leaflet 1.9.4 descargados a
+> `public/assets/vendors/{chart.js,sweetalert2,leaflet}/` (JS + CSS +
+> imágenes de marcador de Leaflet) y servidos localmente. No se vendorizaron
+> los `.map` de sourcemap — F7 pide justo lo contrario, exponerlos.
+>
+> **Chart.js, unificado a una sola versión y un solo punto de carga**
+> (resuelve F4 de paso): había en realidad **4** variantes conviviendo, no 3
+> — el inventario original no había detectado que `admin/dashboard.blade.php`
+> cargaba además `chart.js@3.9.1`. De los 13 `<script>` de Chart.js
+> encontrados (5 sin fijar + 7 en `@4.4.0` + 1 en `@3.9.1`), **12 eran carga
+> duplicada**: las 12 vistas que los tenían ya extienden `layouts/app.blade.php`,
+> que carga Chart.js una vez para las 58 vistas del layout. Se borraron los
+> 12 `<script>` sueltos y se dejó un único `<script>` en el layout, apuntando
+> al Chart.js local. Se verificó antes que ninguna de las 12 vistas dependía
+> de una API específica de su versión pineada (todas usan la sintaxis
+> `scales: { x: {...}, y: {...} }` de v3/v4, ninguna la `xAxes/yAxes` de v2).
+>
+> `Chart.roundedBarCharts.js` (el plugin de F4, escrito para v2) se retiró
+> del layout y se borró el archivo: `grep` confirmó que su única propiedad
+> (`cornerRadius`) que aparecía en el resto del código era una opción nativa
+> de *tooltip* de Chart.js v4 en `lead-time-semanal.blade.php`, sin relación
+> con el plugin — ningún gráfico dependía de él.
+>
+> **SweetAlert2**: 6 referencias, todas por-vista (no en el layout, correcto
+> porque no todas las páginas lo usan) — cambiadas a la copia local.
+>
+> **Leaflet**: 4 vistas (CSS + JS cada una) — cambiadas a la copia local,
+> con las 5 imágenes de marcador (`marker-icon(-2x)?.png`,
+> `marker-shadow.png`, `layers(-2x)?.png`) que su propio CSS/JS referencian
+> por ruta relativa.
+>
+> **Hallazgo adicional, mismo patrón**: `auth/login.blade.php` —la página
+> de login real, no `welcome.blade.php`— cargaba la fuente de iconos MDI
+> desde `cdn.jsdelivr.net/npm/@mdi/font@7.2.96`, una versión distinta a la ya
+> vendorizada en `assets/vendors/mdi/` (v3.9.97) que usa el resto de la app.
+> Verificados los 10 íconos que usa la página contra el CSS local antes de
+> cambiar: los 10 existen en v3.9.97. Cambiado a la copia local.
+>
+> **Efecto colateral encontrado investigando `fonts.bunny.net`** (2 vistas
+> según el inventario original): ambas — `resources/views/welcome.blade.php`
+> y `resources/views/layouts/guest.blade.php` (más
+> `app/View/Components/GuestLayout.php`, la clase que lo respalda) — son
+> **scaffolding muerto de Breeze**, sin ninguna ruta ni vista que las
+> referencie (`/` redirige directo a `/login`, nunca renderiza `welcome`).
+> Mismo patrón que `LoginRequest.php` (ver adenda de A7 en ARQUITECTURA.md).
+> Se borraron los 3 archivos en vez de arreglar su CDN — no había nada que
+> preservar. Con esto, F1 queda en 0 referencias a CDN en todo
+> `resources/views/`.
+>
+> Verificado en navegador (Puppeteer + Chrome headless, usuario de prueba
+> creado y borrado después): `window.Chart.version === '4.4.0'`,
+> `window.Swal` y `window.L` definidos, mapa Leaflet con tiles y controles
+> renderizando, gráficos de Chart.js renderizando — **cero errores de
+> consola y cero requests fallidos** en las 3 páginas probadas (antes había
+> el error de F4 en cada carga). Suite completa: 76 tests en verde salvo el
+> fallo preexistente de `ExampleTest`.
+
 ### Qué pasa
 
 Las vistas cargan código ejecutable desde cuatro dominios externos, y
@@ -106,6 +164,39 @@ poder aplicar una CSP estricta más adelante.
 ---
 
 ## F2 · Nombres de empleados enviados a un servicio externo — Severidad alta
+
+> ✅ **Resuelto 2026-07-27.** Nuevo componente Blade
+> `resources/views/components/avatar-iniciales.blade.php` (iniciales
+> calculadas con `mb_substr`/`mb_strtoupper`, sin librería, sin red) usado en
+> las **24 ocurrencias** de `ui-avatars.com` encontradas en 14 vistas (más
+> que las "12 lugares" originales — el conteo inicial no incluía las
+> reconstrucciones dinámicas por JavaScript). De esas 24: 20 eran `<img>`
+> renderizadas en Blade (migradas al componente) y 4 eran URLs construidas
+> en `<script>` client-side dentro de `admin/users.blade.php`,
+> `admin/dashboard.blade.php` y `marketing/dashboard/index.blade.php` (para
+> actualizar avatares por polling de presencia, o al pintar un modal de
+> encuesta) — se les escribió el equivalente JS (`avatarInicialesHtml()` en
+> el dashboard de marketing) o se adaptó el código de actualización para
+> tocar el nuevo `<span>` en vez de un `<img src>` inexistente.
+>
+> **Detalle que casi se pasa por alto:** `admin/users.blade.php` y
+> `admin/dashboard.blade.php` tienen polling de presencia en vivo que hacía
+> `item.querySelector('img').src = avatarUrl(...)` cada pocos segundos. Al
+> cambiar el `<img>` por un `<span>`, ese `querySelector('img')` habría
+> devuelto `null` y roto el polling con un error de JS silencioso. Corregido
+> actualizando `background-color`/`textContent` del `<span>` en vez del
+> `src` del `<img>`.
+>
+> Verificado en navegador (Puppeteer + Chrome headless, usuario de prueba
+> creado y borrado después): navbar y su dropdown (visibles en las 58 vistas
+> del layout) y la tabla de usuarios del dashboard de Marketing con datos
+> reales — 74 avatares con iniciales correctas, incluida una con tilde
+> (`ÓR`), tamaño y color consistentes con el original. Suite completa: 76
+> tests en verde salvo el fallo preexistente de `ExampleTest`. Un error de
+> consola sí apareció (`Cannot read properties of undefined (reading
+> 'prototype')`) pero es **F4** (el plugin de Chart.js v2 corriendo contra
+> v4), confirmado que existe también sin este cambio — no relacionado a F2,
+> queda para cuando se aborde F1/F4.
 
 ### Qué pasa
 
@@ -224,6 +315,18 @@ requiere decidir antes lo de Vite (A6): funciona igual con el template estático
 
 ## F4 · Tres versiones de Chart.js conviviendo — Severidad media
 
+> ✅ **Resuelto 2026-07-27, junto con F1** (mismo cambio, misma causa —
+> resueltos en una sola pasada). Detalle completo en
+> [F1](#f1--terceros-desde-cdn-sin-integridad-ni-versión--severidad-alta):
+> en realidad eran **4** versiones, no 3 (se encontró una `@3.9.1` adicional
+> en `admin/dashboard.blade.php` que el inventario original no había
+> detectado). Unificadas a Chart.js 4.4.0 servido localmente desde un único
+> `<script>` en el layout; los 12 `<script>` de Chart.js sueltos en vistas
+> individuales (duplicados, ya cubiertos por el layout) se borraron;
+> `Chart.roundedBarCharts.js` (el plugin v2 incompatible) se retiró y se
+> borró el archivo, confirmado que ningún gráfico dependía de él;
+> `vendors/chart.js/` v2.9.4 (sin usar) se reemplazó por la 4.4.0.
+
 ### Qué pasa
 
 | Origen | Versión | Estado |
@@ -266,6 +369,38 @@ funcionar **sin que nadie haya desplegado nada**.
 
 ## F5 · Librerías vendor sin usar — Severidad media
 
+> ✅ **Resuelto 2026-07-27.** Verificación programática antes de borrar
+> nada: cada una de las 50 carpetas de `vendors/` (sin contar `css/`/`js/`,
+> que son utilidades, no librerías) se buscó contra `resources/views/`,
+> `public/assets/css/` **y** `public/assets/js/` — este último paso
+> encontró que varios "usos sueltos" que aparecían al buscar el nombre
+> pelado (`clipboard`, `moment`, `sweetalert`) eran falsos positivos: la
+> palabra "clipboard" aparecía en clases de íconos MDI
+> (`mdi-clipboard-check-outline`), "moment" en el texto español "Un
+> momento por favor", y "sweetalert" como substring de `sweetalert2`
+> (la librería real, ya en uso). Otros "usos sueltos" (`dropify`,
+> `dropzone`, `select2`, `quill`, `colcade`, `inputmask`, `lightgallery`,
+> `pwstabs`, `simplemde`) resultaron ser scripts de inicialización del
+> propio template de demo en `public/assets/js/` (`editorDemo.js`,
+> `tabs.js`, etc.) que **tampoco** carga ninguna vista real — código muerto
+> llamando a otro código muerto. También se revisó que ninguna de las 40
+> quedara referenciada dentro de los bundles ya minificados
+> (`vendors/js/vendor.bundle.base.js`, `vendors/css/vendor.bundle.base.css`).
+>
+> Confirmadas **40 carpetas sin ninguna referencia real** (una más que la
+> estimación original de 41 menos las que este trabajo ya había convertido
+> en usadas: `chart.js` — antes v2.9.4 muerta, ahora v4.4.0 real, ver F1/F4).
+> Borradas las 40, incluida `jquery-file-upload` (la que traía jQuery v1.5
+> de 2011 embebido). `vendors/` pasó de **33 MB a 4,5 MB**. Quedan 10
+> carpetas, todas con uso real verificado:
+> `bootstrap-datepicker`, `chart.js`, `feather`, `leaflet`, `mdi`,
+> `progressbar.js`, `simple-line-icons`, `sweetalert2`, `ti-icons`, `typicons`.
+>
+> Verificado en navegador tras el borrado (Puppeteer + Chrome headless):
+> cero errores de consola, cero requests fallidos en la página de inicio.
+> Suite completa: 76 tests en verde salvo el fallo preexistente de
+> `ExampleTest`.
+
 `public/assets/vendors/` contiene **50 librerías**. Referenciadas desde las
 vistas o el layout: **9**.
 
@@ -307,6 +442,52 @@ sin actualizarse. Conviene planificar la subida, no urge.
 
 ## F6 · Accesibilidad y consistencia — Severidad media
 
+> ✅ **2026-07-27 — punto 1 resuelto: los 10 `console.log` borrados.**
+> Verificado caso por caso que ninguna variable quedaba huérfana al quitar
+> el log — en `consulta-orden.blade.php::cargarRecientes()` `loadTime` se
+> preservó porque también alimenta un `<span>` visible ("Cargado en Xs") y
+> un toast de SweetAlert2, no solo el log que se borró.
+>
+> ✅ **Punto 3 resuelto también (`alt`/`aria-label`), con un alcance mayor
+> al estimado ("14 y 6").** Un barrido exhaustivo de las 41 `<img>` de la
+> app encontró **19** con `alt` ausente o vacío (9 sin el atributo, 10 con
+> `alt=""`) y **39** controles interactivos que son solo un ícono sin
+> `aria-label` ni `title` (36 con ícono `mdi`, 3 con SVG inline en el
+> asistente de IA — un componente incluido en el layout global, así que
+> aparecen en prácticamente todas las páginas).
+>
+> De las 10 imágenes con `alt=""`: las 8 caras de emoji del formulario de
+> encuesta (`marketing/survey/form.blade.php`) se dejaron intencionalmente
+> vacías — cada una tiene al lado una etiqueta visible ("Muy Feliz",
+> "Feliz", ...) que ya transmite el mismo significado; ponerles `alt`
+> habría duplicado el anuncio en un lector de pantalla. Solo se corrigió
+> el logo de esa misma vista (`alt=""` → `alt="TRIMAX"`, sin texto
+> adyacente que lo supla). Las 9 restantes con `alt` ausente sí se
+> completaron con el nombre real del archivo/firma (variable ya disponible
+> en cada caso: `a.name`, `f.name`, o una descripción fija para las firmas
+> del PDF de requerimientos de RRHH).
+>
+> De los 39 controles: búsquedas, aprobar/rechazar, paginación, "Volver",
+> mostrar/ocultar contraseña (con `aria-label` dinámico según estado), y
+> los 2 toggles del navbar + los 3 del asistente de IA — estos últimos 5
+> son los de mayor impacto real, por aparecer en el layout global. El
+> toggle de mostrar/ocultar contraseña y el del asistente de IA actualizan
+> el `aria-label` en el mismo evento que ya cambiaba el ícono, no solo al
+> cargar la página.
+>
+> **Efecto colateral:** `resources/views/layouts/navigation.blade.php`
+> —encontrado durante este barrido— es el mismo scaffolding muerto de
+> Breeze que ya se venía limpiando (ver adendas de A7 en ARQUITECTURA.md):
+> cero vistas lo incluyen. Borrado.
+>
+> Verificado en navegador (Puppeteer + Chrome headless): el `aria-label`
+> de mostrar/ocultar contraseña y del asistente de IA cambian
+> correctamente al hacer clic, cero errores de consola. Suite completa: 76
+> tests en verde salvo el fallo preexistente de `ExampleTest`.
+>
+> Puntos 2 y 4 (los 19 `alert()` nativos, los 891 estilos inline) siguen
+> pendientes — ver más abajo.
+
 | Comprobación | Resultado |
 |---|---|
 | `<img>` sin atributo `alt` | **14 de 29** |
@@ -342,6 +523,16 @@ Por orden de coste/beneficio:
 
 ## F7 · Fuentes SCSS y sourcemaps públicos — Severidad baja
 
+> ✅ **Resuelto 2026-07-27.** Verificado antes que nada en `resources/views/`
+> ni en `public/assets/css/` referenciaba `assets/scss/` (el CSS ya
+> compilado es lo que se sirve realmente) — borrado `public/assets/scss/`
+> completo (214 archivos, 1.1 MB) y los 11 `.map` sueltos bajo `public/`.
+> Confirmado con `curl`: las rutas que antes daban 200
+> (`/assets/scss/vertical-layout-light/_navbar.scss`,
+> `/assets/vendors/js/bootstrap.min.js.map`) ahora dan 404; el resto de
+> `public/assets/` (CSS/JS compilados, los vendors nuevos de F1) sigue en
+> 200.
+
 Verificado contra la instancia local:
 
 ```
@@ -363,6 +554,32 @@ la raíz web.
 ---
 
 ## F8 · Sin vistas de error 404 ni 500 — Severidad baja
+
+> ✅ **Resuelto 2026-07-27, con una decisión distinta a la sugerida.** La
+> corrección propuesta original decía "extendiendo el mismo layout que las
+> dos existentes" — pero de las dos vistas existentes, solo `403.blade.php`
+> extiende `layouts.app` (seguro, porque un 403 solo ocurre dentro del
+> grupo de rutas `auth`, con sesión ya garantizada); `503.blade.php` es
+> HTML autocontenido, precisamente porque el modo mantenimiento puede
+> mostrarse a cualquiera, con o sin sesión.
+>
+> Un 404 o un 500 pueden pasarle a **cualquiera** — un invitado con una URL
+> mal escrita, un enlace roto, un error de servidor a media petición sin
+> sesión todavía resuelta. `layouts.app` incluye el navbar, que llama
+> `Auth::user()->name` sin verificar null. Extenderlo desde un 404/500
+> habría cambiado un error controlado por un fatal error no controlado la
+> primera vez que un invitado topara con una URL rota. Se optaron por
+> páginas HTML autocontenidas (mismo criterio que `503.blade.php`), con la
+> identidad visual de `403.blade.php` (logo, número grande, ícono, botones
+> "Ir al Inicio"/"Volver").
+>
+> Verificado: `view('errors.404')->render()` y `view('errors.500')->render()`
+> no lanzan error; una URL inexistente real (`curl`) devuelve **404** con
+> el HTML nuevo (confirmado también con `APP_DEBUG=true`, que es como
+> corre el entorno local — Laravel sí usa la vista de error en 404 aunque
+> el modo debug esté activo, a diferencia de un 500 genérico). Captura de
+> pantalla verificada en navegador. Suite completa: 76 tests en verde salvo
+> el fallo preexistente de `ExampleTest`.
 
 `resources/views/errors/` contiene solo `403.blade.php` y `503.blade.php`. Un
 404 —el error más frecuente— y un 500 caen a la plantilla por defecto de

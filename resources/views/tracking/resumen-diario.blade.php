@@ -26,7 +26,7 @@
                             <div class="d-flex align-items-center gap-2">
                                 <input type="date" id="sel-fecha" class="form-control form-control-sm"
                                     value="{{ $fecha }}" max="{{ today()->toDateString() }}" style="width:160px">
-                                <button id="btn-fecha" class="btn btn-sm btn-primary">
+                                <button id="btn-fecha" class="btn btn-sm btn-primary" aria-label="Buscar por fecha">
                                     <i class="mdi mdi-magnify"></i>
                                 </button>
                             </div>

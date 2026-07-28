@@ -28,6 +28,37 @@
 > [I4](INFRAESTRUCTURA.md#i4--deriva-de-migraciones--severidad-alta--resuelto).
 > La advertencia de "no corras migrate" del `README.md` ya no aplica.
 
+> **2026-07-27 — A1 avanza: `SedeScope` ya cubre los 4 modelos candidatos**
+> (`ReporteCobranza`, `ReporteCajaChica`, `ReporteComentarios`,
+> `SolicitudDesbloqueo`), además del piloto de Vouchers. Sigue siendo
+> 🟡 piloto porque el paso 2 (Gates reemplazando los ~200 `isSede()`/
+> `isAdmin()` restantes fuera de la frontera de lectura) solo está aplicado en
+> Vouchers. Detalle en [A1](ARQUITECTURA.md#a1--autorización-dispersa--severidad-alta).
+
+> **2026-07-27 — A5 avanza: piloto en `DescuentosEspecialesController`.** 5
+> Form Requests nuevos reemplazan 9 de las 75 validaciones inline,
+> consolidando 4 rulesets que estaban duplicados letra por letra entre
+> métodos. Efecto colateral positivo verificado con tests nuevos: las
+> validaciones vivían dentro de un `try/catch` que convertía cualquier fallo
+> de validación en un 500 genérico en vez del 422 estándar de Laravel — ya
+> corregido. De paso, auditando esta sección se encontró y borró
+> `app/Http/Requests/LoginRequest.php`, scaffolding muerto de Breeze con
+> cero referencias en la app (adenda a A7, no a A5). Detalle en
+> [A5](ARQUITECTURA.md#a5--validación-inline--severidad-media).
+
+> **2026-07-27 — Frontend: F2, F1 y F4 resueltos.** Avatares generados
+> localmente (24 sitios, no 12 — el conteo original no incluía las
+> reconstrucciones por JavaScript); Chart.js/SweetAlert2/Leaflet
+> vendorizados localmente y Chart.js unificado a una sola versión (4.4.0,
+> no 3 — había una 4ª variante sin detectar) cargada una sola vez desde el
+> layout, con el plugin incompatible de v2 retirado. Efecto colateral: el
+> error de consola que aparecía en cada carga de página desapareció. De
+> paso se encontraron y borraron 3 archivos más de scaffolding muerto de
+> Breeze (`welcome.blade.php`, `layouts/guest.blade.php`,
+> `GuestLayout.php`), mismo patrón que la adenda de A7 con `LoginRequest.php`.
+> Verificado con Puppeteer + Chrome headless contra la app real. Detalle en
+> [FRONTEND.md](FRONTEND.md).
+
 > ✅ **2026-07-27 — Ronda 2 completa: S2 y S4 resueltos.** `composer update
 > --with-all-dependencies` corrido tras destrabar un constraint innecesariamente
 > fijado (`google/apiclient`); `composer audit` pasó de 49 advisories a
@@ -111,7 +142,7 @@ tocar el mismo archivo. Detalle de cada cambio en `SEGURIDAD.md` e
 | 4 | ✅ Middleware de cabeceras de seguridad (`X-Frame-Options`, `nosniff`, `Referrer-Policy`) | 🔒 Seguridad | [S3](SEGURIDAD.md#s3--sin-cabeceras-de-seguridad-http--severidad-alta) | Alta | ~30 min |
 | 5 | ✅ Sacar las credenciales literales del `docker-compose.yml` a `env_file` | ⚙️ Infra | [I2](INFRAESTRUCTURA.md#i2--credenciales-literales-en-el-compose--severidad-alta) | Alta | ~1 h |
 | 6 | ✅ Decidir sobre el 2FA: activarlo por rol o retirarlo — está construido, nunca aplicado, 0 de 65 usuarios | 🔒 Seguridad | [S4](SEGURIDAD.md#s4--2fa-construido-pero-nunca-activado--severidad-alta) | Alta | Decisión + ~4 h |
-| 7 | 🟡 Centralizar la frontera de datos por sede en un Global Scope + Gates — hoy son 212 comprobaciones a mano (piloto en Vouchers, resto pendiente) | 🏗️ Arquitectura | [A1](ARQUITECTURA.md#a1--autorización-dispersa--severidad-alta) | Alta | Medio |
+| 7 | 🟡 Centralizar la frontera de datos por sede en un Global Scope + Gates — hoy son 212 comprobaciones a mano (`SedeScope` ya en Voucher + 4 modelos de reportes/sede; Gates solo en Vouchers) | 🏗️ Arquitectura | [A1](ARQUITECTURA.md#a1--autorización-dispersa--severidad-alta) | Alta | Medio |
 | 8 | ✅ `CACHE_STORE=redis`: la clave `CACHE_DRIVER` es de Laravel 10 y se ignora, así que la caché escribe en MySQL | ⚙️ Infra | [I1](INFRAESTRUCTURA.md#i1--la-caché-va-a-mysql-no-a-redis--severidad-alta--resuelto) | Alta | Minutos |
 | 9 | ✅ Sincronizar el registro de `migrations` con el esquema real — `php artisan migrate` hoy fallaría | ⚙️ Infra | [I4](INFRAESTRUCTURA.md#i4--deriva-de-migraciones--severidad-alta--resuelto) | Alta | Minutos |
 | 10 | ✅ Envolver en `DB::transaction` las escrituras multi-tabla (vouchers, requerimientos) | 🏗️ Arquitectura | [A3](ARQUITECTURA.md#a3--escrituras-sin-transacción--severidad-alta) | Alta | Bajo |
@@ -129,7 +160,7 @@ tocar el mismo archivo. Detalle de cada cambio en `SEGURIDAD.md` e
 | 17 | ✅ `horizon` y `scheduler` reutilizando `image: trimax-app` — hoy duplican 2.5 GB y pueden divergir de versión | ⚙️ Infra | [I5](INFRAESTRUCTURA.md#i5--imágenes-duplicadas--severidad-media--resuelto) | Media | Minutos |
 | 18 | ✅ `healthcheck` en app, nginx y horizon + `depends_on: condition: service_healthy` | ⚙️ Infra | [I7](INFRAESTRUCTURA.md#i7--healthchecks-incompletos--severidad-media) | Media | ~1 h |
 | 19 | ✅ `composer install` y cacheo de capas en el `Dockerfile` — la imagen no es autónoma | ⚙️ Infra | [I6](INFRAESTRUCTURA.md#i6--la-imagen-no-es-autónoma--severidad-media) | Media | ~2 h |
-| 20 | Extraer Form Requests donde las reglas se repiten (75 validaciones inline vs 6 Form Requests) | 🏗️ Arquitectura | [A5](ARQUITECTURA.md#a5--validación-inline--severidad-media) | Media | Medio |
+| 20 | 🟡 Extraer Form Requests donde las reglas se repiten (75 validaciones inline vs 6 Form Requests) — piloto: 9 de 75, en `DescuentosEspecialesController` | 🏗️ Arquitectura | [A5](ARQUITECTURA.md#a5--validación-inline--severidad-media) | Media | Medio |
 | 21 | 🟡 Tests de las reglas de negocio, empezando por la frontera de datos por sede — piloto: hora límite Huánuco, KPI de cobranza, frontera de sede | 🏗️ Arquitectura | [A8](ARQUITECTURA.md#a8--cobertura-de-tests--severidad-media) | Media | Alto |
 | 22 | 🔴 Decidir el destino del frontend: asumir el template estático o activar Vite — planteado 2026-07-27, se eligió diferir la decisión | 🏗️ Arquitectura | [A6](ARQUITECTURA.md#a6--pipeline-de-frontend-inutilizado--severidad-media) | Media | Medio |
 | 23 | Extraer servicios de los 10 controladores que superan 400 LOC | 🏗️ Arquitectura | [A4](ARQUITECTURA.md#a4--controladores-gordos--severidad-media) | Media | Alto |
@@ -155,13 +186,13 @@ cerrado: se avanza vista a vista.
 
 | # | Corrección | ID | Severidad | Esfuerzo |
 |---|---|---|---|---|
-| F-1 | Generar los avatares localmente — hoy cada listado envía el nombre completo de cada empleado a `ui-avatars.com` | [F2](FRONTEND.md#f2--nombres-de-empleados-enviados-a-un-servicio-externo--severidad-alta) | Alta | ~1 h |
-| F-2 | Servir Chart.js, SweetAlert2 y Leaflet localmente — hoy vienen de CDN sin `integrity` y dos sin versión fijada | [F1](FRONTEND.md#f1--terceros-desde-cdn-sin-integridad-ni-versión--severidad-alta) | Alta | ~2 h |
-| F-3 | Unificar Chart.js en una sola versión y retirar el plugin de v2 que corre sobre v4 | [F4](FRONTEND.md#f4--tres-versiones-de-chartjs-conviviendo--severidad-media) | Media | ~1 h |
-| F-4 | Borrar los 10 `console.log`, los 214 `.scss` y los 11 sourcemaps servidos públicamente | [F6](FRONTEND.md#f6--accesibilidad-y-consistencia--severidad-media), [F7](FRONTEND.md#f7--fuentes-scss-y-sourcemaps-públicos--severidad-baja) | Baja | ~30 min |
-| F-5 | Eliminar las 41 librerías vendor sin usar (34 MB) | [F5](FRONTEND.md#f5--librerías-vendor-sin-usar--severidad-media) | Media | ~1 h |
-| F-6 | Añadir los 14 `alt` y 6 `aria-label` que faltan | [F6](FRONTEND.md#f6--accesibilidad-y-consistencia--severidad-media) | Media | ~30 min |
-| F-7 | Vistas de error 404 y 500 | [F8](FRONTEND.md#f8--sin-vistas-de-error-404-ni-500--severidad-baja) | Baja | ~30 min |
+| F-1 | ✅ Generar los avatares localmente — hoy cada listado envía el nombre completo de cada empleado a `ui-avatars.com` | [F2](FRONTEND.md#f2--nombres-de-empleados-enviados-a-un-servicio-externo--severidad-alta) | Alta | ~1 h |
+| F-2 | ✅ Servir Chart.js, SweetAlert2 y Leaflet localmente — hoy vienen de CDN sin `integrity` y dos sin versión fijada | [F1](FRONTEND.md#f1--terceros-desde-cdn-sin-integridad-ni-versión--severidad-alta) | Alta | ~2 h |
+| F-3 | ✅ Unificar Chart.js en una sola versión y retirar el plugin de v2 que corre sobre v4 | [F4](FRONTEND.md#f4--tres-versiones-de-chartjs-conviviendo--severidad-media) | Media | ~1 h |
+| F-4 | ✅ Borrar los 10 `console.log`, los 214 `.scss` y los 11 sourcemaps servidos públicamente | [F6](FRONTEND.md#f6--accesibilidad-y-consistencia--severidad-media), [F7](FRONTEND.md#f7--fuentes-scss-y-sourcemaps-públicos--severidad-baja) | Baja | ~30 min |
+| F-5 | ✅ Eliminar las librerías vendor sin usar (40, ~29 MB) | [F5](FRONTEND.md#f5--librerías-vendor-sin-usar--severidad-media) | Media | ~1 h |
+| F-6 | ✅ Añadir los `alt`/`aria-label` que faltan (19 + 39, más que la estimación de 14+6) | [F6](FRONTEND.md#f6--accesibilidad-y-consistencia--severidad-media) | Media | ~30 min |
+| F-7 | ✅ Vistas de error 404 y 500 | [F8](FRONTEND.md#f8--sin-vistas-de-error-404-ni-500--severidad-baja) | Baja | ~30 min |
 | F-8 | Extraer el JavaScript de las vistas a módulos compartidos — 12 724 líneas en 52 plantillas | [F3](FRONTEND.md#f3--javascript-dentro-de-las-plantillas--severidad-alta) | Alta | Alto, incremental |
 
 ---
@@ -202,7 +233,7 @@ también el documento de origen.
 | Principal | S9, S10 (no numeradas, ver recuadro arriba) | ✅ Resuelto | 2026-07-27 |
 | Principal | 2 (S2), 6 (S4) | ✅ Resuelto | 2026-07-27 |
 | Principal | 3 (I3), 5 (I2) | ✅ Resuelto | 2026-07-27 |
-| Principal | 7 (A1) | 🟡 Piloto (Vouchers) | 2026-07-27 |
+| Principal | 7 (A1) | 🟡 Piloto (`SedeScope`: Voucher + 4 modelos de reportes/sede; Gates: solo Vouchers) | 2026-07-27 |
 | Principal | 10 (A3) | ✅ Resuelto | 2026-07-27 |
 | Principal | 11 (A2) | 🟡 Piloto (auditado, 1 hallazgo documentado sin aplicar) | 2026-07-27 |
 | Principal | 13 (S5), 14 (I8), 15 (S7) | ✅ Resuelto | 2026-07-27 |
@@ -210,6 +241,12 @@ también el documento de origen.
 | Principal | 22 (A6) | 🔴 Diferido a propósito (decisión de producto) | 2026-07-27 |
 | Principal | 18 (I7), 19 (I6), 24 (A7), 25 (I9), 26 (I10) | ✅ Resuelto | 2026-07-27 |
 | Principal | 21 (A8) | 🟡 Piloto (Cobranza) | 2026-07-27 |
-| Principal | 20, 23 | Pendiente | — |
-| Frontend | F-1–F-8 | Pendiente | — |
+| Principal | 20 (A5) | 🟡 Piloto (`DescuentosEspecialesController`, 9/75) | 2026-07-27 |
+| Principal | 23 | Pendiente | — |
+| Frontend | F-1 (F2), F-2 (F1), F-3 (F4) | ✅ Resuelto | 2026-07-27 |
+| Frontend | F-4 (F6 punto 1, F7) | ✅ Resuelto | 2026-07-27 |
+| Frontend | F-5 (F5) | ✅ Resuelto | 2026-07-27 |
+| Frontend | F-6 (F6 punto 3) | ✅ Resuelto | 2026-07-27 |
+| Frontend | F-7 (F8) | ✅ Resuelto | 2026-07-27 |
+| Frontend | F-8 (F3) | Pendiente — trabajo de fondo, sin final cerrado | — |
 | Extra (no numerada) | Mensajes de validación en inglés (`APP_LOCALE=en`, sin `lang/es/`) | ✅ Resuelto | 2026-07-27 |

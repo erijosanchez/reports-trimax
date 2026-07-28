@@ -223,7 +223,7 @@
         <td class="firma-box">
             @if($requerimiento->firma_solicitante_data)
                 <div class="firma-img-wrap">
-                    <img src="{{ $requerimiento->firma_solicitante_data }}" style="max-height:46pt; max-width:120pt;">
+                    <img src="{{ $requerimiento->firma_solicitante_data }}" alt="Firma del responsable de área solicitante" style="max-height:46pt; max-width:120pt;">
                 </div>
             @else
                 <div style="height:50pt;"></div>
@@ -242,7 +242,7 @@
         <td class="firma-box">
             @if($requerimiento->firma_rrhh_data)
                 <div class="firma-img-wrap">
-                    <img src="{{ $requerimiento->firma_rrhh_data }}" style="max-height:46pt; max-width:120pt;">
+                    <img src="{{ $requerimiento->firma_rrhh_data }}" alt="Firma del responsable de Recursos Humanos" style="max-height:46pt; max-width:120pt;">
                 </div>
             @else
                 <div style="height:50pt;"></div>
@@ -261,7 +261,7 @@
         <td class="firma-box">
             @if($requerimiento->firma_gerente_data)
                 <div class="firma-img-wrap">
-                    <img src="{{ $requerimiento->firma_gerente_data }}" style="max-height:46pt; max-width:120pt;">
+                    <img src="{{ $requerimiento->firma_gerente_data }}" alt="Firma del gerente" style="max-height:46pt; max-width:120pt;">
                 </div>
             @else
                 <div style="height:50pt;"></div>

@@ -87,9 +87,41 @@ aplicación**. Es consecuencia de A6.
 > que la frontera de datos deje de depender de que nadie olvide una
 > comprobación" que pide A8.
 >
-> **Modelos candidatos para el mismo patrón, no aplicado todavía:**
-> `SolicitudDesbloqueo`, `ReporteCobranza`, `ReporteCajaChica`,
-> `ReporteComentarios` — mismo nombre de columna `sede`, mismo criterio.
+> **2026-07-27 (continuación) — los 4 modelos candidatos, migrados.**
+> `SolicitudDesbloqueo`, `ReporteCobranza`, `ReporteCajaChica` y
+> `ReporteComentarios` ya aplican `SedeScope` vía `booted()`, mismo patrón que
+> `Voucher`. Se verificó antes que ningún controlador usa `DB::table()` sobre
+> esas 4 tablas (el scope solo actúa sobre Eloquent) y que los filtros
+> manuales existentes (`->where('sede', $user->sede)` en
+> `CobranzaSedesController`, `CajaChicaSedesController`,
+> `ComentariosSedesController`, `DesbloqueoController`) quedan redundantes
+> pero no rotos — se dejan como están, a limpiar cuando se toque cada
+> controlador por otra razón. De paso, `ProductivyController::index()` traía
+> las 3 tablas de reportes completas (todas las sedes) a memoria y filtraba
+> recién al armar la tabla; con el scope activo un usuario de sede ahora deja
+> de traer filas ajenas incluso en ese paso intermedio.
+>
+> Cubierto con 9 casos nuevos en `tests/Feature/SedeScopeTest.php` (mismo
+> archivo, misma estructura que el piloto de Voucher): por modelo, lista
+> restringida a la sede propia, `findOrFail` de otra sede da 404, y
+> finanzas ve todas las sedes. No se repitió el test del escape hatch
+> (`withoutGlobalScope`) por modelo — es un mecanismo de `SedeScope` en sí,
+> ya cubierto una vez, no algo que varíe por modelo.
+>
+> **Mismo efecto secundario que en Vouchers:** `DesbloqueoController::servirArchivo()`
+> usa `SolicitudDesbloqueo::findOrFail()`, así que el scope ahora intercepta
+> antes que el chequeo de permiso del controlador — un usuario de otra sede
+> pasa de recibir 403 a recibir 404 al pedir el adjunto ajeno. Se actualizó
+> `DesbloqueoAttachmentDiskTest::test_a_different_sede_cannot_download_the_attachment`
+> para reflejarlo (igual que ya se había hecho con `VoucherAttachmentDiskTest`).
+> Suite completa verificada tras el cambio: 69 tests en verde, el único
+> fallo (`ExampleTest`) es preexistente y no relacionado (la ruta `/`
+> redirige a login, no es un 200 — scaffolding por defecto de Laravel).
+>
+> Quedan sin migrar los ~200 sitios restantes de `isSede()`/`isAdmin()`/
+> `isSuperAdmin()` fuera de la frontera de datos (permisos de acción, no de
+> lectura) — eso es lo que cubre el paso 2 de la corrección propuesta
+> (Gates), aplicado hasta ahora solo a Vouchers.
 
 ### Qué pasa
 
@@ -361,6 +393,56 @@ Orden sugerido, y solo cuando toque trabajar en cada uno:
 
 ## A5 · Validación inline — Severidad media
 
+> 🟡 **Piloto aplicado 2026-07-27** en `DescuentosEspecialesController` (9 de
+> las 75 validaciones inline), el segundo controlador de mayor concentración
+> después de `ComercialController`. No se tocaron los otros 66 sitios —
+> quedan pendientes, mismo criterio incremental que A1/A2.
+>
+> **5 Form Requests nuevos** (`app/Http/Requests/`), cada uno cubriendo un
+> ruleset que aparecía repetido letra por letra en 2+ métodos:
+> `AccionDescuentoRequest` (`aplicarDescuento`/`aprobarDescuento`),
+> `MotivoDescuentoRequest` (`deshabilitarDescuento`/`rehabilitarDescuento`),
+> `NuevoEstadoDescuentoRequest` (`cambiarAplicacion`/`cambiarAprobacion`) y
+> `StoreDescuentoEspecialRequest`/`UpdateDescuentoEspecialRequest` (el
+> ruleset de 15 campos de `crearDescuento`/`editarDescuento`). Se preservó
+> la única divergencia real que ya existía entre create y update
+> (`comentarios` obligatorio al crear, opcional al editar) documentándola en
+> el propio `UpdateDescuentoEspecialRequest` en vez de decidir cuál de las
+> dos reglas es la correcta — no era el alcance de este cambio.
+>
+> `editarDescuento()` tiene una rama que solo corre para usuarios con rol
+> `sede` (edita 2 campos, no 15) resuelta en tiempo de ejecución — no se le
+> puede poner un Form Request por type-hint sin romper esa rama, porque
+> Laravel resuelve y valida el Form Request antes de que el cuerpo del
+> método decida qué rama tomar. Se dejó con `Request` genérico y
+> `$request->validate((new UpdateDescuentoEspecialRequest())->rules())` en la
+> rama no-sede, matando la duplicación literal sin arriesgar el flujo de
+> sede.
+>
+> **Efecto colateral real, verificado con tests:** las 9 validaciones vivían
+> dentro de un `try { ... } catch (\Exception $e) { return 500 }` en cada
+> método. Como `$request->validate()` lanza `ValidationException` (subclase
+> de `Exception`), una petición inválida cascaba con **500** y el mensaje
+> genérico del catch, en vez del 422 con errores por campo que da Laravel
+> por defecto — nadie lo había notado porque no había ningún test sobre este
+> controlador. Con el Form Request, la validación se resuelve *antes* de
+> entrar al método (fuera del try/catch), así que ahora sí es un 422
+> estándar. Cubierto con 6 tests nuevos en
+> `tests/Feature/DescuentoEspecialFormRequestTest.php` (controlador sin
+> tests previos), incluyendo uno que fija explícitamente el 422 en vez del
+> 500 anterior.
+>
+> Nota de orden: en los métodos que además chequean permiso por email
+> (`aplicarDescuento`, `deshabilitarDescuento`, etc.), antes el permiso se
+> comprobaba primero y la validación después (ambos dentro del mismo
+> método); ahora la validación del Form Request corre primero. Si una
+> petición llega inválida *y* de un usuario sin permiso, antes daba 403 y
+> ahora da 422 — mismo tipo de cambio de precedencia ya aceptado en A1 para
+> `findOrFail` (403→404), sin fuga de datos en ningún caso.
+>
+> Suite completa verificada: 75 tests en verde, el único fallo
+> (`ExampleTest`) es preexistente y no relacionado.
+
 **75** `$request->validate()` / `Validator::make()` en controladores, contra
 **6** Form Requests existentes (`ProfileUpdateRequest`, `FileUploadRequest`,
 `StoreUserRequest`, `StoreDashboardRequest`, `UpdateUserRequest`,
@@ -376,11 +458,19 @@ rechaza.
 ### Corrección propuesta
 
 Extraer Form Request solo donde las reglas **se repiten** o pasan de ~5 campos.
-Convención de ubicación ya establecida en el repo: subcarpeta por dominio
-(`app/Http/Requests/Auth/LoginRequest.php`).
 
-> Nota: `LoginRequest` ya fue movido de `app/Http/Requests/` a
-> `app/Http/Requests/Auth/` para corregir una violación de PSR-4. No revertir.
+> **Corrección 2026-07-27 a esta misma nota:** la afirmación anterior ("`LoginRequest`
+> ya fue movido a `app/Http/Requests/Auth/`, no revertir") era incorrecta —
+> nunca se movió. El archivo declaraba `namespace App\Http\Requests\Auth`
+> pero vivía físicamente en `app/Http/Requests/LoginRequest.php` desde su
+> creación (commit `3314eef`, PSR-4 roto desde el día uno) y **no lo
+> referenciaba nada en toda la app**: `Auth/LoginController::login()` usa
+> `Illuminate\Http\Request` con `validate()` inline, el real. Es el mismo
+> scaffolding muerto de Breeze que ya se limpió en
+> [A7](#a7--código-huérfano-y-scaffolding-roto--severidad-baja) — se coló
+> porque A7 auditó controladores y rutas, no Form Requests. Se borró el
+> archivo (adenda a A7, no a A5) en vez de moverlo: no había nada que
+> preservar.
 
 ---
 
@@ -503,6 +593,23 @@ es así.
 > el scaffolding genérico de Laravel que espera `GET /` → 200 pero la app
 > redirige a `/login` por diseño — no está en el alcance de A7, se dejó sin
 > tocar).
+>
+> **Adenda 2026-07-27** (encontrado auditando [A5](#a5--validación-inline--severidad-media)):
+> `app/Http/Requests/LoginRequest.php` era el mismo residuo de Breeze, pasado
+> por alto porque el barrido original de A7 cubrió controladores y rutas, no
+> Form Requests. Cero referencias en toda la app. Borrado.
+>
+> **Segunda adenda 2026-07-27** (encontrado auditando
+> [F1 en FRONTEND.md](FRONTEND.md#f1--terceros-desde-cdn-sin-integridad-ni-versión--severidad-alta)):
+> `resources/views/welcome.blade.php`, `resources/views/layouts/guest.blade.php`
+> y `app/View/Components/GuestLayout.php` — mismo scaffolding de Breeze, cero
+> rutas ni vistas que los referencien (`/` redirige directo a `/login`,
+> nunca renderiza `welcome`). Borrados los 3.
+>
+> **Tercera adenda 2026-07-27** (encontrado auditando
+> [F6 en FRONTEND.md](FRONTEND.md#f6--accesibilidad-y-consistencia--severidad-media)):
+> `resources/views/layouts/navigation.blade.php` — mismo scaffolding de
+> Breeze, cero vistas lo incluyen. Borrado.
 
 ---
 

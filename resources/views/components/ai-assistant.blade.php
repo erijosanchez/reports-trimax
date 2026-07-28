@@ -3,7 +3,7 @@
 <div id="ai-assistant" style="position: fixed; right: 1.25rem; bottom: 1.25rem; z-index: 9999; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;">
 
     {{-- Botón flotante --}}
-    <button id="ai-toggle"
+    <button id="ai-toggle" aria-label="Abrir asistente Trimax"
         style="background: linear-gradient(135deg, #2563eb, #4338ca); border: none; border-radius: 1rem; padding: 0.75rem; color: white; box-shadow: 0 8px 25px rgba(37,99,235,0.35); transition: all 0.3s; cursor: pointer;"
         onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 10px 30px rgba(37,99,235,0.45)';"
         onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 8px 25px rgba(37,99,235,0.35)';"
@@ -41,7 +41,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                     </svg>
                 </button>
-                <button id="ai-close"
+                <button id="ai-close" aria-label="Cerrar asistente"
                     style="background: transparent; border: none; color: white; padding: 0.375rem; border-radius: 0.5rem; cursor: pointer; line-height: 0; transition: background 0.2s;"
                     onmouseover="this.style.background='rgba(255,255,255,0.15)'" onmouseout="this.style.background='transparent'">
                     <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -75,7 +75,7 @@
                     style="flex: 1; padding: 0.625rem 0.875rem; border: 1px solid #e5e7eb; border-radius: 0.75rem; font-size: 13px; resize: none; max-height: 80px; outline: none; transition: border-color 0.2s, box-shadow 0.2s; color: #374151; font-family: inherit;"
                     onfocus="this.style.borderColor='#60a5fa'; this.style.boxShadow='0 0 0 3px rgba(59,130,246,0.2)'"
                     onblur="this.style.borderColor='#e5e7eb'; this.style.boxShadow='none'"></textarea>
-                <button id="ai-send"
+                <button id="ai-send" aria-label="Enviar mensaje"
                     style="flex-shrink: 0; background: #2563eb; border: none; border-radius: 0.75rem; padding: 0.625rem; color: white; cursor: pointer; line-height: 0; transition: all 0.2s;"
                     onmouseover="this.style.background='#1d4ed8'"
                     onmouseout="this.style.background='#2563eb'"
@@ -191,6 +191,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (isOpen) { panel.style.display = 'flex'; }
         iconChat.classList.toggle('d-none', isOpen);
         iconClose.classList.toggle('d-none', !isOpen);
+        toggle.setAttribute('aria-label', isOpen ? 'Cerrar asistente Trimax' : 'Abrir asistente Trimax');
         if (isOpen) input.focus();
     });
 
