@@ -10,6 +10,7 @@ use App\Services\ActivityLogService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -25,7 +26,8 @@ class DesbloqueoController extends Controller
     {
         $user = auth()->user();
 
-        if (!$user->puedeVerDesbloqueo()) {
+        // A1 (ARQUITECTURA.md): migrado a Gate como demostración del patrón.
+        if (Gate::denies('ver-desbloqueo')) {
             abort(403, 'No tienes permiso para acceder a Desbloqueo.');
         }
 

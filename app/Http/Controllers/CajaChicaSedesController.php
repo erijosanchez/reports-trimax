@@ -8,6 +8,7 @@ use App\Services\ActivityLogService;
 use App\Notifications\CajaChicaSubmitida;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
@@ -30,7 +31,8 @@ class CajaChicaSedesController extends Controller
     {
         $user = auth()->user();
 
-        if (!$user->puedeVerCobranzaSedes()) {
+        // A1 (ARQUITECTURA.md): migrado a Gate como demostración del patrón.
+        if (Gate::denies('ver-cobranza-sedes')) {
             abort(403);
         }
 
