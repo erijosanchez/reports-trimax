@@ -555,6 +555,8 @@
 @endpush
 
 @push('scripts')
+<script src="{{ asset('assets/vendors/sweetalert2/sweetalert2.all.min.js') }}"></script>
+    <script src="{{ asset('assets/js/app/notify.js') }}"></script>
 <script>
 const ROUTES = {
     store:    "{{ route('productividad.cobranza-sedes.caja-chica.store') }}",
@@ -1014,7 +1016,7 @@ async function abrirCamara(inputId, previewId) {
     document.getElementById('btn-retomar').classList.add('d-none');
     document.getElementById('btn-usar-foto').classList.add('d-none');
     try { _streamActivo=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'},audio:false}); document.getElementById('camara-video').srcObject=_streamActivo; }
-    catch { alert('No se pudo acceder a la cámara. Verifica los permisos.'); return; }
+    catch { Notify.error('No se pudo acceder a la cámara. Verifica los permisos.'); return; }
     _modalCamaraInst=new bootstrap.Modal(document.getElementById('modal-camara')); _modalCamaraInst.show();
 }
 function capturarFoto() {

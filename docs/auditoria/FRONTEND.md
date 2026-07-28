@@ -248,6 +248,32 @@ si el usuario hace clic, y son aceptables.
 
 ## F3 · JavaScript dentro de las plantillas — Severidad alta
 
+> 🟡 **Primer paso dado 2026-07-27** (de los 3 que propone esta sección).
+> Creados los 3 módulos en `public/assets/js/app/`:
+> - `http.js` — `fetch` envuelto con CSRF automático (`window.Http.get/post/put/del`).
+> - `notify.js` — envoltorio sobre SweetAlert2 (`window.Notify.success/error/warning/info/confirm`).
+> - `charts.js` — fábrica de Chart.js con las opciones comunes (`window.ChartFactory.create`).
+>
+> Sin build ni módulos ES — mismo estilo que el resto del proyecto (script
+> global vía IIFE), consistente con que esta sección no depende de decidir
+> Vite (A6).
+>
+> **`notify.js` ya adoptado, no solo creado**: las 9 vistas donde se
+> reemplazaron los `alert()` nativos por SweetAlert2 en esta misma sesión
+> (ver F6) se migraron directamente a `Notify.error(...)`/`Notify.warning(...)`
+> en vez de `Swal.fire({icon, text})` repetido — los 19 sitios que antes
+> tenían `alert()` ahora pasan por el envoltorio único. `http.js` y
+> `charts.js` quedan creados y listos pero **sin adoptar todavía**: ninguna
+> vista se tocó esta sesión por una razón que ameritara migrar su
+> `fetch`/`$.ajax` o su `new Chart()`.
+>
+> Quedan las 52 vistas con JavaScript embebido (12 724 líneas) sin migrar
+> — sigue siendo, por diseño de esta misma sección, trabajo sin final
+> cerrado: se migra vista por vista cuando se toque cada una por otra
+> razón, no de una vez. Intentar migrar las 52 en una sola sesión sin
+> tests de JavaScript que detecten una regresión habría sido el tipo de
+> cambio de alto riesgo que esta sección explícitamente desaconseja.
+
 ### Qué pasa
 
 **12 724 líneas de JavaScript** viven dentro de etiquetas `<script>` en 52
@@ -485,8 +511,21 @@ sin actualizarse. Conviene planificar la subida, no urge.
 > correctamente al hacer clic, cero errores de consola. Suite completa: 76
 > tests en verde salvo el fallo preexistente de `ExampleTest`.
 >
-> Puntos 2 y 4 (los 19 `alert()` nativos, los 891 estilos inline) siguen
-> pendientes — ver más abajo.
+> ✅ **Punto 2 también resuelto: los 19 `alert()` nativos reemplazados por
+> SweetAlert2.** 9 de las 10 vistas afectadas no cargaban SweetAlert2
+> todavía (solo las de `comercial/` lo tenían) — se agregó el `<script>`
+> local (el mismo de F1) donde hacía falta, incluyendo dos vistas que no
+> extienden `layouts.app` (`marketing/survey/form.blade.php`, la encuesta
+> pública de clientes, y `auth/login.blade.php`, previo a la sesión).
+> Verificado en navegador: el enlace "¿Olvidaste tu contraseña?" del login
+> ahora abre un modal de SweetAlert2 en vez de bloquear la pestaña con un
+> `alert()` del navegador.
+>
+> Punto 4 (891 estilos inline) sigue pendiente — es trabajo de extraer
+> clases de utilidad vista por vista, sin un punto de corte natural ni
+> beneficio proporcional al esfuerzo de tocar prácticamente las 108 vistas
+> de golpe; se deja para cuando se toque cada vista por otra razón, mismo
+> criterio que F3.
 
 | Comprobación | Resultado |
 |---|---|

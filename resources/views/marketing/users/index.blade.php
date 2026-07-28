@@ -681,6 +681,8 @@
 @endsection
 
 @push('scripts')
+    <script src="{{ asset('assets/vendors/sweetalert2/sweetalert2.all.min.js') }}"></script>
+    <script src="{{ asset('assets/js/app/notify.js') }}"></script>
     <script>
         // Initialize tooltips
         document.addEventListener('DOMContentLoaded', function() {
@@ -705,7 +707,7 @@
                 }, 2000);
             }).catch(err => {
                 console.error('Error al copiar: ', err);
-                alert('Error al copiar el link');
+                Notify.error('Error al copiar el link');
             });
         }
 
@@ -726,7 +728,7 @@
                 })
                 .catch(err => {
                     console.error('Error al generar QR:', err);
-                    alert('Error al generar el código QR');
+                    Notify.error('Error al generar el código QR');
                 });
         }
 

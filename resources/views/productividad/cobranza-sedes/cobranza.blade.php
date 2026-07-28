@@ -819,6 +819,8 @@
 @endpush
 
 @push('scripts')
+<script src="{{ asset('assets/vendors/sweetalert2/sweetalert2.all.min.js') }}"></script>
+    <script src="{{ asset('assets/js/app/notify.js') }}"></script>
 <script>
 // ── Config ───────────────────────────────────────────────────────
 const ROUTES = {
@@ -1541,7 +1543,7 @@ async function abrirCamara(inputId, previewId) {
         _streamActivo = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
         video.srcObject = _streamActivo;
     } catch (err) {
-        alert('No se pudo acceder a la cámara. Verifica los permisos del navegador.');
+        Notify.error('No se pudo acceder a la cámara. Verifica los permisos del navegador.');
         return;
     }
 

@@ -95,7 +95,7 @@
                         <div class="field-top">
                             <label class="field-label" for="password">Contraseña</label>
                             <a href="#" class="link-forgot"
-                               onclick="alert('Contacta con el administrador del sistema para recuperar tu contraseña.'); return false;">
+                               onclick="Notify.info('Contacta con el administrador del sistema para recuperar tu contraseña.'); return false;">
                                 ¿Olvidaste tu contraseña?
                             </a>
                         </div>
@@ -134,6 +134,8 @@
 
     </div>
 
+    <script src="{{ asset('assets/vendors/sweetalert2/sweetalert2.all.min.js') }}"></script>
+    <script src="{{ asset('assets/js/app/notify.js') }}"></script>
     <script>
         // Toggle password visibility
         document.getElementById('togglePassword').addEventListener('click', function () {

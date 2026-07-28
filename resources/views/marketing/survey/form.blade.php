@@ -127,6 +127,8 @@
         </div>
     </div>
 
+    <script src="{{ asset('assets/vendors/sweetalert2/sweetalert2.all.min.js') }}"></script>
+    <script src="{{ asset('assets/js/app/notify.js') }}"></script>
     <script>
         const token = '{{ $token }}';
         let selectedRatings = {
@@ -221,10 +223,10 @@
 
                     setTimeout(checkScrollIndicator, 500);
                 } else {
-                    alert('Encuesta no encontrada o inactiva');
+                    Notify.error('Encuesta no encontrada o inactiva');
                 }
             } catch (error) {
-                alert('Error al cargar la encuesta');
+                Notify.error('Error al cargar la encuesta');
             }
         });
 
@@ -269,7 +271,7 @@
             e.preventDefault();
 
             if (!selectedRatings.experience || !selectedRatings.service_quality) {
-                alert('Por favor selecciona una calificación para ambas preguntas');
+                Notify.warning('Por favor selecciona una calificación para ambas preguntas');
                 return;
             }
 
@@ -309,12 +311,12 @@
 
                     scheduleAutoRefresh();
                 } else {
-                    alert(data.message || 'Error al enviar la encuesta');
+                    Notify.error(data.message || 'Error al enviar la encuesta');
                     submitBtn.disabled = false;
                     submitBtn.textContent = 'ENVIAR';
                 }
             } catch (error) {
-                alert('Error de conexión. Intenta nuevamente.');
+                Notify.error('Error de conexión. Intenta nuevamente.');
                 submitBtn.disabled = false;
                 submitBtn.textContent = 'ENVIAR';
             }

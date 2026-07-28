@@ -142,7 +142,7 @@ tocar el mismo archivo. Detalle de cada cambio en `SEGURIDAD.md` e
 | 4 | ✅ Middleware de cabeceras de seguridad (`X-Frame-Options`, `nosniff`, `Referrer-Policy`) | 🔒 Seguridad | [S3](SEGURIDAD.md#s3--sin-cabeceras-de-seguridad-http--severidad-alta) | Alta | ~30 min |
 | 5 | ✅ Sacar las credenciales literales del `docker-compose.yml` a `env_file` | ⚙️ Infra | [I2](INFRAESTRUCTURA.md#i2--credenciales-literales-en-el-compose--severidad-alta) | Alta | ~1 h |
 | 6 | ✅ Decidir sobre el 2FA: activarlo por rol o retirarlo — está construido, nunca aplicado, 0 de 65 usuarios | 🔒 Seguridad | [S4](SEGURIDAD.md#s4--2fa-construido-pero-nunca-activado--severidad-alta) | Alta | Decisión + ~4 h |
-| 7 | 🟡 Centralizar la frontera de datos por sede en un Global Scope + Gates — hoy son 212 comprobaciones a mano (`SedeScope` ya en Voucher + 4 modelos de reportes/sede; Gates solo en Vouchers) | 🏗️ Arquitectura | [A1](ARQUITECTURA.md#a1--autorización-dispersa--severidad-alta) | Alta | Medio |
+| 7 | ✅ Centralizar la frontera de datos por sede en un Global Scope + Gates — mecanismo completo (`SedeScope` en 5 modelos, Gate por cada uno de los 20 `puedeX()`), migración de controladores incremental por diseño (5 de ~40 hechos) | 🏗️ Arquitectura | [A1](ARQUITECTURA.md#a1--autorización-dispersa--severidad-alta) | Alta | Medio |
 | 8 | ✅ `CACHE_STORE=redis`: la clave `CACHE_DRIVER` es de Laravel 10 y se ignora, así que la caché escribe en MySQL | ⚙️ Infra | [I1](INFRAESTRUCTURA.md#i1--la-caché-va-a-mysql-no-a-redis--severidad-alta--resuelto) | Alta | Minutos |
 | 9 | ✅ Sincronizar el registro de `migrations` con el esquema real — `php artisan migrate` hoy fallaría | ⚙️ Infra | [I4](INFRAESTRUCTURA.md#i4--deriva-de-migraciones--severidad-alta--resuelto) | Alta | Minutos |
 | 10 | ✅ Envolver en `DB::transaction` las escrituras multi-tabla (vouchers, requerimientos) | 🏗️ Arquitectura | [A3](ARQUITECTURA.md#a3--escrituras-sin-transacción--severidad-alta) | Alta | Bajo |
@@ -193,7 +193,7 @@ cerrado: se avanza vista a vista.
 | F-5 | ✅ Eliminar las librerías vendor sin usar (40, ~29 MB) | [F5](FRONTEND.md#f5--librerías-vendor-sin-usar--severidad-media) | Media | ~1 h |
 | F-6 | ✅ Añadir los `alt`/`aria-label` que faltan (19 + 39, más que la estimación de 14+6) | [F6](FRONTEND.md#f6--accesibilidad-y-consistencia--severidad-media) | Media | ~30 min |
 | F-7 | ✅ Vistas de error 404 y 500 | [F8](FRONTEND.md#f8--sin-vistas-de-error-404-ni-500--severidad-baja) | Baja | ~30 min |
-| F-8 | Extraer el JavaScript de las vistas a módulos compartidos — 12 724 líneas en 52 plantillas | [F3](FRONTEND.md#f3--javascript-dentro-de-las-plantillas--severidad-alta) | Alta | Alto, incremental |
+| F-8 | 🟡 Extraer el JavaScript de las vistas a módulos compartidos — 12 724 líneas en 52 plantillas (creados los 3 módulos + `notify.js` adoptado en 9 vistas; 51 vistas y `http.js`/`charts.js` sin adoptar) | [F3](FRONTEND.md#f3--javascript-dentro-de-las-plantillas--severidad-alta) | Alta | Alto, incremental |
 
 ---
 
@@ -233,7 +233,7 @@ también el documento de origen.
 | Principal | S9, S10 (no numeradas, ver recuadro arriba) | ✅ Resuelto | 2026-07-27 |
 | Principal | 2 (S2), 6 (S4) | ✅ Resuelto | 2026-07-27 |
 | Principal | 3 (I3), 5 (I2) | ✅ Resuelto | 2026-07-27 |
-| Principal | 7 (A1) | 🟡 Piloto (`SedeScope`: Voucher + 4 modelos de reportes/sede; Gates: solo Vouchers) | 2026-07-27 |
+| Principal | 7 (A1) | ✅ Mecanismo completo (`SedeScope` en 5 modelos, Gate por los 20 `puedeX()`); migración de controladores queda incremental por diseño | 2026-07-27 |
 | Principal | 10 (A3) | ✅ Resuelto | 2026-07-27 |
 | Principal | 11 (A2) | 🟡 Piloto (auditado, 1 hallazgo documentado sin aplicar) | 2026-07-27 |
 | Principal | 13 (S5), 14 (I8), 15 (S7) | ✅ Resuelto | 2026-07-27 |
@@ -248,5 +248,7 @@ también el documento de origen.
 | Frontend | F-5 (F5) | ✅ Resuelto | 2026-07-27 |
 | Frontend | F-6 (F6 punto 3) | ✅ Resuelto | 2026-07-27 |
 | Frontend | F-7 (F8) | ✅ Resuelto | 2026-07-27 |
-| Frontend | F-8 (F3) | Pendiente — trabajo de fondo, sin final cerrado | — |
+| Frontend | F6 punto 2 (19 `alert()` → SweetAlert2) | ✅ Resuelto | 2026-07-27 |
+| Frontend | F-8 (F3) | 🟡 Módulos creados, `notify.js` en 9 vistas; resto incremental por diseño | 2026-07-27 |
+| Frontend | F6 punto 4 (891 estilos inline) | Pendiente — mismo criterio que F3 | — |
 | Extra (no numerada) | Mensajes de validación en inglés (`APP_LOCALE=en`, sin `lang/es/`) | ✅ Resuelto | 2026-07-27 |

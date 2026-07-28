@@ -122,6 +122,36 @@ aplicación**. Es consecuencia de A6.
 > `isSuperAdmin()` fuera de la frontera de datos (permisos de acción, no de
 > lectura) — eso es lo que cubre el paso 2 de la corrección propuesta
 > (Gates), aplicado hasta ahora solo a Vouchers.
+>
+> ✅ **2026-07-27 (cierre) — paso 2 completo: un Gate por cada uno de los
+> 20 `puedeX()` de `User`**, registrados en `AuthServiceProvider` (antes
+> solo existían 2, para Vouchers). Los helpers siguen existiendo — el Gate
+> es la fachada, no un reemplazo. Migrado un punto de entrada por
+> controlador en los 4 módulos que ya tenían `SedeScope`
+> (`CobranzaSedesController`, `CajaChicaSedesController`,
+> `ComentariosSedesController`, `DesbloqueoController`), mismo criterio
+> demostrativo que Vouchers: el `index()` de cada uno pasa de llamar al
+> helper directamente a `Gate::denies('ver-cobranza-sedes')` /
+> `Gate::denies('ver-desbloqueo')`. El resto de las ~30 llamadas al mismo
+> helper dentro de esos controladores (y los ~35 controladores restantes
+> de la app) se quedan como están, a migrar módulo por módulo cuando se
+> toquen por otra razón — esto **no** fue un reemplazo mecánico de los 212
+> sitios originales, que seguiría siendo el enfoque equivocado que esta
+> misma sección descarta más abajo.
+>
+> Cubierto con 12 tests nuevos en `tests/Feature/GatesTest.php`: los 20
+> Gates responden igual que su helper (super_admin pasa los 20 vía
+> `Gate::before`; un usuario sin rol ni flags falla los gates de solo
+> columna; un flag explícito los habilita; sede/finanzas/rrhh pasan los
+> gates de su dominio) y los 4 endpoints migrados devuelven 403/200 según
+> corresponda. Suite completa: 87 tests en verde, único fallo preexistente
+> y no relacionado (`ExampleTest`).
+>
+> Con esto, A1 pasa de piloto a su alcance completo tal como lo definió
+> esta sección desde el inicio: **no** migrar los 212 sitios de una vez —
+> centralizar el mecanismo (Global Scope + Gates) y dejar la migración de
+> cada controlador para cuando se toque por otra razón. Ese mecanismo ya
+> existe y está probado en 5 modelos y 5 controladores.
 
 ### Qué pasa
 

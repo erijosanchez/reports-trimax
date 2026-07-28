@@ -584,6 +584,8 @@
 @endsection
 
 @push('scripts')
+    <script src="{{ asset('assets/vendors/sweetalert2/sweetalert2.all.min.js') }}"></script>
+    <script src="{{ asset('assets/js/app/notify.js') }}"></script>
     <script>
         // Auto-hide alerts
         setTimeout(() => {
@@ -608,7 +610,7 @@
                 }, 2000);
             }).catch(err => {
                 console.error('Error al copiar:', err);
-                alert('Error al copiar el link');
+                Notify.error('Error al copiar el link');
             });
         }
 
