@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Trimax CRM — Acceso</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mdi/font@7.2.96/css/materialdesignicons.min.css">
+    <link rel="stylesheet" href="{{ asset('assets/vendors/mdi/css/materialdesignicons.min.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/css/login.css') }}?v={{ filemtime(public_path('assets/css/login.css')) }}">
     <link rel="shortcut icon" href="{{ asset('assets/img/fv.png') }}" type="image/x-icon">
 </head>
@@ -104,7 +104,7 @@
                             <input type="password" id="password" name="password"
                                    class="field-input"
                                    placeholder="••••••••" required>
-                            <button type="button" id="togglePassword" class="field-eye">
+                            <button type="button" id="togglePassword" class="field-eye" aria-label="Mostrar contraseña">
                                 <i class="mdi-eye-outline mdi"></i>
                             </button>
                         </div>
@@ -143,6 +143,7 @@
             this.querySelector('i').className = visible
                 ? 'mdi mdi-eye-outline'
                 : 'mdi mdi-eye-off-outline';
+            this.setAttribute('aria-label', visible ? 'Mostrar contraseña' : 'Ocultar contraseña');
         });
 
         // Loading state on submit

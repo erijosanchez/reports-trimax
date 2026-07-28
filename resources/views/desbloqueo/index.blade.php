@@ -270,9 +270,9 @@
                     <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 px-3 py-2 border-top">
                         <small class="text-muted" id="hist-info">—</small>
                         <div class="d-flex align-items-center gap-2">
-                            <button id="hist-prev" class="btn btn-outline-secondary btn-sm" disabled><i class="mdi mdi-chevron-left"></i></button>
+                            <button id="hist-prev" class="btn btn-outline-secondary btn-sm" disabled aria-label="Página anterior"><i class="mdi mdi-chevron-left"></i></button>
                             <span class="small text-muted" id="hist-page">1 / 1</span>
-                            <button id="hist-next" class="btn btn-outline-secondary btn-sm" disabled><i class="mdi mdi-chevron-right"></i></button>
+                            <button id="hist-next" class="btn btn-outline-secondary btn-sm" disabled aria-label="Página siguiente"><i class="mdi mdi-chevron-right"></i></button>
                         </div>
                     </div>
                 </div>
@@ -360,7 +360,6 @@
 @endsection
 
 @section('scripts')
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
 (function () {
     const CSRF       = document.querySelector('meta[name="csrf-token"]').content;
@@ -423,7 +422,7 @@
             const f = files[i], col = document.createElement('div');
             col.className = 'col-4 col-md-3';
             const isImg = f.type.startsWith('image/');
-            const icon = isImg ? `<img src="${URL.createObjectURL(f)}" alt="">`
+            const icon = isImg ? `<img src="${URL.createObjectURL(f)}" alt="${f.name}">`
                 : (f.type.includes('pdf') ? `<div class="preview-icon"><i class="mdi mdi-file-pdf-box text-danger"></i></div>`
                 : `<div class="preview-icon"><i class="mdi mdi-file-excel text-success"></i></div>`);
             col.innerHTML = `<div class="preview-thumb">${icon}<button type="button" class="preview-remove" onclick="__quitarArch(${i},'${inputId}','${preview.id}')">×</button><div class="preview-name" title="${f.name}">${f.name}</div></div>`;

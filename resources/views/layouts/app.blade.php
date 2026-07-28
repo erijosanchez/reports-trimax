@@ -23,7 +23,7 @@
     @stack('styles')
     <!-- endinject -->
     <link rel="shortcut icon" href="{{ asset('assets/img/fv.png') }}" />
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="{{ asset('assets/vendors/chart.js/chart.umd.min.js') }}"></script>
 </head>
 
 <body>
@@ -70,7 +70,10 @@
     <!-- endinject -->
     <!-- Custom js for this page-->
     <script src="{{ asset('assets/js/dashboard.js') }}"></script>
-    <script src="{{ asset('assets/js/Chart.roundedBarCharts.js') }}"></script>
+    <!-- Chart.roundedBarCharts.js retirado (FRONTEND.md, F4): escrito para la
+         API de Chart.js v2 (Chart.elements.Rectangle), incompatible con v4 —
+         tiraba un TypeError en cada carga de página sin que ningún gráfico
+         dependiera de él. -->
     <!-- End custom js for this page-->
     @yield('scripts')
     @stack('scripts')

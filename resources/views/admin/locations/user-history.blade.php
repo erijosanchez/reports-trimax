@@ -161,8 +161,8 @@
     </div>
 
     @if($mapPoints->count() > 0)
-        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+        <link rel="stylesheet" href="{{ asset('assets/vendors/leaflet/leaflet.css') }}" />
+        <script src="{{ asset('assets/vendors/leaflet/leaflet.js') }}"></script>
         <script>
             (function () {
                 const points = @json($mapPoints);

@@ -33,9 +33,8 @@
                                             <div class="d-flex justify-content-between align-items-start">
                                                 <div class="text-white">
                                                     <div class="d-flex align-items-center mb-3">
-                                                        <img class="img-lg rounded-circle me-3"
-                                                            src="https://ui-avatars.com/api/?name={{ urlencode($user->name) }}&background=fff&color={{ $user->role === 'trimax' ? '1a1a2e' : '667eea' }}&size=128"
-                                                            alt="profile">
+                                                        <x-avatar-iniciales class="rounded-circle me-3" :nombre="$user->name"
+                                                            background="fff" :color="$user->role === 'trimax' ? '1a1a2e' : '667eea'" :size="92" />
                                                         <div>
                                                             <h2 class="text-white mb-2">{{ $user->name }}</h2>
                                                             @if ($user->role === 'trimax')
@@ -210,9 +209,8 @@
                                                                     <tr>
                                                                         <td>
                                                                             <div class="d-flex align-items-center">
-                                                                                <img class="img-xs rounded-circle me-2"
-                                                                                    src="https://ui-avatars.com/api/?name={{ urlencode($sede->name) }}&background=0dcaf0&color=fff"
-                                                                                    alt="sede">
+                                                                                <x-avatar-iniciales class="rounded-circle me-2" :nombre="$sede->name"
+                                                                                    background="0dcaf0" :size="32" />
                                                                                 <a
                                                                                     href="{{ route('marketing.users.show', $sede->id) }}">
                                                                                     <strong>{{ $sede->name }}</strong>
@@ -397,9 +395,8 @@
                                                                     <td>
                                                                         @if ($survey->client_name)
                                                                             <div class="d-flex align-items-center">
-                                                                                <img class="img-xs rounded-circle me-2"
-                                                                                    src="https://ui-avatars.com/api/?name={{ urlencode($survey->client_name) }}&background=10b981&color=fff"
-                                                                                    alt="client">
+                                                                                <x-avatar-iniciales class="rounded-circle me-2" :nombre="$survey->client_name"
+                                                                                    background="10b981" :size="32" />
                                                                                 {{ $survey->client_name }}
                                                                             </div>
                                                                         @else

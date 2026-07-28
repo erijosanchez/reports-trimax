@@ -99,7 +99,7 @@
                 <button type="submit" class="submit-btn" id="submit-btn">ENVIAR</button>
 
                 <div class="trimax-logo">
-                    <img src="{{ asset('assets/img/ltr.png') }}" alt="">
+                    <img src="{{ asset('assets/img/ltr.png') }}" alt="TRIMAX">
                 </div>
             </form>
         </div>

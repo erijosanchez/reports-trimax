@@ -1,7 +1,7 @@
 <nav class="navbar default-layout col-lg-12 col-12 p-0 fixed-top d-flex align-items-top flex-row">
     <div class="text-center navbar-brand-wrapper d-flex align-items-center justify-content-start">
         <div class="me-3">
-            <button class="navbar-toggler navbar-toggler align-self-center" type="button" data-bs-toggle="minimize">
+            <button class="navbar-toggler navbar-toggler align-self-center" type="button" data-bs-toggle="minimize" aria-label="Contraer/expandir menú lateral">
                 <span class="icon-menu"></span>
             </button>
         </div>
@@ -33,14 +33,10 @@
             </li>
             <li class="nav-item dropdown d-lg-block user-dropdown">
                 <a class="nav-link" id="UserDropdown" href="#" data-bs-toggle="dropdown" aria-expanded="false">
-                    <img class="img-xs rounded-circle"
-                        src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=6366f1&color=fff"
-                        alt="Profile image"> </a>
+                    <x-avatar-iniciales class="rounded-circle" :nombre="Auth::user()->name" :size="32" /> </a>
                 <div class="dropdown-menu dropdown-menu-right navbar-dropdown" aria-labelledby="UserDropdown">
                     <div class="dropdown-header text-center">
-                        <img class="img-md rounded-circle"
-                            src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=6366f1&color=fff&"
-                            alt="Profile image">
+                        <x-avatar-iniciales class="rounded-circle d-inline-flex" :nombre="Auth::user()->name" :size="64" />
                         <p class="mb-1 mt-3 font-weight-semibold">{{ auth()->user()->name }}</p>
                         <p class="fw-light text-muted mb-0">{{ auth()->user()->email }}</p>
                     </div>
@@ -64,7 +60,7 @@
             </li>
         </ul>
         <button class="navbar-toggler navbar-toggler-right d-lg-none align-self-center" type="button"
-            data-bs-toggle="offcanvas">
+            data-bs-toggle="offcanvas" aria-label="Abrir menú">
             <span class="mdi mdi-menu"></span>
         </button>
     </div>

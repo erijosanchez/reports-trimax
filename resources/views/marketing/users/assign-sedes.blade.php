@@ -199,9 +199,7 @@
                                             </h4>
 
                                             <div class="d-flex align-items-center mb-3">
-                                                <img class="img-md rounded-circle me-3"
-                                                    src="https://ui-avatars.com/api/?name={{ urlencode($consultor->name) }}&background=6366f1&color=fff&size=128"
-                                                    alt="profile">
+                                                <x-avatar-iniciales class="rounded-circle me-3" :nombre="$consultor->name" :size="64" />
                                                 <div>
                                                     <h6 class="mb-1">{{ $consultor->name }}</h6>
                                                     <small class="text-muted">ID: #{{ $consultor->id }}</small>
@@ -322,12 +320,6 @@
 
         .icon-wrapper i {
             font-size: 24px;
-        }
-
-        /* Image sizing */
-        .img-md {
-            width: 64px;
-            height: 64px;
         }
     </style>
 @endsection

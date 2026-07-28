@@ -268,9 +268,7 @@
                                                                 </td>
                                                                 <td>
                                                                     <div class="d-flex align-items-center">
-                                                                        <img class="img-xs rounded-circle me-3"
-                                                                            src="https://ui-avatars.com/api/?name={{ urlencode($user->name) }}&background=6366f1&color=fff"
-                                                                            alt="profile" style="min-width: 45px;">
+                                                                        <x-avatar-iniciales class="rounded-circle me-3" :nombre="$user->name" :size="40" />
                                                                         <div style="min-width: 200px;">
                                                                             <div class="fw-bold mb-1"
                                                                                 style="font-size: 0.95rem;">

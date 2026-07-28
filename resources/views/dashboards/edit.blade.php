@@ -15,7 +15,7 @@
                                 <div class="col-sm-12">
                                     <div class="d-flex align-items-center justify-content-between mb-4">
                                         <div class="d-flex align-items-center">
-                                            <a href="{{ route('dashboards.index') }}" class="btn btn-light btn-sm me-3">
+                                            <a href="{{ route('dashboards.index') }}" class="btn btn-light btn-sm me-3" aria-label="Volver">
                                                 <i class="mdi mdi-arrow-left"></i>
                                             </a>
                                             <div>
@@ -260,9 +260,7 @@
                                                                                     {{ in_array($user->id, $assignedUserIds) ? 'checked' : '' }}>
                                                                                 <i class="input-helper"></i>
 
-                                                                                <img class="img-xs rounded-circle ms-2 me-3"
-                                                                                    src="https://ui-avatars.com/api/?name={{ urlencode($user->name) }}&background=6366f1&color=fff"
-                                                                                    alt="profile">
+                                                                                <x-avatar-iniciales class="rounded-circle ms-2 me-3" :nombre="$user->name" :size="32" />
 
                                                                                 <div class="flex-grow-1">
                                                                                     <p class="mb-0 fw-bold">

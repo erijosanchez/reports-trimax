@@ -819,7 +819,6 @@
 @endpush
 
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
 // ── Config ───────────────────────────────────────────────────────
 const ROUTES = {
@@ -1378,7 +1377,7 @@ function buildRevisionHTML(r, id) {
     if ((r.revision_archivos ?? []).length) {
         adjuntos = `<div class="mb-2"><div class="mb-1 text-muted small">Adjuntos de la revisión:</div><div class="d-flex flex-wrap gap-1">` +
             r.revision_archivos.map(a => a.es_imagen
-                ? `<a href="${a.preview_url}" target="_blank"><img src="${a.preview_url}" style="height:56px;border-radius:6px;border:1px solid #e2e8f0;object-fit:cover;"></a>`
+                ? `<a href="${a.preview_url}" target="_blank"><img src="${a.preview_url}" alt="${a.name}" style="height:56px;border-radius:6px;border:1px solid #e2e8f0;object-fit:cover;"></a>`
                 : `<a href="${a.download_url}" class="btn-outline-secondary btn btn-sm" download><i class="mdi mdi-paperclip"></i> ${a.name}</a>`
             ).join('') + `</div></div>`;
     }

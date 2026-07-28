@@ -63,9 +63,7 @@
                                                                 <td>
                                                                     <div class="d-flex align-items-center">
                                                                         <div class="position-relative me-2">
-                                                                            <img class="img-xs rounded-circle"
-                                                                                src="https://ui-avatars.com/api/?name={{ urlencode($user->name) }}&background=6366f1&color=fff"
-                                                                                alt="profile">
+                                                                            <x-avatar-iniciales class="rounded-circle" :nombre="$user->name" :size="32" />
                                                                             @if (isset($onlineIds[$user->id]))
                                                                                 <span class="online-indicator pulse"></span>
                                                                             @endif
@@ -174,10 +172,8 @@
                                                     <div class="presence-item d-flex align-items-center border-bottom py-2"
                                                          data-user-id="{{ $u['id'] }}">
                                                         <div class="position-relative me-3 flex-shrink-0">
-                                                            <img class="rounded-circle"
-                                                                style="width:36px;height:36px;object-fit:cover;"
-                                                                src="https://ui-avatars.com/api/?name={{ urlencode($u['name']) }}&background={{ $u['is_online'] ? '25D366' : 'adb5bd' }}&color=fff"
-                                                                alt="{{ $u['name'] }}">
+                                                            <x-avatar-iniciales class="rounded-circle" :nombre="$u['name']"
+                                                                :background="$u['is_online'] ? '25D366' : 'adb5bd'" :size="36" />
                                                             <span class="online-indicator {{ $u['is_online'] ? 'dot-online pulse' : 'dot-offline' }}"></span>
                                                         </div>
                                                         <div class="flex-grow-1 overflow-hidden">
@@ -312,11 +308,6 @@
             // ── Live presence polling ───────────────────────────────────────
             const onlineStatusUrl = '{{ route("admin.api.online-status") }}';
 
-            function avatarUrl(name, online) {
-                const bg = online ? '25D366' : 'adb5bd';
-                return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=${bg}&color=fff`;
-            }
-
             function refreshPresence() {
                 fetch(onlineStatusUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
                     .then(r => r.json())
@@ -333,8 +324,8 @@
                             let item = list.querySelector(`[data-user-id="${user.id}"]`);
                             if (!item) return;
 
-                            const img = item.querySelector('img');
-                            img.src = avatarUrl(user.name, user.is_online);
+                            const avatar = item.querySelector('.avatar-iniciales');
+                            if (avatar) avatar.style.backgroundColor = user.is_online ? '#25D366' : '#adb5bd';
 
                             const dot = item.querySelector('.online-indicator');
                             dot.className = 'online-indicator ' + (user.is_online ? 'dot-online pulse' : 'dot-offline');

@@ -3,7 +3,7 @@
 @section('title', 'Mapa en Vivo — Motorizados')
 
 @push('styles')
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="{{ asset('assets/vendors/leaflet/leaflet.css') }}" />
     <style>
         #map {
             height: calc(100vh - 220px);
@@ -165,7 +165,7 @@
     @endsection
 
     @push('scripts')
-        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+        <script src="{{ asset('assets/vendors/leaflet/leaflet.js') }}"></script>
         <script>
             const SEDE_COLORS = {
                 'LIMA': '#3498db',

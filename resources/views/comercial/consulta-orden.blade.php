@@ -196,7 +196,7 @@
                                                     <div class="input-group">
                                                         <input type="text" class="form-control" id="buscarPedido"
                                                             placeholder="# Orden, Cliente, RUC...">
-                                                        <button class="btn btn-primary" type="button" id="btnBuscar">
+                                                        <button class="btn btn-primary" type="button" id="btnBuscar" aria-label="Buscar">
                                                             <i class="mdi mdi-magnify"></i>
                                                         </button>
                                                     </div>
@@ -397,8 +397,7 @@
 @endsection
 
 @section('scripts')
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="{{ asset('assets/vendors/sweetalert2/sweetalert2.all.min.js') }}"></script>
     <script>
         let ordenesData = [];
         let ordenesFiltered = [];
@@ -481,8 +480,6 @@
          * Cargar estadísticas generales
          */
         function cargarEstadisticasGenerales(forceRefresh = false) {
-            const startTime = Date.now();
-
             const params = {};
             if (forceRefresh) {
                 params.nocache = Date.now();
@@ -494,16 +491,8 @@
                 data: params,
                 timeout: 60000,
                 success: function(response) {
-                    const endTime = Date.now();
-                    const loadTime = ((endTime - startTime) / 1000).toFixed(2);
-
                     if (response.success) {
-                        console.log('📊 Estadísticas generales cargadas en', loadTime, 's');
                         actualizarEstadisticas(response.stats);
-
-                        if (forceRefresh) {
-                            console.log('✅ Estadísticas actualizadas');
-                        }
                     }
                 },
                 error: function(xhr) {
@@ -557,9 +546,6 @@
                     if (response.success) {
                         ordenesData = response.data;
                         ordenesFiltered = ordenesData;
-
-                        console.log('✅ Vista reciente cargada:', ordenesData.length, 'órdenes en', loadTime,
-                            's');
 
                         currentPage = 1;
                         renderizarTabla();
@@ -720,8 +706,6 @@
             const inicio = (currentPage - 1) * perPage;
             const fin = inicio + perPage;
             const ordenesPagina = ordenesFiltered.slice(inicio, fin);
-
-            console.log(`📄 Renderizando página ${currentPage}: filas ${inicio}-${fin}`);
 
             let html = '';
 

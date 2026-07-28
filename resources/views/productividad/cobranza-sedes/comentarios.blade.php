@@ -552,7 +552,6 @@
 @endpush
 
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
 const ROUTES = {
     store:    "{{ route('productividad.cobranza-sedes.comentarios.store') }}",
@@ -798,7 +797,7 @@ function renderHistorial(rows) {
             <td>${badgeEstado(r.estado)}${badgeRevision(r.revision_estado)}</td>
             <td class="text-center">${r.num_archivos > 0 ? `<span class="bg-info badge">${r.num_archivos}</span>` : '0'}</td>
             <td class="text-nowrap">
-                <button class="px-2 py-0 btn-outline-primary btn btn-sm" onclick="verReporte(${r.id})"><i class="mdi mdi-eye"></i></button>
+                <button class="px-2 py-0 btn-outline-primary btn btn-sm" onclick="verReporte(${r.id})" aria-label="Ver reporte"><i class="mdi mdi-eye"></i></button>
                 ${r.puede_enviar_atrasado ? `<button class="ms-1 px-2 py-0 btn-outline-danger btn btn-sm" onclick="abrirEnviarAtrasado(${r.id},'${r.sede}')" title="Enviar atrasado"><i class="mdi-clock-alert-outline mdi"></i></button>` : ''}
             </td>
         </tr>`).join('');
@@ -820,7 +819,7 @@ async function verReporte(id) {
         const otros    = (r.archivos??[]).filter(a=>!a.es_imagen);
         let archivosHTML = '';
         if (imagenes.length) {
-            archivosHTML += `<div class="mb-3 row g-2">${imagenes.map(a=>`<div class="col-6 col-md-4"><div class="position-relative border rounded overflow-hidden" style="aspect-ratio:4/3;"><img src="${a.preview_url}" style="width:100%;height:100%;object-fit:cover;cursor:pointer;" onclick="window.open('${a.preview_url}','_blank')"><div class="bottom-0 position-absolute d-flex justify-content-between px-2 py-1 start-0 end-0" style="background:rgba(0,0,0,0.45);"><span class="text-white text-truncate small" style="max-width:70%;">${a.name}</span><a href="${a.download_url}" class="px-1 py-0 btn btn-sm btn-light" download><i class="mdi mdi-download small"></i></a></div></div></div>`).join('')}</div>`;
+            archivosHTML += `<div class="mb-3 row g-2">${imagenes.map(a=>`<div class="col-6 col-md-4"><div class="position-relative border rounded overflow-hidden" style="aspect-ratio:4/3;"><img src="${a.preview_url}" alt="${a.name}" style="width:100%;height:100%;object-fit:cover;cursor:pointer;" onclick="window.open('${a.preview_url}','_blank')"><div class="bottom-0 position-absolute d-flex justify-content-between px-2 py-1 start-0 end-0" style="background:rgba(0,0,0,0.45);"><span class="text-white text-truncate small" style="max-width:70%;">${a.name}</span><a href="${a.download_url}" class="px-1 py-0 btn btn-sm btn-light" title="Descargar" download><i class="mdi mdi-download small"></i></a></div></div></div>`).join('')}</div>`;
         }
         otros.forEach(a => {
             const ext = a.name.split('.').pop().toUpperCase();
@@ -871,7 +870,7 @@ function buildRevisionHTML(r, id) {
     if ((r.revision_archivos ?? []).length) {
         adjuntos = `<div class="mb-2"><div class="text-muted small mb-1">Adjuntos de la revisión:</div><div class="d-flex flex-wrap gap-1">` +
             r.revision_archivos.map(a => a.es_imagen
-                ? `<a href="${a.preview_url}" target="_blank"><img src="${a.preview_url}" style="height:56px;border-radius:6px;border:1px solid #e2e8f0;object-fit:cover;"></a>`
+                ? `<a href="${a.preview_url}" target="_blank"><img src="${a.preview_url}" alt="${a.name}" style="height:56px;border-radius:6px;border:1px solid #e2e8f0;object-fit:cover;"></a>`
                 : `<a href="${a.download_url}" class="btn btn-sm btn-outline-secondary" download><i class="mdi mdi-paperclip"></i> ${a.name}</a>`
             ).join('') + `</div></div>`;
     }
