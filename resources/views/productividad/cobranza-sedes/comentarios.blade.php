@@ -89,8 +89,7 @@
                     <div class="py-4 card-body">
                         <h6 class="mb-3 text-muted text-uppercase fw-bold small">Escala KPI</h6>
                         <div class="d-flex flex-column gap-2">
-                            <div class="d-flex align-items-center justify-content-between p-2 rounded"
-                                 style="background:#d1fae5;border-left:4px solid #10b981;">
+                            <div class="kpi-escala-item kpi-escala-success">
                                 <div>
                                     <div class="text-success fw-bold small">Enviado el jueves</div>
                                     <div class="text-muted" style="font-size:11px;">Cualquier hora del jueves</div>
@@ -111,8 +110,7 @@
                                 </div>
                                 <span class="bg-info badge">50%</span>
                             </div>
-                            <div class="d-flex align-items-center justify-content-between p-2 rounded"
-                                 style="background:#fee2e2;border-left:4px solid #ef4444;">
+                            <div class="kpi-escala-item kpi-escala-danger">
                                 <div>
                                     <div class="text-danger fw-bold small">3+ días después</div>
                                 </div>

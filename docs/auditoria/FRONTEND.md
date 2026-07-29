@@ -535,11 +535,31 @@ sin actualizarse. Conviene planificar la subida, no urge.
 > ahora abre un modal de SweetAlert2 en vez de bloquear la pestaña con un
 > `alert()` del navegador.
 >
-> Punto 4 (891 estilos inline) sigue pendiente — es trabajo de extraer
-> clases de utilidad vista por vista, sin un punto de corte natural ni
-> beneficio proporcional al esfuerzo de tocar prácticamente las 108 vistas
-> de golpe; se deja para cuando se toque cada vista por otra razón, mismo
-> criterio que F3.
+> 🟡 **Punto 4 — primer extracto acotado 2026-07-29.** Se creó
+> `public/assets/css/app-utilities.css` (cargado desde el layout, junto al
+> CSS del tema) para clases de utilidad propias de la app, separadas del
+> CSS del tema comprado. Primer extracto: la caja de color de "Escala
+> KPI", que estaba duplicada letra por letra (mismo `background`/
+> `border-left` inline) en `caja-chica.blade.php` (4 veces) y
+> `comentarios.blade.php` (2 de sus 4 — las otras 2 usan tonos de
+> amarillo/celeste ligeramente distintos en cada vista, una inconsistencia
+> real pero distinta a lo que este extracto se propuso resolver, así que
+> se dejaron como están en vez de forzarlas a un color que no era el
+> suyo). 6 sitios migrados de 891, verificado en navegador que el color
+> resultante es exactamente el mismo (`rgb(209,250,229)` = `#d1fae5`).
+>
+> **Hallazgo de paso**: `public/assets/css/global.css` (766 líneas) no lo
+> cargaba ninguna vista — sus clases (`.dashboard-frame-container`,
+> `.fs-button`) tampoco aparecían en ningún HTML. Mismo patrón que el
+> scaffolding muerto de Breeze de sesiones anteriores, esta vez en CSS.
+> Borrado.
+>
+> Quedan ~885 de los 891 estilos inline sin tocar — sigue siendo, por
+> diseño de esta misma sección, trabajo sin final cerrado: se extrae
+> cuando se detecta una duplicación real al tocar cada vista, no de una
+> vez. Un extracto forzado sobre estilos que hoy no se repiten (la
+> mayoría de los 891 son casos únicos, no duplicados) sería una
+> abstracción prematura sin beneficio.
 
 | Comprobación | Resultado |
 |---|---|

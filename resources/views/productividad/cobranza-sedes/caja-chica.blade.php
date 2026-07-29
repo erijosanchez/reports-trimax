@@ -89,32 +89,28 @@
                     <div class="py-4 card-body">
                         <h6 class="mb-3 text-muted text-uppercase fw-bold small">Escala KPI</h6>
                         <div class="d-flex flex-column gap-2">
-                            <div class="d-flex align-items-center justify-content-between p-2 rounded"
-                                 style="background:#d1fae5;border-left:4px solid #10b981;">
+                            <div class="kpi-escala-item kpi-escala-success">
                                 <div>
                                     <div class="text-success fw-bold small">Enviado el sábado</div>
                                     <div class="text-muted" style="font-size:11px;">Hasta las 11:59 PM</div>
                                 </div>
                                 <span class="bg-success badge fs-6">100%</span>
                             </div>
-                            <div class="d-flex align-items-center justify-content-between p-2 rounded"
-                                 style="background:#cffafe;border-left:4px solid #06b6d4;">
+                            <div class="kpi-escala-item kpi-escala-info">
                                 <div>
                                     <div class="fw-bold small" style="color:#0e7490;">Enviado el domingo</div>
                                     <div class="text-muted" style="font-size:11px;">1 día de atraso</div>
                                 </div>
                                 <span class="bg-info badge fs-6">75%</span>
                             </div>
-                            <div class="d-flex align-items-center justify-content-between p-2 rounded"
-                                 style="background:#fef9c3;border-left:4px solid #eab308;">
+                            <div class="kpi-escala-item kpi-escala-warning">
                                 <div>
                                     <div class="text-warning fw-bold small">Enviado el lunes</div>
                                     <div class="text-muted" style="font-size:11px;">2 días de atraso</div>
                                 </div>
                                 <span class="bg-warning badge fs-6">50%</span>
                             </div>
-                            <div class="d-flex align-items-center justify-content-between p-2 rounded"
-                                 style="background:#fee2e2;border-left:4px solid #ef4444;">
+                            <div class="kpi-escala-item kpi-escala-danger">
                                 <div>
                                     <div class="text-danger fw-bold small">Martes en adelante / No enviado</div>
                                     <div class="text-muted" style="font-size:11px;">3+ días de atraso</div>

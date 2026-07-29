@@ -250,5 +250,5 @@ también el documento de origen.
 | Frontend | F-7 (F8) | ✅ Resuelto | 2026-07-27 |
 | Frontend | F6 punto 2 (19 `alert()` → SweetAlert2) | ✅ Resuelto | 2026-07-27 |
 | Frontend | F-8 (F3) | 🟡 Módulos creados, `notify.js` en 9 vistas y `charts.js` en 3; resto incremental por diseño | 2026-07-27 |
-| Frontend | F6 punto 4 (891 estilos inline) | Pendiente — mismo criterio que F3 | — |
+| Frontend | F6 punto 4 (891 estilos inline) | 🟡 Primer extracto (6 sitios, "Escala KPI") + borrado `global.css` muerto (766 líneas); resto incremental por diseño | 2026-07-29 |
 | Extra (no numerada) | Mensajes de validación en inglés (`APP_LOCALE=en`, sin `lang/es/`) | ✅ Resuelto | 2026-07-27 |
