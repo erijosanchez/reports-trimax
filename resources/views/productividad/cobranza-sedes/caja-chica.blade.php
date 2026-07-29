@@ -557,6 +557,7 @@
 @push('scripts')
 <script src="{{ asset('assets/vendors/sweetalert2/sweetalert2.all.min.js') }}"></script>
     <script src="{{ asset('assets/js/app/notify.js') }}"></script>
+    <script src="{{ asset('assets/js/app/charts.js') }}"></script>
 <script>
 const ROUTES = {
     store:    "{{ route('productividad.cobranza-sedes.caja-chica.store') }}",
@@ -986,7 +987,7 @@ async function cargarKpiChart(semanas = 8) {
         const data = await apiFetch(`${ROUTES.kpiData}?tipo=semanas&semanas=${semanas}`);
         const ctx  = document.getElementById('kpi-chart').getContext('2d');
         if (kpiChart) kpiChart.destroy();
-        kpiChart = new Chart(ctx, { type: 'bar', data, options: opcionesChart() });
+        kpiChart = ChartFactory.create(ctx, 'bar', data, opcionesChart());
     } catch(e) { console.error(e); }
 }
 cargarKpiChart(8);
@@ -999,7 +1000,7 @@ async function cargarKpiChartMensual(meses = 3) {
         const data = await apiFetch(`${ROUTES.kpiData}?tipo=mensual&meses=${meses}`);
         const ctx  = document.getElementById('kpi-chart-mensual').getContext('2d');
         if (kpiChartMensual) kpiChartMensual.destroy();
-        kpiChartMensual = new Chart(ctx, { type: 'bar', data, options: opcionesChart() });
+        kpiChartMensual = ChartFactory.create(ctx, 'bar', data, opcionesChart());
     } catch(e) { console.error(e); }
 }
 cargarKpiChartMensual(3);

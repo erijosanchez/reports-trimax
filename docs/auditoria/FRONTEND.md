@@ -262,10 +262,24 @@ si el usuario hace clic, y son aceptables.
 > reemplazaron los `alert()` nativos por SweetAlert2 en esta misma sesión
 > (ver F6) se migraron directamente a `Notify.error(...)`/`Notify.warning(...)`
 > en vez de `Swal.fire({icon, text})` repetido — los 19 sitios que antes
-> tenían `alert()` ahora pasan por el envoltorio único. `http.js` y
-> `charts.js` quedan creados y listos pero **sin adoptar todavía**: ninguna
+> tenían `alert()` ahora pasan por el envoltorio único.
+>
+> **`charts.js` también adoptado**: las 3 vistas de Productividad Sedes
+> (`cobranza`, `caja-chica`, `comentarios`) que ya se habían tocado hoy
+> para SweetAlert2 tenían cada una su propia función local `opcionesChart()`
+> con las mismas opciones de Chart.js repetidas (stacked bars, tooltip
+> custom). Sus 6 `new Chart(...)` pasaron a `ChartFactory.create(ctx, tipo,
+> data, opcionesChart())` — la función local sigue existiendo (define las
+> opciones específicas de cada gráfico), `ChartFactory` solo aporta el
+> merge con las opciones comunes (leyenda, tooltip de fondo). Verificado en
+> navegador: el gráfico "KPI Diario" renderiza igual que antes, con datos
+> reales, sin errores de consola ni requests fallidos.
+>
+> `http.js` queda creado y listo pero **sin adoptar todavía**: ninguna
 > vista se tocó esta sesión por una razón que ameritara migrar su
-> `fetch`/`$.ajax` o su `new Chart()`.
+> `fetch`/`$.ajax` (las que sí se tocaron ya usaban `fetch` con manejo de
+> error propio, migrarlas solo para usar `Http.get/post` sin otro motivo
+> hubiera sido tocar código funcionando sin necesidad).
 >
 > Quedan las 52 vistas con JavaScript embebido (12 724 líneas) sin migrar
 > — sigue siendo, por diseño de esta misma sección, trabajo sin final

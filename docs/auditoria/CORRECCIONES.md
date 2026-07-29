@@ -193,7 +193,7 @@ cerrado: se avanza vista a vista.
 | F-5 | ✅ Eliminar las librerías vendor sin usar (40, ~29 MB) | [F5](FRONTEND.md#f5--librerías-vendor-sin-usar--severidad-media) | Media | ~1 h |
 | F-6 | ✅ Añadir los `alt`/`aria-label` que faltan (19 + 39, más que la estimación de 14+6) | [F6](FRONTEND.md#f6--accesibilidad-y-consistencia--severidad-media) | Media | ~30 min |
 | F-7 | ✅ Vistas de error 404 y 500 | [F8](FRONTEND.md#f8--sin-vistas-de-error-404-ni-500--severidad-baja) | Baja | ~30 min |
-| F-8 | 🟡 Extraer el JavaScript de las vistas a módulos compartidos — 12 724 líneas en 52 plantillas (creados los 3 módulos + `notify.js` adoptado en 9 vistas; 51 vistas y `http.js`/`charts.js` sin adoptar) | [F3](FRONTEND.md#f3--javascript-dentro-de-las-plantillas--severidad-alta) | Alta | Alto, incremental |
+| F-8 | 🟡 Extraer el JavaScript de las vistas a módulos compartidos — 12 724 líneas en 52 plantillas (creados los 3 módulos; `notify.js` en 9 vistas, `charts.js` en 3; `http.js` sin adoptar) | [F3](FRONTEND.md#f3--javascript-dentro-de-las-plantillas--severidad-alta) | Alta | Alto, incremental |
 
 ---
 
@@ -249,6 +249,6 @@ también el documento de origen.
 | Frontend | F-6 (F6 punto 3) | ✅ Resuelto | 2026-07-27 |
 | Frontend | F-7 (F8) | ✅ Resuelto | 2026-07-27 |
 | Frontend | F6 punto 2 (19 `alert()` → SweetAlert2) | ✅ Resuelto | 2026-07-27 |
-| Frontend | F-8 (F3) | 🟡 Módulos creados, `notify.js` en 9 vistas; resto incremental por diseño | 2026-07-27 |
+| Frontend | F-8 (F3) | 🟡 Módulos creados, `notify.js` en 9 vistas y `charts.js` en 3; resto incremental por diseño | 2026-07-27 |
 | Frontend | F6 punto 4 (891 estilos inline) | Pendiente — mismo criterio que F3 | — |
 | Extra (no numerada) | Mensajes de validación en inglés (`APP_LOCALE=en`, sin `lang/es/`) | ✅ Resuelto | 2026-07-27 |

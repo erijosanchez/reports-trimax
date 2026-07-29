@@ -821,6 +821,7 @@
 @push('scripts')
 <script src="{{ asset('assets/vendors/sweetalert2/sweetalert2.all.min.js') }}"></script>
     <script src="{{ asset('assets/js/app/notify.js') }}"></script>
+    <script src="{{ asset('assets/js/app/charts.js') }}"></script>
 <script>
 // ── Config ───────────────────────────────────────────────────────
 const ROUTES = {
@@ -1645,11 +1646,7 @@ async function cargarKpiChart(mes = mesChart, anio = anioChart) {
         const data = await res.json();
         const ctx  = document.getElementById('kpi-chart').getContext('2d');
         if (kpiChart) kpiChart.destroy();
-        kpiChart = new Chart(ctx, {
-            type: 'bar',
-            data: { labels: data.labels ?? [], datasets: data.datasets ?? [] },
-            options: opcionesChart(),
-        });
+        kpiChart = ChartFactory.create(ctx, 'bar', { labels: data.labels ?? [], datasets: data.datasets ?? [] }, opcionesChart());
     } catch (e) {
         console.error('Error cargando KPI diario:', e);
     }
@@ -1685,11 +1682,7 @@ async function cargarKpiChartMensual(meses = 2) {
         const data = await res.json();
         const ctx  = document.getElementById('kpi-chart-mensual').getContext('2d');
         if (kpiChartMensual) kpiChartMensual.destroy();
-        kpiChartMensual = new Chart(ctx, {
-            type: 'bar',
-            data: { labels: data.labels ?? [], datasets: data.datasets ?? [] },
-            options: opcionesChart(),
-        });
+        kpiChartMensual = ChartFactory.create(ctx, 'bar', { labels: data.labels ?? [], datasets: data.datasets ?? [] }, opcionesChart());
     } catch (e) {
         console.error('Error cargando KPI mensual:', e);
     }
