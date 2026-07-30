@@ -29,3 +29,6 @@ Thumbs.db
 !.claude/skills/
 .claude/settings.local.json
 /public/docs/
+
+# Guías/PDFs generados para usuarios finales, no versionados a propósito.
+/docs/guias/
