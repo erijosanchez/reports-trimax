@@ -46,6 +46,7 @@
 .day-pill.estado-con-atraso { background: #fd7e14; color: #fff; }
 .day-pill.estado-no-enviado { background: #dc3545; color: #fff; }
 .day-pill.estado-futuro     { background: rgba(120,120,120,.15); color: rgba(120,120,120,.5); border: 1.5px dashed rgba(120,120,120,.3); }
+.day-pill.estado-feriado    { background: rgba(108,117,125,.15); color: #6c757d; border: 1.5px solid rgba(108,117,125,.35); }
 
 /* Badge enviado/pendiente */
 .badge-enviado  { background: rgba(25,135,84,.12); color: #198754; border: 1px solid rgba(25,135,84,.25); font-weight: 600; }
@@ -321,15 +322,15 @@
                                         @php $letras = ['L','M','M','J','V','S']; @endphp
                                         @foreach($row['dias'] as $di => $dia)
                                         <span class="day-pill estado-{{ $dia['estado'] }}"
-                                              title="{{ $dia['estado'] === 'futuro' ? 'Día no llegado' : ($dia['estado'] === 'en_tiempo' ? 'En tiempo · KPI '.$dia['kpi'].'%' : ($dia['estado'] === 'con_atraso' ? 'Con atraso · KPI '.$dia['kpi'].'%' : 'No enviado · 0%')) }}">
-                                            {{ $letras[$di] }}
+                                              title="{{ $dia['estado'] === 'feriado' ? 'Feriado' : ($dia['estado'] === 'futuro' ? 'Día no llegado' : ($dia['estado'] === 'en_tiempo' ? 'En tiempo · KPI '.$dia['kpi'].'%' : ($dia['estado'] === 'con_atraso' ? 'Con atraso · KPI '.$dia['kpi'].'%' : 'No enviado · 0%'))) }}">
+                                            {{ $dia['estado'] === 'feriado' ? '—' : $letras[$di] }}
                                         </span>
                                         @endforeach
                                     </div>
                                     <span class="px-3 py-2 rounded-pill badge fw-bold"
                                           style="background:{{ $kpiBg($row['dep_kpi']) }};color:inherit;border:1px solid {{ $kpiBorder($row['dep_kpi']) }}">
                                         <span class="{{ $kpiCls($row['dep_kpi']) }} fw-bold">{{ $row['dep_kpi'] }}%</span>
-                                        <span class="ms-1 text-muted fw-normal" style="font-size:.75em">{{ $row['depositos'] }}/6 días</span>
+                                        <span class="ms-1 text-muted fw-normal" style="font-size:.75em">{{ $row['depositos'] }}/{{ $row['dias_laborables'] }} días</span>
                                     </span>
                                 </td>
 

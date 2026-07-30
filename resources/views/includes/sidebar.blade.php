@@ -510,6 +510,13 @@
                     </ul>
                 </div>
             </li>
+            <li class="nav-item">
+                <a class="nav-link {{ request()->routeIs('admin.feriados*') ? 'active' : '' }}"
+                    href="{{ route('admin.feriados.index') }}">
+                    <i class="mdi-calendar-remove-outline menu-icon mdi"></i>
+                    <span class="menu-title">Feriados</span>
+                </a>
+            </li>
         @endif
 
         <li class="nav-item nav-category">help</li>

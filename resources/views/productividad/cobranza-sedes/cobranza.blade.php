@@ -88,6 +88,14 @@
                                     Editado con atraso — KPI ajustado
                                 </div>
                                 @endif
+                            @elseif ($reporteHoyEstado->estado === 'feriado')
+                                <div class="mb-0 py-2 alert alert-secondary">
+                                    <i class="me-1 mdi mdi-calendar-remove"></i>
+                                    <strong>Hoy es feriado</strong> — no se requiere envío.
+                                    @if ($motivoFeriadoHoy)
+                                        <br><small>{{ $motivoFeriadoHoy }}</small>
+                                    @endif
+                                </div>
                             @elseif ($plazoPasadoHoy)
                                 <div class="mb-0 py-2 alert alert-danger">
                                     <i class="me-1 mdi mdi-clock-remove"></i>
@@ -161,6 +169,7 @@
                         <div class="d-flex align-items-center gap-2 text-muted small">
                             <span class="bg-success badge filtro-estado" data-filtro="enviado">Enviado</span>
                             <span class="bg-danger badge filtro-estado" data-filtro="pendiente">Pendiente</span>
+                            <span class="bg-secondary badge filtro-estado" data-filtro="feriado">Feriado</span>
                         </div>
                     </div>
                     <div class="p-0 card-body">
@@ -178,14 +187,19 @@
                                 </thead>
                                 <tbody>
                                     @foreach ($resumenSedes as $fila)
-                                    <tr class="{{ $fila['enviado'] ? '' : 'table-danger bg-opacity-25' }}"
-                                        data-estado="{{ $fila['enviado'] ? 'enviado' : 'pendiente' }}">
+                                    @php $esFeriadoFila = ($fila['estado'] ?? null) === 'feriado'; @endphp
+                                    <tr class="{{ $esFeriadoFila ? '' : ($fila['enviado'] ? '' : 'table-danger bg-opacity-25') }}"
+                                        data-estado="{{ $esFeriadoFila ? 'feriado' : ($fila['enviado'] ? 'enviado' : 'pendiente') }}">
                                         <td>
                                             <strong>{{ $fila['sede'] }}</strong>
                                         </td>
                                         <td class="text-muted small">{{ $fila['usuario'] }}</td>
                                         <td class="text-center">
-                                            @if ($fila['enviado'])
+                                            @if ($esFeriadoFila)
+                                                <span class="bg-secondary badge">
+                                                    <i class="me-1 mdi mdi-calendar-remove"></i>Feriado
+                                                </span>
+                                            @elseif ($fila['enviado'])
                                                 <span class="bg-success badge">
                                                     <i class="me-1 mdi mdi-check"></i>Enviado
                                                 </span>
@@ -242,14 +256,21 @@
                         </span>
                         <span>
                             <i class="text-danger mdi mdi-clock-alert"></i>
-                            Pendientes: <strong>{{ $resumenSedes->where('enviado', false)->count() }}</strong>
+                            Pendientes: <strong>{{ $resumenSedes->where('enviado', false)->where('estado', '!=', 'feriado')->count() }}</strong>
                         </span>
+                        @php $feriadosCount = $resumenSedes->where('estado', 'feriado')->count(); @endphp
+                        @if ($feriadosCount > 0)
+                        <span>
+                            <i class="text-secondary mdi mdi-calendar-remove"></i>
+                            Feriado: <strong>{{ $feriadosCount }}</strong>
+                        </span>
+                        @endif
                         <span>
                             <i class="text-primary mdi mdi-chart-line"></i>
                             KPI promedio:
                             <strong>
                                 @php
-                                    $kpisValidos = $resumenSedes->whereNotNull('kpi')->pluck('kpi');
+                                    $kpisValidos = $resumenSedes->whereNotNull('kpi')->where('estado', '!=', 'feriado')->pluck('kpi');
                                     echo $kpisValidos->count() ? number_format($kpisValidos->avg(), 1) . '%' : '—';
                                 @endphp
                             </strong>
@@ -294,7 +315,7 @@
                                     Enviar Reporte — {{ $fechaReporteLabel }}
                                 @endif
                             </span>
-                            @if ($plazoPasadoHoy)
+                            @if ($esFeriadoHoy || $plazoPasadoHoy)
                                 <span class="bg-warning text-dark badge fw-normal" style="font-size:0.72rem;">
                                     <i class="mdi-calendar-arrow-right me-1 mdi"></i>Siguiente día hábil
                                 </span>
@@ -1750,7 +1771,7 @@ document.getElementById('form-sin-deposito')?.addEventListener('submit', async f
 
 // ── Filtros tabla Estado Sedes ────────────────────────────────────
 (function () {
-    const activos = new Set(['enviado', 'pendiente']);
+    const activos = new Set(['enviado', 'pendiente', 'feriado']);
 
     function aplicar() {
         document.querySelectorAll('#tabla-estado-sedes tbody tr[data-estado]').forEach(tr => {

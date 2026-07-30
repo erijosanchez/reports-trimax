@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Scopes\SedeScope;
+use App\Models\Feriado;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -142,13 +143,16 @@ class ReporteCajaChica extends Model
 
     /**
      * Deadline: sábado 11:59 PM hora Lima (abierto todo el día).
+     * Si el sábado es feriado, el plazo corre al siguiente día hábil.
      */
     public static function datosSemanActual(): array
     {
         $hoy    = Carbon::now('America/Lima');
         $lunes  = $hoy->copy()->startOfWeek(Carbon::MONDAY);
         $sabado = $lunes->copy()->addDays(5);
-        $limite = $sabado->copy()->setTime(23, 59, 59); // 11:59 PM
+
+        $diaLimite = Feriado::esFeriado($sabado) ? Feriado::siguienteDiaHabil($sabado) : $sabado;
+        $limite    = $diaLimite->copy()->setTime(23, 59, 59); // 11:59 PM
 
         return [
             (int) $hoy->isoWeek(),

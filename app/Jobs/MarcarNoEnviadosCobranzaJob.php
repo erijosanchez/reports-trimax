@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Models\Feriado;
 use App\Models\ReporteCobranza;
 use App\Models\User;
 use Carbon\Carbon;
@@ -28,6 +29,7 @@ class MarcarNoEnviadosCobranzaJob implements ShouldQueue
         }
 
         $fechaAyer = $ayer->toDateString();
+        $esFeriado = Feriado::esFeriado($ayer);
 
         $usuariosPorSede = User::role('sede')
             ->where('is_active', true)
@@ -59,9 +61,9 @@ class MarcarNoEnviadosCobranzaJob implements ShouldQueue
                 'fecha_ultimo_envio'   => null,
                 'archivos'             => null,
                 'notas'                => null,
-                'kpi_porcentaje'       => 0.0,
+                'kpi_porcentaje'       => $esFeriado ? null : 0.0,
                 'editado_tarde'        => false,
-                'estado'               => 'no_enviado',
+                'estado'               => $esFeriado ? 'feriado' : 'no_enviado',
             ]);
         }
     }

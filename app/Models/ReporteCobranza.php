@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Scopes\SedeScope;
+use App\Models\Feriado;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -127,6 +128,13 @@ class ReporteCobranza extends Model
      */
     public function recalcularKpi(): void
     {
+        if (Feriado::esFeriado($this->semana_inicio)) {
+            $this->kpi_porcentaje = null;
+            $this->estado         = 'feriado';
+            $this->save();
+            return;
+        }
+
         if (!$this->fecha_ultimo_envio) {
             $this->kpi_porcentaje = 0;
             $this->estado         = 'no_enviado';
@@ -172,7 +180,7 @@ class ReporteCobranza extends Model
                 'anio'          => $anio,
                 'semana_fin'    => $fin,
                 'fecha_limite'  => $limite,
-                'estado'        => 'pendiente',
+                'estado'        => Feriado::esFeriado($inicio) ? 'feriado' : 'pendiente',
             ]
         );
     }
@@ -209,6 +217,7 @@ class ReporteCobranza extends Model
     /** Etiqueta visual del KPI */
     public function kpiLabel(): string
     {
+        if ($this->estado === 'feriado') return 'Feriado';
         if (is_null($this->kpi_porcentaje)) return '—';
         return number_format($this->kpi_porcentaje, 0) . '%';
     }
@@ -216,6 +225,7 @@ class ReporteCobranza extends Model
     /** Color Bootstrap del KPI */
     public function kpiColor(): string
     {
+        if ($this->estado === 'feriado') return 'secondary';
         $k = (float) $this->kpi_porcentaje;
         if ($k >= 100) return 'success';
         if ($k >= 80)  return 'info';

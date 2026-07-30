@@ -9,6 +9,7 @@ use App\Http\Controllers\Auth\TwoFactorController;
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\LocationController;
+use App\Http\Controllers\Admin\FeriadoController;
 use App\Http\Controllers\LocationApiController;
 use App\Http\Controllers\ComercialController;
 use App\Http\Controllers\MarketingController;
@@ -433,6 +434,14 @@ Route::middleware(['auth', '2fa.verified', 'throttle:dashboard', 'track.activity
             Route::get('/user/{userId}', [LocationController::class, 'userHistory'])->name('user-history');
             Route::get('/live', [LocationController::class, 'liveLocations'])->name('live'); // API
 
+        });
+
+        // Feriados
+        Route::prefix('feriados')->name('feriados.')->group(function () {
+            Route::get('/',        [FeriadoController::class, 'index'])->name('index');
+            Route::post('/',       [FeriadoController::class, 'store'])->name('store');
+            Route::post('/sync',   [FeriadoController::class, 'sync'])->name('sync');
+            Route::delete('/{feriado}', [FeriadoController::class, 'destroy'])->name('destroy');
         });
 
         // User Management
