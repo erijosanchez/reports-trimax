@@ -33,10 +33,7 @@ class FeriadoController extends Controller
             'tipo'   => 'required|in:nacional,regional',
         ]);
 
-        $feriado = Feriado::updateOrCreate(
-            ['fecha' => $data['fecha']],
-            ['motivo' => $data['motivo'], 'tipo' => $data['tipo'], 'fuente' => 'manual']
-        );
+        $feriado = Feriado::guardar($data['fecha'], $data['motivo'], $data['tipo'], 'manual');
 
         ActivityLogService::log(auth()->id(), 'crear_feriado', 'Feriado', $feriado->id, "Registró feriado {$data['fecha']} ({$data['motivo']})");
 
@@ -53,9 +50,25 @@ class FeriadoController extends Controller
     }
 
     /**
-     * Trae la propuesta de feriados desde gob.pe y la deja guardada (fuente
-     * 'gob.pe') para que el admin la revise en la tabla — no reemplaza nada
-     * a ciegas, solo agrega/actualiza por fecha.
+     * Vista previa: corre feriados:sync en --dry-run, no escribe nada en la
+     * BD. El admin revisa esta lista ANTES de decidir si aplica el sync
+     * real — evita que un cambio de estructura en gob.pe se cuele directo
+     * a producción sin que nadie lo vea primero.
+     */
+    public function preview(Request $request)
+    {
+        $anio = (int) $request->input('anio', now('America/Lima')->year);
+
+        $exitCode = Artisan::call('feriados:sync', ['--anio' => $anio, '--dry-run' => true]);
+        $salida   = trim(Artisan::output());
+
+        return back()->with($exitCode === 0 ? 'preview' : 'error', $salida ?: 'Sin resultados.')
+            ->with('preview_anio', $anio);
+    }
+
+    /**
+     * Aplica de verdad lo que se vio en la vista previa: agrega/actualiza
+     * por fecha (fuente 'gob.pe'), nunca reemplaza el CRUD manual a ciegas.
      */
     public function sync(Request $request)
     {

@@ -29,10 +29,7 @@ class FeriadosPeru2026Seeder extends Seeder
         ];
 
         foreach ($feriados as [$fecha, $motivo]) {
-            Feriado::updateOrCreate(
-                ['fecha' => $fecha],
-                ['motivo' => $motivo, 'tipo' => 'nacional', 'fuente' => 'manual']
-            );
+            Feriado::guardar($fecha, $motivo, 'nacional', 'manual');
         }
     }
 }

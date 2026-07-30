@@ -67,6 +67,28 @@ class Feriado extends Model
         return $dia;
     }
 
+    /**
+     * Crea o actualiza por fecha, sin usar updateOrCreate(): el cast 'date'
+     * normaliza el valor guardado a 'Y-m-d 00:00:00', así que un lookup con
+     * 'Y-m-d' plano (updateOrCreate(['fecha' => $string], ...)) no matchea
+     * contra una fila ya existente en SQLite (columna TEXT, comparación
+     * literal) — pasa desapercibido en MySQL porque su columna DATE
+     * normaliza sola, pero revienta el UNIQUE de todos modos si el
+     * insert duplica la fecha. whereDate() sí compara de forma segura en
+     * ambos motores.
+     */
+    public static function guardar(string $fecha, string $motivo, string $tipo, string $fuente): self
+    {
+        $feriado = self::whereDate('fecha', $fecha)->first();
+
+        if ($feriado) {
+            $feriado->update(['motivo' => $motivo, 'tipo' => $tipo, 'fuente' => $fuente]);
+            return $feriado;
+        }
+
+        return self::create(['fecha' => $fecha, 'motivo' => $motivo, 'tipo' => $tipo, 'fuente' => $fuente]);
+    }
+
     public static function invalidarCache(int $anio): void
     {
         Cache::forget("feriados:{$anio}");

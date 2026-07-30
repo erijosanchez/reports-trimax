@@ -44,17 +44,35 @@
                     <h4 class="card-title">Sincronizar desde gob.pe</h4>
                     <p class="card-description">
                         Trae la lista de feriados nacionales publicada en
-                        <strong>gob.pe/feriados</strong> y la agrega/actualiza por fecha.
-                        No es automático: revisa la tabla después de sincronizar.
+                        <strong>gob.pe/feriados</strong>. Primero pide la <strong>vista previa</strong>
+                        (no guarda nada) y revisa que se vea bien antes de sincronizar de verdad.
                     </p>
-                    <form action="{{ route('admin.feriados.sync') }}" method="POST" class="d-flex gap-2">
-                        @csrf
-                        <input type="number" name="anio" class="form-control" style="max-width:120px"
+
+                    <div class="d-flex gap-2 mb-2">
+                        <input type="number" form="form-preview" name="anio" class="form-control" style="max-width:120px"
                                value="{{ $anio }}" min="2020" max="2100">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="me-1 mdi mdi-cloud-download"></i>Sincronizar
+                        <form id="form-preview" action="{{ route('admin.feriados.preview') }}" method="POST">
+                            @csrf
+                            <input type="hidden" name="anio" value="{{ $anio }}">
+                        </form>
+                        <button type="submit" form="form-preview" class="btn btn-outline-primary">
+                            <i class="me-1 mdi mdi-eye-outline"></i>Vista previa
                         </button>
-                    </form>
+                    </div>
+
+                    @if (session('preview'))
+                        <div class="alert alert-info small mb-2">
+                            <strong>Vista previa {{ session('preview_anio') }} — nada se guardó todavía:</strong>
+                            <pre class="mb-0 mt-1" style="white-space:pre-wrap;font-size:.8rem">{{ session('preview') }}</pre>
+                        </div>
+                        <form action="{{ route('admin.feriados.sync') }}" method="POST" class="d-flex gap-2">
+                            @csrf
+                            <input type="hidden" name="anio" value="{{ session('preview_anio') }}">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="me-1 mdi mdi-cloud-download"></i>Aplicar esta sincronización
+                            </button>
+                        </form>
+                    @endif
                 </div>
             </div>
         </div>
