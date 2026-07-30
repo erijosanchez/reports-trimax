@@ -90,10 +90,7 @@ class SyncFeriadosGobPe extends Command
                 continue;
             }
 
-            Feriado::updateOrCreate(
-                ['fecha' => $fecha->toDateString()],
-                ['motivo' => $motivo, 'tipo' => $tipo, 'fuente' => 'gob.pe']
-            );
+            Feriado::guardar($fecha->toDateString(), $motivo, $tipo, 'gob.pe');
             $sincronizados++;
         }
 

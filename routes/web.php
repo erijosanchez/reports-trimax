@@ -440,6 +440,7 @@ Route::middleware(['auth', '2fa.verified', 'throttle:dashboard', 'track.activity
         Route::prefix('feriados')->name('feriados.')->group(function () {
             Route::get('/',        [FeriadoController::class, 'index'])->name('index');
             Route::post('/',       [FeriadoController::class, 'store'])->name('store');
+            Route::post('/preview',[FeriadoController::class, 'preview'])->name('preview');
             Route::post('/sync',   [FeriadoController::class, 'sync'])->name('sync');
             Route::delete('/{feriado}', [FeriadoController::class, 'destroy'])->name('destroy');
         });

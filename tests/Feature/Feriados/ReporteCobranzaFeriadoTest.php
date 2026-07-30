@@ -75,7 +75,7 @@ class ReporteCobranzaFeriadoTest extends TestCase
     {
         $reporte = $this->reporte(['estado' => 'feriado', 'kpi_porcentaje' => null]);
 
-        $this->assertSame('secondary', $reporte->kpiColor());
+        $this->assertSame('dark', $reporte->kpiColor());
         $this->assertSame('Feriado', $reporte->kpiLabel());
     }
 
