@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Feriado;
 use App\Models\ReporteCobranza;
 use App\Models\ReporteCajaChica;
 use App\Models\ReporteComentarios;
@@ -128,7 +129,15 @@ class ProductivyController extends Controller
             $diasIndicadores = [];
             $depKpiSum  = 0;
             $depEnviados = 0;
+            $diasLaborablesSemana = 0;
             foreach ($diasSemana as $fecha) {
+                if (Feriado::esFeriado($fecha)) {
+                    $diasIndicadores[] = ['estado' => 'feriado', 'kpi' => null];
+                    continue; // feriado no cuenta en el denominador del KPI
+                }
+
+                $diasLaborablesSemana++;
+
                 // semana_inicio está casteado como 'date' (Carbon), no string → comparar con toDateString()
                 $registro  = $sedeDepositos->first(fn($r) => $r->semana_inicio->toDateString() === $fecha);
                 $esFuturo  = Carbon::parse($fecha)->isAfter($hoy);
@@ -148,8 +157,8 @@ class ProductivyController extends Controller
                     $depEnviados++;
                 }
             }
-            // KPI depósitos = promedio sobre los 6 días posibles (días no enviados = 0)
-            $depKpi = round($depKpiSum / 6, 1);
+            // KPI depósitos = promedio sobre los días laborables reales de la semana (feriados excluidos)
+            $depKpi = $diasLaborablesSemana > 0 ? round($depKpiSum / $diasLaborablesSemana, 1) : 0.0;
 
             $cc    = $cajaChicaPorSede[$sede] ?? null;
             $com   = $comentariosPorSede[$sede] ?? null;
@@ -170,6 +179,7 @@ class ProductivyController extends Controller
                 'depositos'    => $depEnviados,
                 'dep_kpi'      => $depKpi,
                 'dias'         => $diasIndicadores,
+                'dias_laborables' => $diasLaborablesSemana,
                 'ord_kpi'      => $ordKpi,
                 'ord_antes'    => $ordAntes,
                 'ord_total'    => $ordTotal,

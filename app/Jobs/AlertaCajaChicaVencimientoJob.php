@@ -2,9 +2,11 @@
 
 namespace App\Jobs;
 
+use App\Models\Feriado;
 use App\Models\ReporteCajaChica;
 use App\Models\User;
 use App\Notifications\CajaChicaAlertaVencimiento;
+use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -22,6 +24,11 @@ class AlertaCajaChicaVencimientoJob implements ShouldQueue
 
     public function handle(): void
     {
+        // Sábado feriado: el plazo ya corrió al siguiente día hábil, no se notifica hoy.
+        if (Feriado::esFeriado(Carbon::now('America/Lima'))) {
+            return;
+        }
+
         [$semanaNumero, $anio] = array_slice(ReporteCajaChica::datosSemanActual(), 0, 2);
 
         $usuariosSede = User::role('sede')->where('is_active', true)->get();

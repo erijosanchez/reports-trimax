@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Feriado;
 use App\Models\ReporteCobranza;
 use App\Models\User;
 use App\Services\ActivityLogService;
@@ -56,14 +57,32 @@ class CobranzaSedesController extends Controller
         $reporteHoyEstado      = null;
         $plazoPasadoHoy        = false;
         $countdownContextLabel = 'Hoy';
+        $esFeriadoHoy          = Feriado::esFeriado($hoy);
+        $motivoFeriadoHoy      = $esFeriadoHoy
+            ? Feriado::whereDate('fecha', $hoy->toDateString())->value('motivo')
+            : null;
 
         if ($user->isSede() && $user->sede) {
             $fechaHoy = $hoy->toDateString();
             [$horaLimite, $minLimite] = ReporteCobranza::horaLimitePara($user->sede);
             $limiteDeHoy    = $hoy->copy()->setTime($horaLimite, $minLimite, 0);
-            $plazoPasadoHoy = $hoy->greaterThan($limiteDeHoy) && $hoy->dayOfWeek !== Carbon::SUNDAY;
+            $plazoPasadoHoy = !$esFeriadoHoy && $hoy->greaterThan($limiteDeHoy) && $hoy->dayOfWeek !== Carbon::SUNDAY;
 
-            if ($plazoPasadoHoy) {
+            if ($esFeriadoHoy) {
+                $reporteHoyEstado = ReporteCobranza::firstOrCreate(
+                    ['sede' => $user->sede, 'semana_inicio' => $fechaHoy],
+                    [
+                        'user_id'        => $user->id,
+                        'semana_numero'  => (int) $hoy->dayOfYear,
+                        'anio'           => (int) $hoy->year,
+                        'semana_fin'     => $fechaHoy,
+                        'fecha_limite'   => $limiteDeHoy,
+                        'kpi_porcentaje' => null,
+                        'editado_tarde'  => false,
+                        'estado'         => 'feriado',
+                    ]
+                );
+            } elseif ($plazoPasadoHoy) {
                 $reporteHoyEstado = ReporteCobranza::firstOrCreate(
                     ['sede' => $user->sede, 'semana_inicio' => $fechaHoy],
                     [
@@ -79,12 +98,9 @@ class CobranzaSedesController extends Controller
                 );
             }
 
-            if ($plazoPasadoHoy) {
-                // Deadline passed: form and countdown target the next business day
-                $proximoDia = $hoy->copy()->addDay();
-                if ($proximoDia->dayOfWeek === Carbon::SUNDAY) {
-                    $proximoDia->addDay();
-                }
+            if ($esFeriadoHoy || $plazoPasadoHoy) {
+                // Hoy no aplica (feriado o plazo vencido): form y countdown apuntan al siguiente día hábil
+                $proximoDia    = Feriado::siguienteDiaHabil($hoy);
                 $fechaProximo  = $proximoDia->toDateString();
                 [$horaProx, $minProx] = ReporteCobranza::horaLimitePara($user->sede);
                 $limiteProximo = $proximoDia->copy()->setTime($horaProx, $minProx, 0);
@@ -100,7 +116,7 @@ class CobranzaSedesController extends Controller
                     ]
                 );
                 $fechaLimiteTs        = $limiteProximo->timestamp * 1000;
-                $countdownContextLabel = 'Mañana';
+                $countdownContextLabel = $proximoDia->isSameDay($hoy->copy()->addDay()) ? 'Mañana' : 'Próximo día hábil';
             } else {
                 $reporteSemanaActual = ReporteCobranza::obtenerOCrearSemanaActual($user->id, $user->sede);
                 $reporteHoyEstado    = $reporteSemanaActual;
@@ -129,6 +145,7 @@ class CobranzaSedesController extends Controller
                     'kpi_color'    => $reporte?->kpiColor() ?? 'secondary',
                     'editado_tarde'=> $reporte?->editado_tarde ?? false,
                     'sin_deposito' => $reporte?->sin_deposito ?? false,
+                    'estado'       => $reporte?->estado,
                     'reporte_id'   => $reporte?->id,
                 ];
             })->unique('sede')->sortBy('sede')->values();
@@ -166,6 +183,8 @@ class CobranzaSedesController extends Controller
             'mostrarExcepcionNota',
             'fechaReporteLabel',
             'countdownContextLabel',
+            'esFeriadoHoy',
+            'motivoFeriadoHoy',
         ));
     }
 
@@ -191,6 +210,10 @@ class CobranzaSedesController extends Controller
 
         $sede = $user->sede ?? 'Sin asignar';
         $reporte = ReporteCobranza::obtenerOCrearSemanaActual($user->id, $sede);
+
+        if ($reporte->estado === 'feriado') {
+            return response()->json(['error' => 'Hoy es feriado, no se requiere envío.'], 422);
+        }
 
         // Solo se permite un envío inicial por día (edición va por update)
         if ($reporte->fecha_envio_original) {
@@ -327,6 +350,10 @@ class CobranzaSedesController extends Controller
 
         if (!$user->isSuperAdmin() && !$user->isAdmin() && !$esPropietario && !$esMismaSede) {
             return response()->json(['error' => 'Sin permiso para registrar este reporte.'], 403);
+        }
+
+        if ($reporte->estado === 'feriado') {
+            return response()->json(['error' => 'Hoy es feriado, no se requiere envío.'], 422);
         }
 
         if ($reporte->fecha_envio_original) {

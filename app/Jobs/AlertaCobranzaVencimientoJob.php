@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Models\Feriado;
 use App\Models\ReporteCobranza;
 use App\Models\User;
 use App\Notifications\CobranzaAlertaVencimiento;
@@ -23,6 +24,11 @@ class AlertaCobranzaVencimientoJob implements ShouldQueue
 
     public function handle(): void
     {
+        // Hoy es feriado: no se exige envío, no se notifica.
+        if (Feriado::esFeriado(Carbon::now('America/Lima'))) {
+            return;
+        }
+
         [$semanaNumero, $anio] = array_slice(ReporteCobranza::datosSemanActual(), 0, 2);
 
         // Usuarios sede activos

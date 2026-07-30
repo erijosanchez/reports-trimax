@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Scopes\SedeScope;
+use App\Models\Feriado;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -140,13 +141,16 @@ class ReporteComentarios extends Model
 
     /**
      * Deadline: jueves 11:59 PM hora Lima (abierto todo el día).
+     * Si el jueves es feriado, el plazo corre al siguiente día hábil.
      */
     public static function datosSemanActual(): array
     {
         $hoy    = Carbon::now('America/Lima');
         $lunes  = $hoy->copy()->startOfWeek(Carbon::MONDAY);
         $jueves = $lunes->copy()->addDays(3);
-        $limite = $jueves->copy()->setTime(23, 59, 59); // 11:59 PM
+
+        $diaLimite = Feriado::esFeriado($jueves) ? Feriado::siguienteDiaHabil($jueves) : $jueves;
+        $limite    = $diaLimite->copy()->setTime(23, 59, 59); // 11:59 PM
 
         return [
             (int) $hoy->isoWeek(),
