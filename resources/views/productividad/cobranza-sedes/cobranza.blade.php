@@ -169,7 +169,7 @@
                         <div class="d-flex align-items-center gap-2 text-muted small">
                             <span class="bg-success badge filtro-estado" data-filtro="enviado">Enviado</span>
                             <span class="bg-danger badge filtro-estado" data-filtro="pendiente">Pendiente</span>
-                            <span class="bg-secondary badge filtro-estado" data-filtro="feriado">Feriado</span>
+                            <span class="bg-dark badge filtro-estado" data-filtro="feriado">Feriado</span>
                         </div>
                     </div>
                     <div class="p-0 card-body">
@@ -196,7 +196,7 @@
                                         <td class="text-muted small">{{ $fila['usuario'] }}</td>
                                         <td class="text-center">
                                             @if ($esFeriadoFila)
-                                                <span class="bg-secondary badge">
+                                                <span class="bg-dark badge">
                                                     <i class="me-1 mdi mdi-calendar-remove"></i>Feriado
                                                 </span>
                                             @elseif ($fila['enviado'])
@@ -261,7 +261,7 @@
                         @php $feriadosCount = $resumenSedes->where('estado', 'feriado')->count(); @endphp
                         @if ($feriadosCount > 0)
                         <span>
-                            <i class="text-secondary mdi mdi-calendar-remove"></i>
+                            <i class="text-dark mdi mdi-calendar-remove"></i>
                             Feriado: <strong>{{ $feriadosCount }}</strong>
                         </span>
                         @endif
@@ -1140,8 +1140,8 @@ function renderPaginacion() {
 }
 
 function badgeEstado(estado) {
-    const map    = { en_tiempo:'success', con_atraso:'danger', pendiente:'warning', no_enviado:'danger' };
-    const labels = { en_tiempo:'En tiempo', con_atraso:'Con atraso', pendiente:'Pendiente', no_enviado:'No enviado' };
+    const map    = { en_tiempo:'success', con_atraso:'danger', pendiente:'warning', no_enviado:'danger', feriado:'dark' };
+    const labels = { en_tiempo:'En tiempo', con_atraso:'Con atraso', pendiente:'Pendiente', no_enviado:'No enviado', feriado:'Feriado' };
     return `<span class="badge bg-${map[estado] ?? 'secondary'}">${labels[estado] ?? estado}</span>`;
 }
 
@@ -1161,7 +1161,7 @@ function renderHistorial(rows) {
                 ${r.fecha_edicion ? `<br><span class="text-warning small"><i class="mdi mdi-pencil"></i> ${r.fecha_edicion}</span>` : ''}
             </td>
             <td>
-                ${r.kpi !== null ? `<span class="badge bg-${r.kpi_color} fs-6">${r.kpi_label}</span>` : '<span class="text-muted">—</span>'}
+                ${(r.kpi !== null || r.estado === 'feriado') ? `<span class="badge bg-${r.kpi_color} fs-6">${r.kpi_label}</span>` : '<span class="text-muted">—</span>'}
                 ${r.editado_tarde ? '<br><small class="text-warning"><i class="mdi mdi-alert"></i> Editado tarde</small>' : ''}
             </td>
             <td>${badgeEstado(r.estado)}${r.sin_deposito ? ' <span class="bg-secondary badge" title="No hubo facturación en efectivo">Sin depósito</span>' : ''}${badgeRevision(r.revision_estado)}</td>
@@ -1333,7 +1333,7 @@ async function verReporte(id) {
                 </div>
                 <div class="col-6">
                     <div class="text-muted text-uppercase small fw-semibold">Fecha Envío</div>
-                    <div>${r.fecha_envio ?? '<span class="text-muted">No enviado</span>'}</div>
+                    <div>${r.fecha_envio ?? (r.estado === 'feriado' ? '<span class="text-muted">No aplica (feriado)</span>' : '<span class="text-muted">No enviado</span>')}</div>
                 </div>
                 ${r.fecha_edicion ? `
                 <div class="col-12">
@@ -1347,7 +1347,7 @@ async function verReporte(id) {
                 </div>
                 <div class="col-6">
                     <div class="text-muted text-uppercase small fw-semibold">Estado</div>
-                    <div>${r.estado ?? '—'}</div>
+                    <div>${r.estado ? badgeEstado(r.estado) : '—'}</div>
                 </div>
                 ${r.sin_deposito ? `
                 <div class="col-12">

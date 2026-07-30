@@ -225,7 +225,7 @@ class ReporteCobranza extends Model
     /** Color Bootstrap del KPI */
     public function kpiColor(): string
     {
-        if ($this->estado === 'feriado') return 'secondary';
+        if ($this->estado === 'feriado') return 'dark';
         $k = (float) $this->kpi_porcentaje;
         if ($k >= 100) return 'success';
         if ($k >= 80)  return 'info';

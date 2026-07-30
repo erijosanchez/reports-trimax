@@ -46,7 +46,7 @@
 .day-pill.estado-con-atraso { background: #fd7e14; color: #fff; }
 .day-pill.estado-no-enviado { background: #dc3545; color: #fff; }
 .day-pill.estado-futuro     { background: rgba(120,120,120,.15); color: rgba(120,120,120,.5); border: 1.5px dashed rgba(120,120,120,.3); }
-.day-pill.estado-feriado    { background: rgba(108,117,125,.15); color: #6c757d; border: 1.5px solid rgba(108,117,125,.35); }
+.day-pill.estado-feriado    { background: #343a40; color: #fff; border: 1.5px solid #343a40; }
 
 /* Badge enviado/pendiente */
 .badge-enviado  { background: rgba(25,135,84,.12); color: #198754; border: 1px solid rgba(25,135,84,.25); font-weight: 600; }

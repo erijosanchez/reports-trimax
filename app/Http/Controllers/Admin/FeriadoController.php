@@ -22,7 +22,7 @@ class FeriadoController extends Controller
             ->orderByDesc('anio')
             ->pluck('anio');
 
-        return view('admin.feriados.index', compact('feriados', 'anio', 'aniosDisponibles'));
+        return view('admin.feriados', compact('feriados', 'anio', 'aniosDisponibles'));
     }
 
     public function store(Request $request)
