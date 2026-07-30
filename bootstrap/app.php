@@ -18,6 +18,11 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // El TLS lo termina el proxy que hay delante (nginx del contenedor
+        // escucha en :80), así que sin esto Laravel arma las URLs con http://
+        // aunque APP_URL sea https — mixed content y redirecciones en bucle.
+        $middleware->trustProxies(at: '*');
+
         // Middleware global para WEB.
         // El registro de intentos fallidos de login se maneja directamente en
         // LoginController (con motivo y user_id), por eso ya no se usa aquí

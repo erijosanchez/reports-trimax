@@ -11,6 +11,9 @@ services:
     working_dir: /var/www
     volumes:
       - ./:/var/www
+      # Montado (además del COPY del Dockerfile) para poder ajustar los
+      # límites de subida con un restart, sin rebuild de la imagen.
+      - ./docker/php/uploads.ini:/usr/local/etc/php/conf.d/uploads.ini
     networks:
       - trimax-network
     dns:
@@ -121,6 +124,7 @@ services:
     working_dir: /var/www
     volumes:
       - ./:/var/www
+      - ./docker/php/uploads.ini:/usr/local/etc/php/conf.d/uploads.ini
     command: php artisan horizon
     networks:
       - trimax-network
@@ -151,6 +155,7 @@ services:
     working_dir: /var/www
     volumes:
       - ./:/var/www
+      - ./docker/php/uploads.ini:/usr/local/etc/php/conf.d/uploads.ini
     command: >
       sh -c "while true; do
         php artisan schedule:run --verbose --no-interaction &
