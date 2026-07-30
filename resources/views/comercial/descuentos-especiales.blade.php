@@ -185,7 +185,7 @@
                                                     <div class="input-group input-group-lg">
                                                         <input type="text" class="form-control" id="buscarGeneral"
                                                             placeholder="# Descuento, RUC...">
-                                                        <button class="btn btn-primary" type="button" id="btnBuscar">
+                                                        <button class="btn btn-primary" type="button" id="btnBuscar" aria-label="Buscar">
                                                             <i class="mdi mdi-magnify"></i>
                                                         </button>
                                                     </div>
@@ -770,7 +770,7 @@
 @endsection
 
 @section('scripts')
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="{{ asset('assets/vendors/sweetalert2/sweetalert2.all.min.js') }}"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
     <script>
         let descuentosData = [];        // solo los registros de la página actual (server-side)
@@ -892,8 +892,6 @@
                         descuentosActuales = descuentosData;
                         paginationMeta = response.pagination || null;
                         currentPage = paginationMeta ? paginationMeta.current_page : 1;
-                        console.log('✅ Descuentos (página) cargados:', descuentosData.length,
-                            'de', paginationMeta ? paginationMeta.total : '?');
 
                         actualizarEstadisticas(response.stats);
                         renderizarPagina();
@@ -974,10 +972,10 @@
                         ${badgeAplicado}
                         ${canAplicar && descuento.aplicado === 'Pendiente' && !esDeshabilitado ? `
                             <div class="btn-group mt-1" role="group">
-                                <button class="btn btn-sm btn-success" onclick="aplicarDescuento(${descuento.id}, 'Aprobado')">
+                                <button class="btn btn-sm btn-success" onclick="aplicarDescuento(${descuento.id}, 'Aprobado')" aria-label="Aplicar descuento">
                                     <i class="mdi mdi-check"></i>
                                 </button>
-                                <button class="btn btn-sm btn-danger" onclick="aplicarDescuento(${descuento.id}, 'Rechazado')">
+                                <button class="btn btn-sm btn-danger" onclick="aplicarDescuento(${descuento.id}, 'Rechazado')" aria-label="Rechazar aplicación del descuento">
                                     <i class="mdi mdi-close"></i>
                                 </button>
                             </div>
@@ -992,10 +990,10 @@
                         ${badgeAprobado}
                         ${canApprove && descuento.aprobado === 'Pendiente' && !esDeshabilitado ? `
                             <div class="btn-group mt-1" role="group">
-                                <button class="btn btn-sm btn-success" onclick="aprobarDescuento(${descuento.id}, 'Aprobado')">
+                                <button class="btn btn-sm btn-success" onclick="aprobarDescuento(${descuento.id}, 'Aprobado')" aria-label="Aprobar descuento">
                                     <i class="mdi mdi-check"></i>
                                 </button>
-                                <button class="btn btn-sm btn-danger" onclick="aprobarDescuento(${descuento.id}, 'Rechazado')">
+                                <button class="btn btn-sm btn-danger" onclick="aprobarDescuento(${descuento.id}, 'Rechazado')" aria-label="Rechazar descuento">
                                     <i class="mdi mdi-close"></i>
                                 </button>
                             </div>
@@ -1066,7 +1064,7 @@
                 <nav aria-label="Paginación"><ul class="mb-0 pagination pagination-sm">`;
 
             html += `<li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
-                <a class="page-link" href="#" onclick="irAPagina(event,${currentPage - 1})"><i class="mdi-chevron-left mdi"></i></a></li>`;
+                <a class="page-link" href="#" onclick="irAPagina(event,${currentPage - 1})" aria-label="Página anterior"><i class="mdi-chevron-left mdi"></i></a></li>`;
 
             let startP = Math.max(1, currentPage - 2);
             let endP   = Math.min(totalPaginas, startP + 4);
@@ -1086,7 +1084,7 @@
             }
 
             html += `<li class="page-item ${currentPage >= totalPaginas ? 'disabled' : ''}">
-                <a class="page-link" href="#" onclick="irAPagina(event,${currentPage + 1})"><i class="mdi-chevron-right mdi"></i></a></li>`;
+                <a class="page-link" href="#" onclick="irAPagina(event,${currentPage + 1})" aria-label="Página siguiente"><i class="mdi-chevron-right mdi"></i></a></li>`;
             html += `</ul></nav></div>`;
             $('#paginacionContainer').html(html);
         }

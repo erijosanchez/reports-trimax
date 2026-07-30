@@ -2,12 +2,24 @@
 
 namespace App\Models;
 
+use App\Models\Scopes\SedeScope;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Voucher extends Model
 {
+    /**
+     * Piloto de A1 (ARQUITECTURA.md): frontera de datos por sede como
+     * comportamiento por defecto, no como comprobación manual en cada
+     * controlador. Para saltárselo a propósito (finanzas ve todas las
+     * sedes): Voucher::withoutGlobalScope(SedeScope::class).
+     */
+    protected static function booted(): void
+    {
+        static::addGlobalScope(new SedeScope());
+    }
+
     protected $fillable = [
         'codigo',
         'sede',

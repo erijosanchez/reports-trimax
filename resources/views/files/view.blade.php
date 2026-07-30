@@ -15,7 +15,7 @@
                                 <div class="col-sm-12">
                                     <div class="d-flex align-items-center justify-content-between mb-4">
                                         <div class="d-flex align-items-center">
-                                            <a href="{{ route('files.index') }}" class="btn btn-light btn-sm me-3">
+                                            <a href="{{ route('files.index') }}" class="btn btn-light btn-sm me-3" aria-label="Volver">
                                                 <i class="mdi mdi-arrow-left"></i>
                                             </a>
                                             <div>
@@ -74,9 +74,7 @@
 
                                                 <div class="col-md-3 mb-3">
                                                     <div class="d-flex align-items-center">
-                                                        <img class="img-xs rounded-circle me-2"
-                                                            src="https://ui-avatars.com/api/?name={{ urlencode($file->user->name) }}&background=6366f1&color=fff"
-                                                            alt="profile">
+                                                        <x-avatar-iniciales class="rounded-circle me-2" :nombre="$file->user->name" :size="32" />
                                                         <div>
                                                             <small class="text-muted d-block">Subido por</small>
                                                             <strong>{{ $file->user->name }}</strong>

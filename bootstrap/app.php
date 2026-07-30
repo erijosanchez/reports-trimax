@@ -8,6 +8,7 @@ use App\Http\Middleware\TrackUserActivityMiddleware;
 use App\Http\Middleware\TwoFactorVerifiedMiddleware;
 use App\Http\Middleware\PreventBackHistoryMiddleware;
 use App\Http\Middleware\LogFailedActionsMiddleware;
+use App\Http\Middleware\SecurityHeaders;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -26,6 +27,7 @@ return Application::configure(basePath: dirname(__DIR__))
             // Registra automáticamente intentos fallidos en cualquier módulo
             // (validaciones de formularios/uploads, accesos denegados, etc.).
             LogFailedActionsMiddleware::class,
+            SecurityHeaders::class,
         ]);
 
         // Middleware global para API

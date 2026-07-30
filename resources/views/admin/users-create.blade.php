@@ -14,7 +14,7 @@
                             <div class="row">
                                 <div class="col-sm-12">
                                     <div class="d-flex align-items-center mb-4">
-                                        <a href="{{ route('admin.users') }}" class="me-3 btn btn-light btn-sm">
+                                        <a href="{{ route('admin.users') }}" class="me-3 btn btn-light btn-sm" aria-label="Volver">
                                             <i class="mdi-arrow-left mdi"></i>
                                         </a>
                                         <div>

@@ -3,6 +3,11 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Http\Requests\AccionDescuentoRequest;
+use App\Http\Requests\MotivoDescuentoRequest;
+use App\Http\Requests\NuevoEstadoDescuentoRequest;
+use App\Http\Requests\StoreDescuentoEspecialRequest;
+use App\Http\Requests\UpdateDescuentoEspecialRequest;
 use App\Models\DescuentoEspecial;
 use App\Models\User;
 use App\Services\ActivityLogService;
@@ -142,26 +147,10 @@ class DescuentosEspecialesController extends Controller
     /**
      * Crear descuento
      */
-    public function crearDescuento(Request $request)
+    public function crearDescuento(StoreDescuentoEspecialRequest $request)
     {
         try {
-            $validated = $request->validate([
-                'numero_factura' => 'nullable|string',
-                'numero_orden' => 'nullable|string',
-                'sede' => 'required|string',
-                'ruc' => 'required|string',
-                'razon_social' => 'required|string',
-                'consultor' => 'required|string',
-                'ciudad' => 'required|string',
-                'descuento_especial' => 'required|string',
-                'tipo' => 'required|in:ANULACION,CORTESIA,DESCUENTO ADICIONAL,DESCUENTO TOTAL,OTROS',
-                'marca' => 'required|string',
-                'ar' => 'nullable|string',
-                'disenos' => 'nullable|string',
-                'material' => 'nullable|string',
-                'comentarios' => 'required|string|min:1',
-                'archivos.*' => 'nullable|file|max:10240'
-            ]);
+            $validated = $request->validated();
 
             // Generar número de descuento
             $numeroDescuento = DescuentoEspecial::generarNumeroDescuento();
@@ -225,7 +214,7 @@ class DescuentosEspecialesController extends Controller
     /**
      * 🔥 NUEVO: Aplicar descuento (solo auditor.junior@trimaxperu.com)
      */
-    public function aplicarDescuento(Request $request, $id)
+    public function aplicarDescuento(AccionDescuentoRequest $request, $id)
     {
         try {
             $descuento = DescuentoEspecial::findOrFail($id);
@@ -238,9 +227,7 @@ class DescuentosEspecialesController extends Controller
                 ], 403);
             }
 
-            $validated = $request->validate([
-                'accion' => 'required|in:Aprobado,Rechazado'
-            ]);
+            $validated = $request->validated();
 
             $descuento->update([
                 'aplicado' => $validated['accion'],
@@ -273,7 +260,7 @@ class DescuentosEspecialesController extends Controller
     /**
      * 🔥 CAMBIO: Aprobar descuento (solo Sergio y planeamiento)
      */
-    public function aprobarDescuento(Request $request, $id)
+    public function aprobarDescuento(AccionDescuentoRequest $request, $id)
     {
         try {
             $descuento = DescuentoEspecial::findOrFail($id);
@@ -287,9 +274,7 @@ class DescuentosEspecialesController extends Controller
                 ], 403);
             }
 
-            $validated = $request->validate([
-                'accion' => 'required|in:Aprobado,Rechazado'
-            ]);
+            $validated = $request->validated();
 
             $descuento->update([
                 'aprobado' => $validated['accion'],
@@ -322,7 +307,7 @@ class DescuentosEspecialesController extends Controller
     /**
      * Deshabilitar descuento
      */
-    public function deshabilitarDescuento(Request $request, $id)
+    public function deshabilitarDescuento(MotivoDescuentoRequest $request, $id)
     {
         try {
             $descuento = DescuentoEspecial::findOrFail($id);
@@ -335,9 +320,7 @@ class DescuentosEspecialesController extends Controller
                 ], 403);
             }
 
-            $validated = $request->validate([
-                'motivo' => 'required|string|min:10'
-            ]);
+            $validated = $request->validated();
 
             $descuento->update([
                 'habilitado' => false,
@@ -368,7 +351,7 @@ class DescuentosEspecialesController extends Controller
     /**
      * Rehabilitar descuento
      */
-    public function rehabilitarDescuento(Request $request, $id)
+    public function rehabilitarDescuento(MotivoDescuentoRequest $request, $id)
     {
         try {
             $descuento = DescuentoEspecial::findOrFail($id);
@@ -388,9 +371,7 @@ class DescuentosEspecialesController extends Controller
                 ], 400);
             }
 
-            $validated = $request->validate([
-                'motivo' => 'required|string|min:10'
-            ]);
+            $validated = $request->validated();
 
             $descuento->update([
                 'habilitado' => true,
@@ -451,23 +432,11 @@ class DescuentosEspecialesController extends Controller
                 ]);
             }
 
-            $validated = $request->validate([
-                'numero_factura' => 'nullable|string',
-                'numero_orden' => 'nullable|string',
-                'sede' => 'required|string',
-                'ruc' => 'required|string',
-                'razon_social' => 'required|string',
-                'consultor' => 'required|string',
-                'ciudad' => 'required|string',
-                'descuento_especial' => 'required|string',
-                'tipo' => 'required|in:ANULACION,CORTESIA,DESCUENTO ADICIONAL,DESCUENTO TOTAL,OTROS',
-                'marca' => 'required|string',
-                'ar' => 'nullable|string',
-                'disenos' => 'nullable|string',
-                'material' => 'nullable|string',
-                'comentarios' => 'nullable|string',
-                'archivos.*' => 'nullable|file|max:10240'
-            ]);
+            // Mismo ruleset que UpdateDescuentoEspecialRequest (ARQUITECTURA.md, A5).
+            // No se tipa el parámetro del método con el Form Request porque esta
+            // rama solo corre para usuarios no-sede: el rol se conoce recién en
+            // tiempo de ejecución, después de la resolución de la rama de arriba.
+            $validated = $request->validate((new UpdateDescuentoEspecialRequest())->rules());
 
             $archivosActuales = $descuento->archivos_adjuntos ?? [];
             if ($request->hasFile('archivos')) {
@@ -537,7 +506,7 @@ class DescuentosEspecialesController extends Controller
     /**
      * 🔥 NUEVO: Cambiar aplicación (solo auditor junior)
      */
-    public function cambiarAplicacion(Request $request, $id)
+    public function cambiarAplicacion(NuevoEstadoDescuentoRequest $request, $id)
     {
         try {
             $descuento = DescuentoEspecial::findOrFail($id);
@@ -549,9 +518,7 @@ class DescuentosEspecialesController extends Controller
                 ], 403);
             }
 
-            $validated = $request->validate([
-                'nuevo_estado' => 'required|in:Aprobado,Rechazado,Pendiente'
-            ]);
+            $validated = $request->validated();
 
             $descuento->update([
                 'aplicado' => $validated['nuevo_estado'],
@@ -579,7 +546,7 @@ class DescuentosEspecialesController extends Controller
     /**
      * 🔥 CAMBIO: Cambiar aprobación (solo Sergio y planeamiento)
      */
-    public function cambiarAprobacion(Request $request, $id)
+    public function cambiarAprobacion(NuevoEstadoDescuentoRequest $request, $id)
     {
         try {
             $descuento = DescuentoEspecial::findOrFail($id);
@@ -592,9 +559,7 @@ class DescuentosEspecialesController extends Controller
                 ], 403);
             }
 
-            $validated = $request->validate([
-                'nuevo_estado' => 'required|in:Aprobado,Rechazado,Pendiente'
-            ]);
+            $validated = $request->validated();
 
             $descuento->update([
                 'aprobado' => $validated['nuevo_estado'],

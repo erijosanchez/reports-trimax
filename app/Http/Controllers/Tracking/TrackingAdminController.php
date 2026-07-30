@@ -8,6 +8,7 @@ use App\Models\Motorizado;
 use App\Models\GpsRuta;
 use App\Models\Entrega;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rules\Password;
 
 class TrackingAdminController extends Controller
 {
@@ -120,7 +121,7 @@ class TrackingAdminController extends Controller
             'tipo'     => 'required|in:motorizado,delivery',
             'telefono' => 'nullable|string|max:50',
             'email'    => 'required|email|unique:motorizados,email',
-            'password' => 'required|string|min:6',
+            'password' => ['required', Password::min(10)->letters()->numbers()->uncompromised()],
             'estado'   => 'required|in:activo,inactivo',
         ]);
 
@@ -141,7 +142,7 @@ class TrackingAdminController extends Controller
             'tipo'     => 'required|in:motorizado,delivery',
             'telefono' => 'nullable|string|max:50',
             'email'    => "required|email|unique:motorizados,email,{$id}",
-            'password' => 'nullable|string|min:6',
+            'password' => ['nullable', Password::min(10)->letters()->numbers()->uncompromised()],
             'estado'   => 'required|in:activo,inactivo',
         ]);
 

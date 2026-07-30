@@ -134,9 +134,7 @@
                                                                     </td>
                                                                     <td>
                                                                         <div class="d-flex align-items-center">
-                                                                            <img class="img-xs rounded-circle me-2"
-                                                                                src="https://ui-avatars.com/api/?name={{ urlencode($file->user->name) }}&background=6366f1&color=fff"
-                                                                                alt="profile">
+                                                                            <x-avatar-iniciales class="rounded-circle me-2" :nombre="$file->user->name" :size="32" />
                                                                             <span>{{ $file->user->name }}</span>
                                                                         </div>
                                                                     </td>

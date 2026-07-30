@@ -177,7 +177,7 @@
                                                     <div class="input-group input-group-lg">
                                                         <input type="text" class="form-control" id="buscarGeneral"
                                                             placeholder="# Acuerdo, RUC...">
-                                                        <button class="btn btn-primary" type="button" id="btnBuscar">
+                                                        <button class="btn btn-primary" type="button" id="btnBuscar" aria-label="Buscar">
                                                             <i class="mdi mdi-magnify"></i>
                                                         </button>
                                                     </div>
@@ -863,7 +863,7 @@
 @endsection
 
 @section('scripts')
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="{{ asset('assets/vendors/sweetalert2/sweetalert2.all.min.js') }}"></script>
     <script>
         let acuerdosData = [];        // solo los registros de la página actual (server-side)
         let acuerdosActuales = [];    // alias de la página actual (compatibilidad de render)
@@ -1092,8 +1092,6 @@
                         acuerdosActuales = acuerdosData;
                         paginationMeta = response.pagination || null;
                         currentPage = paginationMeta ? paginationMeta.current_page : 1;
-                        console.log('✅ Acuerdos (página) cargados:', acuerdosData.length,
-                            'de', paginationMeta ? paginationMeta.total : '?');
 
                         if (response.is_sede) {
                             $('#filtroUsuario').closest('.col-md-3').hide();
@@ -1195,10 +1193,10 @@
                             ${badgeValidado}
                             ${canValidate && acuerdo.validado === 'Pendiente' && !esDeshabilitado ? `
                                 <div class="btn-group mt-1" role="group">
-                                    <button class="btn btn-sm btn-success" onclick="validarAcuerdo(${acuerdo.id}, 'Aprobado')">
+                                    <button class="btn btn-sm btn-success" onclick="validarAcuerdo(${acuerdo.id}, 'Aprobado')" aria-label="Validar acuerdo">
                                         <i class="mdi mdi-check"></i>
                                     </button>
-                                    <button class="btn btn-sm btn-danger" onclick="validarAcuerdo(${acuerdo.id}, 'Rechazado')">
+                                    <button class="btn btn-sm btn-danger" onclick="validarAcuerdo(${acuerdo.id}, 'Rechazado')" aria-label="Rechazar validación del acuerdo">
                                         <i class="mdi mdi-close"></i>
                                     </button>
                                 </div>
@@ -1213,10 +1211,10 @@
                             ${badgeAprobado}
                             ${canApprove && acuerdo.aprobado === 'Pendiente' && !esDeshabilitado ? `
                                 <div class="btn-group mt-1" role="group">
-                                    <button class="btn btn-sm btn-success" onclick="aprobarAcuerdo(${acuerdo.id}, 'Aprobado')">
+                                    <button class="btn btn-sm btn-success" onclick="aprobarAcuerdo(${acuerdo.id}, 'Aprobado')" aria-label="Aprobar acuerdo">
                                         <i class="mdi mdi-check"></i>
                                     </button>
-                                    <button class="btn btn-sm btn-danger" onclick="aprobarAcuerdo(${acuerdo.id}, 'Rechazado')">
+                                    <button class="btn btn-sm btn-danger" onclick="aprobarAcuerdo(${acuerdo.id}, 'Rechazado')" aria-label="Rechazar acuerdo">
                                         <i class="mdi mdi-close"></i>
                                     </button>
                                 </div>
@@ -1295,7 +1293,7 @@
 
             // Anterior
             html += `<li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
-                <a class="page-link" href="#" onclick="irAPagina(event,${currentPage - 1})">
+                <a class="page-link" href="#" onclick="irAPagina(event,${currentPage - 1})" aria-label="Página anterior">
                     <i class="mdi-chevron-left mdi"></i>
                 </a></li>`;
 
@@ -1321,7 +1319,7 @@
 
             // Siguiente
             html += `<li class="page-item ${currentPage >= totalPaginas ? 'disabled' : ''}">
-                <a class="page-link" href="#" onclick="irAPagina(event,${currentPage + 1})">
+                <a class="page-link" href="#" onclick="irAPagina(event,${currentPage + 1})" aria-label="Página siguiente">
                     <i class="mdi-chevron-right mdi"></i>
                 </a></li>`;
 

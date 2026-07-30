@@ -819,7 +819,9 @@
 @endpush
 
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="{{ asset('assets/vendors/sweetalert2/sweetalert2.all.min.js') }}"></script>
+    <script src="{{ asset('assets/js/app/notify.js') }}"></script>
+    <script src="{{ asset('assets/js/app/charts.js') }}"></script>
 <script>
 // ── Config ───────────────────────────────────────────────────────
 const ROUTES = {
@@ -1378,7 +1380,7 @@ function buildRevisionHTML(r, id) {
     if ((r.revision_archivos ?? []).length) {
         adjuntos = `<div class="mb-2"><div class="mb-1 text-muted small">Adjuntos de la revisión:</div><div class="d-flex flex-wrap gap-1">` +
             r.revision_archivos.map(a => a.es_imagen
-                ? `<a href="${a.preview_url}" target="_blank"><img src="${a.preview_url}" style="height:56px;border-radius:6px;border:1px solid #e2e8f0;object-fit:cover;"></a>`
+                ? `<a href="${a.preview_url}" target="_blank"><img src="${a.preview_url}" alt="${a.name}" style="height:56px;border-radius:6px;border:1px solid #e2e8f0;object-fit:cover;"></a>`
                 : `<a href="${a.download_url}" class="btn-outline-secondary btn btn-sm" download><i class="mdi mdi-paperclip"></i> ${a.name}</a>`
             ).join('') + `</div></div>`;
     }
@@ -1542,7 +1544,7 @@ async function abrirCamara(inputId, previewId) {
         _streamActivo = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
         video.srcObject = _streamActivo;
     } catch (err) {
-        alert('No se pudo acceder a la cámara. Verifica los permisos del navegador.');
+        Notify.error('No se pudo acceder a la cámara. Verifica los permisos del navegador.');
         return;
     }
 
@@ -1644,11 +1646,7 @@ async function cargarKpiChart(mes = mesChart, anio = anioChart) {
         const data = await res.json();
         const ctx  = document.getElementById('kpi-chart').getContext('2d');
         if (kpiChart) kpiChart.destroy();
-        kpiChart = new Chart(ctx, {
-            type: 'bar',
-            data: { labels: data.labels ?? [], datasets: data.datasets ?? [] },
-            options: opcionesChart(),
-        });
+        kpiChart = ChartFactory.create(ctx, 'bar', { labels: data.labels ?? [], datasets: data.datasets ?? [] }, opcionesChart());
     } catch (e) {
         console.error('Error cargando KPI diario:', e);
     }
@@ -1684,11 +1682,7 @@ async function cargarKpiChartMensual(meses = 2) {
         const data = await res.json();
         const ctx  = document.getElementById('kpi-chart-mensual').getContext('2d');
         if (kpiChartMensual) kpiChartMensual.destroy();
-        kpiChartMensual = new Chart(ctx, {
-            type: 'bar',
-            data: { labels: data.labels ?? [], datasets: data.datasets ?? [] },
-            options: opcionesChart(),
-        });
+        kpiChartMensual = ChartFactory.create(ctx, 'bar', { labels: data.labels ?? [], datasets: data.datasets ?? [] }, opcionesChart());
     } catch (e) {
         console.error('Error cargando KPI mensual:', e);
     }

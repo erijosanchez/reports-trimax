@@ -1,0 +1,35 @@
+/**
+ * Clases de utilidad para patrones repetidos en estilos inline
+ * (FRONTEND.md, F6 punto 4). Primer extracto: la caja de color de
+ * "Escala KPI", duplicada letra por letra en varias vistas de
+ * Productividad Sedes. Se agrega a este archivo (no a
+ * vertical-layout-light/style.css, el del tema comprado) para separar
+ * las clases propias de la app de las del tema.
+ */
+.kpi-escala-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem;
+    border-radius: 0.375rem;
+}
+
+.kpi-escala-success {
+    background: #d1fae5;
+    border-left: 4px solid #10b981;
+}
+
+.kpi-escala-info {
+    background: #cffafe;
+    border-left: 4px solid #06b6d4;
+}
+
+.kpi-escala-warning {
+    background: #fef9c3;
+    border-left: 4px solid #eab308;
+}
+
+.kpi-escala-danger {
+    background: #fee2e2;
+    border-left: 4px solid #ef4444;
+}

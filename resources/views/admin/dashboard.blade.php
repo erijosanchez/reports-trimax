@@ -152,10 +152,8 @@
                                                     <div class="presence-item d-flex align-items-center border-bottom py-2"
                                                          data-user-id="{{ $u['id'] }}">
                                                         <div class="position-relative me-3 flex-shrink-0">
-                                                            <img class="rounded-circle"
-                                                                style="width:36px;height:36px;object-fit:cover;"
-                                                                src="https://ui-avatars.com/api/?name={{ urlencode($u['name']) }}&background={{ $u['is_online'] ? '25D366' : 'adb5bd' }}&color=fff"
-                                                                alt="{{ $u['name'] }}">
+                                                            <x-avatar-iniciales class="rounded-circle" :nombre="$u['name']"
+                                                                :background="$u['is_online'] ? '25D366' : 'adb5bd'" :size="36" />
                                                             <span class="presence-dot {{ $u['is_online'] ? 'dot-online pulse' : 'dot-offline' }}"></span>
                                                         </div>
                                                         <div class="flex-grow-1 overflow-hidden">
@@ -210,9 +208,7 @@
                                                             <tr>
                                                                 <td>
                                                                     <div class="d-flex align-items-center">
-                                                                        <img class="img-xs rounded-circle me-2"
-                                                                            src="https://ui-avatars.com/api/?name={{ urlencode($log->user->name) }}&background=6366f1&color=fff"
-                                                                            alt="profile">
+                                                                        <x-avatar-iniciales class="rounded-circle me-2" :nombre="$log->user->name" :size="32" />
                                                                         <span>{{ $log->user->name }}</span>
                                                                     </div>
                                                                 </td>
@@ -444,7 +440,6 @@
         }
     </style>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // User Activity Chart
@@ -511,11 +506,6 @@
                 return name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
             }
 
-            function avatarUrl(name, online) {
-                const bg = online ? '25D366' : 'adb5bd';
-                return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=${bg}&color=fff`;
-            }
-
             function refreshPresence() {
                 fetch(onlineStatusUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
                     .then(r => r.json())
@@ -540,7 +530,7 @@
                                 item.dataset.userId = user.id;
                                 item.innerHTML = `
                                     <div class="position-relative me-3 flex-shrink-0">
-                                        <img class="rounded-circle" style="width:36px;height:36px;object-fit:cover;" src="" alt="">
+                                        <span class="avatar-iniciales rounded-circle" style="display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;color:#fff;font-weight:600;font-size:14px;line-height:1;"></span>
                                         <span class="presence-dot"></span>
                                     </div>
                                     <div class="flex-grow-1 overflow-hidden">
@@ -551,9 +541,10 @@
                             }
 
                             // Update avatar
-                            const img = item.querySelector('img');
-                            img.src = avatarUrl(user.name, user.is_online);
-                            img.alt = user.name;
+                            const avatar = item.querySelector('.avatar-iniciales');
+                            avatar.textContent = getInitials(user.name);
+                            avatar.style.backgroundColor = user.is_online ? '#25D366' : '#adb5bd';
+                            avatar.title = user.name;
 
                             // Update dot
                             const dot = item.querySelector('.presence-dot');

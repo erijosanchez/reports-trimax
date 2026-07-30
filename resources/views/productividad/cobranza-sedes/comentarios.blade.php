@@ -89,8 +89,7 @@
                     <div class="py-4 card-body">
                         <h6 class="mb-3 text-muted text-uppercase fw-bold small">Escala KPI</h6>
                         <div class="d-flex flex-column gap-2">
-                            <div class="d-flex align-items-center justify-content-between p-2 rounded"
-                                 style="background:#d1fae5;border-left:4px solid #10b981;">
+                            <div class="kpi-escala-item kpi-escala-success">
                                 <div>
                                     <div class="text-success fw-bold small">Enviado el jueves</div>
                                     <div class="text-muted" style="font-size:11px;">Cualquier hora del jueves</div>
@@ -111,8 +110,7 @@
                                 </div>
                                 <span class="bg-info badge">50%</span>
                             </div>
-                            <div class="d-flex align-items-center justify-content-between p-2 rounded"
-                                 style="background:#fee2e2;border-left:4px solid #ef4444;">
+                            <div class="kpi-escala-item kpi-escala-danger">
                                 <div>
                                     <div class="text-danger fw-bold small">3+ días después</div>
                                 </div>
@@ -552,7 +550,9 @@
 @endpush
 
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="{{ asset('assets/vendors/sweetalert2/sweetalert2.all.min.js') }}"></script>
+    <script src="{{ asset('assets/js/app/notify.js') }}"></script>
+    <script src="{{ asset('assets/js/app/charts.js') }}"></script>
 <script>
 const ROUTES = {
     store:    "{{ route('productividad.cobranza-sedes.comentarios.store') }}",
@@ -798,7 +798,7 @@ function renderHistorial(rows) {
             <td>${badgeEstado(r.estado)}${badgeRevision(r.revision_estado)}</td>
             <td class="text-center">${r.num_archivos > 0 ? `<span class="bg-info badge">${r.num_archivos}</span>` : '0'}</td>
             <td class="text-nowrap">
-                <button class="px-2 py-0 btn-outline-primary btn btn-sm" onclick="verReporte(${r.id})"><i class="mdi mdi-eye"></i></button>
+                <button class="px-2 py-0 btn-outline-primary btn btn-sm" onclick="verReporte(${r.id})" aria-label="Ver reporte"><i class="mdi mdi-eye"></i></button>
                 ${r.puede_enviar_atrasado ? `<button class="ms-1 px-2 py-0 btn-outline-danger btn btn-sm" onclick="abrirEnviarAtrasado(${r.id},'${r.sede}')" title="Enviar atrasado"><i class="mdi-clock-alert-outline mdi"></i></button>` : ''}
             </td>
         </tr>`).join('');
@@ -820,7 +820,7 @@ async function verReporte(id) {
         const otros    = (r.archivos??[]).filter(a=>!a.es_imagen);
         let archivosHTML = '';
         if (imagenes.length) {
-            archivosHTML += `<div class="mb-3 row g-2">${imagenes.map(a=>`<div class="col-6 col-md-4"><div class="position-relative border rounded overflow-hidden" style="aspect-ratio:4/3;"><img src="${a.preview_url}" style="width:100%;height:100%;object-fit:cover;cursor:pointer;" onclick="window.open('${a.preview_url}','_blank')"><div class="bottom-0 position-absolute d-flex justify-content-between px-2 py-1 start-0 end-0" style="background:rgba(0,0,0,0.45);"><span class="text-white text-truncate small" style="max-width:70%;">${a.name}</span><a href="${a.download_url}" class="px-1 py-0 btn btn-sm btn-light" download><i class="mdi mdi-download small"></i></a></div></div></div>`).join('')}</div>`;
+            archivosHTML += `<div class="mb-3 row g-2">${imagenes.map(a=>`<div class="col-6 col-md-4"><div class="position-relative border rounded overflow-hidden" style="aspect-ratio:4/3;"><img src="${a.preview_url}" alt="${a.name}" style="width:100%;height:100%;object-fit:cover;cursor:pointer;" onclick="window.open('${a.preview_url}','_blank')"><div class="bottom-0 position-absolute d-flex justify-content-between px-2 py-1 start-0 end-0" style="background:rgba(0,0,0,0.45);"><span class="text-white text-truncate small" style="max-width:70%;">${a.name}</span><a href="${a.download_url}" class="px-1 py-0 btn btn-sm btn-light" title="Descargar" download><i class="mdi mdi-download small"></i></a></div></div></div>`).join('')}</div>`;
         }
         otros.forEach(a => {
             const ext = a.name.split('.').pop().toUpperCase();
@@ -871,7 +871,7 @@ function buildRevisionHTML(r, id) {
     if ((r.revision_archivos ?? []).length) {
         adjuntos = `<div class="mb-2"><div class="text-muted small mb-1">Adjuntos de la revisión:</div><div class="d-flex flex-wrap gap-1">` +
             r.revision_archivos.map(a => a.es_imagen
-                ? `<a href="${a.preview_url}" target="_blank"><img src="${a.preview_url}" style="height:56px;border-radius:6px;border:1px solid #e2e8f0;object-fit:cover;"></a>`
+                ? `<a href="${a.preview_url}" target="_blank"><img src="${a.preview_url}" alt="${a.name}" style="height:56px;border-radius:6px;border:1px solid #e2e8f0;object-fit:cover;"></a>`
                 : `<a href="${a.download_url}" class="btn btn-sm btn-outline-secondary" download><i class="mdi mdi-paperclip"></i> ${a.name}</a>`
             ).join('') + `</div></div>`;
     }
@@ -982,7 +982,7 @@ async function cargarKpiChart(semanas = 8) {
         const data = await apiFetch(`${ROUTES.kpiData}?tipo=semanas&semanas=${semanas}`);
         const ctx  = document.getElementById('kpi-chart').getContext('2d');
         if (kpiChart) kpiChart.destroy();
-        kpiChart = new Chart(ctx, { type: 'bar', data, options: opcionesChart() });
+        kpiChart = ChartFactory.create(ctx, 'bar', data, opcionesChart());
     } catch(e) { console.error(e); }
 }
 cargarKpiChart(8);
@@ -995,7 +995,7 @@ async function cargarKpiChartMensual(meses = 3) {
         const data = await apiFetch(`${ROUTES.kpiData}?tipo=mensual&meses=${meses}`);
         const ctx  = document.getElementById('kpi-chart-mensual').getContext('2d');
         if (kpiChartMensual) kpiChartMensual.destroy();
-        kpiChartMensual = new Chart(ctx, { type: 'bar', data, options: opcionesChart() });
+        kpiChartMensual = ChartFactory.create(ctx, 'bar', data, opcionesChart());
     } catch(e) { console.error(e); }
 }
 cargarKpiChartMensual(3);
@@ -1012,7 +1012,7 @@ async function abrirCamara(inputId, previewId) {
     document.getElementById('btn-retomar').classList.add('d-none');
     document.getElementById('btn-usar-foto').classList.add('d-none');
     try { _streamActivo=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'},audio:false}); document.getElementById('camara-video').srcObject=_streamActivo; }
-    catch { alert('No se pudo acceder a la cámara. Verifica los permisos.'); return; }
+    catch { Notify.error('No se pudo acceder a la cámara. Verifica los permisos.'); return; }
     _modalCamaraInst=new bootstrap.Modal(document.getElementById('modal-camara')); _modalCamaraInst.show();
 }
 function capturarFoto() {

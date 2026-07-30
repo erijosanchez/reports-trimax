@@ -158,6 +158,8 @@
 @endpush
 
 @push('scripts')
+<script src="{{ asset('assets/vendors/sweetalert2/sweetalert2.all.min.js') }}"></script>
+    <script src="{{ asset('assets/js/app/notify.js') }}"></script>
 <script>
 (function () {
     /* ── CANVAS: Dibujar ── */
@@ -207,7 +209,7 @@
         blank.width = canvas.width; blank.height = canvas.height;
         if (canvas.toDataURL() === blank.toDataURL()) {
             e.preventDefault();
-            alert('Por favor dibuja tu firma antes de guardar.');
+            Notify.warning('Por favor dibuja tu firma antes de guardar.');
             return;
         }
         document.getElementById('firmaDataDibujar').value = canvas.toDataURL('image/png');
@@ -240,10 +242,10 @@
 
     function processFile(file) {
         if (!file.type.match(/^image\/(png|jpeg|gif)$/)) {
-            alert('Solo se aceptan PNG, JPG o GIF.'); return;
+            Notify.error('Solo se aceptan PNG, JPG o GIF.'); return;
         }
         if (file.size > 2 * 1024 * 1024) {
-            alert('La imagen supera 2 MB.'); return;
+            Notify.error('La imagen supera 2 MB.'); return;
         }
         const reader = new FileReader();
         reader.onload = e => {
@@ -258,7 +260,7 @@
 
     document.getElementById('formSubir').addEventListener('submit', function (e) {
         if (!firmaDataSubir.value) {
-            e.preventDefault(); alert('Selecciona una imagen primero.'); return;
+            e.preventDefault(); Notify.warning('Selecciona una imagen primero.'); return;
         }
     });
 })();

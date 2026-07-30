@@ -9,6 +9,8 @@ use App\Notifications\DesbloqueoRevisado;
 use App\Services\ActivityLogService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -24,7 +26,8 @@ class DesbloqueoController extends Controller
     {
         $user = auth()->user();
 
-        if (!$user->puedeVerDesbloqueo()) {
+        // A1 (ARQUITECTURA.md): migrado a Gate como demostración del patrón.
+        if (Gate::denies('ver-desbloqueo')) {
             abort(403, 'No tienes permiso para acceder a Desbloqueo.');
         }
 
@@ -66,18 +69,25 @@ class DesbloqueoController extends Controller
 
         $sede = $user->sede ?? 'SIN SEDE';
 
-        $solicitud = SolicitudDesbloqueo::create([
-            'user_id'      => $user->id,
-            'sede'         => $sede,
-            'ruc'          => trim($data['ruc']),
-            'razon_social' => trim($data['razon_social']),
-            'comentarios'  => $data['comentarios'] ?? null,
-            'archivos'     => $this->guardarArchivos($request->file('archivos'), $sede),
-        ]);
+        // create() + registro de actividad en la misma transacción (A3); la
+        // notificación queda fuera para no sostener la conexión de BD
+        // abierta durante el I/O de red.
+        $solicitud = DB::transaction(function () use ($request, $user, $data, $sede) {
+            $solicitud = SolicitudDesbloqueo::create([
+                'user_id'      => $user->id,
+                'sede'         => $sede,
+                'ruc'          => trim($data['ruc']),
+                'razon_social' => trim($data['razon_social']),
+                'comentarios'  => $data['comentarios'] ?? null,
+                'archivos'     => $this->guardarArchivos($request->file('archivos'), $sede),
+            ]);
+
+            ActivityLogService::log($user->id, 'crear_desbloqueo', 'SolicitudDesbloqueo', $solicitud->id, "Solicitó desbloqueo RUC {$solicitud->ruc} (sede: {$solicitud->sede})");
+
+            return $solicitud;
+        });
 
         $this->notificarCreacion($solicitud->load('user'));
-
-        ActivityLogService::log($user->id, 'crear_desbloqueo', 'SolicitudDesbloqueo', $solicitud->id, "Solicitó desbloqueo RUC {$solicitud->ruc} (sede: {$solicitud->sede})");
 
         return response()->json([
             'success' => true,
@@ -121,11 +131,13 @@ class DesbloqueoController extends Controller
             $solicitud->revision_archivos = $this->guardarArchivos($request->file('archivos'), $solicitud->sede ?? 'GENERAL');
         }
 
-        $solicitud->save();
+        DB::transaction(function () use ($solicitud, $user, $data) {
+            $solicitud->save();
+
+            ActivityLogService::log($user->id, 'revisar_desbloqueo', 'SolicitudDesbloqueo', $solicitud->id, "Revisó desbloqueo RUC {$solicitud->ruc} como {$data['estado']}");
+        });
 
         $this->notificarRevision($solicitud);
-
-        ActivityLogService::log($user->id, 'revisar_desbloqueo', 'SolicitudDesbloqueo', $solicitud->id, "Revisó desbloqueo RUC {$solicitud->ruc} como {$data['estado']}");
 
         $mensajes = [
             'conforme'           => 'Solicitud marcada como conforme (aprobada).',
@@ -157,7 +169,7 @@ class DesbloqueoController extends Controller
 
         foreach ($solicitud->archivos ?? [] as $a) {
             if (!empty($a['path'])) {
-                Storage::disk('public')->delete($a['path']);
+                Storage::disk('local')->delete($a['path']);
             }
         }
 
@@ -233,13 +245,13 @@ class DesbloqueoController extends Controller
         }
 
         $archivo = ($solicitud->{$campo} ?? [])[$index] ?? null;
-        if (!$archivo || !Storage::disk('public')->exists($archivo['path'])) {
+        if (!$archivo || !Storage::disk('local')->exists($archivo['path'])) {
             abort(404, 'Archivo no encontrado.');
         }
         if ($request->boolean('download')) {
-            return Storage::disk('public')->download($archivo['path'], $archivo['name']);
+            return Storage::disk('local')->download($archivo['path'], $archivo['name']);
         }
-        return response()->file(Storage::disk('public')->path($archivo['path']), [
+        return response()->file(Storage::disk('local')->path($archivo['path']), [
             'Content-Type'        => $archivo['mime'] ?? 'application/octet-stream',
             'Content-Disposition' => 'inline; filename="' . $archivo['name'] . '"',
         ]);
@@ -411,7 +423,7 @@ class DesbloqueoController extends Controller
 
         foreach ($archivos as $file) {
             $ext  = $file->getClientOriginalExtension();
-            $path = $file->storeAs($dir, Str::uuid() . '.' . $ext, 'public');
+            $path = $file->storeAs($dir, Str::uuid() . '.' . $ext, 'local');
 
             $guardados[] = [
                 'name' => $file->getClientOriginalName(),

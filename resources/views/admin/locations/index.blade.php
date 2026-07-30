@@ -137,9 +137,7 @@
                                                                 <!-- Usuario -->
                                                                 <td>
                                                                     <div class="d-flex align-items-center">
-                                                                        <img class="img-xs rounded-circle me-2"
-                                                                            src="https://ui-avatars.com/api/?name={{ urlencode($location->user->name) }}&background=6366f1&color=fff"
-                                                                            alt="{{ $location->user->name }}">
+                                                                        <x-avatar-iniciales class="rounded-circle me-2" :nombre="$location->user->name" :size="32" />
                                                                         <div>
                                                                             <div>{{ $location->user->name }}</div>
                                                                             <small class="text-muted">{{ $location->user->email }}</small>

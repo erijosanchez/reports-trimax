@@ -11,6 +11,8 @@ use App\Notifications\ReporteSedeRechazado;
 use App\Services\ActivityLogService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
@@ -26,7 +28,11 @@ class VoucherController extends Controller
         $user         = auth()->user();
         $puedeAplicar = $user->isFinanzas();
 
-        if (!$user->puedeVerVouchers()) {
+        // Piloto de A1 (ARQUITECTURA.md): mismo chequeo que antes
+        // ($user->puedeVerVouchers()), ahora a través del Gate registrado en
+        // AuthServiceProvider — el helper de User sigue siendo el detalle de
+        // implementación.
+        if (Gate::denies('ver-vouchers')) {
             abort(403, 'No tienes permiso para acceder a Vouchers.');
         }
 
@@ -103,23 +109,27 @@ class VoucherController extends Controller
 
         $total = collect($request->facturas)->sum('monto');
 
-        $voucher = Voucher::create([
-            'codigo'        => strtoupper(trim($request->codigo)),
-            'sede'          => $user->sede ?? 'SIN SEDE',
-            'status'        => 'pendiente',
-            'archivos'      => $archivosGuardados ?: null,
-            'total'         => $total,
-            'solicitado_at' => now()->toDateString(),
-            'created_by'    => $user->id,
-        ]);
-
-        foreach ($request->facturas as $f) {
-            $voucher->facturas()->create([
-                'factura' => trim($f['factura']),
-                'ruc'     => trim($f['ruc']),
-                'monto'   => $f['monto'],
+        $voucher = DB::transaction(function () use ($request, $user, $archivosGuardados, $total) {
+            $voucher = Voucher::create([
+                'codigo'        => strtoupper(trim($request->codigo)),
+                'sede'          => $user->sede ?? 'SIN SEDE',
+                'status'        => 'pendiente',
+                'archivos'      => $archivosGuardados ?: null,
+                'total'         => $total,
+                'solicitado_at' => now()->toDateString(),
+                'created_by'    => $user->id,
             ]);
-        }
+
+            foreach ($request->facturas as $f) {
+                $voucher->facturas()->create([
+                    'factura' => trim($f['factura']),
+                    'ruc'     => trim($f['ruc']),
+                    'monto'   => $f['monto'],
+                ]);
+            }
+
+            return $voucher;
+        });
 
         $voucher->load(['creator', 'aplicador', 'facturas']);
 
@@ -153,15 +163,19 @@ class VoucherController extends Controller
             return response()->json(['success' => false, 'message' => 'No se puede modificar un voucher ya aplicado.'], 422);
         }
 
-        $factura = $voucher->facturas()->create([
-            'factura' => trim($request->factura),
-            'ruc'     => trim($request->ruc),
-            'monto'   => $request->monto,
-        ]);
+        [$factura, $nuevoTotal] = DB::transaction(function () use ($voucher, $request) {
+            $factura = $voucher->facturas()->create([
+                'factura' => trim($request->factura),
+                'ruc'     => trim($request->ruc),
+                'monto'   => $request->monto,
+            ]);
 
-        $nuevoTotal = $voucher->facturas()->sum('monto');
-        $voucher->update(['total' => $nuevoTotal]);
-        $this->resetRevisionSiRechazado($voucher);
+            $nuevoTotal = $voucher->facturas()->sum('monto');
+            $voucher->update(['total' => $nuevoTotal]);
+            $this->resetRevisionSiRechazado($voucher);
+
+            return [$factura, $nuevoTotal];
+        });
 
         return response()->json([
             'success'     => true,
@@ -172,14 +186,19 @@ class VoucherController extends Controller
 
     public function removeFactura($id)
     {
-        $factura    = VoucherFactura::findOrFail($id);
-        $voucherId  = $factura->voucher_id;
-        $factura->delete();
+        $factura   = VoucherFactura::findOrFail($id);
+        $voucherId = $factura->voucher_id;
 
-        $voucher    = Voucher::findOrFail($voucherId);
-        $nuevoTotal = $voucher->facturas()->sum('monto');
-        $voucher->update(['total' => $nuevoTotal]);
-        $this->resetRevisionSiRechazado($voucher);
+        $nuevoTotal = DB::transaction(function () use ($factura, $voucherId) {
+            $factura->delete();
+
+            $voucher    = Voucher::findOrFail($voucherId);
+            $nuevoTotal = $voucher->facturas()->sum('monto');
+            $voucher->update(['total' => $nuevoTotal]);
+            $this->resetRevisionSiRechazado($voucher);
+
+            return $nuevoTotal;
+        });
 
         return response()->json([
             'success'     => true,
@@ -267,7 +286,7 @@ class VoucherController extends Controller
 
         foreach ($voucher->archivos ?? [] as $archivo) {
             if (!empty($archivo['path'])) {
-                Storage::disk('public')->delete($archivo['path']);
+                Storage::disk('local')->delete($archivo['path']);
             }
         }
 
@@ -278,8 +297,13 @@ class VoucherController extends Controller
 
     public function getFacturas($id)
     {
+        $user = auth()->user();
+
+        if (!$user->puedeVerVouchers()) {
+            return response()->json(['error' => 'Sin permiso.'], 403);
+        }
+
         $voucher = Voucher::with(['facturas', 'revisor'])->findOrFail($id);
-        $user    = auth()->user();
 
         return response()->json([
             'id'       => $voucher->id,
@@ -323,6 +347,10 @@ class VoucherController extends Controller
 
     public function servirArchivo($id, $index)
     {
+        if (!auth()->user()->puedeVerVouchers()) {
+            abort(403);
+        }
+
         $voucher  = Voucher::findOrFail($id);
         $archivos = $voucher->archivos ?? [];
 
@@ -332,9 +360,9 @@ class VoucherController extends Controller
 
         $archivo = $archivos[$index];
 
-        if (Storage::disk('public')->exists($archivo['path'])) {
+        if (Storage::disk('local')->exists($archivo['path'])) {
             return response()->file(
-                Storage::disk('public')->path($archivo['path']),
+                Storage::disk('local')->path($archivo['path']),
                 [
                     'Content-Type'        => $archivo['mime'] ?? 'application/octet-stream',
                     'Content-Disposition' => 'inline; filename="' . $archivo['name'] . '"',
@@ -381,16 +409,21 @@ class VoucherController extends Controller
             $voucher->revision_archivos = $this->guardarArchivos($request->file('archivos'), $voucher->sede ?? 'GENERAL');
         }
 
-        $voucher->save();
+        // save() + registro de actividad en la misma transacción (A3); la
+        // notificación por correo queda fuera para no sostener la conexión
+        // de BD abierta durante el I/O de red.
+        DB::transaction(function () use ($voucher, $user, $data) {
+            $voucher->save();
+
+            ActivityLogService::log(
+                $user->id, 'revisar_voucher', 'Voucher', $voucher->id,
+                "Marcó voucher {$voucher->codigo} como {$data['estado']} (sede: {$voucher->sede})"
+            );
+        });
 
         if ($data['estado'] === 'rechazado' || $data['estado'] === 'conforme_observado') {
             $this->notificarRevision($voucher, $data['estado']);
         }
-
-        ActivityLogService::log(
-            $user->id, 'revisar_voucher', 'Voucher', $voucher->id,
-            "Marcó voucher {$voucher->codigo} como {$data['estado']} (sede: {$voucher->sede})"
-        );
 
         $mensajes = [
             'conforme'           => 'Voucher marcado como conforme.',
@@ -435,13 +468,13 @@ class VoucherController extends Controller
         }
         $voucher = Voucher::findOrFail($id);
         $archivo = ($voucher->revision_archivos ?? [])[$index] ?? null;
-        if (!$archivo || !Storage::disk('public')->exists($archivo['path'])) {
+        if (!$archivo || !Storage::disk('local')->exists($archivo['path'])) {
             abort(404, 'Archivo no encontrado.');
         }
         if ($request->boolean('download')) {
-            return Storage::disk('public')->download($archivo['path'], $archivo['name']);
+            return Storage::disk('local')->download($archivo['path'], $archivo['name']);
         }
-        return response()->file(Storage::disk('public')->path($archivo['path']), [
+        return response()->file(Storage::disk('local')->path($archivo['path']), [
             'Content-Type'        => $archivo['mime'] ?? 'application/octet-stream',
             'Content-Disposition' => 'inline; filename="' . $archivo['name'] . '"',
         ]);
@@ -620,7 +653,7 @@ class VoucherController extends Controller
         foreach ($archivos as $file) {
             $ext    = $file->getClientOriginalExtension();
             $nombre = $file->getClientOriginalName();
-            $path   = $file->storeAs($dir, Str::uuid() . '.' . $ext, 'public');
+            $path   = $file->storeAs($dir, Str::uuid() . '.' . $ext, 'local');
 
             $guardados[] = [
                 'name' => $nombre,

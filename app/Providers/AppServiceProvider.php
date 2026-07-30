@@ -29,7 +29,5 @@ class AppServiceProvider extends ServiceProvider
         if (config('app.env') !== 'local') {
             // ya manejado por view:cache
         }
-
-        \Illuminate\Support\Facades\Blade::setEchoFormat('%s');
     }
 }

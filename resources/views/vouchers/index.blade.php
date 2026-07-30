@@ -521,11 +521,11 @@
                     <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 px-3 py-2 border-top">
                         <small class="text-muted" id="hist-info">—</small>
                         <div class="d-flex align-items-center gap-2">
-                            <button id="hist-prev" class="btn btn-outline-secondary btn-sm" disabled>
+                            <button id="hist-prev" class="btn btn-outline-secondary btn-sm" disabled aria-label="Página anterior">
                                 <i class="mdi mdi-chevron-left"></i>
                             </button>
                             <span class="small text-muted" id="hist-page">1 / 1</span>
-                            <button id="hist-next" class="btn btn-outline-secondary btn-sm" disabled>
+                            <button id="hist-next" class="btn btn-outline-secondary btn-sm" disabled aria-label="Página siguiente">
                                 <i class="mdi mdi-chevron-right"></i>
                             </button>
                         </div>
@@ -637,7 +637,6 @@
 @endsection
 
 @section('scripts')
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
 (function () {
     const CSRF   = document.querySelector('meta[name="csrf-token"]').content;
@@ -882,7 +881,7 @@
                            placeholder="0.00" step="0.01" min="0.01" required>
                 </td>
                 <td class="text-center">
-                    <button type="button" class="btn btn-outline-danger btn-sm btn-remove-row">
+                    <button type="button" class="btn btn-outline-danger btn-sm btn-remove-row" aria-label="Quitar factura">
                         <i class="mdi mdi-minus"></i>
                     </button>
                 </td>`;
@@ -1035,7 +1034,7 @@
                             <a href="${a.url}" target="_blank" class="text-decoration-none">
                                 <div class="border rounded p-2 text-center bg-light">
                                     ${isImg
-                                        ? `<img src="${a.url}" class="img-fluid rounded mb-1" style="max-height:80px;object-fit:cover">`
+                                        ? `<img src="${a.url}" alt="${a.name}" class="img-fluid rounded mb-1" style="max-height:80px;object-fit:cover">`
                                         : `<div class="py-2">${icon}</div>`}
                                     <div class="text-truncate text-muted" style="font-size:10px" title="${a.name}">${a.name}</div>
                                     <div class="text-muted" style="font-size:10px">${a.size}</div>

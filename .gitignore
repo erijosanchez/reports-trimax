@@ -23,5 +23,9 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
-.claude/
+# Config de Claude Code: se versionan las skills compartidas del proyecto,
+# no los ajustes locales de cada maquina.
+.claude/*
+!.claude/skills/
+.claude/settings.local.json
 /public/docs/

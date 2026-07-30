@@ -268,9 +268,7 @@
                                                                 </td>
                                                                 <td>
                                                                     <div class="d-flex align-items-center">
-                                                                        <img class="img-xs rounded-circle me-3"
-                                                                            src="https://ui-avatars.com/api/?name={{ urlencode($user->name) }}&background=6366f1&color=fff"
-                                                                            alt="profile" style="min-width: 45px;">
+                                                                        <x-avatar-iniciales class="rounded-circle me-3" :nombre="$user->name" :size="40" />
                                                                         <div style="min-width: 200px;">
                                                                             <div class="fw-bold mb-1"
                                                                                 style="font-size: 0.95rem;">
@@ -683,6 +681,8 @@
 @endsection
 
 @push('scripts')
+    <script src="{{ asset('assets/vendors/sweetalert2/sweetalert2.all.min.js') }}"></script>
+    <script src="{{ asset('assets/js/app/notify.js') }}"></script>
     <script>
         // Initialize tooltips
         document.addEventListener('DOMContentLoaded', function() {
@@ -707,7 +707,7 @@
                 }, 2000);
             }).catch(err => {
                 console.error('Error al copiar: ', err);
-                alert('Error al copiar el link');
+                Notify.error('Error al copiar el link');
             });
         }
 
@@ -728,7 +728,7 @@
                 })
                 .catch(err => {
                     console.error('Error al generar QR:', err);
-                    alert('Error al generar el código QR');
+                    Notify.error('Error al generar el código QR');
                 });
         }
 

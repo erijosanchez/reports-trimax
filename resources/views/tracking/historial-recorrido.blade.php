@@ -2,7 +2,7 @@
 @section('title', 'Historial de Recorrido')
 
 @push('styles')
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="{{ asset('assets/vendors/leaflet/leaflet.css') }}" />
 
     <style>
         #map {
@@ -219,7 +219,9 @@
 @endsection
 
 @push('scripts')
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="{{ asset('assets/vendors/leaflet/leaflet.js') }}"></script>
+    <script src="{{ asset('assets/vendors/sweetalert2/sweetalert2.all.min.js') }}"></script>
+    <script src="{{ asset('assets/js/app/notify.js') }}"></script>
 
     <script>
         let mapInstance  = null;
@@ -358,7 +360,7 @@
         async function cargarRecorrido() {
             const motId = document.getElementById('sel-motorizado').value;
             const fecha = document.getElementById('sel-fecha').value;
-            if (!motId) { alert('Selecciona un motorizado'); return; }
+            if (!motId) { Notify.warning('Selecciona un motorizado'); return; }
 
             const btn = document.getElementById('btn-buscar');
             btn.disabled = true;
@@ -372,7 +374,7 @@
                 const data = await res.json();
                 const rutas = data.rutas || [];
 
-                if (!rutas.length) { alert('No hay puntos GPS para esta fecha'); return; }
+                if (!rutas.length) { Notify.info('No hay puntos GPS para esta fecha'); return; }
 
                 document.getElementById('titulo-mapa').innerHTML =
                     `<i class="me-1 text-primary mdi mdi-map-marker-path"></i>
@@ -402,7 +404,7 @@
 
             } catch (e) {
                 console.error(e);
-                alert('Error cargando recorrido');
+                Notify.error('Error cargando recorrido');
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = `<i class="me-1 mdi mdi-magnify"></i> Ver recorrido`;

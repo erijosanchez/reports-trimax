@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Scopes\SedeScope;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -9,6 +10,17 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class ReporteComentarios extends Model
 {
     protected $table = 'reportes_comentarios';
+
+    /**
+     * Piloto de A1 (ARQUITECTURA.md): frontera de datos por sede como
+     * comportamiento por defecto, no una comprobación manual que se puede
+     * olvidar. Para saltárselo a propósito:
+     * ReporteComentarios::withoutGlobalScope(SedeScope::class).
+     */
+    protected static function booted(): void
+    {
+        static::addGlobalScope(new SedeScope());
+    }
 
     protected $fillable = [
         'user_id',

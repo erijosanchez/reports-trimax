@@ -15,7 +15,7 @@
                                 <div class="col-sm-12">
                                     <div class="d-flex align-items-center justify-content-between mb-4">
                                         <div class="d-flex align-items-center">
-                                            <a href="{{ route('admin.users') }}" class="me-3 btn btn-light btn-sm">
+                                            <a href="{{ route('admin.users') }}" class="me-3 btn btn-light btn-sm" aria-label="Volver">
                                                 <i class="mdi-arrow-left mdi"></i>
                                             </a>
                                             <div>
@@ -616,9 +616,7 @@
                                             </h4>
 
                                             <div class="mb-4 pb-3 border-bottom text-center">
-                                                <img class="mb-3 rounded-circle" style="width: 100px; height: 100px;"
-                                                    src="https://ui-avatars.com/api/?name={{ urlencode($user->name) }}&size=200&background=6366f1&color=fff"
-                                                    alt="profile">
+                                                <x-avatar-iniciales class="mb-3 rounded-circle" :nombre="$user->name" :size="100" />
                                                 <h5 class="mb-1">{{ $user->name }}</h5>
                                                 <p class="mb-0 text-muted">{{ $user->email }}</p>
                                             </div>
@@ -790,6 +788,33 @@
                                         </div>
                                     </div>
                                 </div>
+
+                                @if ($user->hasTwoFactorEnabled() && $user->id !== auth()->id())
+                                    <div class="grid-margin col-lg-12 stretch-card">
+                                        <div class="card">
+                                            <div class="card-body">
+                                                <h5 class="mb-3">
+                                                    <i class="me-2 mdi-shield-key-outline mdi"></i>
+                                                    Seguridad
+                                                </h5>
+                                                <p class="mb-3 text-muted small">
+                                                    Este usuario tiene 2FA habilitado. Si perdió el acceso a su
+                                                    app de autenticación y también agotó sus códigos de
+                                                    recuperación, puedes reiniciarlo aquí. Deberá configurarlo
+                                                    de nuevo en su próximo ingreso.
+                                                </p>
+                                                <form method="POST"
+                                                    action="{{ route('admin.users.reset-2fa', $user->id) }}">
+                                                    @csrf
+                                                    <button type="submit" class="w-100 btn btn-outline-warning"
+                                                        onclick="return confirm('¿Reiniciar el 2FA de {{ $user->name }}?\n\nDeberá configurarlo de nuevo en su próximo ingreso.')">
+                                                        <i class="me-1 mdi mdi-shield-refresh-outline"></i>Resetear 2FA
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endif
 
                                 <div class="grid-margin col-lg-12 stretch-card">
                                     @if (auth()->user()->isSuperAdmin() &&

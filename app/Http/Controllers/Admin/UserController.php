@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rules\Password;
 
 class UserController extends Controller
 {
@@ -93,7 +94,7 @@ class UserController extends Controller
         $rules = [
             'name'     => 'required|string|max:255',
             'email'    => 'required|email|unique:users,email',
-            'password' => 'required|min:8|confirmed',
+            'password' => ['required', 'confirmed', Password::min(10)->letters()->numbers()->uncompromised()],
             'role'     => 'required|exists:roles,name',
         ];
 
@@ -142,7 +143,7 @@ class UserController extends Controller
             'name'      => 'required|string|max:255',
             'email'     => 'required|email|unique:users,email,' . $id,
             'role'      => 'required|exists:roles,name',
-            'password'  => 'nullable|min:8|confirmed',
+            'password'  => ['nullable', 'confirmed', Password::min(10)->letters()->numbers()->uncompromised()],
             'is_active' => 'boolean',
         ];
 
@@ -194,5 +195,25 @@ class UserController extends Controller
         ActivityLogService::log(Auth::id(), 'delete_user', 'User', $userId, "Eliminó usuario: {$userName} ({$userEmail})");
 
         return back()->with('success', "Usuario {$userName} eliminado exitosamente.");
+    }
+
+    /**
+     * Reinicia el 2FA de un usuario bloqueado (perdió el teléfono y se
+     * quedó sin códigos de recuperación). Sin esto no había ninguna forma
+     * de recuperar el acceso salvo un UPDATE directo en la base.
+     */
+    public function resetTwoFactor($id)
+    {
+        $user = User::findOrFail($id);
+
+        $user->update([
+            'two_factor_secret'         => null,
+            'two_factor_confirmed_at'   => null,
+            'two_factor_recovery_codes' => null,
+        ]);
+
+        ActivityLogService::log(Auth::id(), 'admin_reset_2fa', 'User', $user->id, "Reinició el 2FA de {$user->name} ({$user->email})");
+
+        return back()->with('success', "2FA de {$user->name} reiniciado. Deberá configurarlo de nuevo en su próximo ingreso.");
     }
 }

@@ -15,7 +15,7 @@
                                 <div class="col-sm-12">
                                     <div class="d-flex align-items-center justify-content-between mb-4">
                                         <div class="d-flex align-items-center flex-grow-1">
-                                            <a href="{{ route('dashboards.index') }}" class="btn btn-light btn-sm me-3">
+                                            <a href="{{ route('dashboards.index') }}" class="btn btn-light btn-sm me-3" aria-label="Volver">
                                                 <i class="mdi mdi-arrow-left"></i>
                                             </a>
                                             <div class="flex-grow-1">

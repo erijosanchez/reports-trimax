@@ -284,9 +284,8 @@
                                                                 @if ($s['role'] === 'trimax') style="background:rgba(26,26,46,.04)" @endif>
                                                                 <td>
                                                                     <div class="d-flex align-items-center">
-                                                                        <img class="me-2 rounded-circle img-xs"
-                                                                            src="https://ui-avatars.com/api/?name={{ urlencode($s['name']) }}&background={{ $s['role'] === 'trimax' ? '1a1a2e' : '6366f1' }}&color=fff"
-                                                                            alt="">
+                                                                        <x-avatar-iniciales class="me-2 rounded-circle" :nombre="$s['name']"
+                                                                            :background="$s['role'] === 'trimax' ? '1a1a2e' : '6366f1'" :size="32" />
                                                                         <div>
                                                                             <strong>{{ $s['name'] }}</strong>
                                                                             @if ($s['role'] === 'consultor' && $s['sedes_count'] > 0)
@@ -433,9 +432,8 @@
                                                                 <td>
                                                                     @if ($sv->client_name)
                                                                         <div class="d-flex align-items-center">
-                                                                            <img class="me-2 rounded-circle img-xs"
-                                                                                src="https://ui-avatars.com/api/?name={{ urlencode($sv->client_name) }}&background=10b981&color=fff"
-                                                                                alt="">
+                                                                            <x-avatar-iniciales class="me-2 rounded-circle" :nombre="$sv->client_name"
+                                                                                background="10b981" :size="32" />
                                                                             <strong>{{ $sv->client_name }}</strong>
                                                                         </div>
                                                                     @else
@@ -1065,6 +1063,15 @@
 
 @push('scripts')
     <script>
+        // Avatar de iniciales generado en cliente (FRONTEND.md, F2) — reemplaza al
+        // fetch dinámico a ui-avatars.com dentro de innerHTML construido por JS.
+        function avatarInicialesHtml(nombre, background = '6366f1', size = 32, extraClass = '') {
+            const iniciales = String(nombre || '').trim().split(/\s+/).filter(Boolean)
+                .slice(0, 2).map(p => p[0].toUpperCase()).join('') || '?';
+            const fontSize = Math.max(10, Math.round(size / 2.5));
+            return `<span class="avatar-iniciales ${extraClass}" style="display:inline-flex;align-items:center;justify-content:center;width:${size}px;height:${size}px;background-color:#${background};color:#fff;font-weight:600;font-size:${fontSize}px;line-height:1;flex-shrink:0;" title="${nombre ?? ''}">${iniciales}</span>`;
+        }
+
         // ─── DATOS PARA GRÁFICOS ────────────────────────────────────────────────
         const statsData = {
             muy_feliz: {{ $stats['muy_feliz'] }},
@@ -1434,8 +1441,7 @@
             <div class="p-4">
                 {{-- Evaluado --}}
                 <div class="d-flex align-items-center mb-4 pb-3 border-bottom">
-                    <img class="me-3 rounded-circle" width="56" height="56"
-                         src="https://ui-avatars.com/api/?name=${encodeURIComponent(sv.evaluado_name)}&background=6366f1&color=fff&size=128" alt="">
+                    ${avatarInicialesHtml(sv.evaluado_name, '6366f1', 56, 'me-3 rounded-circle')}
                     <div>
                         <h5 class="mb-1">${sv.evaluado_name}</h5>
                         <span class="badge badge-primary">${sv.evaluado_role === 'consultor' ? 'Consultor' : sv.evaluado_role === 'trimax' ? 'TRIMAX' : 'Sede — '+sv.evaluado_location}</span>
@@ -1553,8 +1559,7 @@
                     <td>
                         ${sv.client_name
                             ? `<div class="d-flex align-items-center">
-                                    <img class="me-2 rounded-circle img-xs"
-                                        src="https://ui-avatars.com/api/?name=${encodeURIComponent(sv.client_name)}&background=10b981&color=fff" alt="">
+                                    ${avatarInicialesHtml(sv.client_name, '10b981', 32, 'me-2 rounded-circle')}
                                     <strong>${sv.client_name}</strong>
                                    </div>`
                             : '<span class="text-muted"><i class="mdi mdi-account-off"></i> Anónimo</span>'
@@ -1585,14 +1590,14 @@
                     const linksEl = document.getElementById('enc-pagination-links');
                     linksEl.innerHTML = '';
                     if (data.prev_page_url) {
-                        linksEl.innerHTML += `<button class="btn-outline-primary btn btn-sm" onclick="loadEncuestas(${data.current_page - 1})">
+                        linksEl.innerHTML += `<button class="btn-outline-primary btn btn-sm" onclick="loadEncuestas(${data.current_page - 1})" aria-label="Página anterior">
                     <i class="mdi-chevron-left mdi"></i>
                 </button>`;
                     }
                     linksEl.innerHTML +=
                         `<span class="text-white btn btn-sm btn-primary disabled">${data.current_page} / ${data.last_page}</span>`;
                     if (data.next_page_url) {
-                        linksEl.innerHTML += `<button class="btn-outline-primary btn btn-sm" onclick="loadEncuestas(${data.current_page + 1})">
+                        linksEl.innerHTML += `<button class="btn-outline-primary btn btn-sm" onclick="loadEncuestas(${data.current_page + 1})" aria-label="Página siguiente">
                     <i class="mdi-chevron-right mdi"></i>
                 </button>`;
                     }
