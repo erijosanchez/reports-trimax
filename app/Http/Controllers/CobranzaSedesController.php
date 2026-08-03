@@ -259,6 +259,10 @@ class CobranzaSedesController extends Controller
             return response()->json(['error' => 'Sin permiso para editar este reporte.'], 403);
         }
 
+        if ($reporte->estado === 'feriado') {
+            return response()->json(['error' => 'Hoy es feriado, no se requiere envío.'], 422);
+        }
+
         $request->validate([
             'archivos'         => 'nullable|array',
             'archivos.*'       => 'file|max:' . self::MAX_SIZE_KB . '|mimes:' . self::MIMES_PERMITIDOS,
@@ -605,7 +609,7 @@ class CobranzaSedesController extends Controller
                 'num_archivos'          => count($r->archivos ?? []),
                 'notas'                 => $r->notas,
                 'usuario'               => $r->user?->name,
-                'puede_enviar_atrasado' => is_null($r->fecha_envio_original) &&
+                'puede_enviar_atrasado' => is_null($r->fecha_envio_original) && $r->estado !== 'feriado' &&
                     ($user->isSuperAdmin() || $user->isAdmin() || $r->sede === $user->sede),
                 'puede_editar'          => !is_null($r->fecha_envio_original) &&
                     ($user->isSuperAdmin() || $user->isAdmin() || $r->sede === $user->sede),
