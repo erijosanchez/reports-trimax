@@ -34,9 +34,16 @@ class TwoFactorVerifiedMiddleware
      * S4 (SEGURIDAD.md): 2FA obligatorio solo para quienes aprueban
      * movimientos de dinero — super_admin, admin y finanzas. El resto de
      * roles sigue sin verse afectado.
+     *
+     * Apagado temporal vía config('security.two_factor.enforced') mientras
+     * se capacita a los usuarios; no borra secretos ni códigos existentes.
      */
     private function requiere2fa($user): bool
     {
+        if (!config('security.two_factor.enforced')) {
+            return false;
+        }
+
         return $user->isSuperAdmin() || $user->isAdmin() || $user->isFinanzas();
     }
 }

@@ -28,4 +28,10 @@ return [
         // Cada cuántos segundos se reenvía la ubicación mientras navega.
         'track_interval' => env('TRACK_USER_LOCATION_INTERVAL', 300),
     ],
+
+    'two_factor' => [
+        // S4 (SEGURIDAD.md): apagado temporal mientras se capacita a los usuarios.
+        // Por defecto queda en true para no desactivar 2FA en entornos donde no se defina.
+        'enforced' => env('TWO_FACTOR_ENFORCED', true),
+    ],
 ];
