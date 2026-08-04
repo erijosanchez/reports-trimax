@@ -35,6 +35,7 @@ class DescuentoEspecialRehabilitado extends Notification
             ->line('**N° Descuento:** ' . $this->descuento->numero_descuento)
             ->line('**RUC:** ' . $this->descuento->ruc)
             ->line('**Razón Social:** ' . $this->descuento->razon_social)
+            ->line('**Detalle del Descuento:** ' . $this->descuento->descuento_especial)
             ->line('**Motivo:** ' . $this->motivo)
             ->line('**Rehabilitado por:** ' . ($this->descuento->rehabilitador ? $this->descuento->rehabilitador->name : '-'))
             ->action('Ver Descuento', url('/comercial/descuentos-especiales'))

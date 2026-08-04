@@ -32,6 +32,7 @@ class AcuerdoRehabilitado extends Notification
             ->greeting('¡Hola!')
             ->line('El acuerdo comercial **' . $this->acuerdo->numero_acuerdo . '** ha sido rehabilitado y está nuevamente activo.')
             ->line('**Cliente:** ' . $this->acuerdo->razon_social)
+            ->line('**Detalle del Acuerdo:** ' . $this->acuerdo->acuerdo_comercial)
             ->line('**Motivo:** ' . $this->motivo)
             ->line('**Rehabilitado por:** ' . $this->acuerdo->rehabilitador->name)
             ->action('Ver Detalles', url('/comercial/acuerdos'))

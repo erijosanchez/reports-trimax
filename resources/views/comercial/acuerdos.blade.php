@@ -1774,6 +1774,7 @@
                         <tr><th>Sede:</th><td>${acuerdo.sede}</td></tr>
                         <tr><th>Ciudad:</th><td>${acuerdo.ciudad}</td></tr>
                         <tr><th>Consultor:</th><td>${acuerdo.consultor}</td></tr>
+                        <tr><th>Fecha Registro:</th><td>${formatearFecha(acuerdo.created_at)}</td></tr>
                     </table>
                 </div>
                 <div class="col-md-6">

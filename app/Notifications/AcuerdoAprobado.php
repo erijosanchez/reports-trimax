@@ -44,6 +44,7 @@ class AcuerdoAprobado extends Notification
             ->line('**Cliente:** ' . $this->acuerdo->razon_social)
             ->line('**Estado:** Vigente')
             ->line('**Vigencia:** ' . $this->acuerdo->fecha_inicio->format('d/m/Y') . ' - ' . $this->acuerdo->fecha_fin->format('d/m/Y'))
+            ->line('**Detalle del Acuerdo:** ' . $this->acuerdo->acuerdo_comercial)
             ->action('Ver Acuerdo', url('/comercial/acuerdos'))
             ->line('¡Felicidades!');
     }

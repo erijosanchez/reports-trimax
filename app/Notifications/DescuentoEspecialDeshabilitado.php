@@ -35,6 +35,7 @@ class DescuentoEspecialDeshabilitado extends Notification
             ->line('**N° Descuento:** ' . $this->descuento->numero_descuento)
             ->line('**RUC:** ' . $this->descuento->ruc)
             ->line('**Razón Social:** ' . $this->descuento->razon_social)
+            ->line('**Detalle del Descuento:** ' . $this->descuento->descuento_especial)
             ->line('**Motivo:** ' . $this->motivo)
             ->line('**Deshabilitado por:** ' . ($this->descuento->deshabilitador ? $this->descuento->deshabilitador->name : '-'))
             ->action('Ver Descuento', url('/comercial/descuentos-especiales'))

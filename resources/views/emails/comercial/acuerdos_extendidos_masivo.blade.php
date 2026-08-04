@@ -68,6 +68,7 @@
                     @if($esAdmin)
                     <th style="padding:8px 12px; text-align:left; font-weight:700; letter-spacing:0.05em;">CONSULTOR</th>
                     @endif
+                    <th style="padding:8px 12px; text-align:left; font-weight:700; letter-spacing:0.05em;">DETALLE</th>
                     <th style="padding:8px 12px; text-align:center; font-weight:700; letter-spacing:0.05em;">NUEVA FECHA FIN</th>
                 </tr>
             </thead>
@@ -82,6 +83,7 @@
                     @if($esAdmin)
                     <td style="padding:8px 12px; color:#475569;">{{ $acuerdo->consultor }}</td>
                     @endif
+                    <td style="padding:8px 12px; color:#475569;">{{ $acuerdo->acuerdo_comercial }}</td>
                     <td style="padding:8px 12px; text-align:center;">
                         <span style="background:#d1fae5; color:#065f46; padding:3px 10px; border-radius:20px; font-weight:700;">
                             {{ \Carbon\Carbon::parse($acuerdo->fecha_fin)->format('d/m/Y') }}

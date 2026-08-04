@@ -45,6 +45,7 @@ class AcuerdoCreado extends Notification
             ->line('**Sede:** ' . $this->acuerdo->sede)
             ->line('**Tipo de Promoción:** ' . $this->acuerdo->tipo_promocion)
             ->line('**Vigencia:** ' . $this->acuerdo->fecha_inicio->format('d/m/Y') . ' - ' . $this->acuerdo->fecha_fin->format('d/m/Y'))
+            ->line('**Detalle del Acuerdo:** ' . $this->acuerdo->acuerdo_comercial)
             ->action('Ver Acuerdo', url('/comercial/acuerdos'))
             ->line('Gracias por tu atención.');
     }

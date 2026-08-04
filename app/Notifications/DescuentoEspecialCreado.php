@@ -35,6 +35,7 @@ class DescuentoEspecialCreado extends Notification
             ->line('**Razón Social:** ' . $this->descuento->razon_social)
             ->line('**Tipo:** ' . $this->descuento->tipo)
             ->line('**Sede:** ' . $this->descuento->sede)
+            ->line('**Detalle del Descuento:** ' . $this->descuento->descuento_especial)
             ->line('**Creado por:** ' . $this->descuento->creador->name)
             ->action('Ver Descuento', url('/comercial/descuentos-especiales'))
             ->line('Gracias por usar nuestro sistema.');

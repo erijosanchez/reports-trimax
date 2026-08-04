@@ -32,6 +32,7 @@ class AcuerdoDeshabilitado extends Notification
             ->greeting('¡Hola!')
             ->line('El acuerdo comercial **' . $this->acuerdo->numero_acuerdo . '** ha sido deshabilitado.')
             ->line('**Cliente:** ' . $this->acuerdo->razon_social)
+            ->line('**Detalle del Acuerdo:** ' . $this->acuerdo->acuerdo_comercial)
             ->line('**Motivo:** ' . $this->motivo)
             ->line('**Deshabilitado por:** ' . $this->acuerdo->deshabilitador->name)
             ->action('Ver Detalles', url('/comercial/acuerdos'))

@@ -34,6 +34,7 @@ class DescuentoEspecialAprobado extends Notification
             ->line('**RUC:** ' . $this->descuento->ruc)
             ->line('**Razón Social:** ' . $this->descuento->razon_social)
             ->line('**Tipo:** ' . $this->descuento->tipo)
+            ->line('**Detalle del Descuento:** ' . $this->descuento->descuento_especial)
             ->line('**Validado por:** ' . ($this->descuento->validador ? $this->descuento->validador->name : '-'))
             ->line('**Aprobado por:** ' . ($this->descuento->aprobador ? $this->descuento->aprobador->name : '-'))
             ->action('Ver Descuento', url('/comercial/descuentos-especiales'))

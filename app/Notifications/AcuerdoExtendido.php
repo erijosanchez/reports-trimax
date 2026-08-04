@@ -34,6 +34,7 @@ class AcuerdoExtendido extends Notification
             ->greeting('¡Hola!')
             ->line('El acuerdo comercial **' . $this->acuerdo->numero_acuerdo . '** ha sido extendido.')
             ->line('**Cliente:** ' . $this->acuerdo->razon_social)
+            ->line('**Detalle del Acuerdo:** ' . $this->acuerdo->acuerdo_comercial)
             ->line('**Nueva Fecha de Fin:** ' . $this->nuevaFecha)
             ->line('**Motivo:** ' . $this->motivo)
             ->line('**Extendido por:** ' . $this->acuerdo->extensor->name)
