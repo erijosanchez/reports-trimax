@@ -159,6 +159,58 @@ class SedeScopeTest extends TestCase
         $this->assertFalse(Gate::forUser($sinPermiso)->allows('ver-vouchers'));
     }
 
+    /**
+     * Bug: un usuario sin rol de sede (sede = null) al que se le activa el
+     * permiso especial puede_ver_vouchers pasaba el Gate pero el historial,
+     * el selector de sedes y el KPI seguían filtrando por su sede (null),
+     * devolviendo siempre cero resultados — la vista se veía en blanco.
+     */
+    public function test_usuario_con_permiso_especial_ve_vouchers_de_todas_las_sedes_en_historial(): void
+    {
+        $this->voucherDeSede('Lima', 'V-LIMA-5');
+        $this->voucherDeSede('Huánuco', 'V-HCO-6');
+
+        $user = $this->userConRol('user');
+        $user->update(['puede_ver_vouchers' => true]);
+        $this->actingAs($user);
+
+        $this->assertTrue(Gate::forUser($user)->allows('ver-vouchers'));
+
+        $response = $this->getJson(route('vouchers.historial'));
+
+        $response->assertOk();
+        $response->assertJsonCount(2, 'data');
+    }
+
+    public function test_usuario_con_permiso_especial_ve_todas_las_sedes_en_el_selector(): void
+    {
+        $this->voucherDeSede('Lima', 'V-LIMA-6');
+        $this->voucherDeSede('Huánuco', 'V-HCO-7');
+
+        $user = $this->userConRol('user');
+        $user->update(['puede_ver_vouchers' => true]);
+        $this->actingAs($user);
+
+        $response = $this->getJson(route('vouchers.sedes'));
+
+        $response->assertOk();
+        $response->assertJson(['Huánuco', 'Lima']);
+    }
+
+    public function test_usuario_sin_permiso_especial_y_sin_sede_no_ve_vouchers(): void
+    {
+        $this->voucherDeSede('Lima', 'V-LIMA-7');
+
+        $user = $this->userConRol('user');
+        $this->actingAs($user);
+
+        $this->assertFalse(Gate::forUser($user)->allows('ver-vouchers'));
+
+        $response = $this->getJson(route('vouchers.historial'));
+
+        $response->assertStatus(403);
+    }
+
     // ── ReporteCobranza ──────────────────────────────────────────
 
     public function test_usuario_de_sede_solo_ve_reportes_de_cobranza_de_su_sede(): void

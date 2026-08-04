@@ -392,7 +392,7 @@
     </div>
     @endif
 
-    @php $verTodo = $puedeAplicar || $esRevisor; @endphp
+    @php $verTodo = $puedeAplicar || $esRevisor || auth()->user()->puede_ver_vouchers; @endphp
 
     {{-- ══ KPI SEMANAL DE CONFORMIDAD ══ --}}
     <div class="mb-4 row">

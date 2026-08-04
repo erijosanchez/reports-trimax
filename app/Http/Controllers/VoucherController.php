@@ -492,8 +492,8 @@ class VoucherController extends Controller
 
         $query = Voucher::with(['creator', 'aplicador']);
 
-        // Sede solo ve lo suyo; admin/finanzas ven todo
-        $verTodo = $user->isSuperAdmin() || $user->isAdmin() || $user->isFinanzas();
+        // Sede solo ve lo suyo; admin/finanzas/permiso especial ven todo
+        $verTodo = $user->isSuperAdmin() || $user->isAdmin() || $user->isFinanzas() || $user->puede_ver_vouchers;
         if (!$verTodo) {
             $query->where('sede', $user->sede);
         }
@@ -563,7 +563,7 @@ class VoucherController extends Controller
             return response()->json([], 403);
         }
         $query = Voucher::selectRaw('DISTINCT sede')->orderBy('sede');
-        $verTodo = $user->isSuperAdmin() || $user->isAdmin() || $user->isFinanzas();
+        $verTodo = $user->isSuperAdmin() || $user->isAdmin() || $user->isFinanzas() || $user->puede_ver_vouchers;
         if (!$verTodo) {
             $query->where('sede', $user->sede);
         }
@@ -583,7 +583,7 @@ class VoucherController extends Controller
             return response()->json(['error' => 'Sin permiso.'], 403);
         }
 
-        $verTodo    = $user->isSuperAdmin() || $user->isAdmin() || $user->isFinanzas();
+        $verTodo    = $user->isSuperAdmin() || $user->isAdmin() || $user->isFinanzas() || $user->puede_ver_vouchers;
         $sedeFiltro = $verTodo ? $request->get('sede') : $user->sede;
 
         $hoy    = Carbon::now('America/Lima');
