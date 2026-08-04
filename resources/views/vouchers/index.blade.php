@@ -643,7 +643,7 @@
     const BASE   = '{{ url("vouchers") }}';
     const PUEDE_APLICAR = {{ $puedeAplicar ? 'true' : 'false' }};
     const ES_REVISOR = {{ $esRevisor ? 'true' : 'false' }};
-    const VER_TODO   = {{ ($puedeAplicar || $esRevisor) ? 'true' : 'false' }};
+    const VER_TODO   = {{ $verTodo ? 'true' : 'false' }};
 
     // Límites reales del servidor (php.ini) para validar antes de enviar.
     const MAX_UPLOAD_FILES = {{ $maxUploadFiles ?? 20 }};
