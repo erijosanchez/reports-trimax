@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Encuesta de satisfacción - TRIMAX</title>
-    <link rel="stylesheet" href="{{ asset('assets/css/survey.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/css/survey.css') }}?v={{ filemtime(public_path('assets/css/survey.css')) }}">
     <link rel="icon" type="image/x-icon" href="{{ asset('assets/img/fv.png') }}">
 </head>
 
