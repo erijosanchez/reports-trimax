@@ -158,6 +158,8 @@ class VentaClienteController extends Controller
                     ];
                 }
 
+                if (empty($filas)) continue; // sede sin ningún cliente con historial en los 3 meses previos
+
                 usort($filas, fn($a, $b) => $b['prom'] <=> $a['prom']);
 
                 $resultado[] = [
