@@ -36,16 +36,25 @@ class SurveyController extends Controller
             ], 404);
         }
 
+        $data = [
+            'user' => [
+                'id'       => $user->id,
+                'name'     => $user->name,
+                'role'     => $user->role,
+                'location' => $user->location,
+            ]
+        ];
+
+        if ($user->role === 'trimax') {
+            $data['sedes'] = UsersMarketing::where('role', 'sede')
+                ->where('is_active', true)
+                ->orderBy('name')
+                ->get(['id', 'name', 'location']);
+        }
+
         return response()->json([
             'success' => true,
-            'data' => [
-                'user' => [
-                    'id'       => $user->id,
-                    'name'     => $user->name,
-                    'role'     => $user->role,
-                    'location' => $user->location,
-                ]
-            ]
+            'data' => $data,
         ]);
     }
 
@@ -67,6 +76,7 @@ class SurveyController extends Controller
             'service_quality_rating' => 'required|integer|between:1,4',
             'client_name'            => 'nullable|string|max:255',
             'comments'               => 'nullable|string|max:1000',
+            'sede_id'                => 'nullable|integer|exists:users_marketing,id',
         ]);
 
         if ($validator->fails()) {
@@ -77,9 +87,28 @@ class SurveyController extends Controller
             ], 422);
         }
 
+        // El sede_id solo aplica a la encuesta de Trimax General, y debe ser una sede real
+        $sedeId = null;
+        if ($user->role === 'trimax' && $request->filled('sede_id')) {
+            $sede = UsersMarketing::where('id', $request->sede_id)
+                ->where('role', 'sede')
+                ->where('is_active', true)
+                ->first();
+
+            if (!$sede) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'La sede seleccionada no es válida',
+                ], 422);
+            }
+
+            $sedeId = $sede->id;
+        }
+
         try {
             $survey = Survey::create([
                 'user_id'                => $user->id,
+                'sede_id'                => $sedeId,
                 'client_name'            => $request->client_name,
                 'experience_rating'      => $request->experience_rating,
                 'service_quality_rating' => $request->service_quality_rating,
@@ -90,7 +119,7 @@ class SurveyController extends Controller
 
             // Email de alerta en try/catch propio — si falla el email, la encuesta igual se guarda
             try {
-                MarketingController::dispatchAlertIfNeeded($survey, $user);
+                MarketingController::dispatchAlertIfNeeded($survey, $survey->display_entity);
             } catch (\Exception $emailEx) {
                 Log::error('[SurveyAlert] Fallo al enviar notificación: ' . $emailEx->getMessage());
             }

@@ -40,10 +40,28 @@ class MarketingController extends Controller
 
     /**
      * Mismos stats pero para una colección de IDs de user_id (útil para consultores + sedes).
+     *
+     * @param array $userIds IDs de users_marketing cuyas encuestas directas se cuentan.
+     * @param array $sedeTagIds IDs de sede a incluir también vía Survey.sede_id (encuestas de
+     *   Trimax General etiquetadas con esa sede).
+     * @param bool $excludeTagged Si es true, excluye las encuestas ya etiquetadas con una sede
+     *   (usado para Trimax General: esas ya se cuentan exclusivamente en la sede elegida).
      */
-    private function calcStatsForIds(array $ids, ?string $startDate = null, ?string $endDate = null): array
-    {
-        $query = Survey::whereIn('user_id', $ids);
+    private function calcStatsForIds(
+        array $userIds,
+        ?string $startDate = null,
+        ?string $endDate = null,
+        array $sedeTagIds = [],
+        bool $excludeTagged = false
+    ): array {
+        $query = Survey::where(function ($q) use ($userIds, $sedeTagIds, $excludeTagged) {
+            $q->whereIn('user_id', $userIds);
+            if ($excludeTagged) {
+                $q->whereNull('sede_id');
+            } elseif (!empty($sedeTagIds)) {
+                $q->orWhereIn('sede_id', $sedeTagIds);
+            }
+        });
 
         if ($startDate && $endDate) {
             $query->whereBetween('created_at', [
@@ -68,7 +86,7 @@ class MarketingController extends Controller
         $hasDateRange = $startDate && $endDate;
 
         // ── Encuestas (todas, o filtradas por rango si se pidió) ──
-        $query = Survey::with('userMarketing:id,name,role,location')
+        $query = Survey::with(['userMarketing:id,name,role,location', 'selectedSede:id,name,role,location'])
             ->when($hasDateRange, fn($q) => $q->whereBetween('created_at', [
                 $startDate . ' 00:00:00',
                 $endDate   . ' 23:59:59',
@@ -108,7 +126,7 @@ class MarketingController extends Controller
                 if ($user->isConsultor()) {
                     $sedeIds = $user->sedes->pluck('id')->toArray();
                     $allIds  = array_merge([$user->id], $sedeIds);
-                    $s       = $this->calcStatsForIds($allIds, $startDate, $endDate);
+                    $s       = $this->calcStatsForIds($allIds, $startDate, $endDate, $sedeIds);
 
                     return array_merge($s, [
                         'id'          => $user->id,
@@ -119,8 +137,13 @@ class MarketingController extends Controller
                     ]);
                 }
 
-                // sede / trimax — solo sus encuestas
-                $s = $this->calcStatsForIds([$user->id], $startDate, $endDate);
+                if ($user->isSede()) {
+                    // Sus encuestas directas + las de Trimax General etiquetadas con esta sede
+                    $s = $this->calcStatsForIds([$user->id], $startDate, $endDate, [$user->id]);
+                } else {
+                    // Trimax General — solo las encuestas que el cliente dejó sin sede seleccionada
+                    $s = $this->calcStatsForIds([$user->id], $startDate, $endDate, [], true);
+                }
 
                 return array_merge($s, [
                     'id'          => $user->id,
@@ -140,7 +163,7 @@ class MarketingController extends Controller
             ->get(['id', 'name', 'role', 'location']);
 
         // ── Encuestas recientes (preview de las 50 más nuevas) ──
-        $recentSurveys = Survey::with('userMarketing:id,name,role,location')
+        $recentSurveys = Survey::with(['userMarketing:id,name,role,location', 'selectedSede:id,name,role,location'])
             ->when($hasDateRange, fn($q) => $q->whereBetween('created_at', [
                 $startDate . ' 00:00:00',
                 $endDate   . ' 23:59:59',
@@ -166,7 +189,8 @@ class MarketingController extends Controller
 
     public function showSurvey(Survey $survey)
     {
-        $survey->load('userMarketing');
+        $survey->load(['userMarketing', 'selectedSede']);
+        $evaluado = $survey->display_entity;
 
         return response()->json([
             'success' => true,
@@ -178,9 +202,9 @@ class MarketingController extends Controller
                 'average_combined'      => round(($survey->experience_rating + $survey->service_quality_rating) / 2, 2),
                 'comments'              => $survey->comments,
                 'created_at'            => $survey->created_at->format('d/m/Y H:i'),
-                'evaluado_name'         => $survey->userMarketing->name,
-                'evaluado_role'         => $survey->userMarketing->role,
-                'evaluado_location'     => $survey->userMarketing->location,
+                'evaluado_name'         => $evaluado->name,
+                'evaluado_role'         => $evaluado->role,
+                'evaluado_location'     => $evaluado->location,
             ],
         ]);
     }
@@ -236,7 +260,7 @@ class MarketingController extends Controller
         $userId    = $request->get('user_id');
         $rating    = $request->get('rating');
 
-        $query = Survey::with('userMarketing:id,name,role,location')
+        $query = Survey::with(['userMarketing:id,name,role,location', 'selectedSede:id,name,role,location'])
             // Solo filtrar por fecha si se pasan ambos valores
             ->when(
                 $startDate && $endDate,
@@ -254,9 +278,9 @@ class MarketingController extends Controller
             'date'                   => $sv->created_at->format('d/m/Y'),
             'time'                   => $sv->created_at->format('H:i'),
             'client_name'            => $sv->client_name,
-            'evaluado_name'          => $sv->userMarketing->name,
-            'evaluado_role'          => $sv->userMarketing->role,
-            'evaluado_location'      => $sv->userMarketing->location,
+            'evaluado_name'          => $sv->display_entity->name,
+            'evaluado_role'          => $sv->display_entity->role,
+            'evaluado_location'      => $sv->display_entity->location,
             'experience_rating'      => $sv->experience_rating,
             'service_quality_rating' => $sv->service_quality_rating,
             'comments'               => $sv->comments,

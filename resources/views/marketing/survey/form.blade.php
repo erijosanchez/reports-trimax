@@ -86,6 +86,13 @@
                     </div>
                 </div>
 
+                <div class="form-group" id="sede-group" style="display: none;">
+                    <label>¿Tu evaluación es sobre una sede en particular? (opcional)</label>
+                    <select name="sede_id" id="sede_id">
+                        <option value="">General (sin sede específica)</option>
+                    </select>
+                </div>
+
                 <div class="form-group">
                     <label>Tu nombre (opcional)</label>
                     <input type="text" name="client_name" id="client_name" placeholder="Escribe tu nombre aquí...">
@@ -202,6 +209,18 @@
                             `Sede - ${data.data.user.location || ''}`;
                     } else if (userRole === 'trimax') {
                         document.getElementById('evaluado-type').textContent = 'TRIMAX - General';
+
+                        const sedes = data.data.sedes || [];
+                        if (sedes.length) {
+                            const select = document.getElementById('sede_id');
+                            sedes.forEach(sede => {
+                                const opt = document.createElement('option');
+                                opt.value = sede.id;
+                                opt.textContent = sede.name;
+                                select.appendChild(opt);
+                            });
+                            document.getElementById('sede-group').style.display = 'block';
+                        }
                     }
 
                     // Texto de la pregunta 2 según rol
@@ -285,6 +304,11 @@
                 client_name: document.getElementById('client_name').value,
                 comments: document.getElementById('comments').value
             };
+
+            const sedeSelect = document.getElementById('sede_id');
+            if (sedeSelect && sedeSelect.value) {
+                formData.sede_id = parseInt(sedeSelect.value);
+            }
 
             try {
                 const response = await fetch(`/api/encuesta/${token}`, {

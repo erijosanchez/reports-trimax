@@ -11,6 +11,7 @@ class Survey extends Model
 
     protected $fillable = [
         'user_id',
+        'sede_id',
         'client_name',
         'experience_rating',
         'service_quality_rating',
@@ -27,6 +28,21 @@ class Survey extends Model
     public function userMarketing()
     {
         return $this->belongsTo(UsersMarketing::class, 'user_id', 'id');
+    }
+
+    public function selectedSede()
+    {
+        return $this->belongsTo(UsersMarketing::class, 'sede_id', 'id');
+    }
+
+    /**
+     * Entidad a mostrar/atribuir: la sede seleccionada por el cliente
+     * (encuesta de Trimax General) o, si no se eligió ninguna, el
+     * dueño real del link (userMarketing).
+     */
+    public function getDisplayEntityAttribute()
+    {
+        return $this->selectedSede ?? $this->userMarketing;
     }
 
     public function getRatingTextAttribute()

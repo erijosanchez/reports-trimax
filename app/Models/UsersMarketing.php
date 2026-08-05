@@ -81,9 +81,28 @@ class UsersMarketing extends Model
         return $this->role === 'sede';
     }
 
+    /**
+     * Query de encuestas a considerar para las stats "propias" de esta entidad.
+     * - Sede: sus encuestas directas + las de Trimax General etiquetadas con esta sede.
+     * - Trimax: solo las que el cliente dejó sin sede seleccionada.
+     * - Resto (consultor): sin cambios, sus encuestas directas.
+     */
+    protected function surveyQueryForStats()
+    {
+        if ($this->isSede()) {
+            return Survey::where('user_id', $this->id)->orWhere('sede_id', $this->id);
+        }
+
+        if ($this->isTrimax()) {
+            return Survey::where('user_id', $this->id)->whereNull('sede_id');
+        }
+
+        return $this->surveys();
+    }
+
     public function getAverageRatingAttribute()
     {
-        return round($this->surveys()->avg('experience_rating') ?? 0, 2);
+        return round($this->surveyQueryForStats()->avg('experience_rating') ?? 0, 2);
     }
 
     // Obtener promedio INCLUYENDO sedes asignadas (solo para consultores)
@@ -99,16 +118,20 @@ class UsersMarketing extends Model
         // Incluir el ID del consultor
         $allIds = array_merge([$this->id], $sedeIds);
 
-        // Calcular promedio de todas las encuestas
-        $average = Survey::whereIn('user_id', $allIds)
-            ->avg('experience_rating');
+        // Calcular promedio de todas las encuestas (directas + Trimax General etiquetadas a sus sedes)
+        $average = Survey::where(function ($q) use ($allIds, $sedeIds) {
+            $q->whereIn('user_id', $allIds);
+            if (!empty($sedeIds)) {
+                $q->orWhereIn('sede_id', $sedeIds);
+            }
+        })->avg('experience_rating');
 
         return round($average ?? 0, 2);
     }
 
     public function getTotalSurveysAttribute()
     {
-        return $this->surveys()->count();
+        return $this->surveyQueryForStats()->count();
     }
 
     // Obtener total de encuestas INCLUYENDO sedes (solo para consultores)
@@ -121,7 +144,12 @@ class UsersMarketing extends Model
         $sedeIds = $this->sedes()->pluck('users_marketing.id')->toArray();
         $allIds = array_merge([$this->id], $sedeIds);
 
-        return Survey::whereIn('user_id', $allIds)->count();
+        return Survey::where(function ($q) use ($allIds, $sedeIds) {
+            $q->whereIn('user_id', $allIds);
+            if (!empty($sedeIds)) {
+                $q->orWhereIn('sede_id', $sedeIds);
+            }
+        })->count();
     }
 
     // Obtener estadísticas detalladas del consultor con sus sedes
@@ -134,7 +162,12 @@ class UsersMarketing extends Model
         $sedeIds = $this->sedes()->pluck('users_marketing.id')->toArray();
         $allIds = array_merge([$this->id], $sedeIds);
 
-        $surveys = Survey::whereIn('user_id', $allIds)->get();
+        $surveys = Survey::where(function ($q) use ($allIds, $sedeIds) {
+            $q->whereIn('user_id', $allIds);
+            if (!empty($sedeIds)) {
+                $q->orWhereIn('sede_id', $sedeIds);
+            }
+        })->get();
 
         return [
             'total_surveys' => $surveys->count(),
@@ -148,7 +181,7 @@ class UsersMarketing extends Model
                     'sede_id' => $sede->id,
                     'sede_name' => $sede->name,
                     'sede_location' => $sede->location,
-                    'total_surveys' => $sede->surveys->count(),
+                    'total_surveys' => $sede->total_surveys,
                     'average_rating' => $sede->average_rating,
                 ];
             }),

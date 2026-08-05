@@ -443,14 +443,14 @@
                                                                     @endif
                                                                 </td>
                                                                 <td>
-                                                                    <strong>{{ $sv->userMarketing->name }}</strong><br>
+                                                                    <strong>{{ $sv->display_entity->name }}</strong><br>
                                                                     <small class="text-muted">
-                                                                        @if ($sv->userMarketing->role === 'consultor')
+                                                                        @if ($sv->display_entity->role === 'consultor')
                                                                             Consultor
-                                                                        @elseif($sv->userMarketing->role === 'trimax')
+                                                                        @elseif($sv->display_entity->role === 'trimax')
                                                                             TRIMAX General
                                                                         @else
-                                                                            Sede {{ $sv->userMarketing->location }}
+                                                                            Sede {{ $sv->display_entity->location }}
                                                                         @endif
                                                                     </small>
                                                                 </td>
