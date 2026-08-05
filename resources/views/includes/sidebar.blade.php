@@ -106,6 +106,12 @@
                         id="venta-clientes-menu">
                         <ul class="flex-column nav sub-menu">
                             <li class="nav-item">
+                                <a class="nav-link {{ request()->routeIs('comercial.venta-cliente.top') ? 'active' : '' }}"
+                                    href="{{ route('comercial.venta-cliente.top') }}">
+                                    Top Clientes
+                                </a>
+                            </li>
+                            <li class="nav-item">
                                 <a class="nav-link {{ request()->routeIs('comercial.venta-cliente.mes') ? 'active' : '' }}"
                                     href="{{ route('comercial.venta-cliente.mes') }}">
                                     Evolutivo — Mes

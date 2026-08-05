@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Feriado;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
@@ -28,10 +30,161 @@ class VentaClienteController extends Controller
         12 => 'DICIEMBRE',
     ];
 
+    // Cuentas que aparecen en el sheet como "sede" pero no son sedes físicas.
+    // Mismo criterio que ComercialController::sedesMonturas() / HomeController,
+    // sumando "(EN BLANCO)" (ventas sin sede asignada en el sheet).
+    private const SEDES_EXCLUIDAS_TOP = [
+        'CONSULTOR DE MONTURAS 1',
+        'CONSULTOR DE MONTURAS 2',
+        'MONTURAS GENERAL',
+        '(EN BLANCO)',
+    ];
+
+    private const TOP_N = 25;
+
     private function sedeFijaDelUsuario(): ?string
     {
         $user = auth()->user();
         return $user->isSede() ? strtoupper(trim($user->sede)) : null;
+    }
+
+    /** Cuenta días hábiles (no domingo, no feriado nacional) entre dos fechas, ambas inclusive. */
+    private function diasHabilesEnRango(Carbon $inicio, Carbon $fin): int
+    {
+        $count = 0;
+        $cursor = $inicio->copy();
+        while ($cursor->lte($fin)) {
+            if (Feriado::esDiaLaborable($cursor)) {
+                $count++;
+            }
+            $cursor->addDay();
+        }
+        return $count;
+    }
+
+    // ─────────────────────────────────────────────────────────────────
+    // VISTA 0: Top Clientes por Sede
+    // ─────────────────────────────────────────────────────────────────
+    public function topClientes()
+    {
+        if (!auth()->user()->puedeVerVentaClientes()) {
+            abort(403, 'No tienes permiso para ver Venta Clientes');
+        }
+
+        return view('comercial.venta-cliente.top-clientes');
+    }
+
+    public function getTopClientesData(Request $request)
+    {
+        if (!auth()->user()->puedeVerVentaClientes()) {
+            return response()->json(['error' => 'No autorizado'], 403);
+        }
+
+        try {
+            $hoy = Carbon::now();
+
+            // Los 3 meses anteriores al actual + el mes actual, con manejo de cruce de año.
+            $periodos = []; // 'actual','m1','m2','m3' => ['anio'=>..,'mes'=>..,'codigo'=>anio*100+mes]
+            foreach (['actual' => 0, 'm1' => 1, 'm2' => 2, 'm3' => 3] as $clave => $offset) {
+                $fecha = $hoy->copy()->subMonthsNoOverflow($offset);
+                $periodos[$clave] = [
+                    'anio'   => $fecha->year,
+                    'mes'    => $fecha->month,
+                    'codigo' => $fecha->year * 100 + $fecha->month,
+                    'label'  => self::MESES[$fecha->month] . ' ' . $fecha->year,
+                ];
+            }
+
+            $inicioMes = $hoy->copy()->startOfMonth();
+            $finMes    = $hoy->copy()->endOfMonth();
+            $diasHabilesTranscurridos = $this->diasHabilesEnRango($inicioMes, $hoy->copy()->startOfDay());
+            $diasHabilesTotales       = $this->diasHabilesEnRango($inicioMes, $finMes);
+
+            $sedeFija = $this->sedeFijaDelUsuario();
+
+            $codigos = array_column($periodos, 'codigo');
+
+            $query = DB::table(self::TABLA)
+                ->select('sede', 'ruc', 'razon_social', 'anio', 'mes', 'importe')
+                ->whereIn(DB::raw('(anio * 100 + mes)'), $codigos)
+                ->whereNotIn('sede', self::SEDES_EXCLUIDAS_TOP);
+
+            if ($sedeFija) {
+                $query->where('sede', $sedeFija);
+            }
+
+            // Agrupar en memoria por sede -> ruc
+            $porSede = [];
+            foreach ($query->get() as $row) {
+                $codigo = (int) $row->anio * 100 + (int) $row->mes;
+                if ($row->razon_social || !isset($porSede[$row->sede][$row->ruc]['razon'])) {
+                    $porSede[$row->sede][$row->ruc]['razon'] = $row->razon_social ?: '';
+                }
+                $porSede[$row->sede][$row->ruc]['periodos'][$codigo] = (float) $row->importe;
+            }
+
+            $resultado = [];
+            foreach ($porSede as $sede => $clientes) {
+                $filas = [];
+
+                foreach ($clientes as $ruc => $info) {
+                    $p = $info['periodos'] ?? [];
+                    $ventaM3 = $p[$periodos['m3']['codigo']] ?? 0.0;
+                    $ventaM2 = $p[$periodos['m2']['codigo']] ?? 0.0;
+                    $ventaM1 = $p[$periodos['m1']['codigo']] ?? 0.0;
+                    $prom    = round(($ventaM3 + $ventaM2 + $ventaM1) / 3, 2);
+
+                    if ($prom <= 0) continue; // sin actividad relevante en los 3 meses previos
+
+                    $ventaActualReal = $p[$periodos['actual']['codigo']] ?? 0.0;
+                    $proyeccion = $diasHabilesTranscurridos > 0
+                        ? round(($ventaActualReal / $diasHabilesTranscurridos) * $diasHabilesTotales, 2)
+                        : 0.0;
+
+                    $variacionPct = round((($proyeccion - $prom) / $prom) * 100, 1);
+                    $semaforo = $variacionPct < 0 ? 'rojo' : ($variacionPct < 10 ? 'amarillo' : 'verde');
+
+                    $filas[] = [
+                        'ruc'               => $ruc,
+                        'razon'             => $info['razon'],
+                        'venta_m3'          => $ventaM3,
+                        'venta_m2'          => $ventaM2,
+                        'venta_m1'          => $ventaM1,
+                        'prom'              => $prom,
+                        'venta_actual'      => $proyeccion,
+                        'venta_actual_real' => $ventaActualReal,
+                        'variacion_pct'     => $variacionPct,
+                        'semaforo'          => $semaforo,
+                    ];
+                }
+
+                usort($filas, fn($a, $b) => $b['prom'] <=> $a['prom']);
+
+                $resultado[] = [
+                    'sede'     => $sede,
+                    'clientes' => array_slice($filas, 0, self::TOP_N),
+                ];
+            }
+
+            usort($resultado, fn($a, $b) => $a['sede'] <=> $b['sede']);
+
+            return response()->json([
+                'success' => true,
+                'periodos' => [
+                    'm3'     => $periodos['m3']['label'],
+                    'm2'     => $periodos['m2']['label'],
+                    'm1'     => $periodos['m1']['label'],
+                    'actual' => $periodos['actual']['label'],
+                ],
+                'dias_habiles_transcurridos' => $diasHabilesTranscurridos,
+                'dias_habiles_totales'       => $diasHabilesTotales,
+                'fecha_corte'                => $hoy->toDateString(),
+                'sedes'                      => $resultado,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error getTopClientesData: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
     }
 
     // ─────────────────────────────────────────────────────────────────
