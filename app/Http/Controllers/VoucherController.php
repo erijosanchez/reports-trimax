@@ -500,7 +500,14 @@ class VoucherController extends Controller
 
         if ($request->filled('sede'))   $query->where('sede', $request->sede);
         if ($request->filled('estado')) $query->where('status', $request->estado);
-        if ($request->filled('fecha'))  $query->whereDate('solicitado_at', $request->fecha);
+
+        if ($request->filled('desde') && $request->filled('hasta')) {
+            $query->whereBetween('solicitado_at', [$request->desde, $request->hasta]);
+        } elseif ($request->filled('desde')) {
+            $query->whereDate('solicitado_at', '>=', $request->desde);
+        } elseif ($request->filled('hasta')) {
+            $query->whereDate('solicitado_at', '<=', $request->hasta);
+        }
 
         if ($request->filled('conformidad')) {
             if ($request->conformidad === 'sin_revisar') {

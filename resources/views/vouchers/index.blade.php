@@ -479,8 +479,12 @@
                             </select>
                         </div>
                         <div class="col-6 col-md-3 col-lg-2">
-                            <label class="form-label small mb-1 text-muted">Fecha solicitud</label>
-                            <input type="date" id="f-fecha" class="form-control form-control-sm">
+                            <label class="form-label small mb-1 text-muted">Desde</label>
+                            <input type="date" id="f-fecha-desde" class="form-control form-control-sm">
+                        </div>
+                        <div class="col-6 col-md-3 col-lg-2">
+                            <label class="form-label small mb-1 text-muted">Hasta</label>
+                            <input type="date" id="f-fecha-hasta" class="form-control form-control-sm">
                         </div>
                         <div class="col-12 col-lg-2">
                             <button id="btn-limpiar-filtros" class="btn btn-outline-secondary btn-sm w-100">
@@ -1153,12 +1157,14 @@
         const p = new URLSearchParams();
         const sede = document.getElementById('f-sede')?.value;
         const est  = document.getElementById('f-estado')?.value;
-        const conf = document.getElementById('f-conformidad')?.value;
-        const fec  = document.getElementById('f-fecha')?.value;
-        if (sede) p.set('sede', sede);
-        if (est)  p.set('estado', est);
-        if (conf) p.set('conformidad', conf);
-        if (fec)  p.set('fecha', fec);
+        const conf  = document.getElementById('f-conformidad')?.value;
+        const desde = document.getElementById('f-fecha-desde')?.value;
+        const hasta = document.getElementById('f-fecha-hasta')?.value;
+        if (sede)  p.set('sede', sede);
+        if (est)   p.set('estado', est);
+        if (conf)  p.set('conformidad', conf);
+        if (desde) p.set('desde', desde);
+        if (hasta) p.set('hasta', hasta);
         return p;
     }
 
@@ -1233,12 +1239,12 @@
 
     document.getElementById('hist-prev').addEventListener('click', () => { if (histPage > 1) loadHistorial(histPage - 1); });
     document.getElementById('hist-next').addEventListener('click', () => { if (histPage < histLastPage) loadHistorial(histPage + 1); });
-    ['f-sede', 'f-estado', 'f-conformidad', 'f-fecha'].forEach(id => {
+    ['f-sede', 'f-estado', 'f-conformidad', 'f-fecha-desde', 'f-fecha-hasta'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.addEventListener('change', () => loadHistorial(1));
     });
     document.getElementById('btn-limpiar-filtros')?.addEventListener('click', () => {
-        ['f-sede', 'f-estado', 'f-conformidad', 'f-fecha'].forEach(id => {
+        ['f-sede', 'f-estado', 'f-conformidad', 'f-fecha-desde', 'f-fecha-hasta'].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.value = '';
         });
