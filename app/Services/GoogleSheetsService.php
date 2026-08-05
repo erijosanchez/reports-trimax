@@ -286,6 +286,27 @@ class GoogleSheetsService
     }
 
     /**
+     * Igual que getRawRows() pero para un spreadsheet distinto al configurado por defecto
+     * (spreadsheet_id). Devuelve filas crudas, sin fila de "Actualizado:" ni headers.
+     */
+    public function getRawRowsFromSpreadsheet($spreadsheetId, $sheetName, $range)
+    {
+        $values = $this->getSheetDataFromSpreadsheet($spreadsheetId, $sheetName, $range);
+
+        if (empty($values)) return [];
+
+        // Saltar fila de "Actualizado:" si existe
+        if (!empty($values[0][0]) && stripos(trim($values[0][0]), 'actualizado') !== false) {
+            array_shift($values);
+        }
+
+        // Saltar fila de headers
+        array_shift($values);
+
+        return $values;
+    }
+
+    /**
      * Obtener datos con caché de un spreadsheet específico
      */
     public function getSheetDataFromSpreadsheetCached($spreadsheetId, $sheetName, $range = null, $ttl = 300)
