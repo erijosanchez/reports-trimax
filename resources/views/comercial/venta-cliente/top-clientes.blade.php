@@ -24,14 +24,20 @@
                                         <span id="subtituloPeriodo">Cargando...</span>
                                     </p>
                                 </div>
-                                <div class="d-flex align-items-center justify-content-end gap-2 mt-3 mt-lg-0 col-lg-5">
-                                    <div style="width:200px;">
+                                <div class="d-flex align-items-center justify-content-end gap-2 mt-3 mt-lg-0 col-lg-5 flex-wrap">
+                                    <div style="width:190px;">
+                                        <label class="mb-1 text-muted form-label small">Mes de referencia</label>
+                                        <select id="selectMes" class="form-select-sm form-select">
+                                            <option>Cargando...</option>
+                                        </select>
+                                    </div>
+                                    <div style="width:180px;">
                                         <label class="mb-1 text-muted form-label small">Sede</label>
                                         <select id="selectSede" class="form-select-sm form-select">
                                             <option>Cargando...</option>
                                         </select>
                                     </div>
-                                    <div style="width:220px;">
+                                    <div style="width:200px;">
                                         <label class="mb-1 text-muted form-label small">Buscar cliente / RUC</label>
                                         <input type="text" id="buscador" class="form-control form-control-sm"
                                             placeholder="Buscar...">
@@ -116,8 +122,37 @@
             return `<span class="badge badge-semaforo ${clase}">${signo}${pct.toFixed(1)}%</span>`;
         }
 
+        const MESES_NOMBRES = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO',
+            'JULIO', 'AGOSTO', 'SETIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'
+        ];
+
         let datosOriginales = [];
         let periodosActuales = null;
+        let mesCerradoActual = false;
+
+        // ── Selector de mes de referencia: mes actual (en curso) + 11 anteriores ──
+        function poblarSelectMes() {
+            const sel = document.getElementById('selectMes');
+            const valorPrevio = sel.value;
+            sel.innerHTML = '';
+
+            const hoy = new Date();
+            for (let i = 0; i < 12; i++) {
+                const d = new Date(hoy.getFullYear(), hoy.getMonth() - i, 1);
+                const anio = d.getFullYear();
+                const mes = d.getMonth() + 1;
+                const o = document.createElement('option');
+                o.value = `${anio}-${mes}`;
+                o.text = i === 0 ?
+                    `${MESES_NOMBRES[mes - 1]} ${anio} (en curso)` :
+                    `${MESES_NOMBRES[mes - 1]} ${anio}`;
+                sel.appendChild(o);
+            }
+
+            if (valorPrevio && [...sel.options].some(o => o.value === valorPrevio)) {
+                sel.value = valorPrevio;
+            }
+        }
 
         // ── Carga principal ───────────────────────────────────────────────────
         async function cargarDatos() {
@@ -128,17 +163,29 @@
                 </div>`;
 
             try {
-                const res = await fetch('{{ route('comercial.venta-cliente.top.data') }}');
+                const [anio, mes] = document.getElementById('selectMes').value.split('-');
+                const url = new URL('{{ route('comercial.venta-cliente.top.data') }}', window.location.origin);
+                if (anio && mes) {
+                    url.searchParams.set('anio', anio);
+                    url.searchParams.set('mes', mes);
+                }
+
+                const res = await fetch(url);
                 const data = await res.json();
                 if (!data.success) throw new Error(data.message || 'Error desconocido');
 
                 datosOriginales = data.sedes || [];
                 periodosActuales = data.periodos;
+                mesCerradoActual = !!data.mes_cerrado;
 
-                document.getElementById('subtituloPeriodo').textContent =
+                document.getElementById('subtituloPeriodo').textContent = mesCerradoActual ?
+                    `${data.periodos.m3} · ${data.periodos.m2} · ${data.periodos.m1} · ${data.periodos.actual} (mes cerrado)` :
                     `${data.periodos.m3} · ${data.periodos.m2} · ${data.periodos.m1} → proyección ${data.periodos.actual}`;
 
-                document.getElementById('infoCorte').innerHTML = `
+                document.getElementById('infoCorte').innerHTML = mesCerradoActual ? `
+                    <span><i class="me-1 mdi mdi-calendar-check"></i>
+                    Mes cerrado — se muestra la venta real de <strong>${data.periodos.actual}</strong>, sin proyección.</span>
+                ` : `
                     <span><i class="me-1 mdi mdi-calendar-clock"></i>
                     Fecha de corte: <strong>${data.fecha_corte}</strong></span>
                     <span><i class="me-1 mdi mdi-calendar-check"></i>
@@ -214,7 +261,7 @@
                                         <th class="text-end">${p.m2 || 'Mes -2'}</th>
                                         <th class="text-end">${p.m1 || 'Mes -1'}</th>
                                         <th class="text-end">PROM</th>
-                                        <th class="text-end">${p.actual || 'Mes actual'} (proy.)</th>
+                                        <th class="text-end">${p.actual || 'Mes actual'}${mesCerradoActual ? '' : ' (proy.)'}</th>
                                         <th class="text-center">%</th>
                                     </tr>
                                 </thead>
@@ -265,6 +312,7 @@
             renderSedes(filtrado);
         }
 
+        document.getElementById('selectMes').addEventListener('change', cargarDatos);
         document.getElementById('selectSede').addEventListener('change', aplicarFiltros);
         document.getElementById('buscador').addEventListener('input', aplicarFiltros);
 
@@ -285,6 +333,7 @@
         });
 
         // ── Init ──────────────────────────────────────────────────────────────
+        poblarSelectMes();
         cargarDatos();
     </script>
 @endsection

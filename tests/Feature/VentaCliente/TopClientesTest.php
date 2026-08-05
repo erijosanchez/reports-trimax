@@ -27,6 +27,12 @@ class TopClientesTest extends TestCase
 {
     use RefreshDatabase;
 
+    // Mismo mapeo que VentaClienteController::MESES, para armar el label esperado en las aserciones.
+    private const MESES_NOMBRES = [
+        1 => 'ENERO', 2 => 'FEBRERO', 3 => 'MARZO', 4 => 'ABRIL', 5 => 'MAYO', 6 => 'JUNIO',
+        7 => 'JULIO', 8 => 'AGOSTO', 9 => 'SETIEMBRE', 10 => 'OCTUBRE', 11 => 'NOVIEMBRE', 12 => 'DICIEMBRE',
+    ];
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -270,5 +276,61 @@ class TopClientesTest extends TestCase
         $resp->assertOk();
         $this->assertSame($this->diasHabilesTranscurridosEsperado() - 1, $resp->json('dias_habiles_transcurridos'));
         $this->assertSame($this->diasHabilesTotalesEsperado() - 1, $resp->json('dias_habiles_totales'));
+    }
+
+    public function test_mes_de_referencia_pasado_muestra_venta_real_sin_proyeccion(): void
+    {
+        // Mes de referencia: 2 meses antes del "hoy" congelado en setUp.
+        $ref = Carbon::now()->subMonthsNoOverflow(2);
+        $refM1 = $ref->copy()->subMonthsNoOverflow(1);
+        $refM2 = $ref->copy()->subMonthsNoOverflow(2);
+        $refM3 = $ref->copy()->subMonthsNoOverflow(3);
+
+        $this->venta('CUSCO', 'RUC-CERRADO', 'Cliente Cerrado', $refM3->year, $refM3->month, 300);
+        $this->venta('CUSCO', 'RUC-CERRADO', 'Cliente Cerrado', $refM2->year, $refM2->month, 300);
+        $this->venta('CUSCO', 'RUC-CERRADO', 'Cliente Cerrado', $refM1->year, $refM1->month, 300);
+        $this->venta('CUSCO', 'RUC-CERRADO', 'Cliente Cerrado', $ref->year, $ref->month, 360); // +20% real
+
+        $admin = $this->userConRol('admin');
+        $resp = $this->actingAs($admin)->getJson(route('comercial.venta-cliente.top.data', [
+            'anio' => $ref->year,
+            'mes'  => $ref->month,
+        ]));
+
+        $resp->assertOk();
+        $data = $resp->json();
+
+        $this->assertTrue($data['mes_cerrado']);
+        $this->assertSame(self::MESES_NOMBRES[$ref->month] . ' ' . $ref->year, $data['periodos']['actual']);
+
+        $cliente = collect($data['sedes'])
+            ->firstWhere('sede', 'CUSCO')['clientes'][0];
+
+        // Sin días hábiles de por medio: la venta del mes actual = la venta real, sin escalar.
+        $this->assertEquals(360.0, $cliente['venta_actual']);
+        $this->assertEquals(360.0, $cliente['venta_actual_real']);
+        $this->assertEquals(300.0, $cliente['prom']);
+        $this->assertEquals(20.0, $cliente['variacion_pct']);
+        $this->assertSame('verde', $cliente['semaforo']);
+    }
+
+    public function test_mes_de_referencia_igual_al_mes_actual_se_trata_como_en_curso(): void
+    {
+        $hoy = Carbon::now();
+
+        $admin = $this->userConRol('admin');
+        $sinParametros = $this->actingAs($admin)
+            ->getJson(route('comercial.venta-cliente.top.data'))
+            ->json();
+
+        $admin2 = $this->userConRol('admin');
+        $conMesActualExplicito = $this->actingAs($admin2)
+            ->getJson(route('comercial.venta-cliente.top.data', ['anio' => $hoy->year, 'mes' => $hoy->month]))
+            ->json();
+
+        $this->assertFalse($sinParametros['mes_cerrado']);
+        $this->assertFalse($conMesActualExplicito['mes_cerrado']);
+        $this->assertSame($sinParametros['dias_habiles_transcurridos'], $conMesActualExplicito['dias_habiles_transcurridos']);
+        $this->assertSame($sinParametros['dias_habiles_totales'], $conMesActualExplicito['dias_habiles_totales']);
     }
 }

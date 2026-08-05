@@ -82,6 +82,23 @@ class VentaClienteController extends Controller
 
         try {
             $hoy = Carbon::now();
+            $mesCerrado = false;
+
+            // Mes de referencia opcional (?anio=2026&mes=6) para ver la misma
+            // comparativa de un mes ya completado. Si coincide con el mes
+            // actual, se ignora y sigue comportándose como "en curso" (con
+            // proyección) — evita que alguien mande el mes de hoy y se
+            // trate como cerrado a mitad de mes.
+            $anioParam = (int) $request->input('anio');
+            $mesParam  = (int) $request->input('mes');
+
+            if ($anioParam && $mesParam >= 1 && $mesParam <= 12) {
+                $seleccionado = Carbon::create($anioParam, $mesParam, 1);
+                if (!$seleccionado->isSameMonth($hoy)) {
+                    $hoy = $seleccionado->endOfMonth();
+                    $mesCerrado = true;
+                }
+            }
 
             // Los 3 meses anteriores al actual + el mes actual, con manejo de cruce de año.
             $periodos = []; // 'actual','m1','m2','m3' => ['anio'=>..,'mes'=>..,'codigo'=>anio*100+mes]
@@ -181,6 +198,7 @@ class VentaClienteController extends Controller
                 'dias_habiles_transcurridos' => $diasHabilesTranscurridos,
                 'dias_habiles_totales'       => $diasHabilesTotales,
                 'fecha_corte'                => $hoy->toDateString(),
+                'mes_cerrado'                => $mesCerrado,
                 'sedes'                      => $resultado,
             ]);
         } catch (\Exception $e) {
