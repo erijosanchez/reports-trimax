@@ -577,6 +577,8 @@
                     <div id="rev-msg"></div>
                     <input type="hidden" id="rev-id" name="voucher_id">
 
+                    <div id="rev-envio-info" class="mb-3 text-muted" style="font-size:.8rem"></div>
+
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Resultado de la revisión <span class="text-danger">*</span></label>
                         <div class="d-flex flex-column gap-2">
@@ -1090,7 +1092,13 @@
                     </div>`;
             }
 
+            const envioHtml = `
+                <div class="mb-3 text-muted" style="font-size:.8rem">
+                    <i class="mdi mdi-send-outline me-1"></i>Enviado por <strong>${data.creator_name ?? '—'}</strong> · ${data.hora_envio ?? '—'}
+                </div>`;
+
             document.getElementById('det-body').innerHTML = `
+                ${envioHtml}
                 <table class="table table-bordered table-sm mb-0">
                     <thead class="table-light">
                         <tr><th>Factura</th><th>RUC</th><th class="text-end">Monto</th></tr>
@@ -1193,7 +1201,7 @@
             <td><span class="sede-badge">${v.sede}</span></td>
             ${solicitanteCol}
             <td class="text-end fw-semibold">S/ ${v.total}</td>
-            <td style="font-size:.82rem;white-space:nowrap">${v.solicitado_at ?? '—'}</td>
+            <td style="font-size:.82rem;white-space:nowrap">${v.solicitado_at ?? '—'}${v.hora_envio ? ` <span class="text-muted">${v.hora_envio}</span>` : ''}</td>
             <td style="font-size:.82rem;white-space:nowrap">${aplicadoHtml}</td>
             <td class="text-center">${demoraHtml(v)}</td>
             <td class="text-center"><span class="badge bg-${v.conformidad_color}">${v.conformidad_label}</span></td>
@@ -1325,7 +1333,7 @@
         setupDropZone('drop-zone-rev', 'archivos-rev', 'preview-rev');
         const modalRev = new bootstrap.Modal(document.getElementById('modalRevision'));
 
-        function abrirRevision(id, codigo) {
+        async function abrirRevision(id, codigo) {
             const form = document.getElementById('formRevision');
             form.reset();
             document.getElementById('rev-id').value = id;
@@ -1335,7 +1343,18 @@
             document.getElementById('preview-rev').innerHTML = '';
             _acumulados['archivos-rev'] = new DataTransfer();
             updatePeso('archivos-rev');
+
+            const envioInfo = document.getElementById('rev-envio-info');
+            envioInfo.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
             modalRev.show();
+
+            try {
+                const data = await apiFetch(`${BASE}/${id}/facturas`);
+                envioInfo.innerHTML =
+                    `<i class="mdi mdi-send-outline me-1"></i>Enviado por <strong>${data.creator_name ?? '—'}</strong> · ${data.hora_envio ?? '—'}`;
+            } catch (e) {
+                envioInfo.innerHTML = '';
+            }
         }
         window.__abrirRevision = abrirRevision;
 

@@ -303,12 +303,14 @@ class VoucherController extends Controller
             return response()->json(['error' => 'Sin permiso.'], 403);
         }
 
-        $voucher = Voucher::with(['facturas', 'revisor'])->findOrFail($id);
+        $voucher = Voucher::with(['facturas', 'revisor', 'creator'])->findOrFail($id);
 
         return response()->json([
-            'id'       => $voucher->id,
-            'codigo'   => $voucher->codigo,
-            'status'   => $voucher->status,
+            'id'           => $voucher->id,
+            'codigo'       => $voucher->codigo,
+            'status'       => $voucher->status,
+            'creator_name' => $voucher->creator?->name,
+            'hora_envio'   => $voucher->created_at?->setTimezone('America/Lima')->format('d/m/Y H:i'),
             'facturas' => $voucher->facturas->map(fn($f) => [
                 'id'      => $f->id,
                 'factura' => $f->factura,
@@ -551,6 +553,7 @@ class VoucherController extends Controller
             'status'            => $v->status,
             'total'             => number_format((float) $v->total, 2),
             'solicitado_at'     => $v->solicitado_at?->format('d/m/Y'),
+            'hora_envio'        => $v->created_at?->setTimezone('America/Lima')->format('H:i'),
             'aplicado_at'       => $v->aplicado_at?->format('d/m/Y'),
             'creator_name'      => $v->creator?->name,
             'demora'            => $demora,
