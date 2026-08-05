@@ -86,11 +86,13 @@
                     </div>
                 </div>
 
-                <div class="form-group" id="sede-group" style="display: none;">
+                <div class="form-group sede-group" id="sede-group" style="display: none;">
                     <label>¿Tu evaluación es sobre una sede en particular? (opcional)</label>
-                    <select name="sede_id" id="sede_id">
-                        <option value="">General (sin sede específica)</option>
-                    </select>
+                    <div class="select-wrapper">
+                        <select name="sede_id" id="sede_id">
+                            <option value="">General (sin sede específica)</option>
+                        </select>
+                    </div>
                 </div>
 
                 <div class="form-group">
