@@ -46,6 +46,7 @@ class AuthServiceProvider extends ServiceProvider
         Gate::define('ver-acuerdos-comerciales', fn (User $u) => $u->puedeVerAcuerdosComerciales());
         Gate::define('ver-lead-time', fn (User $u) => $u->puedeVerLeadTime());
         Gate::define('ver-venta-clientes', fn (User $u) => $u->puedeVerVentaClientes());
+        Gate::define('ver-top-clientes', fn (User $u) => $u->puedeVerTopClientes());
         Gate::define('ver-ordenes-x-sede', fn (User $u) => $u->puedeVerOrdenesXSede());
         Gate::define('ver-asignacion-bases', fn (User $u) => $u->puedeVerAsignacionBases());
         Gate::define('crear-requerimientos', fn (User $u) => $u->puedeCrearRequerimientos());

@@ -27,6 +27,7 @@ class User extends Authenticatable
         'puede_ver_lead_time',
         'puede_ver_pendiente_entrega_montura',
         'puede_ver_venta_clientes',
+        'puede_ver_top_clientes',
         'puede_ver_ordenes_x_sede',
         'puede_ver_asignacion_bases',
         'puede_crear_requerimientos',
@@ -63,6 +64,7 @@ class User extends Authenticatable
         'puede_ver_lead_time' => 'boolean',
         'puede_ver_pendiente_entrega_montura' => 'boolean',
         'puede_ver_venta_clientes' => 'boolean',
+        'puede_ver_top_clientes' => 'boolean',
         'puede_ver_ordenes_x_sede' => 'boolean',
         'puede_ver_asignacion_bases' => 'boolean',
         'puede_crear_requerimientos' => 'boolean',
@@ -215,6 +217,11 @@ class User extends Authenticatable
     public function puedeVerVentaClientes(): bool
     {
         return $this->isSuperAdmin() || $this->isAdmin() || $this->puede_ver_venta_clientes;
+    }
+
+    public function puedeVerTopClientes(): bool
+    {
+        return $this->isSuperAdmin() || $this->isAdmin() || $this->puede_ver_top_clientes;
     }
 
     public function puedeVerOrdenesXSede(): bool

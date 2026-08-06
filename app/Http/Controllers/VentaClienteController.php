@@ -2,56 +2,209 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Feriado;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use App\Services\GoogleSheetsService;
-
 
 class VentaClienteController extends Controller
 {
-    protected GoogleSheetsService $googleSheets;
+    // Los datos se sincronizan desde Google Sheets a esta tabla cada 30 min
+    // por el comando trimax:sync-venta-clientes (ver routes/console.php).
+    private const TABLA = 'venta_clientes_historico';
 
-    // ─── Nombre de la hoja — solo esto cambia si renombran la hoja ───
-    private const SHEET_NAME = 'Venta_Historica';
-    private const CACHE_KEY  = 'venta_x_cliente_raw';
-    private const CACHE_TTL  = 600; // 10 minutos
+    private const MESES = [
+        1  => 'ENERO',
+        2  => 'FEBRERO',
+        3  => 'MARZO',
+        4  => 'ABRIL',
+        5  => 'MAYO',
+        6  => 'JUNIO',
+        7  => 'JULIO',
+        8  => 'AGOSTO',
+        9  => 'SETIEMBRE',
+        10 => 'OCTUBRE',
+        11 => 'NOVIEMBRE',
+        12 => 'DICIEMBRE',
+    ];
 
-    public function __construct(GoogleSheetsService $googleSheets)
+    // Cuentas que aparecen en el sheet como "sede" pero no son sedes físicas.
+    // Mismo criterio que ComercialController::sedesMonturas() / HomeController,
+    // sumando "(EN BLANCO)" (ventas sin sede asignada en el sheet).
+    private const SEDES_EXCLUIDAS_TOP = [
+        'CONSULTOR DE MONTURAS 1',
+        'CONSULTOR DE MONTURAS 2',
+        'MONTURAS GENERAL',
+        '(EN BLANCO)',
+    ];
+
+    private const TOP_N = 25;
+
+    private function sedeFijaDelUsuario(): ?string
     {
-        $this->googleSheets = $googleSheets;
+        $user = auth()->user();
+        return $user->isSede() ? strtoupper(trim($user->sede)) : null;
     }
 
-    // ─────────────────────────────────────────────────────────────────
-    // Helper: leer hoja con caché
-    // Columnas: A=Sede, B=RUC, C=Razón Social, D=Año, E=Mes, F=Importe
-    // ─────────────────────────────────────────────────────────────────
-    private function getRawData(): array
+    /** Cuenta días hábiles (no domingo, no feriado nacional) entre dos fechas, ambas inclusive. */
+    private function diasHabilesEnRango(Carbon $inicio, Carbon $fin): int
     {
-        return Cache::store('file')->remember(
-            self::CACHE_KEY,
-            self::CACHE_TTL,
-            function () {
-                $spreadsheetId = config('google.venta_clientes_spreadsheet_id');
-
-                $rows = $this->googleSheets->getSheetDataFromSpreadsheet(
-                    $spreadsheetId,
-                    self::SHEET_NAME,
-                    'A:F'
-                );
-
-                // Quitar cabecera
-                array_shift($rows);
-                return $rows ?? [];
+        $count = 0;
+        $cursor = $inicio->copy();
+        while ($cursor->lte($fin)) {
+            if (Feriado::esDiaLaborable($cursor)) {
+                $count++;
             }
-        );
+            $cursor->addDay();
+        }
+        return $count;
     }
 
-    private function limpiarNumero($valor): float
+    // ─────────────────────────────────────────────────────────────────
+    // VISTA 0: Top Clientes por Sede
+    // ─────────────────────────────────────────────────────────────────
+    public function topClientes()
     {
-        if (empty($valor)) return 0.0;
-        $v = str_replace([',', ' '], ['.', ''], trim((string) $valor));
-        return floatval(preg_replace('/[^0-9.\-]/', '', $v));
+        if (!auth()->user()->puedeVerTopClientes()) {
+            abort(403, 'No tienes permiso para ver Top Clientes');
+        }
+
+        return view('comercial.venta-cliente.top-clientes');
+    }
+
+    public function getTopClientesData(Request $request)
+    {
+        if (!auth()->user()->puedeVerTopClientes()) {
+            return response()->json(['error' => 'No autorizado'], 403);
+        }
+
+        try {
+            $hoy = Carbon::now();
+            $mesCerrado = false;
+
+            // Mes de referencia opcional (?anio=2026&mes=6) para ver la misma
+            // comparativa de un mes ya completado. Si coincide con el mes
+            // actual, se ignora y sigue comportándose como "en curso" (con
+            // proyección) — evita que alguien mande el mes de hoy y se
+            // trate como cerrado a mitad de mes.
+            $anioParam = (int) $request->input('anio');
+            $mesParam  = (int) $request->input('mes');
+
+            if ($anioParam && $mesParam >= 1 && $mesParam <= 12) {
+                $seleccionado = Carbon::create($anioParam, $mesParam, 1);
+                if (!$seleccionado->isSameMonth($hoy)) {
+                    $hoy = $seleccionado->endOfMonth();
+                    $mesCerrado = true;
+                }
+            }
+
+            // Los 3 meses anteriores al actual + el mes actual, con manejo de cruce de año.
+            $periodos = []; // 'actual','m1','m2','m3' => ['anio'=>..,'mes'=>..,'codigo'=>anio*100+mes]
+            foreach (['actual' => 0, 'm1' => 1, 'm2' => 2, 'm3' => 3] as $clave => $offset) {
+                $fecha = $hoy->copy()->subMonthsNoOverflow($offset);
+                $periodos[$clave] = [
+                    'anio'   => $fecha->year,
+                    'mes'    => $fecha->month,
+                    'codigo' => $fecha->year * 100 + $fecha->month,
+                    'label'  => self::MESES[$fecha->month] . ' ' . $fecha->year,
+                ];
+            }
+
+            $inicioMes = $hoy->copy()->startOfMonth();
+            $finMes    = $hoy->copy()->endOfMonth();
+            $diasHabilesTranscurridos = $this->diasHabilesEnRango($inicioMes, $hoy->copy()->startOfDay());
+            $diasHabilesTotales       = $this->diasHabilesEnRango($inicioMes, $finMes);
+
+            $sedeFija = $this->sedeFijaDelUsuario();
+
+            $codigos = array_column($periodos, 'codigo');
+
+            $query = DB::table(self::TABLA)
+                ->select('sede', 'ruc', 'razon_social', 'anio', 'mes', 'importe')
+                ->whereIn(DB::raw('(anio * 100 + mes)'), $codigos)
+                ->whereNotIn('sede', self::SEDES_EXCLUIDAS_TOP);
+
+            if ($sedeFija) {
+                $query->where('sede', $sedeFija);
+            }
+
+            // Agrupar en memoria por sede -> ruc
+            $porSede = [];
+            foreach ($query->get() as $row) {
+                $codigo = (int) $row->anio * 100 + (int) $row->mes;
+                if ($row->razon_social || !isset($porSede[$row->sede][$row->ruc]['razon'])) {
+                    $porSede[$row->sede][$row->ruc]['razon'] = $row->razon_social ?: '';
+                }
+                $porSede[$row->sede][$row->ruc]['periodos'][$codigo] = (float) $row->importe;
+            }
+
+            $resultado = [];
+            foreach ($porSede as $sede => $clientes) {
+                $filas = [];
+
+                foreach ($clientes as $ruc => $info) {
+                    $p = $info['periodos'] ?? [];
+                    $ventaM3 = $p[$periodos['m3']['codigo']] ?? 0.0;
+                    $ventaM2 = $p[$periodos['m2']['codigo']] ?? 0.0;
+                    $ventaM1 = $p[$periodos['m1']['codigo']] ?? 0.0;
+                    $prom    = round(($ventaM3 + $ventaM2 + $ventaM1) / 3, 2);
+
+                    if ($prom <= 0) continue; // sin actividad relevante en los 3 meses previos
+
+                    $ventaActualReal = $p[$periodos['actual']['codigo']] ?? 0.0;
+                    $proyeccion = $diasHabilesTranscurridos > 0
+                        ? round(($ventaActualReal / $diasHabilesTranscurridos) * $diasHabilesTotales, 2)
+                        : 0.0;
+
+                    $variacionPct = round((($proyeccion - $prom) / $prom) * 100, 1);
+                    $semaforo = $variacionPct < 0 ? 'rojo' : ($variacionPct < 10 ? 'amarillo' : 'verde');
+
+                    $filas[] = [
+                        'ruc'               => $ruc,
+                        'razon'             => $info['razon'],
+                        'venta_m3'          => $ventaM3,
+                        'venta_m2'          => $ventaM2,
+                        'venta_m1'          => $ventaM1,
+                        'prom'              => $prom,
+                        'venta_actual'      => $proyeccion,
+                        'venta_actual_real' => $ventaActualReal,
+                        'variacion_pct'     => $variacionPct,
+                        'semaforo'          => $semaforo,
+                    ];
+                }
+
+                if (empty($filas)) continue; // sede sin ningún cliente con historial en los 3 meses previos
+
+                usort($filas, fn($a, $b) => $b['prom'] <=> $a['prom']);
+
+                $resultado[] = [
+                    'sede'     => $sede,
+                    'clientes' => array_slice($filas, 0, self::TOP_N),
+                ];
+            }
+
+            usort($resultado, fn($a, $b) => $a['sede'] <=> $b['sede']);
+
+            return response()->json([
+                'success' => true,
+                'periodos' => [
+                    'm3'     => $periodos['m3']['label'],
+                    'm2'     => $periodos['m2']['label'],
+                    'm1'     => $periodos['m1']['label'],
+                    'actual' => $periodos['actual']['label'],
+                ],
+                'dias_habiles_transcurridos' => $diasHabilesTranscurridos,
+                'dias_habiles_totales'       => $diasHabilesTotales,
+                'fecha_corte'                => $hoy->toDateString(),
+                'mes_cerrado'                => $mesCerrado,
+                'sedes'                      => $resultado,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error getTopClientesData: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
     }
 
     // ─────────────────────────────────────────────────────────────────
@@ -73,47 +226,25 @@ class VentaClienteController extends Controller
         }
 
         try {
-            ini_set('memory_limit', '512M');
-            ini_set('max_execution_time', '60');
+            $anio     = (int) $request->input('anio', now()->year);
+            $sedeFija = $this->sedeFijaDelUsuario();
+            $meses    = array_values(self::MESES);
 
-            $anio = $request->input('anio', now()->year);
+            $query = DB::table(self::TABLA)
+                ->select('sede', 'ruc', 'razon_social', 'mes', 'importe')
+                ->where('anio', $anio);
 
-            // filtrar por la sede del usuario
-            $user = auth()->user();
-            $esSede = $user->isSede();
-            $sedeFija = $esSede ? strtoupper($user->sede) : null;
+            if ($sedeFija) {
+                $query->where('sede', $sedeFija);
+            }
 
-            $meses = [
-                'ENERO',
-                'FEBRERO',
-                'MARZO',
-                'ABRIL',
-                'MAYO',
-                'JUNIO',
-                'JULIO',
-                'AGOSTO',
-                'SETIEMBRE',
-                'OCTUBRE',
-                'NOVIEMBRE',
-                'DICIEMBRE'
-            ];
-
-            $raw      = $this->getRawData();
             $clientes = [];
 
-            foreach ($raw as $row) {
-                $sede    = strtoupper(trim($row[0] ?? ''));
-                $ruc     = trim($row[1] ?? '');
-                $razon   = trim($row[2] ?? '');
-                $anioR   = trim($row[3] ?? '');
-                $mesR    = strtoupper(trim($row[4] ?? ''));
-                $importe = $this->limpiarNumero($row[5] ?? 0);
-
-                if ($anioR != $anio || !$sede || !$ruc) continue;
-                // Si es sede, solo su sede
-                if ($sedeFija && $sede !== $sedeFija) continue;
-
-                $key = "{$sede}||{$ruc}||{$razon}";
+            foreach ($query->get() as $row) {
+                $sede  = $row->sede;
+                $ruc   = $row->ruc;
+                $razon = $row->razon_social ?? '';
+                $key   = "{$sede}||{$ruc}||{$razon}";
 
                 if (!isset($clientes[$key])) {
                     $clientes[$key] = [
@@ -125,12 +256,10 @@ class VentaClienteController extends Controller
                     ];
                 }
 
-                // Normalizar variante ortográfica
-                $mesR = str_replace('SEPTIEMBRE', 'SETIEMBRE', $mesR);
-
-                if (in_array($mesR, $meses)) {
-                    $clientes[$key]['meses'][$mesR] += $importe;
-                    $clientes[$key]['total']        += $importe;
+                $mesNombre = self::MESES[(int) $row->mes] ?? null;
+                if ($mesNombre) {
+                    $clientes[$key]['meses'][$mesNombre] += (float) $row->importe;
+                    $clientes[$key]['total']              += (float) $row->importe;
                 }
             }
 
@@ -171,29 +300,26 @@ class VentaClienteController extends Controller
         }
 
         try {
-            ini_set('memory_limit', '512M');
-            ini_set('max_execution_time', '60');
+            $sedeFija = $this->sedeFijaDelUsuario();
 
-            $raw      = $this->getRawData();
+            $query = DB::table(self::TABLA)
+                ->select('sede', 'ruc', 'razon_social', 'anio', DB::raw('SUM(importe) as importe'))
+                ->groupBy('sede', 'ruc', 'razon_social', 'anio');
+
+            if ($sedeFija) {
+                $query->where('sede', $sedeFija);
+            }
+
             $clientes = [];
             $aniosSet = [];
 
-            $user     = auth()->user();
-            $esSede   = $user->isSede();
-            $sedeFija = $esSede ? strtoupper(trim($user->sede)) : null;
+            foreach ($query->get() as $row) {
+                $sede    = $row->sede;
+                $ruc     = $row->ruc;
+                $razon   = $row->razon_social ?? '';
+                $anioInt = (int) $row->anio;
+                $importe = (float) $row->importe;
 
-            foreach ($raw as $row) {
-                $sede    = strtoupper(trim($row[0] ?? ''));
-                $ruc     = trim($row[1] ?? '');
-                $razon   = trim($row[2] ?? '');
-                $anioR   = trim($row[3] ?? '');
-                $importe = $this->limpiarNumero($row[5] ?? 0);
-
-                if (!$sede || !$ruc || !is_numeric($anioR)) continue;
-                // Si es sede, solo su sede
-                if ($sedeFija && $sede !== $sedeFija) continue;
-
-                $anioInt            = (int) $anioR;
                 $aniosSet[$anioInt] = true;
                 $key                = "{$sede}||{$ruc}||{$razon}";
 
@@ -246,21 +372,15 @@ class VentaClienteController extends Controller
     public function getAnios()
     {
         try {
-            $raw   = $this->getRawData();
-            $anios = [];
+            $sedeFija = $this->sedeFijaDelUsuario();
 
-            $user    = auth()->user();
-            $esSede  = $user->isSede();
-            $sedeFija = $esSede ? strtoupper(trim($user->sede)) : null;
+            $query = DB::table(self::TABLA)->select('anio')->distinct();
 
-            foreach ($raw as $row) {
-                $sede = strtoupper(trim($row[0] ?? ''));
-                $a    = trim($row[3] ?? '');
-                if ($sedeFija && $sede !== $sedeFija) continue;
-                if (is_numeric($a)) $anios[(int)$a] = true;
+            if ($sedeFija) {
+                $query->where('sede', $sedeFija);
             }
 
-            $anios = array_keys($anios);
+            $anios = $query->pluck('anio')->map(fn($a) => (int) $a)->all();
             rsort($anios);
 
             return response()->json(['success' => true, 'anios' => $anios]);
@@ -270,11 +390,18 @@ class VentaClienteController extends Controller
     }
 
     // ─────────────────────────────────────────────────────────────────
-    // Limpiar caché
+    // Forzar una resincronización inmediata desde Google Sheets
+    // (antes limpiaba un caché de 10 min; ahora los datos viven en BD
+    // y se refrescan solos cada 30 min vía trimax:sync-venta-clientes).
     // ─────────────────────────────────────────────────────────────────
     public function clearCache()
     {
-        Cache::store('file')->forget(self::CACHE_KEY);
-        return response()->json(['success' => true, 'message' => 'Caché limpiado correctamente']);
+        try {
+            Artisan::call('trimax:sync-venta-clientes');
+            return response()->json(['success' => true, 'message' => 'Datos sincronizados correctamente']);
+        } catch (\Exception $e) {
+            Log::error('Error al forzar sync de venta-clientes: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
     }
 }

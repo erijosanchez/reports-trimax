@@ -45,7 +45,7 @@
                                     {{-- Refresh --}}
                                     <div style="margin-top:22px;">
                                         <button id="btnRefresh" class="btn-outline-secondary btn btn-sm"
-                                            title="Limpiar caché">
+                                            title="Sincronizar ahora">
                                             <i class="mdi mdi-refresh"></i>
                                         </button>
                                     </div>

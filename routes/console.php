@@ -59,6 +59,12 @@ Schedule::command('trimax:sync-asignacion-bases')
     ->withoutOverlapping(20)
     ->runInBackground();
 
+// El sheet Venta_Historica se actualiza cada 30 min.
+Schedule::command('trimax:sync-venta-clientes')
+    ->everyThirtyMinutes()
+    ->withoutOverlapping(20)
+    ->runInBackground();
+
 // Marca acuerdos comerciales vencidos — diario 00:10 (Lima).
 // Reemplaza la escritura por request que antes hacía el listado de acuerdos.
 Schedule::command('acuerdos:marcar-vencidos')

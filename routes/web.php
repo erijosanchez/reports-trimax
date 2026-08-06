@@ -209,6 +209,8 @@ Route::middleware(['auth', '2fa.verified', 'throttle:dashboard', 'track.activity
         Route::get('/api/ventas-sedes-data', [ComercialController::class, 'getVentasSedesData'])->name('ventas.sedes.data');
 
         // Venta Clientes
+        Route::get('/venta-clientes/top-clientes', [VentaClienteController::class, 'topClientes'])->name('venta-cliente.top');
+        Route::get('/api/venta-clientes/top-clientes-data', [VentaClienteController::class, 'getTopClientesData'])->name('venta-cliente.top.data');
         Route::get('/venta-clientes/evolutivo-mes',  [VentaClienteController::class, 'evolutivoMes'])->name('venta-cliente.mes');
         Route::get('/venta-clientes/evolutivo-anio', [VentaClienteController::class, 'evolutivoAnio'])->name('venta-cliente.anio');
         Route::get('/api/venta-clientes/mes-data',   [VentaClienteController::class, 'getEvolutivoMesData'])->name('venta-cliente.mes.data');
