@@ -67,8 +67,8 @@ class VentaClienteController extends Controller
     // ─────────────────────────────────────────────────────────────────
     public function topClientes()
     {
-        if (!auth()->user()->puedeVerVentaClientes()) {
-            abort(403, 'No tienes permiso para ver Venta Clientes');
+        if (!auth()->user()->puedeVerTopClientes()) {
+            abort(403, 'No tienes permiso para ver Top Clientes');
         }
 
         return view('comercial.venta-cliente.top-clientes');
@@ -76,7 +76,7 @@ class VentaClienteController extends Controller
 
     public function getTopClientesData(Request $request)
     {
-        if (!auth()->user()->puedeVerVentaClientes()) {
+        if (!auth()->user()->puedeVerTopClientes()) {
             return response()->json(['error' => 'No autorizado'], 403);
         }
 

@@ -268,6 +268,19 @@
                                                                             </label>
                                                                         </div>
                                                                     </div>
+                                                                    <div class="col-md-6">
+                                                                        <div class="form-check form-check-success">
+                                                                            <label class="form-check-label">
+                                                                                <input type="checkbox"
+                                                                                    name="puede_ver_top_clientes"
+                                                                                    value="1"
+                                                                                    class="form-check-input"
+                                                                                    {{ old('puede_ver_top_clientes', $user->puede_ver_top_clientes ?? false) ? 'checked' : '' }}>
+                                                                                Top Clientes
+                                                                                <i class="input-helper"></i>
+                                                                            </label>
+                                                                        </div>
+                                                                    </div>
                                                                 </div>
                                                             </div>
 
@@ -647,6 +660,7 @@
                                                     'puede_ver_ventas_consolidadas' => 'Ventas Consolidadas',
                                                     'puede_ver_descuentos_especiales' => 'Descuentos Especiales',
                                                     'puede_ver_venta_clientes' => 'Ventas por Cliente',
+                                                    'puede_ver_top_clientes' => 'Top Clientes',
                                                     'puede_ver_lead_time' => 'Lead Time',
                                                     'puede_ver_pendiente_entrega_montura' =>
                                                         'Pendiente de Entrega Montura',

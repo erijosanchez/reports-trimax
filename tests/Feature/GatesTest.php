@@ -27,13 +27,13 @@ class GatesTest extends TestCase
         return $user;
     }
 
-    /** Los 20 Gates registrados en AuthServiceProvider — todos true para super_admin (Gate::before). */
+    /** Los 21 Gates registrados en AuthServiceProvider — todos true para super_admin (Gate::before). */
     public function test_super_admin_pasa_los_20_gates(): void
     {
         $gates = [
             'ver-vouchers', 'revisar-vouchers', 'ver-ventas-consolidadas',
             'ver-descuentos-especiales', 'ver-consultar-orden', 'ver-acuerdos-comerciales',
-            'ver-lead-time', 'ver-venta-clientes', 'ver-ordenes-x-sede',
+            'ver-lead-time', 'ver-venta-clientes', 'ver-top-clientes', 'ver-ordenes-x-sede',
             'ver-asignacion-bases', 'crear-requerimientos', 'ver-todos-requerimientos',
             'gestionar-requerimientos', 'ver-cobranza-sedes', 'revisar-reportes-sedes',
             'ver-productivy-total', 'acceder-productivy', 'ver-pendiente-entrega-montura',
@@ -57,6 +57,7 @@ class GatesTest extends TestCase
         $this->assertFalse(Gate::forUser($user)->allows('ver-ventas-consolidadas'));
         $this->assertFalse(Gate::forUser($user)->allows('ver-descuentos-especiales'));
         $this->assertFalse(Gate::forUser($user)->allows('ver-venta-clientes'));
+        $this->assertFalse(Gate::forUser($user)->allows('ver-top-clientes'));
         $this->assertFalse(Gate::forUser($user)->allows('ver-ordenes-x-sede'));
         $this->assertFalse(Gate::forUser($user)->allows('ver-asignacion-bases'));
         $this->assertFalse(Gate::forUser($user)->allows('ver-productivy-total'));

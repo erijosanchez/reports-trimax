@@ -235,7 +235,7 @@ class TopClientesTest extends TestCase
         $this->venta('AREQUIPA', 'RUC-AQP', 'Cliente AQP', $m1['anio'], $m1['mes'], 1000);
         $this->venta('HUANUCO', 'RUC-HCO', 'Cliente HCO', $m1['anio'], $m1['mes'], 1000);
 
-        $sedeUser = $this->userConRol('sede', ['sede' => 'AREQUIPA', 'puede_ver_venta_clientes' => true]);
+        $sedeUser = $this->userConRol('sede', ['sede' => 'AREQUIPA', 'puede_ver_top_clientes' => true]);
         $resp = $this->actingAs($sedeUser)->getJson(route('comercial.venta-cliente.top.data'));
 
         $resp->assertOk();
@@ -253,6 +253,26 @@ class TopClientesTest extends TestCase
 
         $this->actingAs($user)
             ->getJson(route('comercial.venta-cliente.top.data'))
+            ->assertStatus(403);
+    }
+
+    /**
+     * puede_ver_top_clientes es independiente de puede_ver_venta_clientes:
+     * tener uno no otorga el otro, en ningún sentido.
+     */
+    public function test_permiso_top_clientes_es_independiente_de_venta_clientes(): void
+    {
+        $soloVentaClientes = $this->userConRol('consultor', ['puede_ver_venta_clientes' => true]);
+        $this->actingAs($soloVentaClientes)
+            ->getJson(route('comercial.venta-cliente.top.data'))
+            ->assertStatus(403);
+
+        $soloTopClientes = $this->userConRol('consultor', ['puede_ver_top_clientes' => true]);
+        $this->actingAs($soloTopClientes)
+            ->getJson(route('comercial.venta-cliente.top.data'))
+            ->assertOk();
+        $this->actingAs($soloTopClientes)
+            ->getJson(route('comercial.venta-cliente.mes.data'))
             ->assertStatus(403);
     }
 

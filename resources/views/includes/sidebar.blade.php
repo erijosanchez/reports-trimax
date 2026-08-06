@@ -34,6 +34,7 @@
                 $user->puedeVerAcuerdosComerciales() ||
                 $user->puedeVerDescuentosEspeciales() ||
                 $user->puedeVerVentaClientes() ||
+                $user->puedeVerTopClientes() ||
                 $user->puedeVerVentasConsolidadas();
         @endphp
 
@@ -90,7 +91,7 @@
                 </li>
             @endif
 
-            @if ($user->puedeVerVentaClientes())
+            @if ($user->puedeVerVentaClientes() || $user->puedeVerTopClientes())
                 <li class="nav-item">
                     <a class="nav-link {{ request()->routeIs('comercial.venta-cliente.*') ? '' : 'collapsed' }}"
                         data-bs-toggle="collapse" href="#venta-clientes-menu"
@@ -105,24 +106,28 @@
                     <div class="collapse {{ request()->routeIs('comercial.venta-cliente.*') ? 'show' : '' }}"
                         id="venta-clientes-menu">
                         <ul class="flex-column nav sub-menu">
-                            <li class="nav-item">
-                                <a class="nav-link {{ request()->routeIs('comercial.venta-cliente.top') ? 'active' : '' }}"
-                                    href="{{ route('comercial.venta-cliente.top') }}">
-                                    Top Clientes
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link {{ request()->routeIs('comercial.venta-cliente.mes') ? 'active' : '' }}"
-                                    href="{{ route('comercial.venta-cliente.mes') }}">
-                                    Evolutivo — Mes
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link {{ request()->routeIs('comercial.venta-cliente.anio') ? 'active' : '' }}"
-                                    href="{{ route('comercial.venta-cliente.anio') }}">
-                                    Evolutivo — Año
-                                </a>
-                            </li>
+                            @if ($user->puedeVerTopClientes())
+                                <li class="nav-item">
+                                    <a class="nav-link {{ request()->routeIs('comercial.venta-cliente.top') ? 'active' : '' }}"
+                                        href="{{ route('comercial.venta-cliente.top') }}">
+                                        Top Clientes
+                                    </a>
+                                </li>
+                            @endif
+                            @if ($user->puedeVerVentaClientes())
+                                <li class="nav-item">
+                                    <a class="nav-link {{ request()->routeIs('comercial.venta-cliente.mes') ? 'active' : '' }}"
+                                        href="{{ route('comercial.venta-cliente.mes') }}">
+                                        Evolutivo — Mes
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link {{ request()->routeIs('comercial.venta-cliente.anio') ? 'active' : '' }}"
+                                        href="{{ route('comercial.venta-cliente.anio') }}">
+                                        Evolutivo — Año
+                                    </a>
+                                </li>
+                            @endif
                         </ul>
                     </div>
                 </li>
