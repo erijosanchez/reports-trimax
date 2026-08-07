@@ -14,12 +14,14 @@ use Tests\TestCase;
  * Objetivo +) reporten el MISMO total de "fuera de tiempo" para un mes dado,
  * usando el mismo Sheet — no deberían mostrar números distintos entre sí.
  *
- * Objetivo + tenía dos causas de desalineación, corregidas juntas:
- *   1. Ubicaba las órdenes por TIME (fecha de entrega), exigiendo que exista.
- *      Las pendientes-ya-vencidas (sin TIME, ubicadas por LEAD_TIME en las
- *      otras 2 vistas) quedaban fuera por completo.
- *   2. No filtraba por tipo de trabajo válido (NOX/TD/DEVABLUE/BLANCO/
- *      COLOREADO), a diferencia de las otras 2 vistas.
+ * Objetivo + ubicaba las órdenes por TIME (fecha de entrega), exigiendo que
+ * exista. Las pendientes-ya-vencidas (sin TIME, ubicadas por LEAD_TIME en
+ * las otras 2 vistas) quedaban fuera por completo.
+ *
+ * El filtro de tipo de trabajo válido (NOX/TD/DEVABLUE/BLANCO/COLOREADO)
+ * aplica solo dentro de las tarjetas por categoría — el conteo general
+ * (Cumplimiento General) de las 3 vistas cuenta TODAS las órdenes, sin
+ * importar el tipo.
  */
 class LeadTimeConsistenciaTest extends TestCase
 {
@@ -90,7 +92,8 @@ class LeadTimeConsistenciaTest extends TestCase
             //    entregarse) -> el caso que Objetivo+ perdía antes del fix;
             //    debe contar como "fuera" en las 3 vistas por igual.
             $this->fila('FUERA DE TIEMPO', '', $dia8, 'BLANCO'),
-            // 5) Tipo inválido, FUERA DE TIEMPO -> no debe contar en ninguna vista.
+            // 5) Tipo inválido, FUERA DE TIEMPO -> cuenta en el general de las
+            //    3 vistas (no en ninguna tarjeta de categoría).
             $this->fila('FUERA DE TIEMPO', $dia5, $dia5, 'SIN'),
         ]);
 
@@ -108,19 +111,23 @@ class LeadTimeConsistenciaTest extends TestCase
             ->getJson(route('produccion.lead-time.objetivo-mas.data', ['year' => $year]))
             ->json('data');
 
-        // Dashboard mensual: filas 1-4 cuentan (5 se descarta por tipo inválido).
-        $this->assertSame(4, $mensual['total']);
+        // Dashboard mensual (Cumplimiento General): cuenta las 5 filas, tipo
+        // inválido incluido.
+        $this->assertSame(5, $mensual['total']);
         $this->assertSame(2, $mensual['total_en_tiempo']); // 1 y 3
-        $this->assertSame(2, $mensual['total_fuera']);     // 2 y 4
+        $this->assertSame(3, $mensual['total_fuera']);     // 2, 4 y 5
 
         // Semanal: mismo total que el mensual.
-        $this->assertSame(4, array_sum($semanal['dayOrders']));
+        $this->assertSame(5, array_sum($semanal['dayOrders']));
 
         // Objetivo+: acumulado "fuera de tiempo" del año (solo hay datos de
-        // este mes en el fixture) -> debe dar exactamente 2, igual que el
-        // total_fuera del dashboard mensual. Antes del fix daba 1 (perdía la
-        // fila 4, la pendiente-ya-vencida) y sin el filtro de tipo hubiera
-        // sumado también la fila 5 (tipo inválido).
-        $this->assertSame(2, $objetivo['general']['totales']['acum']['cant']);
+        // este mes en el fixture) -> debe dar exactamente 3, igual que el
+        // total_fuera del dashboard mensual (filas 2, 4 y 5). Antes del fix
+        // de LEAD_TIME daba 1 (perdía la fila 4, la pendiente-ya-vencida).
+        $this->assertSame(3, $objetivo['general']['totales']['acum']['cant']);
+
+        // Pero la tarjeta de categoría "TD" en Objetivo+ solo ve su fila (2),
+        // no la de tipo inválido "SIN" (5) ni las de otras categorías.
+        $this->assertSame(1, $objetivo['categorias']['TD']['totales']['acum']['cant']);
     }
 }

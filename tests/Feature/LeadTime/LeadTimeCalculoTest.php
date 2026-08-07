@@ -141,32 +141,41 @@ class LeadTimeCalculoTest extends TestCase
     }
 
     /**
-     * Confirmado con negocio: "SIN" (sin tratamiento) y variantes no
-     * mapeadas como "TDLS"/"NOXLS" no cuentan en el KPI general — solo las
-     * 5 categorías que mide Lead Time (NOX, TD, DEVABLUE, BLANCO/BLANCOS,
-     * COLOREADO).
+     * El filtro de tipo de trabajo válido solo aplica dentro de las
+     * tarjetas por categoría (NOX/TD/DEVABLUE/BLANCO/COLOREADO) — el
+     * Cumplimiento General cuenta TODAS las órdenes, incluyendo "SIN" (sin
+     * tratamiento) o variantes no mapeadas como "TDLS"/"NOXLS".
      */
-    public function test_tipos_de_trabajo_fuera_de_las_5_categorias_no_cuentan(): void
+    public function test_tipos_de_trabajo_invalidos_cuentan_en_general_pero_no_en_ninguna_categoria(): void
     {
         $hoy = Carbon::now();
         $leadTimeEnMes = $hoy->copy()->endOfMonth()->format('Y-m-d');
 
         $this->mockSheet([
-            $this->fila('DENTRO DE TIEMPO', '', $leadTimeEnMes, tipo: 'NOX'),    // válido -> cuenta
-            $this->fila('FUERA DE TIEMPO', '', $leadTimeEnMes, tipo: 'SIN'),     // sin tratamiento -> no cuenta
-            $this->fila('DENTRO DE TIEMPO', '', $leadTimeEnMes, tipo: 'TDLS'),   // variante no mapeada -> no cuenta
-            $this->fila('DENTRO DE TIEMPO', '', $leadTimeEnMes, tipo: 'NOXLS'),  // variante no mapeada -> no cuenta
-            $this->fila('DENTRO DE TIEMPO', '', $leadTimeEnMes, tipo: 'BLANCOS'), // alias válido de BLANCO -> cuenta
+            $this->fila('DENTRO DE TIEMPO', '', $leadTimeEnMes, tipo: 'NOX'),
+            $this->fila('FUERA DE TIEMPO', '', $leadTimeEnMes, tipo: 'SIN'),      // sin tratamiento
+            $this->fila('DENTRO DE TIEMPO', '', $leadTimeEnMes, tipo: 'TDLS'),    // variante no mapeada
+            $this->fila('DENTRO DE TIEMPO', '', $leadTimeEnMes, tipo: 'NOXLS'),   // variante no mapeada
+            $this->fila('DENTRO DE TIEMPO', '', $leadTimeEnMes, tipo: 'BLANCOS'), // alias válido de BLANCO
         ]);
 
         $resp = $this->actingAs($this->admin())
             ->getJson(route('produccion.lead-time.data', ['year' => $hoy->year, 'month' => $hoy->month]));
 
         $resp->assertOk();
-        $general = $resp->json('data.general');
+        $data = $resp->json('data');
 
-        $this->assertSame(2, $general['total']); // solo NOX y BLANCOS
-        $this->assertSame(2, $general['total_en_tiempo']);
-        $this->assertSame(0, $general['total_fuera']);
+        // Cumplimiento General: cuenta las 5, sin importar el tipo.
+        $this->assertSame(5, $data['general']['total']);
+        $this->assertSame(4, $data['general']['total_en_tiempo']); // NOX, TDLS, NOXLS, BLANCOS
+        $this->assertSame(1, $data['general']['total_fuera']);     // SIN
+
+        // Tarjetas por categoría: TDLS/NOXLS/SIN no matchean ningún tipo
+        // exacto, así que no aparecen en NOX ni en BLANCO ni en ninguna otra.
+        $this->assertSame(1, $data['categorias']['NOX']['total']);
+        $this->assertSame(1, $data['categorias']['BLANCO']['total']);
+        $this->assertSame(0, $data['categorias']['TD']['total']);
+        $this->assertSame(0, $data['categorias']['DEVABLUE']['total']);
+        $this->assertSame(0, $data['categorias']['COLOREADO']['total']);
     }
 }

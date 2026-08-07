@@ -136,8 +136,12 @@ class LeadTimeSemanalCalculoTest extends TestCase
         $this->assertSame(0, array_sum($resp->json('data.dayOrders')));
     }
 
-    /** Mismo criterio de tipos válidos que el dashboard mensual (LeadTimeCalculoTest). */
-    public function test_tipos_de_trabajo_fuera_de_las_5_categorias_no_cuentan(): void
+    /**
+     * El filtro de tipo válido solo aplica dentro de las columnas por
+     * categoría (dayData[cat]) — dayOrders/dayKpi (general) cuentan todo.
+     * Mismo criterio que el dashboard mensual (LeadTimeCalculoTest).
+     */
+    public function test_tipos_de_trabajo_invalidos_cuentan_en_general_pero_no_en_categoria(): void
     {
         $hoy   = Carbon::now();
         $year  = $hoy->year;
@@ -145,9 +149,9 @@ class LeadTimeSemanalCalculoTest extends TestCase
         $dia5  = Carbon::create($year, $month, 5)->format('Y-m-d');
 
         $this->mockSheet([
-            $this->fila('DENTRO DE TIEMPO', '', $dia5, tipo: 'NOX'), // válido -> cuenta
-            $this->fila('FUERA DE TIEMPO', '', $dia5, tipo: 'SIN'),  // sin tratamiento -> no cuenta
-            $this->fila('DENTRO DE TIEMPO', '', $dia5, tipo: 'TDLS'), // variante no mapeada -> no cuenta
+            $this->fila('DENTRO DE TIEMPO', '', $dia5, tipo: 'NOX'),
+            $this->fila('FUERA DE TIEMPO', '', $dia5, tipo: 'SIN'),   // sin tratamiento
+            $this->fila('DENTRO DE TIEMPO', '', $dia5, tipo: 'TDLS'), // variante no mapeada
         ]);
 
         $resp = $this->actingAs($this->admin())
@@ -156,8 +160,14 @@ class LeadTimeSemanalCalculoTest extends TestCase
         $resp->assertOk();
         $data = $resp->json('data');
 
-        $this->assertSame(1, $data['dayOrders'][4]);
-        $this->assertEquals(100.0, $data['dayKpi'][4]);
-        $this->assertSame(1, array_sum($data['dayOrders']));
+        // General: cuenta las 3 (2 en tiempo de 3 -> 66.67%).
+        $this->assertSame(3, $data['dayOrders'][4]);
+        $this->assertEqualsWithDelta(66.67, $data['dayKpi'][4], 0.01);
+        $this->assertSame(3, array_sum($data['dayOrders']));
+
+        // Categoría NOX solo ve su propio registro (100%); TD no ve nada ese
+        // día porque "TDLS" no matchea el tipo exacto "TD".
+        $this->assertEquals(100.0, $data['dayData']['NOX'][4]);
+        $this->assertNull($data['dayData']['TD'][4]);
     }
 }
