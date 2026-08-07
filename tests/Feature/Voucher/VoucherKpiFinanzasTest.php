@@ -213,4 +213,40 @@ class VoucherKpiFinanzasTest extends TestCase
             ->assertSee('KPI Semanal de Finanzas')
             ->assertSee('Revisor:');
     }
+
+    /**
+     * El KPI de Conformidad mide el desempeño de la SEDE, no el de finanzas
+     * (para eso está el KPI de Finanzas de arriba) — finanzas puro no debe
+     * verlo, ni en la vista ni pegándole directo al endpoint.
+     */
+    public function test_finanzas_puro_no_ve_el_kpi_de_sede_pero_admin_y_sede_si(): void
+    {
+        $finanzas = $this->userConRol('finanzas');
+        $this->actingAs($finanzas)->get(route('vouchers.index'))
+            ->assertOk()
+            ->assertDontSee('KPI Semanal de Conformidad');
+
+        $this->actingAs($finanzas)
+            ->getJson(route('vouchers.kpiSemanal'))
+            ->assertStatus(403);
+
+        $admin = $this->userConRol('admin');
+        $this->actingAs($admin)->get(route('vouchers.index'))
+            ->assertOk()
+            ->assertSee('KPI Semanal de Conformidad');
+        $this->actingAs($admin)
+            ->getJson(route('vouchers.kpiSemanal'))
+            ->assertOk();
+
+        Role::findOrCreate('sede', 'web');
+        $sede = User::factory()->create(['sede' => 'LIMA']);
+        $sede->assignRole('sede');
+        $this->withSession(['2fa_verified' => true]);
+        $this->actingAs($sede)->get(route('vouchers.index'))
+            ->assertOk()
+            ->assertSee('KPI Semanal de Conformidad');
+        $this->actingAs($sede)
+            ->getJson(route('vouchers.kpiSemanal'))
+            ->assertOk();
+    }
 }

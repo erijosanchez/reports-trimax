@@ -394,7 +394,8 @@
 
     @php $verTodo = $puedeAplicar || $esRevisor || auth()->user()->puede_ver_vouchers; @endphp
 
-    {{-- ══ KPI SEMANAL DE CONFORMIDAD ══ --}}
+    @if($puedeVerKpiSede)
+    {{-- ══ KPI SEMANAL DE CONFORMIDAD (desempeño de la sede, no de finanzas) ══ --}}
     <div class="mb-4 row">
         <div class="col-12">
             <div class="card">
@@ -434,6 +435,7 @@
             </div>
         </div>
     </div>
+    @endif
 
     @if($esRevisor)
     {{-- ══ KPI SEMANAL DE FINANZAS (tiempo de revisión) ══ --}}

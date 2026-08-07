@@ -40,6 +40,11 @@ class VoucherController extends Controller
         $puedeVerTodosLosRevisores = $user->isSuperAdmin() || $user->isAdmin();
         $puedeCrear = $user->isSede() || $user->isSuperAdmin() || $user->isAdmin();
 
+        // El KPI de conformidad es sobre el desempeño de la SEDE, no de
+        // finanzas: a finanzas puro no le corresponde verlo (tiene su propio
+        // KPI de tiempo de revisión). Admin/superadmin sí ven ambos.
+        $puedeVerKpiSede = !$user->isFinanzas() || $user->isSuperAdmin() || $user->isAdmin();
+
         // Panel de pendientes de aplicar (solo finanzas)
         $pendientes = collect();
         if ($puedeAplicar) {
@@ -60,6 +65,7 @@ class VoucherController extends Controller
             'puedeAplicar'              => $puedeAplicar,
             'esRevisor'                 => $esRevisor,
             'puedeVerTodosLosRevisores' => $puedeVerTodosLosRevisores,
+            'puedeVerKpiSede'           => $puedeVerKpiSede,
             'puedeCrear'                => $puedeCrear,
             'pendientes'                => $pendientes,
             'sedUsuario'                => $user->sede,
@@ -594,8 +600,13 @@ class VoucherController extends Controller
         if (!$user->puedeVerVouchers()) {
             return response()->json(['error' => 'Sin permiso.'], 403);
         }
+        // Es el KPI de desempeño de la SEDE, no de finanzas — finanzas puro
+        // no debe verlo (tiene su propio KPI de tiempo de revisión).
+        if ($user->isFinanzas() && !$user->isSuperAdmin() && !$user->isAdmin()) {
+            return response()->json(['error' => 'Sin permiso.'], 403);
+        }
 
-        $verTodo    = $user->isSuperAdmin() || $user->isAdmin() || $user->isFinanzas() || $user->puede_ver_vouchers;
+        $verTodo    = $user->isSuperAdmin() || $user->isAdmin() || $user->puede_ver_vouchers;
         $sedeFiltro = $verTodo ? $request->get('sede') : $user->sede;
 
         $semanas     = $this->ultimasSemanas();
