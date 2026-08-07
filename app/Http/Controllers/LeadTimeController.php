@@ -11,13 +11,30 @@ class LeadTimeController extends Controller
 {
     protected $sheetsService;
 
-    /** Tipos de TIPO_DE_TRABAJO que caen dentro de cada categoría que mide Lead Time. */
+    /**
+     * Categorías que mide Lead Time. NOXLS/TDLS son categorías propias, NO
+     * variantes de NOX/TD — solo BLANCO tiene un alias real ("BLANCOS").
+     */
+    private const CATEGORIAS = ['NOX', 'NOXLS', 'TD', 'TDLS', 'DEVABLUE', 'BLANCO', 'COLOREADO'];
+
     private const TIPOS_POR_CATEGORIA = [
-        'NOX'       => ['NOX', 'NOXLS'],
-        'TD'        => ['TD', 'TDLS'],
+        'NOX'       => ['NOX'],
+        'NOXLS'     => ['NOXLS'],
+        'TD'        => ['TD'],
+        'TDLS'      => ['TDLS'],
         'DEVABLUE'  => ['DEVABLUE'],
         'BLANCO'    => ['BLANCO', 'BLANCOS'],
         'COLOREADO' => ['COLOREADO'],
+    ];
+
+    private const NOMBRES_DISPLAY = [
+        'NOX'       => 'NOX',
+        'NOXLS'     => 'NOX LS',
+        'TD'        => 'TRIDUREX',
+        'TDLS'      => 'TRIDUREX LS',
+        'DEVABLUE'  => 'DEVABLUE',
+        'BLANCO'    => 'BLANCOS',
+        'COLOREADO' => 'COLOREADO',
     ];
 
     public function __construct(GoogleSheetsService $sheetsService)
@@ -186,7 +203,7 @@ class LeadTimeController extends Controller
      */
     private function processSemanalData(int $year, int $month): array
     {
-        $categorias = ['NOX', 'TD', 'DEVABLUE', 'BLANCO', 'COLOREADO'];
+        $categorias = self::CATEGORIAS;
 
         $spreadsheetId = config('google.lead_time_spreadsheet_id');
         $rawData = $this->sheetsService->getSheetDataFromSpreadsheet($spreadsheetId, 'Historico');
@@ -502,15 +519,9 @@ class LeadTimeController extends Controller
             return $this->emptyResponse();
         }
 
-        $categorias = ['NOX', 'TD', 'DEVABLUE', 'BLANCO', 'COLOREADO'];
+        $categorias = self::CATEGORIAS;
 
-        $nombresDisplay = [
-            'NOX'       => 'NOX',
-            'TD'        => 'TRIDUREX',
-            'DEVABLUE'  => 'DEVABLUE',
-            'BLANCO'    => 'BLANCOS',
-            'COLOREADO' => 'COLOREADO',
-        ];
+        $nombresDisplay = self::NOMBRES_DISPLAY;
 
         $resultados   = [];
         $totalGeneral = count($filtered);
@@ -768,7 +779,7 @@ class LeadTimeController extends Controller
      */
     private function processObjetivoMasData(int $year): array
     {
-        $categorias = ['NOX', 'TD', 'DEVABLUE', 'BLANCO', 'COLOREADO'];
+        $categorias = self::CATEGORIAS;
 
         $spreadsheetId = config('google.lead_time_spreadsheet_id');
         $rawData = $this->sheetsService->getSheetDataFromSpreadsheet($spreadsheetId, 'Historico');
@@ -908,13 +919,7 @@ class LeadTimeController extends Controller
         // ── Tablas de conteo ─────────────────────────────────────────────────
         $general = $buildTable($filtered);
 
-        $nombresDisplay = [
-            'NOX'       => 'NOX',
-            'TD'        => 'TRIDUREX',
-            'DEVABLUE'  => 'DEVABLUE',
-            'BLANCO'    => 'BLANCOS',
-            'COLOREADO' => 'COLOREADO',
-        ];
+        $nombresDisplay = self::NOMBRES_DISPLAY;
 
         $cats = [];
         foreach ($categorias as $cat) {
