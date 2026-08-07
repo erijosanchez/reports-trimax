@@ -370,8 +370,7 @@ class LeadTimeController extends Controller
 
         $enTiempoGeneral = 0;
         foreach ($records as $r) {
-            $conclusion = strtoupper(trim($r['CONCLUSION'] ?? ''));
-            if ($conclusion === 'DENTRO DE TIEMPO' || $conclusion === 'EN TIEMPO') {
+            if ($this->esConclusionEnTiempo($r)) {
                 $enTiempoGeneral++;
             }
         }
@@ -388,8 +387,7 @@ class LeadTimeController extends Controller
             $catEnTiempo = 0;
 
             foreach ($catRecs as $r) {
-                $conclusion = strtoupper(trim($r['CONCLUSION'] ?? ''));
-                if ($conclusion === 'DENTRO DE TIEMPO' || $conclusion === 'EN TIEMPO') {
+                if ($this->esConclusionEnTiempo($r)) {
                     $catEnTiempo++;
                 }
             }
@@ -482,15 +480,12 @@ class LeadTimeController extends Controller
         $resultados   = [];
         $totalGeneral = count($filtered);
 
-        // Se cuentan por separado: hay registros con CONCLUSION no evaluable
-        // (ej. 'SIN DATOS') que no son ni en tiempo ni atrasados.
         $totalEnTiempo = 0;
         $totalFuera    = 0;
         foreach ($filtered as $record) {
-            $conclusion = strtoupper(trim($record['CONCLUSION'] ?? ''));
-            if ($conclusion === 'DENTRO DE TIEMPO' || $conclusion === 'EN TIEMPO') {
+            if ($this->esConclusionEnTiempo($record)) {
                 $totalEnTiempo++;
-            } elseif ($conclusion === 'FUERA DE TIEMPO') {
+            } elseif (strtoupper(trim($record['CONCLUSION'] ?? '')) === 'FUERA DE TIEMPO') {
                 $totalFuera++;
             }
         }
@@ -591,6 +586,18 @@ class LeadTimeController extends Controller
     }
 
     /**
+     * "SIN DATOS" son órdenes ya entregadas (tienen TIME) a las que el
+     * Sheet no les pudo calcular el veredicto por faltarles LEAD_TIME/META.
+     * Sin evidencia de atraso, se cuentan como en tiempo (igual que
+     * "DENTRO DE TIEMPO"/"EN TIEMPO") — no como "fuera de tiempo" ni aparte.
+     */
+    private function esConclusionEnTiempo($record): bool
+    {
+        $conclusion = strtoupper(trim($record['CONCLUSION'] ?? ''));
+        return in_array($conclusion, ['DENTRO DE TIEMPO', 'EN TIEMPO', 'SIN DATOS'], true);
+    }
+
+    /**
      * Una orden está pendiente cuando todavía no tiene fecha de entrega:
      * la columna TIME trae el centinela 'PENDIENTE' en vez de una fecha.
      */
@@ -652,7 +659,7 @@ class LeadTimeController extends Controller
         foreach ($registros as $record) {
             $conclusion = strtoupper(trim($record['CONCLUSION'] ?? ''));
 
-            if ($conclusion === 'DENTRO DE TIEMPO' || $conclusion === 'EN TIEMPO') {
+            if ($this->esConclusionEnTiempo($record)) {
                 $label = $this->getLabelDentroTiempo($record);
             } elseif ($conclusion === 'FUERA DE TIEMPO') {
                 $diasAtraso = $this->diasDeAtraso($record);

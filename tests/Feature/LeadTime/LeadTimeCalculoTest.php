@@ -141,6 +141,35 @@ class LeadTimeCalculoTest extends TestCase
     }
 
     /**
+     * CONCLUSION="SIN DATOS": el Sheet no pudo calcular el veredicto (falta
+     * LEAD_TIME/META) para una orden que YA se entregó. Sin evidencia de
+     * atraso, cuenta como en tiempo — confirmado con negocio.
+     */
+    public function test_sin_datos_cuenta_como_en_tiempo(): void
+    {
+        $hoy  = Carbon::now();
+        $dia3 = $hoy->copy()->startOfMonth()->addDays(2)->format('Y-m-d');
+
+        $this->mockSheet([
+            $this->fila('SIN DATOS', $dia3, '', tipo: 'NOX'),
+        ]);
+
+        $resp = $this->actingAs($this->admin())
+            ->getJson(route('produccion.lead-time.data', ['year' => $hoy->year, 'month' => $hoy->month]));
+
+        $resp->assertOk();
+        $data = $resp->json('data');
+
+        $this->assertSame(1, $data['general']['total']);
+        $this->assertSame(1, $data['general']['total_en_tiempo']);
+        $this->assertSame(0, $data['general']['total_fuera']);
+
+        // También en la tarjeta de su categoría (NOX).
+        $this->assertSame(1, $data['categorias']['NOX']['total']);
+        $this->assertEquals(100.0, $data['categorias']['NOX']['porcentaje_cumplimiento']);
+    }
+
+    /**
      * El filtro de tipo de trabajo válido solo aplica dentro de las
      * tarjetas por categoría (NOX/TD/DEVABLUE/BLANCO/COLOREADO) — el
      * Cumplimiento General cuenta TODAS las órdenes, incluyendo "SIN" (sin
