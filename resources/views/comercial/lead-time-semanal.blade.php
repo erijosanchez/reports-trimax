@@ -1296,7 +1296,7 @@
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--kw-blue-500)" stroke-width="2.5">
                     <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
                 </svg>
-                Tendencia KPI General — Semanas
+                Tendencia KPI General — Días
             </div>
             <div class="kw-trend-nav">
                 <span class="kw-trend-period" id="kwTrendPeriod">${KW_MESES[parseInt(kwCurrentMonth)]} ${kwCurrentYear}</span>
@@ -1632,13 +1632,17 @@
                                     const v = ctx.parsed.y;
 
                                     if (ctx.datasetIndex === 0) {
-                                        // Dataset KPI General: mostrar las tres metricas
-                                        // dayOrders: total entregadas ese dia sin importar si fue a tiempo o tarde
-                                        // dayVencidos: ordenes cuyo LEAD_TIME vencio ese dia (pendientes o entregadas tarde)
+                                        // Dataset KPI General: mostrar las tres metricas.
+                                        // dayOrders: ordenes ubicadas ese dia (entregadas con TIME ese
+                                        //   dia, o pendientes cuyo LEAD_TIME cae ese dia) — no son solo
+                                        //   entregas.
+                                        // dayVencidos: ordenes cuyo LEAD_TIME vencio ese dia sin
+                                        //   cumplirse (pendientes, o entregadas tarde) — criterio propio,
+                                        //   no es el complemento de dayOrders (no suman el total del dia).
                                         return [
                                             ` KPI General: ${v !== null ? v.toFixed(2) + '%' : 'Sin datos'}`,
-                                            ` Entregadas: ${dayOrders[i] ?? 0}`,
-                                            ` No entregadas: ${dayVencidos[i] ?? 0}`,
+                                            ` Órdenes del día: ${dayOrders[i] ?? 0}`,
+                                            ` Vencidas ese día: ${dayVencidos[i] ?? 0}`,
                                         ];
                                     }
 
