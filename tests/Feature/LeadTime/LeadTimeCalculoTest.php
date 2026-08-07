@@ -139,4 +139,34 @@ class LeadTimeCalculoTest extends TestCase
         $this->assertSame(0, $general['total_en_tiempo']);
         $this->assertSame(0, $general['total_fuera']);
     }
+
+    /**
+     * Confirmado con negocio: "SIN" (sin tratamiento) y variantes no
+     * mapeadas como "TDLS"/"NOXLS" no cuentan en el KPI general — solo las
+     * 5 categorías que mide Lead Time (NOX, TD, DEVABLUE, BLANCO/BLANCOS,
+     * COLOREADO).
+     */
+    public function test_tipos_de_trabajo_fuera_de_las_5_categorias_no_cuentan(): void
+    {
+        $hoy = Carbon::now();
+        $leadTimeEnMes = $hoy->copy()->endOfMonth()->format('Y-m-d');
+
+        $this->mockSheet([
+            $this->fila('DENTRO DE TIEMPO', '', $leadTimeEnMes, tipo: 'NOX'),    // válido -> cuenta
+            $this->fila('FUERA DE TIEMPO', '', $leadTimeEnMes, tipo: 'SIN'),     // sin tratamiento -> no cuenta
+            $this->fila('DENTRO DE TIEMPO', '', $leadTimeEnMes, tipo: 'TDLS'),   // variante no mapeada -> no cuenta
+            $this->fila('DENTRO DE TIEMPO', '', $leadTimeEnMes, tipo: 'NOXLS'),  // variante no mapeada -> no cuenta
+            $this->fila('DENTRO DE TIEMPO', '', $leadTimeEnMes, tipo: 'BLANCOS'), // alias válido de BLANCO -> cuenta
+        ]);
+
+        $resp = $this->actingAs($this->admin())
+            ->getJson(route('produccion.lead-time.data', ['year' => $hoy->year, 'month' => $hoy->month]));
+
+        $resp->assertOk();
+        $general = $resp->json('data.general');
+
+        $this->assertSame(2, $general['total']); // solo NOX y BLANCOS
+        $this->assertSame(2, $general['total_en_tiempo']);
+        $this->assertSame(0, $general['total_fuera']);
+    }
 }

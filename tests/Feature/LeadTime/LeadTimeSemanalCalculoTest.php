@@ -135,4 +135,29 @@ class LeadTimeSemanalCalculoTest extends TestCase
         $resp->assertOk();
         $this->assertSame(0, array_sum($resp->json('data.dayOrders')));
     }
+
+    /** Mismo criterio de tipos válidos que el dashboard mensual (LeadTimeCalculoTest). */
+    public function test_tipos_de_trabajo_fuera_de_las_5_categorias_no_cuentan(): void
+    {
+        $hoy   = Carbon::now();
+        $year  = $hoy->year;
+        $month = $hoy->month;
+        $dia5  = Carbon::create($year, $month, 5)->format('Y-m-d');
+
+        $this->mockSheet([
+            $this->fila('DENTRO DE TIEMPO', '', $dia5, tipo: 'NOX'), // válido -> cuenta
+            $this->fila('FUERA DE TIEMPO', '', $dia5, tipo: 'SIN'),  // sin tratamiento -> no cuenta
+            $this->fila('DENTRO DE TIEMPO', '', $dia5, tipo: 'TDLS'), // variante no mapeada -> no cuenta
+        ]);
+
+        $resp = $this->actingAs($this->admin())
+            ->getJson(route('produccion.lead-time.semanal-data', ['year' => $year, 'month' => $month]));
+
+        $resp->assertOk();
+        $data = $resp->json('data');
+
+        $this->assertSame(1, $data['dayOrders'][4]);
+        $this->assertEquals(100.0, $data['dayKpi'][4]);
+        $this->assertSame(1, array_sum($data['dayOrders']));
+    }
 }

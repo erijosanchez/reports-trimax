@@ -194,6 +194,8 @@ class LeadTimeController extends Controller
 
         $filtered = [];
         foreach ($records as $rec) {
+            if (!$this->esTipoDeTrabajoValido($rec)) continue;
+
             // Mismo criterio que el dashboard mensual: las pendientes se ubican
             // por su LEAD_TIME (fecha comprometida), evaluables desde el Sheet
             // aunque todavía no se hayan entregado.
@@ -215,6 +217,8 @@ class LeadTimeController extends Controller
         }
 
         foreach ($records as $rec) {
+            if (!$this->esTipoDeTrabajoValido($rec)) continue;
+
             $leadTime = trim($rec['LEAD_TIME'] ?? '');
             if (empty($leadTime)) continue;
             try {
@@ -444,6 +448,8 @@ class LeadTimeController extends Controller
         }
 
         $filtered = array_filter($records, function ($record) use ($year, $month) {
+            if (!$this->esTipoDeTrabajoValido($record)) return false;
+
             // Las pendientes no tienen fecha de entrega: se ubican en el mes de
             // su LEAD_TIME (fecha comprometida). El Sheet ya evalúa su
             // CONCLUSION (DENTRO/FUERA DE TIEMPO) mientras siguen pendientes,
@@ -588,6 +594,18 @@ class LeadTimeController extends Controller
     {
         $time = strtoupper(trim($record['TIME'] ?? ''));
         return $time === '' || $time === 'PENDIENTE';
+    }
+
+    /**
+     * Solo las 5 categorías que mide Lead Time (NOX, TD/TRIDUREX, DEVABLUE,
+     * BLANCO/BLANCOS, COLOREADO) cuentan para el conteo general de órdenes.
+     * Deja fuera "SIN" (sin tratamiento) y variantes no mapeadas como
+     * "TDLS"/"NOXLS" — confirmado con el negocio que por ahora no cuentan.
+     */
+    private function esTipoDeTrabajoValido($record): bool
+    {
+        $tipo = strtoupper(trim($record['TIPO_DE_TRABAJO'] ?? ''));
+        return in_array($tipo, ['NOX', 'TD', 'DEVABLUE', 'BLANCO', 'BLANCOS', 'COLOREADO'], true);
     }
 
     /**
@@ -743,19 +761,20 @@ class LeadTimeController extends Controller
             $records[] = $rec;
         }
 
-        // Solo FUERA DE TIEMPO para el año completo (hasta hoy)
+        // Solo FUERA DE TIEMPO para el año completo (hasta hoy). Se ubican
+        // igual que en las otras 2 vistas: por TIME si ya se entregó, por
+        // LEAD_TIME si sigue pendiente (antes exigía TIME real y perdía las
+        // pendientes-ya-vencidas, desalineando el total con el dashboard
+        // mensual y el semanal).
         $today    = Carbon::today();
         $filtered = array_values(array_filter($records, function ($rec) use ($year, $today) {
+            if (!$this->esTipoDeTrabajoValido($rec)) return false;
+
             $conclusion = strtoupper(trim($rec['CONCLUSION'] ?? ''));
             if ($conclusion !== 'FUERA DE TIEMPO') return false;
-            $time = $rec['TIME'] ?? '';
-            if (empty($time)) return false;
-            try {
-                $d = Carbon::parse($time);
-                return $d->year == $year && $d->lte($today);
-            } catch (\Exception $e) {
-                return false;
-            }
+
+            $fecha = $this->fechaDePeriodo($rec);
+            return $fecha && $fecha->year == $year && $fecha->lte($today);
         }));
 
         if (empty($filtered)) {
@@ -765,22 +784,18 @@ class LeadTimeController extends Controller
         // ── Construir semanas ISO ────────────────────────────────────────────
         $semanasMap = [];
         foreach ($filtered as $rec) {
-            $time = $rec['TIME'] ?? '';
-            if (empty($time)) continue;
-            try {
-                $d      = Carbon::parse($time);
-                $semNum = (int) $d->format('W');
-                if (!isset($semanasMap[$semNum])) {
-                    $lunes   = Carbon::now()->setISODate($year, $semNum, 1);
-                    $domingo = Carbon::now()->setISODate($year, $semNum, 7);
-                    $semanasMap[$semNum] = [
-                        'num'   => $semNum,
-                        'label' => "Semana $semNum",
-                        'rango' => $lunes->format('d/m') . ' – ' . $domingo->format('d/m'),
-                    ];
-                }
-            } catch (\Exception $e) {
-                continue;
+            $d = $this->fechaDePeriodo($rec);
+            if (!$d) continue;
+
+            $semNum = (int) $d->format('W');
+            if (!isset($semanasMap[$semNum])) {
+                $lunes   = Carbon::now()->setISODate($year, $semNum, 1);
+                $domingo = Carbon::now()->setISODate($year, $semNum, 7);
+                $semanasMap[$semNum] = [
+                    'num'   => $semNum,
+                    'label' => "Semana $semNum",
+                    'rango' => $lunes->format('d/m') . ' – ' . $domingo->format('d/m'),
+                ];
             }
         }
 
@@ -801,12 +816,9 @@ class LeadTimeController extends Controller
             foreach ($recs as $rec) {
                 $atraso = abs((int) ($rec['ATRASO'] ?? 0));
                 if ($atraso === 0) $atraso = 1;
-                try {
-                    $d      = Carbon::parse($rec['TIME'] ?? '');
-                    $semNum = (int) $d->format('W');
-                } catch (\Exception $e) {
-                    continue;
-                }
+                $d = $this->fechaDePeriodo($rec);
+                if (!$d) continue;
+                $semNum = (int) $d->format('W');
                 if (!isset($semanasMap[$semNum])) continue;
                 $key = $atraso <= $maxAtraso ? $atraso : 'mas';
                 $data[$key][$semNum]++;
