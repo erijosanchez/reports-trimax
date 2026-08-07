@@ -37,6 +37,7 @@ class VoucherController extends Controller
         }
 
         $esRevisor = $user->puedeRevisarReportesSedes();
+        $puedeVerTodosLosRevisores = $user->isSuperAdmin() || $user->isAdmin();
         $puedeCrear = $user->isSede() || $user->isSuperAdmin() || $user->isAdmin();
 
         // Panel de pendientes de aplicar (solo finanzas)
@@ -56,13 +57,14 @@ class VoucherController extends Controller
         $maxUploadTotal = max(1024 * 1024, $postMax - 2 * 1024 * 1024);
 
         return view('vouchers.index', [
-            'puedeAplicar'   => $puedeAplicar,
-            'esRevisor'      => $esRevisor,
-            'puedeCrear'     => $puedeCrear,
-            'pendientes'     => $pendientes,
-            'sedUsuario'     => $user->sede,
-            'maxUploadFiles' => $maxUploadFiles ?: 20,
-            'maxUploadTotal' => $maxUploadTotal,
+            'puedeAplicar'              => $puedeAplicar,
+            'esRevisor'                 => $esRevisor,
+            'puedeVerTodosLosRevisores' => $puedeVerTodosLosRevisores,
+            'puedeCrear'                => $puedeCrear,
+            'pendientes'                => $pendientes,
+            'sedUsuario'                => $user->sede,
+            'maxUploadFiles'            => $maxUploadFiles ?: 20,
+            'maxUploadTotal'            => $maxUploadTotal,
         ]);
     }
 
@@ -596,19 +598,7 @@ class VoucherController extends Controller
         $verTodo    = $user->isSuperAdmin() || $user->isAdmin() || $user->isFinanzas() || $user->puede_ver_vouchers;
         $sedeFiltro = $verTodo ? $request->get('sede') : $user->sede;
 
-        $hoy    = Carbon::now('America/Lima');
-        $semanas = [];
-        for ($i = 7; $i >= 0; $i--) {
-            $ref     = $hoy->copy()->subWeeks($i);
-            $inicio  = $ref->copy()->startOfWeek(Carbon::MONDAY);
-            $fin     = $ref->copy()->endOfWeek(Carbon::SUNDAY);
-            $semanas[] = [
-                'inicio' => $inicio->toDateString(),
-                'fin'    => $fin->toDateString(),
-                'label'  => $inicio->format('d/m') . '–' . $fin->format('d/m'),
-            ];
-        }
-
+        $semanas     = $this->ultimasSemanas();
         $rangoInicio = $semanas[0]['inicio'];
         $rangoFin    = $semanas[count($semanas) - 1]['fin'];
 
@@ -650,6 +640,111 @@ class VoucherController extends Controller
             'semana_actual'   => $actual['label'],
             'promedio_actual' => $promedioActual,
             'revisados_actual'=> $delActual->count(),
+        ]);
+    }
+
+    /** Últimas 8 semanas ISO (lunes a domingo), hoy incluido, más antigua primero. */
+    private function ultimasSemanas(): array
+    {
+        $hoy     = Carbon::now('America/Lima');
+        $semanas = [];
+        for ($i = 7; $i >= 0; $i--) {
+            $ref    = $hoy->copy()->subWeeks($i);
+            $inicio = $ref->copy()->startOfWeek(Carbon::MONDAY);
+            $fin    = $ref->copy()->endOfWeek(Carbon::SUNDAY);
+            $semanas[] = [
+                'inicio' => $inicio->toDateString(),
+                'fin'    => $fin->toDateString(),
+                'label'  => $inicio->format('d/m') . '–' . $fin->format('d/m'),
+            ];
+        }
+        return $semanas;
+    }
+
+    // ── KPI semanal de finanzas (tiempo de revisión) ────────────────
+
+    /**
+     * Revisores disponibles para el selector del KPI de finanzas: cualquiera
+     * que ya haya revisado al menos un voucher (normalmente finanzas, pero
+     * admin/superadmin también pueden revisar como respaldo). Solo para
+     * quien puede ver a todos — cada finanzas individual no elige, ve lo suyo.
+     */
+    public function revisoresDisponibles()
+    {
+        $user = auth()->user();
+        if (!$user->isSuperAdmin() && !$user->isAdmin()) {
+            return response()->json([], 403);
+        }
+
+        $revisores = User::query()
+            ->whereIn('id', Voucher::whereNotNull('revision_user_id')->distinct()->pluck('revision_user_id'))
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
+        return response()->json($revisores);
+    }
+
+    /**
+     * Promedio semanal de días de revisión (solicitado_at → revision_at) por
+     * revisor de finanzas, últimas 8 semanas ISO. A diferencia de
+     * kpiSemanal() (que agrupa por semana de SOLICITUD, para reflejar el mes
+     * de la sede), acá se agrupa por semana de REVISIÓN: mide el trabajo que
+     * hizo finanzas esa semana, no cuándo la sede pidió el voucher.
+     *
+     * Visibilidad: finanzas (sin ser admin/superadmin) solo ve su propio
+     * promedio, sin poder elegir otro revisor. Admin/superadmin puede elegir
+     * cualquier revisor puntual o dejarlo vacío para ver el promedio
+     * combinado de todos.
+     */
+    public function kpiFinanzasSemanal(Request $request)
+    {
+        $user = auth()->user();
+        if (!$user->puedeRevisarReportesSedes()) {
+            return response()->json(['error' => 'Sin permiso.'], 403);
+        }
+
+        $puedeVerTodos = $user->isSuperAdmin() || $user->isAdmin();
+        $revisorFiltro = $puedeVerTodos ? $request->get('revisor') : $user->id;
+
+        $semanas     = $this->ultimasSemanas();
+        $rangoInicio = $semanas[0]['inicio'];
+        $rangoFin    = $semanas[count($semanas) - 1]['fin'];
+
+        $query = Voucher::whereNotNull('revision_user_id')
+            ->whereNotNull('revision_at')
+            ->whereNotNull('solicitado_at')
+            ->whereBetween('revision_at', [$rangoInicio . ' 00:00:00', $rangoFin . ' 23:59:59']);
+        if ($revisorFiltro) {
+            $query->where('revision_user_id', $revisorFiltro);
+        }
+        $vouchers = $query->get();
+
+        $diasRevision = fn($v) => $v->solicitado_at->diffInDays($v->revision_at);
+
+        $labels = [];
+        $data   = [];
+        foreach ($semanas as $s) {
+            $delRango = $vouchers->filter(function ($v) use ($s) {
+                $d = $v->revision_at->timezone('America/Lima')->toDateString();
+                return $d >= $s['inicio'] && $d <= $s['fin'];
+            });
+            $labels[] = $s['label'];
+            $data[]   = $delRango->isEmpty() ? null : round($delRango->avg($diasRevision), 1);
+        }
+
+        $actual    = $semanas[count($semanas) - 1];
+        $delActual = $vouchers->filter(function ($v) use ($actual) {
+            $d = $v->revision_at->timezone('America/Lima')->toDateString();
+            return $d >= $actual['inicio'] && $d <= $actual['fin'];
+        });
+        $promedioActual = $delActual->isEmpty() ? null : round($delActual->avg($diasRevision), 1);
+
+        return response()->json([
+            'labels'           => $labels,
+            'data'             => $data,
+            'semana_actual'    => $actual['label'],
+            'promedio_actual'  => $promedioActual,
+            'revisados_actual' => $delActual->count(),
         ]);
     }
 

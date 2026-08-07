@@ -369,6 +369,8 @@ Route::middleware(['auth', '2fa.verified', 'throttle:dashboard', 'track.activity
         Route::get('/historial',               [VoucherController::class, 'historial'])->name('historial');
         Route::get('/sedes',                   [VoucherController::class, 'sedesDisponibles'])->name('sedes');
         Route::get('/kpi-semanal',             [VoucherController::class, 'kpiSemanal'])->name('kpiSemanal');
+        Route::get('/kpi-finanzas-semanal',    [VoucherController::class, 'kpiFinanzasSemanal'])->name('kpiFinanzasSemanal');
+        Route::get('/revisores',               [VoucherController::class, 'revisoresDisponibles'])->name('revisores');
         Route::post('/',                       [VoucherController::class, 'store'])->name('store');
         Route::post('/{id}/factura',           [VoucherController::class, 'addFactura'])->name('addFactura');
         Route::delete('/factura/{id}',         [VoucherController::class, 'removeFactura'])->name('removeFactura');

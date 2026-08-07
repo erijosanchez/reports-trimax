@@ -435,6 +435,49 @@
         </div>
     </div>
 
+    @if($esRevisor)
+    {{-- ══ KPI SEMANAL DE FINANZAS (tiempo de revisión) ══ --}}
+    <div class="mb-4 row">
+        <div class="col-12">
+            <div class="card">
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 card-header">
+                    <h6 class="mb-0 card-title">
+                        <i class="me-2 mdi mdi-clock-outline text-primary"></i>
+                        KPI Semanal de Finanzas
+                        <small class="text-muted fw-normal ms-1" style="font-size:.72rem">
+                            (días promedio hasta revisar · últimas 8 semanas)
+                        </small>
+                    </h6>
+                    @if($puedeVerTodosLosRevisores)
+                    <div class="d-flex align-items-center gap-2">
+                        <label class="mb-0 text-muted small">Revisor:</label>
+                        <select id="kpi-revisor" class="form-select form-select-sm" style="width:auto;min-width:150px">
+                            <option value="">Todos</option>
+                        </select>
+                    </div>
+                    @endif
+                </div>
+                <div class="card-body">
+                    <div class="row align-items-center g-3">
+                        <div class="col-12 col-md-3">
+                            <div class="text-center p-3 rounded" style="background:var(--bs-tertiary-bg,#f8f9fa)">
+                                <div class="text-muted small mb-1">Semana actual</div>
+                                <div id="kpi-fin-actual-valor" class="fw-bold" style="font-size:2rem;line-height:1">—</div>
+                                <div id="kpi-fin-actual-detalle" class="text-muted mt-1" style="font-size:.75rem">Sin revisiones</div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-9">
+                            <div style="position:relative;height:220px">
+                                <canvas id="kpiFinanzasChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+
     {{-- ══ HISTORIAL ══ --}}
     <div class="row">
         <div class="col-12">
@@ -1270,6 +1313,17 @@
         } catch (e) { /* noop */ }
     }
 
+    /* ══ Poblado de revisores (KPI de finanzas) ═════════════ */
+    async function populateRevisores() {
+        const sel = document.getElementById('kpi-revisor');
+        if (!sel) return;
+        try {
+            const revisores = await apiFetch(`${BASE}/revisores`);
+            const opts = revisores.map(r => `<option value="${r.id}">${r.name}</option>`).join('');
+            sel.insertAdjacentHTML('beforeend', opts);
+        } catch (e) { /* noop */ }
+    }
+
     /* ══ KPI semanal de conformidad ═════════════════════════ */
     let kpiChart = null;
     async function loadKpiSemanal() {
@@ -1327,6 +1381,63 @@
         } catch (e) { /* noop */ }
     }
     document.getElementById('kpi-sede')?.addEventListener('change', loadKpiSemanal);
+
+    /* ══ KPI semanal de finanzas (tiempo de revisión) ═══════ */
+    let kpiFinanzasChart = null;
+    async function loadKpiFinanzas() {
+        const canvas = document.getElementById('kpiFinanzasChart');
+        if (!canvas) return;
+        const revisor = document.getElementById('kpi-revisor')?.value || '';
+        const p = new URLSearchParams();
+        if (revisor) p.set('revisor', revisor);
+        try {
+            const data = await apiFetch(`${BASE}/kpi-finanzas-semanal?${p.toString()}`);
+
+            const valEl = document.getElementById('kpi-fin-actual-valor');
+            const detEl = document.getElementById('kpi-fin-actual-detalle');
+            if (data.promedio_actual === null) {
+                valEl.textContent = '—';
+                valEl.className   = 'fw-bold text-muted';
+                detEl.textContent = 'Sin revisiones esta semana';
+            } else {
+                // Menos días es mejor: mismos umbrales que la columna "demora" del historial.
+                const c = data.promedio_actual <= 3 ? 'text-success'
+                        : data.promedio_actual <= 7 ? 'text-warning' : 'text-danger';
+                valEl.textContent = data.promedio_actual + ' día' + (data.promedio_actual == 1 ? '' : 's');
+                valEl.className   = 'fw-bold ' + c;
+                detEl.textContent = `${data.revisados_actual} voucher(s) revisado(s)`;
+            }
+
+            const color = v => v === null ? 'rgba(148,163,184,.4)'
+                             : v <= 3 ? 'rgba(16,185,129,.85)'
+                             : v <= 7 ? 'rgba(234,179,8,.85)' : 'rgba(239,68,68,.85)';
+
+            if (kpiFinanzasChart) kpiFinanzasChart.destroy();
+            kpiFinanzasChart = new Chart(canvas.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        label: 'Días hasta revisar',
+                        data: data.data,
+                        backgroundColor: data.data.map(color),
+                        borderRadius: 6,
+                        maxBarThickness: 46,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true, ticks: { callback: v => v + 'd' } } },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { callbacks: { label: c => c.parsed.y === null ? 'Sin datos' : c.parsed.y + ' día(s)' } }
+                    }
+                }
+            });
+        } catch (e) { /* noop */ }
+    }
+    document.getElementById('kpi-revisor')?.addEventListener('change', loadKpiFinanzas);
 
     /* ══ Revisión de finanzas ═══════════════════════════════ */
     if (ES_REVISOR) {
@@ -1397,6 +1508,7 @@
                 modalRev.hide();
                 loadHistorial(histPage);
                 loadKpiSemanal();
+                loadKpiFinanzas();
             } catch (err) {
                 msg.innerHTML = `<div class="alert alert-danger py-2">${err.message}</div>`;
             } finally {
@@ -1407,8 +1519,10 @@
 
     /* ══ Init ═══════════════════════════════════════════════ */
     populateSedes();
+    populateRevisores();
     loadHistorial(1);
     loadKpiSemanal();
+    loadKpiFinanzas();
 
 })();
 </script>
