@@ -66,14 +66,6 @@
                         </div>
                     </div>
                     <div class="kw-filter-actions">
-                        <button class="kw-btn kw-btn-ghost" onclick="kwClearCache()">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                stroke-width="2">
-                                <polyline points="1 4 1 10 7 10" />
-                                <path d="M3.51 15a9 9 0 1 0 .49-3" />
-                            </svg>
-                            Limpiar caché
-                        </button>
                         <button class="kw-btn kw-btn-primary" id="kwBtnConsultar" onclick="kwLoadData()">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                 stroke-width="2.5" id="kwBtnIcon">
@@ -1768,32 +1760,5 @@
     `);
         }
 
-        /* ── CLEAR CACHE ── */
-        function kwClearCache() {
-            $.ajax({
-                url: "{{ route('produccion.lead-time.clear-cache') }}",
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                },
-                success() {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Caché limpiado',
-                        text: 'Los datos se recargarán desde Google Sheets',
-                        timer: 2000,
-                        showConfirmButton: false
-                    });
-                    kwLoadData();
-                },
-                error() {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        text: 'No se pudo limpiar el caché'
-                    });
-                }
-            });
-        }
     </script>
 @endsection

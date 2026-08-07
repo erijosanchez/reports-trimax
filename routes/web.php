@@ -230,7 +230,6 @@ Route::middleware(['auth', '2fa.verified', 'throttle:dashboard', 'track.activity
         Route::get('/lead-time/dashboard/otp', [LeadTimeController::class, 'index'])->name('lead-time.index');
         Route::get('api/lead-time/data', [LeadTimeController::class, 'getData'])->name('lead-time.data');
         Route::get('api/lead-time/years', [LeadTimeController::class, 'getAvailableYears'])->name('lead-time.years');
-        Route::post('api/lead-time/clear-cache', [LeadTimeController::class, 'clearCache'])->name('lead-time.clear-cache');
 
         // Ver lead time semanal y mensual
         Route::get('/lead-time/semanal', [LeadTimeController::class, 'semanal'])->name('lead-time.semanal');

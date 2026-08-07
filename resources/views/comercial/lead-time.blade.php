@@ -59,14 +59,6 @@
                         </div>
                     </div>
                     <div class="lt-filter-actions">
-                        <button class="lt-btn lt-btn-ghost" onclick="clearCache()">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                stroke-width="2">
-                                <polyline points="1 4 1 10 7 10" />
-                                <path d="M3.51 15a9 9 0 1 0 .49-3" />
-                            </svg>
-                            Limpiar caché
-                        </button>
                         <button class="lt-btn lt-btn-primary" id="btnConsultar" onclick="loadData()">
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                 stroke-width="2.5" id="btnIcon">
@@ -1704,32 +1696,5 @@ function renderEmpty(msg) {
     `);
 }
 
-/* ── CLEAR CACHE ── */
-function clearCache() {
-    $.ajax({
-        url: "{{ route('produccion.lead-time.clear-cache') }}",
-        method: 'POST',
-        headers: {
-            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-        },
-        success() {
-            Swal.fire({
-                icon: 'success',
-                title: 'Caché limpiado',
-                text: 'Los datos se recargarán desde Google Sheets',
-                timer: 2000,
-                showConfirmButton: false
-            });
-            loadData();
-        },
-        error() {
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: 'No se pudo limpiar el caché'
-            });
-        }
-    });
-}
     </script>
 @endsection

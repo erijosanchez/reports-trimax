@@ -50,6 +50,10 @@ class LeadTimeController extends Controller
      */
     public function getObjetivoMasData(Request $request)
     {
+        if (!auth()->user()->puedeVerLeadTime()) {
+            return response()->json(['error' => 'No autorizado'], 403);
+        }
+
         try {
             $year = (int) $request->get('year', Carbon::now()->year);
 
@@ -87,6 +91,10 @@ class LeadTimeController extends Controller
      */
     public function getData(Request $request)
     {
+        if (!auth()->user()->puedeVerLeadTime()) {
+            return response()->json(['error' => 'No autorizado'], 403);
+        }
+
         try {
             $year = $request->get('year', Carbon::now()->year);
             $month = $request->get('month', Carbon::now()->month);
@@ -119,6 +127,10 @@ class LeadTimeController extends Controller
      */
     public function getSemanalData(Request $request)
     {
+        if (!auth()->user()->puedeVerLeadTime()) {
+            return response()->json(['error' => 'No autorizado'], 403);
+        }
+
         try {
             $year  = (int) $request->get('year',  Carbon::now()->year);
             $month = (int) $request->get('month', Carbon::now()->month);
@@ -183,12 +195,8 @@ class LeadTimeController extends Controller
         $filtered = [];
         foreach ($records as $rec) {
             // Mismo criterio que el dashboard mensual: las pendientes se ubican
-            // por su LEAD_TIME y solo entran las que el Sheet ya marcó atrasadas.
-            if ($this->esPendiente($rec)) {
-                $conclusion = strtoupper(trim($rec['CONCLUSION'] ?? ''));
-                if ($conclusion !== 'FUERA DE TIEMPO') continue;
-            }
-
+            // por su LEAD_TIME (fecha comprometida), evaluables desde el Sheet
+            // aunque todavía no se hayan entregado.
             $d = $this->fechaDePeriodo($rec);
             if (!$d) continue;
 
@@ -437,13 +445,9 @@ class LeadTimeController extends Controller
 
         $filtered = array_filter($records, function ($record) use ($year, $month) {
             // Las pendientes no tienen fecha de entrega: se ubican en el mes de
-            // su LEAD_TIME y solo entran las que el Sheet ya marcó atrasadas.
-            // Las que siguen dentro de plazo todavía no se pueden evaluar.
-            if ($this->esPendiente($record)) {
-                $conclusion = strtoupper(trim($record['CONCLUSION'] ?? ''));
-                if ($conclusion !== 'FUERA DE TIEMPO') return false;
-            }
-
+            // su LEAD_TIME (fecha comprometida). El Sheet ya evalúa su
+            // CONCLUSION (DENTRO/FUERA DE TIEMPO) mientras siguen pendientes,
+            // así que no hace falta esperar a que se entreguen para contarlas.
             $fecha = $this->fechaDePeriodo($record);
 
             return $fecha && $fecha->year == $year && $fecha->month == $month;
@@ -976,6 +980,10 @@ class LeadTimeController extends Controller
      */
     public function getAvailableYears()
     {
+        if (!auth()->user()->puedeVerLeadTime()) {
+            return response()->json(['error' => 'No autorizado'], 403);
+        }
+
         try {
             $cacheKey = "lead_time_available_years";
 
@@ -1012,22 +1020,5 @@ class LeadTimeController extends Controller
         } catch (\Exception $e) {
             return response()->json(['success' => true, 'years' => [Carbon::now()->year]]);
         }
-    }
-
-    /**
-     * API: Limpiar caché
-     */
-    public function clearCache()
-    {
-        for ($m = 1; $m <= 12; $m++) {
-            for ($y = 2024; $y <= 2027; $y++) {
-                Cache::forget("lead_time_data_{$y}_{$m}");
-                Cache::forget("lead_time_semanal_{$y}_{$m}");
-                Cache::forget("lead_time_objetivo_mas_{$y}");
-            }
-        }
-        Cache::forget("lead_time_available_years");
-
-        return response()->json(['success' => true, 'message' => 'Caché limpiado']);
     }
 }
