@@ -117,8 +117,15 @@ class LeadTimeConsistenciaTest extends TestCase
         $this->assertSame(2, $mensual['total_en_tiempo']); // 1 y 3
         $this->assertSame(3, $mensual['total_fuera']);     // 2, 4 y 5
 
-        // Semanal: mismo total que el mensual.
-        $this->assertSame(5, array_sum($semanal['dayOrders']));
+        // Semanal (desglose por DÍA): no muestra días futuros -- "hoy" está
+        // fijo en el día 15, así que la fila 3 (LEAD_TIME día 20) no aparece
+        // en dayOrders, aunque sí sigue contando en el acumulado del mes.
+        $this->assertSame(4, array_sum($semanal['dayOrders'])); // 1, 2, 4 y 5 (no la 3)
+
+        // El acumulado MENSUAL de la vista semanal (monthKpi) sí incluye las
+        // 5 -- solo el desglose diario recorta el futuro, no los agregados.
+        $this->assertCount(1, $semanal['meses']);
+        $this->assertEquals(40.0, $semanal['monthKpi'][0]); // 2 en tiempo de 5 -> 40%
 
         // Objetivo+: acumulado "fuera de tiempo" del año (solo hay datos de
         // este mes en el fixture) -> debe dar exactamente 3, igual que el

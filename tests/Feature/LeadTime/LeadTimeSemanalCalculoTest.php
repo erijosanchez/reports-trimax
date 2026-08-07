@@ -170,4 +170,53 @@ class LeadTimeSemanalCalculoTest extends TestCase
         $this->assertEquals(100.0, $data['dayData']['NOX'][4]);
         $this->assertNull($data['dayData']['TD'][4]);
     }
+
+    /**
+     * El desglose diario del mes en curso no debe incluir días que todavía
+     * no pasaron: una pendiente con LEAD_TIME futuro (dentro del mismo mes)
+     * no puede estar "vencida" ni tener un KPI resuelto todavía.
+     */
+    public function test_no_muestra_dias_futuros_del_mes_en_curso(): void
+    {
+        $hoy = Carbon::now(); // fijo en el día 15 (ver setUp)
+        $diaFuturo = $hoy->copy()->addDays(5)->format('Y-m-d'); // día 20
+
+        $this->mockSheet([
+            $this->fila('DENTRO DE TIEMPO', '', $diaFuturo, tipo: 'NOX'),
+        ]);
+
+        $resp = $this->actingAs($this->admin())
+            ->getJson(route('produccion.lead-time.semanal-data', ['year' => $hoy->year, 'month' => $hoy->month]));
+
+        $resp->assertOk();
+        $data = $resp->json('data');
+
+        // Solo hay días hasta hoy (15), no hasta fin de mes.
+        $this->assertCount($hoy->day, $data['dias']);
+        $this->assertSame($hoy->day, end($data['dias'])['label']);
+
+        // La orden con LEAD_TIME futuro no aparece en ningún día del desglose.
+        $this->assertSame(0, array_sum($data['dayOrders']));
+        $this->assertSame(0, array_sum($data['dayVencidos']));
+    }
+
+    /** Un mes ya cerrado (pasado) sí muestra todos sus días, no se recorta. */
+    public function test_mes_pasado_muestra_todos_sus_dias(): void
+    {
+        $hoy = Carbon::now();
+        $mesPasado = $hoy->copy()->subMonthNoOverflow();
+        $diaEnMes = Carbon::create($mesPasado->year, $mesPasado->month, 5)->format('Y-m-d');
+
+        $this->mockSheet([
+            $this->fila('DENTRO DE TIEMPO', $diaEnMes, $diaEnMes, tipo: 'NOX'),
+        ]);
+
+        $resp = $this->actingAs($this->admin())
+            ->getJson(route('produccion.lead-time.semanal-data', [
+                'year' => $mesPasado->year, 'month' => $mesPasado->month,
+            ]));
+
+        $resp->assertOk();
+        $this->assertCount($mesPasado->daysInMonth, $resp->json('data.dias'));
+    }
 }

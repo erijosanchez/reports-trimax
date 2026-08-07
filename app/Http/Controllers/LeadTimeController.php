@@ -179,9 +179,22 @@ class LeadTimeController extends Controller
             $records[] = $rec;
         }
 
+        // El desglose diario no debe mostrar días futuros: un día que no ha
+        // pasado no tiene datos que mostrar (y las pendientes con LEAD_TIME
+        // en ese día todavía no pueden estar "vencidas", así que ni siquiera
+        // se calculan para esos días).
         $daysInMonth = Carbon::createFromDate($year, $month, 1)->daysInMonth;
+        $hoy = Carbon::today();
+        if ($year > $hoy->year || ($year == $hoy->year && $month > $hoy->month)) {
+            $limiteDia = 0;
+        } elseif ($year == $hoy->year && $month == $hoy->month) {
+            $limiteDia = $hoy->day;
+        } else {
+            $limiteDia = $daysInMonth;
+        }
+
         $diasMap = [];
-        for ($d = 1; $d <= $daysInMonth; $d++) {
+        for ($d = 1; $d <= $limiteDia; $d++) {
             $fecha = Carbon::createFromDate($year, $month, $d)->format('Y-m-d');
             $diasMap[$fecha] = [
                 'label'   => $d,
