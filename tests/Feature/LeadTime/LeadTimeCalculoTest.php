@@ -173,9 +173,11 @@ class LeadTimeCalculoTest extends TestCase
      * El filtro de tipo de trabajo válido solo aplica dentro de las
      * tarjetas por categoría (NOX/TD/DEVABLUE/BLANCO/COLOREADO) — el
      * Cumplimiento General cuenta TODAS las órdenes, incluyendo "SIN" (sin
-     * tratamiento) o variantes no mapeadas como "TDLS"/"NOXLS".
+     * tratamiento, que no pertenece a ninguna categoría). "NOXLS"/"TDLS" son
+     * variantes de NOX/TD y sí se suman a esas tarjetas (igual que
+     * "BLANCOS" ya se sumaba a "BLANCO").
      */
-    public function test_tipos_de_trabajo_invalidos_cuentan_en_general_pero_no_en_ninguna_categoria(): void
+    public function test_tipos_de_trabajo_invalidos_cuentan_en_general_pero_sin_no_entra_a_ninguna_categoria(): void
     {
         $hoy = Carbon::now();
         $leadTimeEnMes = $hoy->copy()->endOfMonth()->format('Y-m-d');
@@ -183,8 +185,8 @@ class LeadTimeCalculoTest extends TestCase
         $this->mockSheet([
             $this->fila('DENTRO DE TIEMPO', '', $leadTimeEnMes, tipo: 'NOX'),
             $this->fila('FUERA DE TIEMPO', '', $leadTimeEnMes, tipo: 'SIN'),      // sin tratamiento
-            $this->fila('DENTRO DE TIEMPO', '', $leadTimeEnMes, tipo: 'TDLS'),    // variante no mapeada
-            $this->fila('DENTRO DE TIEMPO', '', $leadTimeEnMes, tipo: 'NOXLS'),   // variante no mapeada
+            $this->fila('DENTRO DE TIEMPO', '', $leadTimeEnMes, tipo: 'TDLS'),    // variante de TD
+            $this->fila('DENTRO DE TIEMPO', '', $leadTimeEnMes, tipo: 'NOXLS'),   // variante de NOX
             $this->fila('DENTRO DE TIEMPO', '', $leadTimeEnMes, tipo: 'BLANCOS'), // alias válido de BLANCO
         ]);
 
@@ -199,11 +201,11 @@ class LeadTimeCalculoTest extends TestCase
         $this->assertSame(4, $data['general']['total_en_tiempo']); // NOX, TDLS, NOXLS, BLANCOS
         $this->assertSame(1, $data['general']['total_fuera']);     // SIN
 
-        // Tarjetas por categoría: TDLS/NOXLS/SIN no matchean ningún tipo
-        // exacto, así que no aparecen en NOX ni en BLANCO ni en ninguna otra.
-        $this->assertSame(1, $data['categorias']['NOX']['total']);
+        // Tarjetas por categoría: NOXLS suma a NOX, TDLS suma a TD, BLANCOS
+        // suma a BLANCO. Solo "SIN" no matchea ninguna.
+        $this->assertSame(2, $data['categorias']['NOX']['total']);  // NOX + NOXLS
+        $this->assertSame(1, $data['categorias']['TD']['total']);   // TDLS
         $this->assertSame(1, $data['categorias']['BLANCO']['total']);
-        $this->assertSame(0, $data['categorias']['TD']['total']);
         $this->assertSame(0, $data['categorias']['DEVABLUE']['total']);
         $this->assertSame(0, $data['categorias']['COLOREADO']['total']);
     }

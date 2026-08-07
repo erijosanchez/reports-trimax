@@ -139,9 +139,10 @@ class LeadTimeSemanalCalculoTest extends TestCase
     /**
      * El filtro de tipo válido solo aplica dentro de las columnas por
      * categoría (dayData[cat]) — dayOrders/dayKpi (general) cuentan todo.
-     * Mismo criterio que el dashboard mensual (LeadTimeCalculoTest).
+     * "TDLS" es variante de TD y sí suma a esa columna. Mismo criterio que
+     * el dashboard mensual (LeadTimeCalculoTest).
      */
-    public function test_tipos_de_trabajo_invalidos_cuentan_en_general_pero_no_en_categoria(): void
+    public function test_tipos_de_trabajo_invalidos_cuentan_en_general_pero_sin_no_en_categoria(): void
     {
         $hoy   = Carbon::now();
         $year  = $hoy->year;
@@ -151,7 +152,7 @@ class LeadTimeSemanalCalculoTest extends TestCase
         $this->mockSheet([
             $this->fila('DENTRO DE TIEMPO', '', $dia5, tipo: 'NOX'),
             $this->fila('FUERA DE TIEMPO', '', $dia5, tipo: 'SIN'),   // sin tratamiento
-            $this->fila('DENTRO DE TIEMPO', '', $dia5, tipo: 'TDLS'), // variante no mapeada
+            $this->fila('DENTRO DE TIEMPO', '', $dia5, tipo: 'TDLS'), // variante de TD
         ]);
 
         $resp = $this->actingAs($this->admin())
@@ -165,10 +166,10 @@ class LeadTimeSemanalCalculoTest extends TestCase
         $this->assertEqualsWithDelta(66.67, $data['dayKpi'][4], 0.01);
         $this->assertSame(3, array_sum($data['dayOrders']));
 
-        // Categoría NOX solo ve su propio registro (100%); TD no ve nada ese
-        // día porque "TDLS" no matchea el tipo exacto "TD".
+        // Categoría NOX solo ve su propio registro (100%); TD ve "TDLS"
+        // (también 100%, es la única de esa categoría ese día).
         $this->assertEquals(100.0, $data['dayData']['NOX'][4]);
-        $this->assertNull($data['dayData']['TD'][4]);
+        $this->assertEquals(100.0, $data['dayData']['TD'][4]);
     }
 
     /**

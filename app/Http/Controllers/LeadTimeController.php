@@ -11,12 +11,38 @@ class LeadTimeController extends Controller
 {
     protected $sheetsService;
 
+    /** Tipos de TIPO_DE_TRABAJO que caen dentro de cada categoría que mide Lead Time. */
+    private const TIPOS_POR_CATEGORIA = [
+        'NOX'       => ['NOX', 'NOXLS'],
+        'TD'        => ['TD', 'TDLS'],
+        'DEVABLUE'  => ['DEVABLUE'],
+        'BLANCO'    => ['BLANCO', 'BLANCOS'],
+        'COLOREADO' => ['COLOREADO'],
+    ];
+
     public function __construct(GoogleSheetsService $sheetsService)
     {
         $this->sheetsService = $sheetsService;
     }
 
-    
+    /** ¿El TIPO_DE_TRABAJO de este registro pertenece a la categoría $cat? */
+    private function tipoPerteneceACategoria($record, string $cat): bool
+    {
+        $tipo = strtoupper(trim($record['TIPO_DE_TRABAJO'] ?? ''));
+        return in_array($tipo, self::TIPOS_POR_CATEGORIA[$cat] ?? [$cat], true);
+    }
+
+    /** ¿El TIPO_DE_TRABAJO de este registro pertenece a alguna de las 5 categorías? */
+    private function tipoEsCategoriaValida($record): bool
+    {
+        $tipo = strtoupper(trim($record['TIPO_DE_TRABAJO'] ?? ''));
+        foreach (self::TIPOS_POR_CATEGORIA as $tipos) {
+            if (in_array($tipo, $tipos, true)) return true;
+        }
+        return false;
+    }
+
+
     // ════════════════════════════════════════════════════════════
     //  VISTAS
     // ════════════════════════════════════════════════════════════
@@ -390,11 +416,7 @@ class LeadTimeController extends Controller
 
         $porCat = [];
         foreach ($categorias as $cat) {
-            $catRecs = array_filter($records, function ($r) use ($cat) {
-                $tipo = strtoupper(trim($r['TIPO_DE_TRABAJO'] ?? ''));
-                if ($cat === 'BLANCO') return $tipo === 'BLANCO' || $tipo === 'BLANCOS';
-                return $tipo === $cat;
-            });
+            $catRecs = array_filter($records, fn($r) => $this->tipoPerteneceACategoria($r, $cat));
 
             $catTotal    = count($catRecs);
             $catEnTiempo = 0;
@@ -504,13 +526,7 @@ class LeadTimeController extends Controller
         }
 
         foreach ($categorias as $cat) {
-            $datosCategoria = array_filter($filtered, function ($r) use ($cat) {
-                $tipo = strtoupper(trim($r['TIPO_DE_TRABAJO'] ?? ''));
-                if ($cat === 'BLANCO') {
-                    return $tipo === 'BLANCO' || $tipo === 'BLANCOS';
-                }
-                return $tipo === $cat;
-            });
+            $datosCategoria = array_filter($filtered, fn($r) => $this->tipoPerteneceACategoria($r, $cat));
 
             $totalCat = count($datosCategoria);
 
@@ -562,10 +578,8 @@ class LeadTimeController extends Controller
         $ordenesAtrasadas = [];
         foreach ($filtered as $record) {
             $conclusion = strtoupper(trim($record['CONCLUSION'] ?? ''));
-            $tipo       = strtoupper(trim($record['TIPO_DE_TRABAJO'] ?? ''));
-            $categoriasValidas = ['NOX', 'TD', 'DEVABLUE', 'BLANCO', 'COLOREADO'];
 
-            if ($conclusion === 'FUERA DE TIEMPO' && in_array($tipo, $categoriasValidas)) {
+            if ($conclusion === 'FUERA DE TIEMPO' && $this->tipoEsCategoriaValida($record)) {
                 $ordenesAtrasadas[] = [
                     'numero_orden'    => $record['NUMERO_ORDEN'] ?? '',
                     'sede'            => $record['SEDE'] ?? '',
@@ -904,11 +918,7 @@ class LeadTimeController extends Controller
 
         $cats = [];
         foreach ($categorias as $cat) {
-            $catRecs = array_values(array_filter($filtered, function ($r) use ($cat) {
-                $tipo = strtoupper(trim($r['TIPO_DE_TRABAJO'] ?? ''));
-                if ($cat === 'BLANCO') return $tipo === 'BLANCO' || $tipo === 'BLANCOS';
-                return $tipo === $cat;
-            }));
+            $catRecs = array_values(array_filter($filtered, fn($r) => $this->tipoPerteneceACategoria($r, $cat)));
             $cats[$cat] = array_merge($buildTable($catRecs), ['nombre' => $nombresDisplay[$cat]]);
         }
 
@@ -934,11 +944,7 @@ class LeadTimeController extends Controller
 
         // Por categoría
         foreach ($categorias as $cat) {
-            $catRecs = array_values(array_filter($filtered, function ($r) use ($cat) {
-                $tipo = strtoupper(trim($r['TIPO_DE_TRABAJO'] ?? ''));
-                if ($cat === 'BLANCO') return $tipo === 'BLANCO' || $tipo === 'BLANCOS';
-                return $tipo === $cat;
-            }));
+            $catRecs = array_values(array_filter($filtered, fn($r) => $this->tipoPerteneceACategoria($r, $cat)));
 
             $criticas = array_values(array_filter($catRecs, function ($r) {
                 return abs((int) ($r['ATRASO'] ?? 0)) >= 2;
