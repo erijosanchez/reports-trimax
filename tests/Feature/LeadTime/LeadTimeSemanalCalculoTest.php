@@ -139,9 +139,10 @@ class LeadTimeSemanalCalculoTest extends TestCase
     /**
      * El filtro de tipo válido solo aplica dentro de las columnas por
      * categoría (dayData[cat]) — dayOrders/dayKpi (general) cuentan todo.
+     * "TDLS" es categoría propia, tiene su propia columna, NO suma a "TD".
      * Mismo criterio que el dashboard mensual (LeadTimeCalculoTest).
      */
-    public function test_tipos_de_trabajo_invalidos_cuentan_en_general_pero_no_en_categoria(): void
+    public function test_tipos_de_trabajo_invalidos_cuentan_en_general_pero_sin_no_en_categoria(): void
     {
         $hoy   = Carbon::now();
         $year  = $hoy->year;
@@ -151,7 +152,7 @@ class LeadTimeSemanalCalculoTest extends TestCase
         $this->mockSheet([
             $this->fila('DENTRO DE TIEMPO', '', $dia5, tipo: 'NOX'),
             $this->fila('FUERA DE TIEMPO', '', $dia5, tipo: 'SIN'),   // sin tratamiento
-            $this->fila('DENTRO DE TIEMPO', '', $dia5, tipo: 'TDLS'), // variante no mapeada
+            $this->fila('DENTRO DE TIEMPO', '', $dia5, tipo: 'TDLS'), // categoría propia
         ]);
 
         $resp = $this->actingAs($this->admin())
@@ -165,9 +166,59 @@ class LeadTimeSemanalCalculoTest extends TestCase
         $this->assertEqualsWithDelta(66.67, $data['dayKpi'][4], 0.01);
         $this->assertSame(3, array_sum($data['dayOrders']));
 
-        // Categoría NOX solo ve su propio registro (100%); TD no ve nada ese
-        // día porque "TDLS" no matchea el tipo exacto "TD".
+        // Categoría NOX solo ve su propio registro (100%); TD queda vacía ese
+        // día (null); TDLS tiene su propia columna con el 100%.
         $this->assertEquals(100.0, $data['dayData']['NOX'][4]);
         $this->assertNull($data['dayData']['TD'][4]);
+        $this->assertEquals(100.0, $data['dayData']['TDLS'][4]);
+    }
+
+    /**
+     * El desglose diario del mes en curso no debe incluir días que todavía
+     * no pasaron: una pendiente con LEAD_TIME futuro (dentro del mismo mes)
+     * no puede estar "vencida" ni tener un KPI resuelto todavía.
+     */
+    public function test_no_muestra_dias_futuros_del_mes_en_curso(): void
+    {
+        $hoy = Carbon::now(); // fijo en el día 15 (ver setUp)
+        $diaFuturo = $hoy->copy()->addDays(5)->format('Y-m-d'); // día 20
+
+        $this->mockSheet([
+            $this->fila('DENTRO DE TIEMPO', '', $diaFuturo, tipo: 'NOX'),
+        ]);
+
+        $resp = $this->actingAs($this->admin())
+            ->getJson(route('produccion.lead-time.semanal-data', ['year' => $hoy->year, 'month' => $hoy->month]));
+
+        $resp->assertOk();
+        $data = $resp->json('data');
+
+        // Solo hay días hasta hoy (15), no hasta fin de mes.
+        $this->assertCount($hoy->day, $data['dias']);
+        $this->assertSame($hoy->day, end($data['dias'])['label']);
+
+        // La orden con LEAD_TIME futuro no aparece en ningún día del desglose.
+        $this->assertSame(0, array_sum($data['dayOrders']));
+        $this->assertSame(0, array_sum($data['dayVencidos']));
+    }
+
+    /** Un mes ya cerrado (pasado) sí muestra todos sus días, no se recorta. */
+    public function test_mes_pasado_muestra_todos_sus_dias(): void
+    {
+        $hoy = Carbon::now();
+        $mesPasado = $hoy->copy()->subMonthNoOverflow();
+        $diaEnMes = Carbon::create($mesPasado->year, $mesPasado->month, 5)->format('Y-m-d');
+
+        $this->mockSheet([
+            $this->fila('DENTRO DE TIEMPO', $diaEnMes, $diaEnMes, tipo: 'NOX'),
+        ]);
+
+        $resp = $this->actingAs($this->admin())
+            ->getJson(route('produccion.lead-time.semanal-data', [
+                'year' => $mesPasado->year, 'month' => $mesPasado->month,
+            ]));
+
+        $resp->assertOk();
+        $this->assertCount($mesPasado->daysInMonth, $resp->json('data.dias'));
     }
 }

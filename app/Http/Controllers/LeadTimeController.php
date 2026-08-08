@@ -11,12 +11,55 @@ class LeadTimeController extends Controller
 {
     protected $sheetsService;
 
+    /**
+     * Categorías que mide Lead Time. NOXLS/TDLS son categorías propias, NO
+     * variantes de NOX/TD — solo BLANCO tiene un alias real ("BLANCOS").
+     */
+    private const CATEGORIAS = ['NOX', 'NOXLS', 'TD', 'TDLS', 'DEVABLUE', 'BLANCO', 'COLOREADO'];
+
+    private const TIPOS_POR_CATEGORIA = [
+        'NOX'       => ['NOX'],
+        'NOXLS'     => ['NOXLS'],
+        'TD'        => ['TD'],
+        'TDLS'      => ['TDLS'],
+        'DEVABLUE'  => ['DEVABLUE'],
+        'BLANCO'    => ['BLANCO', 'BLANCOS'],
+        'COLOREADO' => ['COLOREADO'],
+    ];
+
+    private const NOMBRES_DISPLAY = [
+        'NOX'       => 'NOX',
+        'NOXLS'     => 'NOX LS',
+        'TD'        => 'TRIDUREX',
+        'TDLS'      => 'TRIDUREX LS',
+        'DEVABLUE'  => 'DEVABLUE',
+        'BLANCO'    => 'BLANCOS',
+        'COLOREADO' => 'COLOREADO',
+    ];
+
     public function __construct(GoogleSheetsService $sheetsService)
     {
         $this->sheetsService = $sheetsService;
     }
 
-    
+    /** ¿El TIPO_DE_TRABAJO de este registro pertenece a la categoría $cat? */
+    private function tipoPerteneceACategoria($record, string $cat): bool
+    {
+        $tipo = strtoupper(trim($record['TIPO_DE_TRABAJO'] ?? ''));
+        return in_array($tipo, self::TIPOS_POR_CATEGORIA[$cat] ?? [$cat], true);
+    }
+
+    /** ¿El TIPO_DE_TRABAJO de este registro pertenece a alguna de las 5 categorías? */
+    private function tipoEsCategoriaValida($record): bool
+    {
+        $tipo = strtoupper(trim($record['TIPO_DE_TRABAJO'] ?? ''));
+        foreach (self::TIPOS_POR_CATEGORIA as $tipos) {
+            if (in_array($tipo, $tipos, true)) return true;
+        }
+        return false;
+    }
+
+
     // ════════════════════════════════════════════════════════════
     //  VISTAS
     // ════════════════════════════════════════════════════════════
@@ -160,7 +203,7 @@ class LeadTimeController extends Controller
      */
     private function processSemanalData(int $year, int $month): array
     {
-        $categorias = ['NOX', 'TD', 'DEVABLUE', 'BLANCO', 'COLOREADO'];
+        $categorias = self::CATEGORIAS;
 
         $spreadsheetId = config('google.lead_time_spreadsheet_id');
         $rawData = $this->sheetsService->getSheetDataFromSpreadsheet($spreadsheetId, 'Historico');
@@ -179,9 +222,22 @@ class LeadTimeController extends Controller
             $records[] = $rec;
         }
 
+        // El desglose diario no debe mostrar días futuros: un día que no ha
+        // pasado no tiene datos que mostrar (y las pendientes con LEAD_TIME
+        // en ese día todavía no pueden estar "vencidas", así que ni siquiera
+        // se calculan para esos días).
         $daysInMonth = Carbon::createFromDate($year, $month, 1)->daysInMonth;
+        $hoy = Carbon::today();
+        if ($year > $hoy->year || ($year == $hoy->year && $month > $hoy->month)) {
+            $limiteDia = 0;
+        } elseif ($year == $hoy->year && $month == $hoy->month) {
+            $limiteDia = $hoy->day;
+        } else {
+            $limiteDia = $daysInMonth;
+        }
+
         $diasMap = [];
-        for ($d = 1; $d <= $daysInMonth; $d++) {
+        for ($d = 1; $d <= $limiteDia; $d++) {
             $fecha = Carbon::createFromDate($year, $month, $d)->format('Y-m-d');
             $diasMap[$fecha] = [
                 'label'   => $d,
@@ -377,11 +433,7 @@ class LeadTimeController extends Controller
 
         $porCat = [];
         foreach ($categorias as $cat) {
-            $catRecs = array_filter($records, function ($r) use ($cat) {
-                $tipo = strtoupper(trim($r['TIPO_DE_TRABAJO'] ?? ''));
-                if ($cat === 'BLANCO') return $tipo === 'BLANCO' || $tipo === 'BLANCOS';
-                return $tipo === $cat;
-            });
+            $catRecs = array_filter($records, fn($r) => $this->tipoPerteneceACategoria($r, $cat));
 
             $catTotal    = count($catRecs);
             $catEnTiempo = 0;
@@ -467,15 +519,9 @@ class LeadTimeController extends Controller
             return $this->emptyResponse();
         }
 
-        $categorias = ['NOX', 'TD', 'DEVABLUE', 'BLANCO', 'COLOREADO'];
+        $categorias = self::CATEGORIAS;
 
-        $nombresDisplay = [
-            'NOX'       => 'NOX',
-            'TD'        => 'TRIDUREX',
-            'DEVABLUE'  => 'DEVABLUE',
-            'BLANCO'    => 'BLANCOS',
-            'COLOREADO' => 'COLOREADO',
-        ];
+        $nombresDisplay = self::NOMBRES_DISPLAY;
 
         $resultados   = [];
         $totalGeneral = count($filtered);
@@ -491,13 +537,7 @@ class LeadTimeController extends Controller
         }
 
         foreach ($categorias as $cat) {
-            $datosCategoria = array_filter($filtered, function ($r) use ($cat) {
-                $tipo = strtoupper(trim($r['TIPO_DE_TRABAJO'] ?? ''));
-                if ($cat === 'BLANCO') {
-                    return $tipo === 'BLANCO' || $tipo === 'BLANCOS';
-                }
-                return $tipo === $cat;
-            });
+            $datosCategoria = array_filter($filtered, fn($r) => $this->tipoPerteneceACategoria($r, $cat));
 
             $totalCat = count($datosCategoria);
 
@@ -549,10 +589,8 @@ class LeadTimeController extends Controller
         $ordenesAtrasadas = [];
         foreach ($filtered as $record) {
             $conclusion = strtoupper(trim($record['CONCLUSION'] ?? ''));
-            $tipo       = strtoupper(trim($record['TIPO_DE_TRABAJO'] ?? ''));
-            $categoriasValidas = ['NOX', 'TD', 'DEVABLUE', 'BLANCO', 'COLOREADO'];
 
-            if ($conclusion === 'FUERA DE TIEMPO' && in_array($tipo, $categoriasValidas)) {
+            if ($conclusion === 'FUERA DE TIEMPO' && $this->tipoEsCategoriaValida($record)) {
                 $ordenesAtrasadas[] = [
                     'numero_orden'    => $record['NUMERO_ORDEN'] ?? '',
                     'sede'            => $record['SEDE'] ?? '',
@@ -741,7 +779,7 @@ class LeadTimeController extends Controller
      */
     private function processObjetivoMasData(int $year): array
     {
-        $categorias = ['NOX', 'TD', 'DEVABLUE', 'BLANCO', 'COLOREADO'];
+        $categorias = self::CATEGORIAS;
 
         $spreadsheetId = config('google.lead_time_spreadsheet_id');
         $rawData = $this->sheetsService->getSheetDataFromSpreadsheet($spreadsheetId, 'Historico');
@@ -881,21 +919,11 @@ class LeadTimeController extends Controller
         // ── Tablas de conteo ─────────────────────────────────────────────────
         $general = $buildTable($filtered);
 
-        $nombresDisplay = [
-            'NOX'       => 'NOX',
-            'TD'        => 'TRIDUREX',
-            'DEVABLUE'  => 'DEVABLUE',
-            'BLANCO'    => 'BLANCOS',
-            'COLOREADO' => 'COLOREADO',
-        ];
+        $nombresDisplay = self::NOMBRES_DISPLAY;
 
         $cats = [];
         foreach ($categorias as $cat) {
-            $catRecs = array_values(array_filter($filtered, function ($r) use ($cat) {
-                $tipo = strtoupper(trim($r['TIPO_DE_TRABAJO'] ?? ''));
-                if ($cat === 'BLANCO') return $tipo === 'BLANCO' || $tipo === 'BLANCOS';
-                return $tipo === $cat;
-            }));
+            $catRecs = array_values(array_filter($filtered, fn($r) => $this->tipoPerteneceACategoria($r, $cat)));
             $cats[$cat] = array_merge($buildTable($catRecs), ['nombre' => $nombresDisplay[$cat]]);
         }
 
@@ -921,11 +949,7 @@ class LeadTimeController extends Controller
 
         // Por categoría
         foreach ($categorias as $cat) {
-            $catRecs = array_values(array_filter($filtered, function ($r) use ($cat) {
-                $tipo = strtoupper(trim($r['TIPO_DE_TRABAJO'] ?? ''));
-                if ($cat === 'BLANCO') return $tipo === 'BLANCO' || $tipo === 'BLANCOS';
-                return $tipo === $cat;
-            }));
+            $catRecs = array_values(array_filter($filtered, fn($r) => $this->tipoPerteneceACategoria($r, $cat)));
 
             $criticas = array_values(array_filter($catRecs, function ($r) {
                 return abs((int) ($r['ATRASO'] ?? 0)) >= 2;
