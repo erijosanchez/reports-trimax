@@ -11,13 +11,19 @@ use Tests\TestCase;
 
 /**
  * Cubre VoucherController::kpiFinanzasSemanal y revisoresDisponibles — el
- * KPI de finanzas (días promedio hasta revisar), pensado para vivir junto
- * al KPI de conformidad por sede pero con alcance invertido: cada finanzas
- * ve solo lo suyo, solo admin/superadmin pueden ver a los demás.
+ * KPI de finanzas (horas promedio hasta APLICAR, no hasta revisar), pensado
+ * para vivir junto al KPI de conformidad por sede pero con alcance
+ * invertido: cada finanzas ve solo lo suyo, solo admin/superadmin pueden ver
+ * a los demás.
  *
- * A diferencia de kpiSemanal() (agrupa por semana de SOLICITUD), este agrupa
- * por semana de REVISIÓN — un voucher pedido una semana pero revisado la
- * siguiente debe contar en la semana en que se revisó, no en la que se pidió.
+ * Se agrupa por semana de SOLICITUD (a pedido de negocio, igual que
+ * kpiSemanal()): un voucher pedido una semana cuenta en esa semana aunque
+ * finanzas tarde varias semanas en aplicarlo — así el atraso queda visible
+ * en la semana que lo originó, no en la semana en que por fin se resolvió.
+ *
+ * Reusa VoucherController::demoraEnMinutos(), la misma fórmula que la
+ * columna "Demora" del historial: created_at (envío real) → aplicado_at
+ * (aplicación real).
  */
 class VoucherKpiFinanzasTest extends TestCase
 {
@@ -26,8 +32,12 @@ class VoucherKpiFinanzasTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        // Día 15 fijo: evita casos límite de fin de semana/mes en los rangos ISO.
-        Carbon::setTestNow(Carbon::now()->startOfMonth()->addDays(14)->setTime(10, 0, 0, 0));
+        // Domingo fijo, 10:00: es el último día de la semana ISO
+        // (lunes–domingo), así que "hoy menos N días" con N entre 0 y 6
+        // siempre cae dentro de la MISMA semana — evita que un offset se
+        // cruce a la semana anterior según en qué día caiga "hoy" al correr
+        // el test.
+        Carbon::setTestNow(Carbon::now()->next(Carbon::SUNDAY)->setTime(10, 0, 0, 0));
     }
 
     protected function tearDown(): void
@@ -48,18 +58,36 @@ class VoucherKpiFinanzasTest extends TestCase
         return $user;
     }
 
-    private function voucherRevisado(string $sede, ?int $revisorId, string $solicitadoAt, ?string $revisionAt, string $estado = 'conforme'): Voucher
+    /**
+     * Crea un voucher "solicitado" $diasAntes días antes de "hoy" (el
+     * domingo fijo del setUp) y, si $aplicar es true, lo aplica exactamente
+     * "hoy" — congelando Carbon::setTestNow en cada paso para que created_at
+     * y aplicado_at queden con la hora real que demoraEnMinutos() necesita
+     * (created_at no se puede asignar por mass-assignment, solo vía reloj).
+     */
+    private function voucherAplicado(string $sede, ?int $aplicadorId, int $diasAntes, bool $aplicar = true): Voucher
     {
-        return Voucher::create([
-            'codigo'            => 'V-' . uniqid(),
-            'sede'              => $sede,
-            'status'            => 'pendiente',
-            'total'             => 100,
-            'solicitado_at'     => $solicitadoAt,
-            'revision_estado'   => $revisionAt ? $estado : null,
-            'revision_user_id'  => $revisionAt ? $revisorId : null,
-            'revision_at'       => $revisionAt,
+        $hoy = Carbon::now();
+
+        Carbon::setTestNow($hoy->copy()->subDays($diasAntes));
+        $voucher = Voucher::create([
+            'codigo'        => 'V-' . uniqid(),
+            'sede'          => $sede,
+            'status'        => 'pendiente',
+            'total'         => 100,
+            'solicitado_at' => now()->toDateString(),
         ]);
+
+        Carbon::setTestNow($hoy);
+        if ($aplicar) {
+            $voucher->update([
+                'status'      => 'aplicado',
+                'applied_by'  => $aplicadorId,
+                'aplicado_at' => now(),
+            ]);
+        }
+
+        return $voucher->fresh();
     }
 
     public function test_sede_no_accede_al_kpi_de_finanzas(): void
@@ -77,29 +105,25 @@ class VoucherKpiFinanzasTest extends TestCase
             ->assertStatus(403);
     }
 
-    public function test_finanzas_no_admin_solo_ve_su_propio_promedio_aunque_pida_otro_revisor(): void
+    public function test_finanzas_no_admin_solo_ve_su_propio_promedio_aunque_pida_otro_aplicador(): void
     {
         $finanzasA = $this->userConRol('finanzas');
         $finanzasB = $this->userConRol('finanzas');
 
-        $hoy = Carbon::now();
-
-        // Voucher revisado por A: 2 días de demora, esta semana.
-        $this->voucherRevisado('LIMA', $finanzasA->id, $hoy->copy()->subDays(2)->toDateString(), $hoy->copy()->toDateTimeString());
-        // Voucher revisado por B: 8 días de demora, esta semana. Si el filtro
-        // de "propio usuario" no funcionara, este contaminaría el promedio de A.
-        $this->voucherRevisado('LIMA', $finanzasB->id, $hoy->copy()->subDays(8)->toDateString(), $hoy->copy()->toDateTimeString());
+        // Ambos solicitados y aplicados dentro de la semana actual (domingo
+        // -2 y -6 días siguen cayendo en el mismo lunes-domingo).
+        $this->voucherAplicado('LIMA', $finanzasA->id, 2); // 48h de demora
+        // Si el filtro de "propio usuario" no funcionara, este contaminaría
+        // el promedio de A.
+        $this->voucherAplicado('LIMA', $finanzasB->id, 6); // 144h de demora
 
         $resp = $this->actingAs($finanzasA)
-            ->getJson(route('vouchers.kpiFinanzasSemanal', ['revisor' => $finanzasB->id]));
+            ->getJson(route('vouchers.kpiFinanzasSemanal', ['aplicador' => $finanzasB->id]));
 
         $resp->assertOk();
-        // Ignora el ?revisor= ajeno: sigue siendo el promedio de A, no el combinado.
-        // 2.4 y no 2.0: revision_at lleva la hora real (hoy quedó fijo a las
-        // 10:00), mientras solicitado_at es solo fecha (medianoche) -> 2 días
-        // y 10 horas = 2.41666.. -> redondeado a 1 decimal.
-        $this->assertEquals(2.4, $resp->json('promedio_actual'));
-        $this->assertSame(1, $resp->json('revisados_actual'));
+        // Ignora el ?aplicador= ajeno: sigue siendo el promedio de A, no el combinado.
+        $this->assertEquals(48.0, $resp->json('promedio_actual'));
+        $this->assertSame(1, $resp->json('aplicados_actual'));
 
         // revisoresDisponibles tampoco es accesible para finanzas sin ser admin/superadmin.
         $this->actingAs($finanzasA)
@@ -107,32 +131,30 @@ class VoucherKpiFinanzasTest extends TestCase
             ->assertStatus(403);
     }
 
-    public function test_admin_puede_ver_un_revisor_puntual_o_el_combinado_de_todos(): void
+    public function test_admin_puede_ver_un_aplicador_puntual_o_el_combinado_de_todos(): void
     {
         $finanzasA = $this->userConRol('finanzas');
         $finanzasB = $this->userConRol('finanzas');
         $admin     = $this->userConRol('admin');
 
-        $hoy = Carbon::now();
+        $this->voucherAplicado('LIMA', $finanzasA->id, 2); // 48h
+        $this->voucherAplicado('LIMA', $finanzasB->id, 6); // 144h
 
-        $this->voucherRevisado('LIMA', $finanzasA->id, $hoy->copy()->subDays(2)->toDateString(), $hoy->copy()->toDateTimeString());
-        $this->voucherRevisado('LIMA', $finanzasB->id, $hoy->copy()->subDays(8)->toDateString(), $hoy->copy()->toDateTimeString());
-
-        // Revisor puntual: solo el de A (2 días y 10h -> 2.4, ver test anterior).
+        // Aplicador puntual: solo el de A.
         $soloA = $this->actingAs($admin)
-            ->getJson(route('vouchers.kpiFinanzasSemanal', ['revisor' => $finanzasA->id]))
+            ->getJson(route('vouchers.kpiFinanzasSemanal', ['aplicador' => $finanzasA->id]))
             ->json();
-        $this->assertEquals(2.4, $soloA['promedio_actual']);
-        $this->assertSame(1, $soloA['revisados_actual']);
+        $this->assertEquals(48.0, $soloA['promedio_actual']);
+        $this->assertSame(1, $soloA['aplicados_actual']);
 
-        // Sin filtro ("Todos"): promedio combinado de A (2.41666..) y B (8.41666..) = 5.41666.. -> 5.4.
+        // Sin filtro ("Todos"): promedio combinado de A (48h) y B (144h) = 96h.
         $todos = $this->actingAs($admin)
             ->getJson(route('vouchers.kpiFinanzasSemanal'))
             ->json();
-        $this->assertEquals(5.4, $todos['promedio_actual']);
-        $this->assertSame(2, $todos['revisados_actual']);
+        $this->assertEquals(96.0, $todos['promedio_actual']);
+        $this->assertSame(2, $todos['aplicados_actual']);
 
-        // Selector de revisores: admin sí puede listarlos.
+        // Selector: admin sí puede listar quiénes han aplicado vouchers.
         $revisores = $this->actingAs($admin)->getJson(route('vouchers.revisores'));
         $revisores->assertOk();
         $ids = collect($revisores->json())->pluck('id')->all();
@@ -140,47 +162,51 @@ class VoucherKpiFinanzasTest extends TestCase
         $this->assertContains($finanzasB->id, $ids);
     }
 
-    public function test_vouchers_sin_revisar_no_cuentan_en_el_promedio(): void
+    public function test_vouchers_sin_aplicar_no_cuentan_en_el_promedio(): void
     {
         $finanzas = $this->userConRol('finanzas');
-        $hoy = Carbon::now();
 
-        $this->voucherRevisado('LIMA', $finanzas->id, $hoy->copy()->subDays(2)->toDateString(), $hoy->copy()->toDateTimeString());
-        // Sin revisar: revision_at null -> no debe entrar al conteo ni al promedio.
-        $this->voucherRevisado('LIMA', null, $hoy->copy()->subDays(1)->toDateString(), null);
+        $this->voucherAplicado('LIMA', $finanzas->id, 2); // aplicado -> 48h
+        $this->voucherAplicado('LIMA', null, 1, aplicar: false); // sigue pendiente -> no debe entrar
 
         $resp = $this->actingAs($finanzas)->getJson(route('vouchers.kpiFinanzasSemanal'));
 
         $resp->assertOk();
-        $this->assertSame(1, $resp->json('revisados_actual'));
-        $this->assertEquals(2.4, $resp->json('promedio_actual'));
+        $this->assertSame(1, $resp->json('aplicados_actual'));
+        $this->assertEquals(48.0, $resp->json('promedio_actual'));
     }
 
     /**
-     * El voucher se ubica en la semana en que se REVISÓ, no en la que se
-     * solicitó — a propósito, distinto del KPI de sede (kpiSemanal), que sí
-     * agrupa por solicitud. Aquí se mide el trabajo de finanzas de esa semana.
+     * El voucher se ubica en la semana en que se SOLICITÓ, no en la que se
+     * aplicó — a pedido de negocio: si finanzas destraba tarde un voucher
+     * viejo, el atraso debe quedar visible en la semana que lo originó, no
+     * "explotar" en la semana en que por fin se resolvió.
      */
-    public function test_agrupa_por_semana_de_revision_no_de_solicitud(): void
+    public function test_agrupa_por_semana_de_solicitud_no_de_aplicacion(): void
     {
         $finanzas = $this->userConRol('finanzas');
-        $hoy = Carbon::now();
 
-        // Solicitado hace 2 semanas, pero recién revisado esta semana.
-        $this->voucherRevisado(
-            'LIMA',
-            $finanzas->id,
-            $hoy->copy()->subWeeks(2)->toDateString(),
-            $hoy->copy()->toDateTimeString()
-        );
+        // Solicitado hace 2 semanas exactas, pero recién aplicado hoy.
+        $this->voucherAplicado('LIMA', $finanzas->id, 14);
 
         $resp = $this->actingAs($finanzas)->getJson(route('vouchers.kpiFinanzasSemanal'));
 
         $resp->assertOk();
-        // Cuenta en la semana actual (la de revisión), no en la de -2 semanas.
-        // 14 días y 10h -> 14.41666.. -> 14.4.
-        $this->assertSame(1, $resp->json('revisados_actual'));
-        $this->assertEquals(14.4, $resp->json('promedio_actual'));
+        // No cuenta en la semana actual (la de aplicación)...
+        $this->assertSame(0, $resp->json('aplicados_actual'));
+        $this->assertNull($resp->json('promedio_actual'));
+
+        // ...sino en el bucket de hace 2 semanas (la de solicitud): 14 días
+        // exactos entre created_at y aplicado_at = 336 horas. ultimasSemanas()
+        // arma 8 semanas de la más antigua (índice 0) a la actual (índice 7),
+        // así que "hace 2 semanas" es el índice 5.
+        $data = $resp->json('data');
+        $this->assertEquals(14 * 24, $data[5]);
+        foreach ($data as $i => $valor) {
+            if ($i !== 5) {
+                $this->assertNull($valor, "El índice $i debería estar vacío");
+            }
+        }
     }
 
     /**
@@ -205,13 +231,13 @@ class VoucherKpiFinanzasTest extends TestCase
         $this->actingAs($finanzas)->get(route('vouchers.index'))
             ->assertOk()
             ->assertSee('KPI Semanal de Finanzas')
-            ->assertDontSee('Revisor:');
+            ->assertDontSee('Aplicado por:');
 
         $admin = $this->userConRol('admin');
         $this->actingAs($admin)->get(route('vouchers.index'))
             ->assertOk()
             ->assertSee('KPI Semanal de Finanzas')
-            ->assertSee('Revisor:');
+            ->assertSee('Aplicado por:');
     }
 
     /**

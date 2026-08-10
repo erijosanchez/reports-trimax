@@ -438,7 +438,7 @@
     @endif
 
     @if($esRevisor)
-    {{-- ══ KPI SEMANAL DE FINANZAS (tiempo de revisión) ══ --}}
+    {{-- ══ KPI SEMANAL DE FINANZAS (tiempo de aplicación) ══ --}}
     <div class="mb-4 row">
         <div class="col-12">
             <div class="card">
@@ -447,12 +447,12 @@
                         <i class="me-2 mdi mdi-clock-outline text-primary"></i>
                         KPI Semanal de Finanzas
                         <small class="text-muted fw-normal ms-1" style="font-size:.72rem">
-                            (días promedio hasta revisar · últimas 8 semanas)
+                            (horas promedio hasta aplicar · últimas 8 semanas)
                         </small>
                     </h6>
                     @if($puedeVerTodosLosRevisores)
                     <div class="d-flex align-items-center gap-2">
-                        <label class="mb-0 text-muted small">Revisor:</label>
+                        <label class="mb-0 text-muted small">Aplicado por:</label>
                         <select id="kpi-revisor" class="form-select form-select-sm" style="width:auto;min-width:150px">
                             <option value="">Todos</option>
                         </select>
@@ -465,7 +465,7 @@
                             <div class="text-center p-3 rounded" style="background:var(--bs-tertiary-bg,#f8f9fa)">
                                 <div class="text-muted small mb-1">Semana actual</div>
                                 <div id="kpi-fin-actual-valor" class="fw-bold" style="font-size:2rem;line-height:1">—</div>
-                                <div id="kpi-fin-actual-detalle" class="text-muted mt-1" style="font-size:.75rem">Sin revisiones</div>
+                                <div id="kpi-fin-actual-detalle" class="text-muted mt-1" style="font-size:.75rem">Sin aplicaciones</div>
                             </div>
                         </div>
                         <div class="col-12 col-md-9">
@@ -1223,13 +1223,28 @@
 
     function demoraHtml(v) {
         if (v.demora === null || v.demora === undefined) return '<span class="text-muted">—</span>';
-        const cls = v.demora <= 3 ? 'kpi-ok' : (v.demora <= 7 ? 'kpi-warn' : 'kpi-bad');
-        return `<span class="${cls}">${v.demora}d</span>`;
+        // v.demora llega en minutos (precisión real de horas/minutos, no días
+        // redondeados). Verde hasta 48h (2 días), amarillo hasta 72h (3 días),
+        // rojo desde ahí — mismo criterio que antes, expresado en horas.
+        const mins  = v.demora;
+        const horas = mins / 60;
+        const cls   = horas <= 48 ? 'kpi-ok' : (horas <= 72 ? 'kpi-warn' : 'kpi-bad');
+
+        const d = Math.floor(mins / 1440);
+        const h = Math.floor((mins % 1440) / 60);
+        const m = mins % 60;
+
+        let texto;
+        if (d > 0)      texto = h > 0 ? `${d}d ${h}h` : `${d}d`;
+        else if (h > 0) texto = m > 0 ? `${h}h ${m}m` : `${h}h`;
+        else            texto = `${m}m`;
+
+        return `<span class="${cls}">${texto}</span>`;
     }
 
     function renderHistRow(v) {
         const aplicadoHtml = v.aplicado_at
-            ? `<span class="text-success fw-semibold">${v.aplicado_at}</span>`
+            ? `<span class="text-success fw-semibold">${v.aplicado_at}</span>${v.hora_aplicado ? ` <span class="text-muted">${v.hora_aplicado}</span>` : ''}`
             : `<span class="text-muted">—</span>`;
         const solicitanteCol = VER_TODO ? `<td style="font-size:.83rem">${v.creator_name ?? '—'}</td>` : '';
         const revisarBtn = v.puede_revisar
@@ -1384,14 +1399,14 @@
     }
     document.getElementById('kpi-sede')?.addEventListener('change', loadKpiSemanal);
 
-    /* ══ KPI semanal de finanzas (tiempo de revisión) ═══════ */
+    /* ══ KPI semanal de finanzas (tiempo de aplicación) ═══════ */
     let kpiFinanzasChart = null;
     async function loadKpiFinanzas() {
         const canvas = document.getElementById('kpiFinanzasChart');
         if (!canvas) return;
-        const revisor = document.getElementById('kpi-revisor')?.value || '';
+        const aplicador = document.getElementById('kpi-revisor')?.value || '';
         const p = new URLSearchParams();
-        if (revisor) p.set('revisor', revisor);
+        if (aplicador) p.set('aplicador', aplicador);
         try {
             const data = await apiFetch(`${BASE}/kpi-finanzas-semanal?${p.toString()}`);
 
@@ -1400,19 +1415,21 @@
             if (data.promedio_actual === null) {
                 valEl.textContent = '—';
                 valEl.className   = 'fw-bold text-muted';
-                detEl.textContent = 'Sin revisiones esta semana';
+                detEl.textContent = 'Sin aplicaciones esta semana';
             } else {
-                // Menos días es mejor: mismos umbrales que la columna "demora" del historial.
-                const c = data.promedio_actual <= 3 ? 'text-success'
-                        : data.promedio_actual <= 7 ? 'text-warning' : 'text-danger';
-                valEl.textContent = data.promedio_actual + ' día' + (data.promedio_actual == 1 ? '' : 's');
+                // Menos horas es mejor: mismos umbrales que la columna "Demora"
+                // del historial — verde hasta 2 días (48h), amarillo hasta
+                // 3 días (72h), rojo desde el día 4 (>72h).
+                const c = data.promedio_actual <= 48 ? 'text-success'
+                        : data.promedio_actual <= 72 ? 'text-warning' : 'text-danger';
+                valEl.textContent = data.promedio_actual + ' hora' + (data.promedio_actual == 1 ? '' : 's');
                 valEl.className   = 'fw-bold ' + c;
-                detEl.textContent = `${data.revisados_actual} voucher(s) revisado(s)`;
+                detEl.textContent = `${data.aplicados_actual} voucher(s) aplicado(s)`;
             }
 
             const color = v => v === null ? 'rgba(148,163,184,.4)'
-                             : v <= 3 ? 'rgba(16,185,129,.85)'
-                             : v <= 7 ? 'rgba(234,179,8,.85)' : 'rgba(239,68,68,.85)';
+                             : v <= 48 ? 'rgba(16,185,129,.85)'
+                             : v <= 72 ? 'rgba(234,179,8,.85)' : 'rgba(239,68,68,.85)';
 
             if (kpiFinanzasChart) kpiFinanzasChart.destroy();
             kpiFinanzasChart = new Chart(canvas.getContext('2d'), {
@@ -1420,7 +1437,7 @@
                 data: {
                     labels: data.labels,
                     datasets: [{
-                        label: 'Días hasta revisar',
+                        label: 'Horas hasta aplicar',
                         data: data.data,
                         backgroundColor: data.data.map(color),
                         borderRadius: 6,
@@ -1430,10 +1447,10 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    scales: { y: { beginAtZero: true, ticks: { callback: v => v + 'd' } } },
+                    scales: { y: { beginAtZero: true, ticks: { callback: v => v + 'h' } } },
                     plugins: {
                         legend: { display: false },
-                        tooltip: { callbacks: { label: c => c.parsed.y === null ? 'Sin datos' : c.parsed.y + ' día(s)' } }
+                        tooltip: { callbacks: { label: c => c.parsed.y === null ? 'Sin datos' : c.parsed.y + ' hora(s)' } }
                     }
                 }
             });
