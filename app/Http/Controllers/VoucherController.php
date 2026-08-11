@@ -288,11 +288,18 @@ class VoucherController extends Controller
 
     public function destroy($id)
     {
-        $user    = auth()->user();
+        $user = auth()->user();
+
+        // Las sedes (creadoras del voucher) nunca pueden eliminar, ni
+        // siquiera el suyo propio pendiente — solo admin/superadmin.
+        if (!$user->isAdmin() && !$user->isSuperAdmin()) {
+            return response()->json(['success' => false, 'message' => 'No autorizado.'], 403);
+        }
+
         $voucher = Voucher::findOrFail($id);
 
-        if ($voucher->created_by !== $user->id && !$user->isAdmin() && !$user->isSuperAdmin()) {
-            return response()->json(['success' => false, 'message' => 'No autorizado.'], 403);
+        if ($voucher->status !== 'pendiente') {
+            return response()->json(['success' => false, 'message' => 'Solo se pueden eliminar vouchers pendientes.'], 422);
         }
 
         foreach ($voucher->archivos ?? [] as $archivo) {
@@ -616,7 +623,7 @@ class VoucherController extends Controller
             'conformidad_color' => $v->conformidadColor(),
             'revision_estado'   => $v->revision_estado,
             'puede_reenviar'    => $v->status === 'pendiente' && $v->created_by === $user->id,
-            'puede_eliminar'    => $v->status === 'pendiente' && ($v->created_by === $user->id || $user->isAdmin() || $user->isSuperAdmin()),
+            'puede_eliminar'    => $v->status === 'pendiente' && ($user->isAdmin() || $user->isSuperAdmin()),
             'puede_revisar'     => $user->puedeRevisarReportesSedes(),
         ];
     }
