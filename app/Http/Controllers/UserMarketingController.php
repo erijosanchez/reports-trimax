@@ -145,12 +145,11 @@ class UserMarketingController extends Controller
 
         // Estadísticas del usuario
         if ($user->isConsultor()) {
-            // Para consultores, incluir estadísticas de sedes asignadas
+            // Para consultores: solo sus encuestas propias — las calificaciones de
+            // una sede ya no se heredan hacia el consultor asignado (2026-08-11).
             $stats = [
                 'total_surveys' => $user->total_surveys,
-                'total_surveys_with_sedes' => $user->total_surveys_with_sedes,
                 'average_rating' => $user->average_rating,
-                'average_rating_with_sedes' => $user->average_rating_with_sedes,
                 'muy_feliz' => $user->surveys->where('experience_rating', 4)->count(),
                 'feliz' => $user->surveys->where('experience_rating', 3)->count(),
                 'insatisfecho' => $user->surveys->where('experience_rating', 2)->count(),

@@ -82,10 +82,34 @@ class UsersMarketing extends Model
     }
 
     /**
+     * Sede a precargar en el formulario público según el rol del link:
+     * - Sede: ella misma.
+     * - Consultor: su única sede asignada en consultor_sede (si tiene más de
+     *   una, no se precarga — el cliente elige, igual que en el link de
+     *   Trimax General).
+     * - Trimax: null, siempre se elige desde cero.
+     */
+    public function sedePreseleccionadaId(): ?int
+    {
+        if ($this->isSede()) {
+            return $this->id;
+        }
+
+        if ($this->isConsultor()) {
+            $sedeIds = $this->sedes()->pluck('users_marketing.id');
+            return $sedeIds->count() === 1 ? $sedeIds->first() : null;
+        }
+
+        return null;
+    }
+
+    /**
      * Query de encuestas a considerar para las stats "propias" de esta entidad.
      * - Sede: sus encuestas directas + las de Trimax General etiquetadas con esta sede.
      * - Trimax: solo las que el cliente dejó sin sede seleccionada.
-     * - Resto (consultor): sin cambios, sus encuestas directas.
+     * - Consultor: únicamente sus encuestas directas — las calificaciones de
+     *   una sede ya NO se heredan hacia sus consultores asignados (decisión
+     *   validada 2026-08-11: cada consultor responde solo por su propio link).
      */
     protected function surveyQueryForStats()
     {
@@ -105,69 +129,19 @@ class UsersMarketing extends Model
         return round($this->surveyQueryForStats()->avg('experience_rating') ?? 0, 2);
     }
 
-    // Obtener promedio INCLUYENDO sedes asignadas (solo para consultores)
-    public function getAverageRatingWithSedesAttribute()
-    {
-        if (!$this->isConsultor()) {
-            return $this->average_rating;
-        }
-
-        // Obtener IDs de las sedes asignadas
-        $sedeIds = $this->sedes()->pluck('users_marketing.id')->toArray();
-
-        // Incluir el ID del consultor
-        $allIds = array_merge([$this->id], $sedeIds);
-
-        // Calcular promedio de todas las encuestas (directas + Trimax General etiquetadas a sus sedes)
-        $average = Survey::where(function ($q) use ($allIds, $sedeIds) {
-            $q->whereIn('user_id', $allIds);
-            if (!empty($sedeIds)) {
-                $q->orWhereIn('sede_id', $sedeIds);
-            }
-        })->avg('experience_rating');
-
-        return round($average ?? 0, 2);
-    }
-
     public function getTotalSurveysAttribute()
     {
         return $this->surveyQueryForStats()->count();
     }
 
-    // Obtener total de encuestas INCLUYENDO sedes (solo para consultores)
-    public function getTotalSurveysWithSedesAttribute()
-    {
-        if (!$this->isConsultor()) {
-            return $this->total_surveys;
-        }
-
-        $sedeIds = $this->sedes()->pluck('users_marketing.id')->toArray();
-        $allIds = array_merge([$this->id], $sedeIds);
-
-        return Survey::where(function ($q) use ($allIds, $sedeIds) {
-            $q->whereIn('user_id', $allIds);
-            if (!empty($sedeIds)) {
-                $q->orWhereIn('sede_id', $sedeIds);
-            }
-        })->count();
-    }
-
-    // Obtener estadísticas detalladas del consultor con sus sedes
+    // Obtener estadísticas detalladas del consultor (solo sus encuestas propias).
     public function getConsultorStatsAttribute()
     {
         if (!$this->isConsultor()) {
             return null;
         }
 
-        $sedeIds = $this->sedes()->pluck('users_marketing.id')->toArray();
-        $allIds = array_merge([$this->id], $sedeIds);
-
-        $surveys = Survey::where(function ($q) use ($allIds, $sedeIds) {
-            $q->whereIn('user_id', $allIds);
-            if (!empty($sedeIds)) {
-                $q->orWhereIn('sede_id', $sedeIds);
-            }
-        })->get();
+        $surveys = $this->surveys;
 
         return [
             'total_surveys' => $surveys->count(),
@@ -176,19 +150,6 @@ class UsersMarketing extends Model
             'feliz' => $surveys->where('experience_rating', 3)->count(),
             'insatisfecho' => $surveys->where('experience_rating', 2)->count(),
             'muy_insatisfecho' => $surveys->where('experience_rating', 1)->count(),
-            'por_sede' => $this->sedes->map(function ($sede) {
-                return [
-                    'sede_id' => $sede->id,
-                    'sede_name' => $sede->name,
-                    'sede_location' => $sede->location,
-                    'total_surveys' => $sede->total_surveys,
-                    'average_rating' => $sede->average_rating,
-                ];
-            }),
-            'propio' => [
-                'total_surveys' => $this->surveys->count(),
-                'average_rating' => $this->average_rating,
-            ]
         ];
     }
 }

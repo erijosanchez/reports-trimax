@@ -163,7 +163,7 @@
                                             class="me-1 mdi mdi-view-dashboard"></i>General</button></li>
                                 <li class="nav-item"><button class="nav-link" data-bs-toggle="tab"
                                         data-bs-target="#tab-zona" type="button"><i class="me-1 mdi mdi-map-marker"></i>Por
-                                        Zona</button></li>
+                                        Sede</button></li>
                                 <li class="nav-item"><button class="nav-link" data-bs-toggle="tab"
                                         data-bs-target="#tab-reconocimientos" type="button"><i
                                             class="me-1 mdi mdi-trophy"></i>Reconocimientos</button></li>
@@ -488,88 +488,139 @@
                                     </div>
                                 </div>
 
-                                {{-- ══ TAB: POR ZONA ══ --}}
+                                {{-- ══ TAB: POR SEDE ══ --}}
                                 <div class="tab-pane fade" id="tab-zona" role="tabpanel">
-                                    @php
-                                        $sedeStats = $userStats->where('role', 'sede');
-                                        $zonas = $sedeStats->groupBy('location');
-                                    @endphp
+
+                                    <div class="grid-margin card">
+                                        <div class="card-body d-flex align-items-center flex-wrap gap-2">
+                                            <i class="me-1 text-muted mdi mdi-information-outline"></i>
+                                            <span class="text-muted small">
+                                                Meta y cumplimiento son semanales (lunes–domingo). Solo cuentan
+                                                encuestas con el formulario nuevo — las anteriores al rediseño no
+                                                tienen las preguntas de sede/consultor/productos.
+                                            </span>
+                                            <button type="button" class="ms-auto btn-outline-primary btn btn-sm"
+                                                data-bs-toggle="modal" data-bs-target="#modalMeta">
+                                                <i class="mdi mdi-target me-1"></i>Definir meta semanal
+                                            </button>
+                                        </div>
+                                    </div>
+
                                     <div class="row">
-                                        @foreach ($zonas as $loc => $sedes)
+                                        @forelse ($sedeStats as $s)
                                             @php
-                                                $zt = $sedes->sum('total');
-                                                $zavg = $sedes->avg('average_combined');
+                                                $semaforo = is_null($s['cumplimiento_pct'])
+                                                    ? 'sin-meta'
+                                                    : ($s['cumplimiento_pct'] < 70
+                                                        ? 'rojo'
+                                                        : ($s['cumplimiento_pct'] < 100
+                                                            ? 'amarillo'
+                                                            : 'verde'));
+                                                $maxDia = collect($s['avance_diario'])->max('total') ?: 1;
                                             @endphp
                                             <div class="grid-margin col-xl-4 col-lg-6 col-md-6 stretch-card">
                                                 <div class="card">
                                                     <div class="card-body">
                                                         <div class="d-flex align-items-start justify-content-between mb-3">
                                                             <h5 class="mb-0 card-title"><i
-                                                                    class="me-1 text-primary mdi mdi-map-marker"></i>{{ $loc }}
+                                                                    class="me-1 text-primary mdi mdi-map-marker"></i>{{ $s['name'] }}
                                                             </h5>
-                                                            <span class="badge badge-primary">{{ $sedes->count() }}
-                                                                sede(s)</span>
+                                                            <span
+                                                                class="badge-cumplimiento {{ $semaforo }}">{{ is_null($s['cumplimiento_pct']) ? 'Sin meta' : $s['cumplimiento_pct'] . '%' }}</span>
                                                         </div>
+
                                                         <div class="mb-3 text-center row">
-                                                            <div class="col-6">
-                                                                <h3 class="mb-0 rate-percentage">{{ $zt }}</h3>
-                                                                <p class="mb-0 statistics-title">Encuestas</p>
+                                                            <div class="col-4">
+                                                                <h4 class="mb-0 rate-percentage">
+                                                                    {{ $s['obtenidas_semana'] }}</h4>
+                                                                <p class="mb-0 statistics-title">Esta semana</p>
                                                             </div>
-                                                            <div class="col-6">
-                                                                <h3 class="mb-0 rate-percentage">
-                                                                    {{ number_format($zavg, 2) }}</h3>
-                                                                <p class="mb-0 statistics-title">Promedio ⭐</p>
+                                                            <div class="col-4">
+                                                                <h4 class="mb-0 rate-percentage">
+                                                                    {{ $s['meta_semanal'] ?? '—' }}</h4>
+                                                                <p class="mb-0 statistics-title">Meta / semana</p>
+                                                            </div>
+                                                            <div class="col-4">
+                                                                <h4 class="mb-0 rate-percentage">
+                                                                    {{ $s['total_historico'] }}</h4>
+                                                                <p class="mb-0 statistics-title">Total histórico</p>
                                                             </div>
                                                         </div>
-                                                        @if ($zt > 0)
-                                                            @php
-                                                                $zmf = $sedes->sum('muy_feliz');
-                                                                $zf = $sedes->sum('feliz');
-                                                                $zi = $sedes->sum('insatisfecho');
-                                                                $zmi = $sedes->sum('muy_insatisfecho');
-                                                            @endphp
-                                                            <div class="progress" style="height:22px;">
-                                                                @if ($zmf > 0)
-                                                                    <div class="bg-success progress-bar"
-                                                                        style="width:{{ round(($zmf / $zt) * 100) }}%">
-                                                                        {{ round(($zmf / $zt) * 100) > 10 ? round(($zmf / $zt) * 100) . '%' : '' }}
+
+                                                        <p class="mb-1 text-muted small">Avance por día</p>
+                                                        <div class="mb-3 sede-week-bars">
+                                                            @foreach ($s['avance_diario'] as $dia)
+                                                                <div class="day" title="{{ $dia['total'] }} el {{ $dia['label'] }}">
+                                                                    <div class="bar"
+                                                                        style="height:{{ $dia['total'] > 0 ? max(10, round(($dia['total'] / $maxDia) * 100)) : 2 }}%;">
                                                                     </div>
-                                                                @endif
-                                                                @if ($zf > 0)
-                                                                    <div class="bg-info progress-bar"
-                                                                        style="width:{{ round(($zf / $zt) * 100) }}%">
-                                                                        {{ round(($zf / $zt) * 100) > 10 ? round(($zf / $zt) * 100) . '%' : '' }}
-                                                                    </div>
-                                                                @endif
-                                                                @if ($zi > 0)
-                                                                    <div class="bg-warning progress-bar"
-                                                                        style="width:{{ round(($zi / $zt) * 100) }}%">
-                                                                        {{ round(($zi / $zt) * 100) > 10 ? round(($zi / $zt) * 100) . '%' : '' }}
-                                                                    </div>
-                                                                @endif
-                                                                @if ($zmi > 0)
-                                                                    <div class="bg-danger progress-bar"
-                                                                        style="width:{{ round(($zmi / $zt) * 100) }}%">
-                                                                        {{ round(($zmi / $zt) * 100) > 10 ? round(($zmi / $zt) * 100) . '%' : '' }}
-                                                                    </div>
-                                                                @endif
+                                                                    <div class="day-label">{{ $dia['label'] }}</div>
+                                                                </div>
+                                                            @endforeach
+                                                        </div>
+
+                                                        @if ($s['total_historico'] > 0)
+                                                            <p class="mb-1 text-muted small">Resultados (esquema nuevo)</p>
+                                                            <div class="row text-center small">
+                                                                <div class="col-3"><strong>{{ number_format($s['avg_experiencia'], 1) }}</strong><br><span class="text-muted">General</span></div>
+                                                                <div class="col-3"><strong>{{ number_format($s['avg_sede'], 1) }}</strong><br><span class="text-muted">Sede</span></div>
+                                                                <div class="col-3"><strong>{{ $s['avg_consultor'] > 0 ? number_format($s['avg_consultor'], 1) : '—' }}</strong><br><span class="text-muted">Consultor</span></div>
+                                                                <div class="col-3"><strong>{{ number_format($s['avg_productos'], 1) }}</strong><br><span class="text-muted">Productos</span></div>
                                                             </div>
                                                         @endif
                                                     </div>
                                                 </div>
                                             </div>
-                                        @endforeach
+                                        @empty
+                                            <div class="col-12">
+                                                <div class="alert alert-warning">No hay sedes activas registradas en Marketing.</div>
+                                            </div>
+                                        @endforelse
                                     </div>
-                                    @if ($zonas->count() > 1)
+
+                                    @if ($sedeStats->where('meta_semanal', '!=', null)->count() > 1)
                                         <div class="grid-margin card">
                                             <div class="card-body">
                                                 <h5 class="mb-3 card-title"><i
-                                                        class="me-2 text-info mdi mdi-chart-bar"></i>Comparativa de Zonas
-                                                    (Promedio Combinado)</h5>
+                                                        class="me-2 text-info mdi mdi-chart-bar"></i>Cumplimiento semanal por sede</h5>
                                                 <canvas id="chartZona" height="80"></canvas>
                                             </div>
                                         </div>
                                     @endif
+                                </div>
+
+                                {{-- ══ MODAL: Definir meta semanal por sede ══ --}}
+                                <div class="modal fade" id="modalMeta" tabindex="-1" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <form id="formMeta">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title">Definir meta semanal</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Sede</label>
+                                                        <select class="form-select" name="sede_id" required>
+                                                            <option value="">Selecciona una sede...</option>
+                                                            @foreach ($sedesParaMeta as $sede)
+                                                                <option value="{{ $sede->id }}">{{ $sede->name }}</option>
+                                                            @endforeach
+                                                        </select>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Meta de encuestas por semana</label>
+                                                        <input type="number" class="form-control" name="meta_semanal" min="1" max="1000" required>
+                                                    </div>
+                                                    <p class="mb-0 text-muted small">Aplica desde hoy en adelante — no cambia el histórico de semanas anteriores.</p>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                                                    <button type="submit" class="btn btn-primary">Guardar meta</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
                                 </div>
 
                                 {{-- ══ TAB: RECONOCIMIENTOS ══ --}}
@@ -971,6 +1022,65 @@
             justify-content: center;
         }
 
+        .badge-cumplimiento {
+            display: inline-block;
+            min-width: 60px;
+            padding: .35em .6em;
+            font-weight: 700;
+            border-radius: .375rem;
+        }
+
+        .badge-cumplimiento.rojo {
+            background: #f8d7da;
+            color: #842029;
+        }
+
+        .badge-cumplimiento.amarillo {
+            background: #fff3cd;
+            color: #664d03;
+        }
+
+        .badge-cumplimiento.verde {
+            background: #d1e7dd;
+            color: #0f5132;
+        }
+
+        .badge-cumplimiento.sin-meta {
+            background: #e9ecef;
+            color: #6c757d;
+        }
+
+        .sede-week-bars {
+            display: flex;
+            align-items: flex-end;
+            gap: 4px;
+            height: 40px;
+        }
+
+        .sede-week-bars .day {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 3px;
+            height: 100%;
+        }
+
+        .sede-week-bars .bar {
+            width: 100%;
+            max-width: 18px;
+            background: #6366f1;
+            border-radius: 3px 3px 0 0;
+            min-height: 2px;
+        }
+
+        .sede-week-bars .day-label {
+            font-size: 9px;
+            color: #9ca3af;
+            text-transform: uppercase;
+        }
+
         .nav-tabs-line .nav-link {
             border: none;
             border-bottom: 3px solid transparent;
@@ -1087,9 +1197,9 @@
         const dailyData = @json($dailyTrend);
 
         @php
-            $zonas = $userStats->where('role', 'sede')->groupBy('location');
-            $zonaLabels = $zonas->keys();
-            $zonaAvgs = $zonas->map(fn($s) => round($s->avg('average_combined'), 2))->values();
+            $sedesConMeta = $sedeStats->where('meta_semanal', '!=', null)->values();
+            $zonaLabels = $sedesConMeta->pluck('name');
+            $zonaAvgs = $sedesConMeta->pluck('cumplimiento_pct');
         @endphp
         const zonaLabels = @json($zonaLabels);
         const zonaAvgs = @json($zonaAvgs);
@@ -1351,7 +1461,7 @@
                 });
             }
 
-            // Zona chart
+            // Cumplimiento semanal por sede
             const zonaEl = document.getElementById('chartZona');
             if (zonaEl && zonaLabels.length > 0) {
                 new Chart(zonaEl, {
@@ -1359,9 +1469,10 @@
                     data: {
                         labels: zonaLabels,
                         datasets: [{
-                            label: 'Promedio Combinado',
+                            label: 'Cumplimiento (%)',
                             data: zonaAvgs,
-                            backgroundColor: '#6366f1',
+                            backgroundColor: zonaAvgs.map(v => v >= 100 ? '#198754' : (v >= 70 ? '#ffc107' :
+                                '#dc3545')),
                             borderRadius: 6
                         }]
                     },
@@ -1376,12 +1487,38 @@
                         scales: {
                             y: {
                                 beginAtZero: true,
-                                max: 4,
                                 ticks: {
-                                    stepSize: 1
+                                    callback: (v) => v + '%'
                                 }
                             }
                         }
+                    }
+                });
+            }
+
+            // Guardar meta semanal por sede
+            const formMeta = document.getElementById('formMeta');
+            if (formMeta) {
+                formMeta.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const fd = new FormData(formMeta);
+                    try {
+                        const res = await fetch('{{ route('marketing.metas.store') }}', {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                'Accept': 'application/json'
+                            },
+                            body: fd
+                        });
+                        const data = await res.json();
+                        if (data.success) {
+                            window.location.reload();
+                        } else {
+                            alert('No se pudo guardar la meta.');
+                        }
+                    } catch (err) {
+                        alert('Error de conexión al guardar la meta.');
                     }
                 });
             }

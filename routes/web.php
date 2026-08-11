@@ -129,6 +129,8 @@ Route::middleware(['auth', '2fa.verified', 'throttle:dashboard', 'track.activity
 
         Route::get('/encuestas/ajax', [MarketingController::class, 'encuestasAjax'])
             ->name('encuestas.ajax');
+        Route::post('/metas', [MarketingController::class, 'storeGoal'])
+            ->name('metas.store');
 
         Route::prefix('users')->name('users.')->group(function () {
             // User Management (Super Admin and Marketing only)
