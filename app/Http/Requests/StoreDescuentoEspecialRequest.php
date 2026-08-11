@@ -22,7 +22,7 @@ class StoreDescuentoEspecialRequest extends FormRequest
             'consultor' => 'required|string',
             'ciudad' => 'required|string',
             'descuento_especial' => 'required|string',
-            'tipo' => 'required|in:ANULACION,CORTESIA,DESCUENTO ADICIONAL,DESCUENTO TOTAL,OTROS',
+            'tipo' => 'required|in:ANULACION,CORTESIA,DESCUENTO ADICIONAL,DESCUENTO TOTAL,APOYO COMERCIAL,OTROS',
             'marca' => 'required|string',
             'ar' => 'nullable|string',
             'disenos' => 'nullable|string',

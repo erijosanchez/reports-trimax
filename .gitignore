@@ -35,3 +35,6 @@ Thumbs.db
 
 # Documentación de arquitectura/infraestructura de referencia, solo local.
 /docs/documentacion/
+
+# Spec de trabajo, no versionado a propósito.
+/spec-encuesta-satisfaccion.html

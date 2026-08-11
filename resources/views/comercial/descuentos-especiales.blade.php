@@ -500,6 +500,7 @@
                                         <option value="CORTESIA">CORTESIA</option>
                                         <option value="DESCUENTO ADICIONAL">DESCUENTO ADICIONAL</option>
                                         <option value="DESCUENTO TOTAL">DESCUENTO TOTAL</option>
+                                        <option value="APOYO COMERCIAL">APOYO COMERCIAL</option>
                                         <option value="OTROS">OTROS</option>
                                     </select>
                                 </div>
