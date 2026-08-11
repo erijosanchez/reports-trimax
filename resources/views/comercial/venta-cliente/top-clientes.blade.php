@@ -42,7 +42,11 @@
                                         <input type="text" id="buscador" class="form-control form-control-sm"
                                             placeholder="Buscar...">
                                     </div>
-                                    <div style="margin-top:22px;">
+                                    <div class="d-flex gap-2" style="margin-top:22px;">
+                                        <button id="btnExportar" class="btn-outline-success btn btn-sm"
+                                            title="Exportar a Excel">
+                                            <i class="mdi mdi-file-excel-outline"></i> Exportar
+                                        </button>
                                         <button id="btnRefresh" class="btn-outline-secondary btn btn-sm"
                                             title="Sincronizar ahora">
                                             <i class="mdi mdi-refresh"></i>
@@ -256,7 +260,8 @@
                             <table class="table table-hover table-bordered">
                                 <thead class="table-light">
                                     <tr>
-                                        <th style="min-width:260px;">Cliente</th>
+                                        <th style="min-width:110px;">RUC</th>
+                                        <th style="min-width:220px;">Razón Social</th>
                                         <th class="text-end">${p.m3 || 'Mes -3'}</th>
                                         <th class="text-end">${p.m2 || 'Mes -2'}</th>
                                         <th class="text-end">${p.m1 || 'Mes -1'}</th>
@@ -268,10 +273,8 @@
                                 <tbody>
                                     ${s.clientes.map(c => `
                                         <tr>
-                                            <td>
-                                                <div class="fw-medium">${c.razon || '—'}</div>
-                                                <div class="text-muted small">${c.ruc}</div>
-                                            </td>
+                                            <td>${c.ruc}</td>
+                                            <td class="fw-medium">${c.razon || '—'}</td>
                                             <td class="text-end">${fmt(c.venta_m3)}</td>
                                             <td class="text-end">${fmt(c.venta_m2)}</td>
                                             <td class="text-end">${fmt(c.venta_m1)}</td>
@@ -315,6 +318,23 @@
         document.getElementById('selectMes').addEventListener('change', cargarDatos);
         document.getElementById('selectSede').addEventListener('change', aplicarFiltros);
         document.getElementById('buscador').addEventListener('input', aplicarFiltros);
+
+        // ── Exportar a Excel: respeta mes de referencia, sede y búsqueda actuales ──
+        document.getElementById('btnExportar').addEventListener('click', function() {
+            const [anio, mes] = document.getElementById('selectMes').value.split('-');
+            const sede = document.getElementById('selectSede').value;
+            const q = document.getElementById('buscador').value.trim();
+
+            const url = new URL('{{ route('comercial.venta-cliente.top.exportar') }}', window.location.origin);
+            if (anio && mes) {
+                url.searchParams.set('anio', anio);
+                url.searchParams.set('mes', mes);
+            }
+            if (sede) url.searchParams.set('sede', sede);
+            if (q) url.searchParams.set('q', q);
+
+            window.location.href = url;
+        });
 
         // ── Refresh: fuerza resincronización desde el Sheet y recarga ───────
         document.getElementById('btnRefresh').addEventListener('click', async function() {

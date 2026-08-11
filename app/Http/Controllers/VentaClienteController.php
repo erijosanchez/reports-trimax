@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\TopClientesExport;
 use App\Models\Feriado;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Maatwebsite\Excel\Facades\Excel;
 
 class VentaClienteController extends Controller
 {
@@ -81,130 +83,179 @@ class VentaClienteController extends Controller
         }
 
         try {
-            $hoy = Carbon::now();
-            $mesCerrado = false;
-
-            // Mes de referencia opcional (?anio=2026&mes=6) para ver la misma
-            // comparativa de un mes ya completado. Si coincide con el mes
-            // actual, se ignora y sigue comportándose como "en curso" (con
-            // proyección) — evita que alguien mande el mes de hoy y se
-            // trate como cerrado a mitad de mes.
-            $anioParam = (int) $request->input('anio');
-            $mesParam  = (int) $request->input('mes');
-
-            if ($anioParam && $mesParam >= 1 && $mesParam <= 12) {
-                $seleccionado = Carbon::create($anioParam, $mesParam, 1);
-                if (!$seleccionado->isSameMonth($hoy)) {
-                    $hoy = $seleccionado->endOfMonth();
-                    $mesCerrado = true;
-                }
-            }
-
-            // Los 3 meses anteriores al actual + el mes actual, con manejo de cruce de año.
-            $periodos = []; // 'actual','m1','m2','m3' => ['anio'=>..,'mes'=>..,'codigo'=>anio*100+mes]
-            foreach (['actual' => 0, 'm1' => 1, 'm2' => 2, 'm3' => 3] as $clave => $offset) {
-                $fecha = $hoy->copy()->subMonthsNoOverflow($offset);
-                $periodos[$clave] = [
-                    'anio'   => $fecha->year,
-                    'mes'    => $fecha->month,
-                    'codigo' => $fecha->year * 100 + $fecha->month,
-                    'label'  => self::MESES[$fecha->month] . ' ' . $fecha->year,
-                ];
-            }
-
-            $inicioMes = $hoy->copy()->startOfMonth();
-            $finMes    = $hoy->copy()->endOfMonth();
-            $diasHabilesTranscurridos = $this->diasHabilesEnRango($inicioMes, $hoy->copy()->startOfDay());
-            $diasHabilesTotales       = $this->diasHabilesEnRango($inicioMes, $finMes);
-
-            $sedeFija = $this->sedeFijaDelUsuario();
-
-            $codigos = array_column($periodos, 'codigo');
-
-            $query = DB::table(self::TABLA)
-                ->select('sede', 'ruc', 'razon_social', 'anio', 'mes', 'importe')
-                ->whereIn(DB::raw('(anio * 100 + mes)'), $codigos)
-                ->whereNotIn('sede', self::SEDES_EXCLUIDAS_TOP);
-
-            if ($sedeFija) {
-                $query->where('sede', $sedeFija);
-            }
-
-            // Agrupar en memoria por sede -> ruc
-            $porSede = [];
-            foreach ($query->get() as $row) {
-                $codigo = (int) $row->anio * 100 + (int) $row->mes;
-                if ($row->razon_social || !isset($porSede[$row->sede][$row->ruc]['razon'])) {
-                    $porSede[$row->sede][$row->ruc]['razon'] = $row->razon_social ?: '';
-                }
-                $porSede[$row->sede][$row->ruc]['periodos'][$codigo] = (float) $row->importe;
-            }
-
-            $resultado = [];
-            foreach ($porSede as $sede => $clientes) {
-                $filas = [];
-
-                foreach ($clientes as $ruc => $info) {
-                    $p = $info['periodos'] ?? [];
-                    $ventaM3 = $p[$periodos['m3']['codigo']] ?? 0.0;
-                    $ventaM2 = $p[$periodos['m2']['codigo']] ?? 0.0;
-                    $ventaM1 = $p[$periodos['m1']['codigo']] ?? 0.0;
-                    $prom    = round(($ventaM3 + $ventaM2 + $ventaM1) / 3, 2);
-
-                    if ($prom <= 0) continue; // sin actividad relevante en los 3 meses previos
-
-                    $ventaActualReal = $p[$periodos['actual']['codigo']] ?? 0.0;
-                    $proyeccion = $diasHabilesTranscurridos > 0
-                        ? round(($ventaActualReal / $diasHabilesTranscurridos) * $diasHabilesTotales, 2)
-                        : 0.0;
-
-                    $variacionPct = round((($proyeccion - $prom) / $prom) * 100, 1);
-                    $semaforo = $variacionPct < 0 ? 'rojo' : ($variacionPct < 10 ? 'amarillo' : 'verde');
-
-                    $filas[] = [
-                        'ruc'               => $ruc,
-                        'razon'             => $info['razon'],
-                        'venta_m3'          => $ventaM3,
-                        'venta_m2'          => $ventaM2,
-                        'venta_m1'          => $ventaM1,
-                        'prom'              => $prom,
-                        'venta_actual'      => $proyeccion,
-                        'venta_actual_real' => $ventaActualReal,
-                        'variacion_pct'     => $variacionPct,
-                        'semaforo'          => $semaforo,
-                    ];
-                }
-
-                if (empty($filas)) continue; // sede sin ningún cliente con historial en los 3 meses previos
-
-                usort($filas, fn($a, $b) => $b['prom'] <=> $a['prom']);
-
-                $resultado[] = [
-                    'sede'     => $sede,
-                    'clientes' => array_slice($filas, 0, self::TOP_N),
-                ];
-            }
-
-            usort($resultado, fn($a, $b) => $a['sede'] <=> $b['sede']);
-
-            return response()->json([
-                'success' => true,
-                'periodos' => [
-                    'm3'     => $periodos['m3']['label'],
-                    'm2'     => $periodos['m2']['label'],
-                    'm1'     => $periodos['m1']['label'],
-                    'actual' => $periodos['actual']['label'],
-                ],
-                'dias_habiles_transcurridos' => $diasHabilesTranscurridos,
-                'dias_habiles_totales'       => $diasHabilesTotales,
-                'fecha_corte'                => $hoy->toDateString(),
-                'mes_cerrado'                => $mesCerrado,
-                'sedes'                      => $resultado,
-            ]);
+            $data = $this->calcularTopClientes($request);
+            return response()->json(['success' => true] + $data);
         } catch (\Exception $e) {
             Log::error('Error getTopClientesData: ' . $e->getMessage());
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
+    }
+
+    // ─────────────────────────────────────────────────────────────────
+    // Exportar Top Clientes a Excel (respeta mes de referencia y,
+    // opcionalmente, el filtro de sede / búsqueda aplicado en pantalla).
+    // ─────────────────────────────────────────────────────────────────
+    public function exportarTopClientes(Request $request)
+    {
+        if (!auth()->user()->puedeVerTopClientes()) {
+            abort(403, 'No tienes permiso para ver Top Clientes');
+        }
+
+        try {
+            $data = $this->calcularTopClientes($request);
+
+            $sedes = $data['sedes'];
+
+            $sedeFiltro = trim((string) $request->input('sede'));
+            if ($sedeFiltro !== '' && $sedeFiltro !== '__todas__') {
+                $sedes = array_values(array_filter($sedes, fn($s) => $s['sede'] === $sedeFiltro));
+            }
+
+            $q = mb_strtolower(trim((string) $request->input('q')));
+            if ($q !== '') {
+                $sedes = array_values(array_filter(array_map(function ($s) use ($q) {
+                    $clientes = array_values(array_filter($s['clientes'], function ($c) use ($q) {
+                        return str_contains(mb_strtolower($c['razon'] ?? ''), $q)
+                            || str_contains(mb_strtolower($c['ruc'] ?? ''), $q);
+                    }));
+                    return $clientes ? ['sede' => $s['sede'], 'clientes' => $clientes] : null;
+                }, $sedes)));
+            }
+
+            $filename = 'top_clientes_' . now()->format('Ymd_His') . '.xlsx';
+
+            return Excel::download(
+                new TopClientesExport($sedes, $data['periodos'], $data['mes_cerrado']),
+                $filename
+            );
+        } catch (\Exception $e) {
+            Log::error('Error exportarTopClientes: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /** Construye la data de Top Clientes (misma lógica para la vista JSON y el Excel). */
+    private function calcularTopClientes(Request $request): array
+    {
+        $hoy = Carbon::now();
+        $mesCerrado = false;
+
+        // Mes de referencia opcional (?anio=2026&mes=6) para ver la misma
+        // comparativa de un mes ya completado. Si coincide con el mes
+        // actual, se ignora y sigue comportándose como "en curso" (con
+        // proyección) — evita que alguien mande el mes de hoy y se
+        // trate como cerrado a mitad de mes.
+        $anioParam = (int) $request->input('anio');
+        $mesParam  = (int) $request->input('mes');
+
+        if ($anioParam && $mesParam >= 1 && $mesParam <= 12) {
+            $seleccionado = Carbon::create($anioParam, $mesParam, 1);
+            if (!$seleccionado->isSameMonth($hoy)) {
+                $hoy = $seleccionado->endOfMonth();
+                $mesCerrado = true;
+            }
+        }
+
+        // Los 3 meses anteriores al actual + el mes actual, con manejo de cruce de año.
+        $periodos = []; // 'actual','m1','m2','m3' => ['anio'=>..,'mes'=>..,'codigo'=>anio*100+mes]
+        foreach (['actual' => 0, 'm1' => 1, 'm2' => 2, 'm3' => 3] as $clave => $offset) {
+            $fecha = $hoy->copy()->subMonthsNoOverflow($offset);
+            $periodos[$clave] = [
+                'anio'   => $fecha->year,
+                'mes'    => $fecha->month,
+                'codigo' => $fecha->year * 100 + $fecha->month,
+                'label'  => self::MESES[$fecha->month] . ' ' . $fecha->year,
+            ];
+        }
+
+        $inicioMes = $hoy->copy()->startOfMonth();
+        $finMes    = $hoy->copy()->endOfMonth();
+        $diasHabilesTranscurridos = $this->diasHabilesEnRango($inicioMes, $hoy->copy()->startOfDay());
+        $diasHabilesTotales       = $this->diasHabilesEnRango($inicioMes, $finMes);
+
+        $sedeFija = $this->sedeFijaDelUsuario();
+
+        $codigos = array_column($periodos, 'codigo');
+
+        $query = DB::table(self::TABLA)
+            ->select('sede', 'ruc', 'razon_social', 'anio', 'mes', 'importe')
+            ->whereIn(DB::raw('(anio * 100 + mes)'), $codigos)
+            ->whereNotIn('sede', self::SEDES_EXCLUIDAS_TOP);
+
+        if ($sedeFija) {
+            $query->where('sede', $sedeFija);
+        }
+
+        // Agrupar en memoria por sede -> ruc
+        $porSede = [];
+        foreach ($query->get() as $row) {
+            $codigo = (int) $row->anio * 100 + (int) $row->mes;
+            if ($row->razon_social || !isset($porSede[$row->sede][$row->ruc]['razon'])) {
+                $porSede[$row->sede][$row->ruc]['razon'] = $row->razon_social ?: '';
+            }
+            $porSede[$row->sede][$row->ruc]['periodos'][$codigo] = (float) $row->importe;
+        }
+
+        $resultado = [];
+        foreach ($porSede as $sede => $clientes) {
+            $filas = [];
+
+            foreach ($clientes as $ruc => $info) {
+                $p = $info['periodos'] ?? [];
+                $ventaM3 = $p[$periodos['m3']['codigo']] ?? 0.0;
+                $ventaM2 = $p[$periodos['m2']['codigo']] ?? 0.0;
+                $ventaM1 = $p[$periodos['m1']['codigo']] ?? 0.0;
+                $prom    = round(($ventaM3 + $ventaM2 + $ventaM1) / 3, 2);
+
+                if ($prom <= 0) continue; // sin actividad relevante en los 3 meses previos
+
+                $ventaActualReal = $p[$periodos['actual']['codigo']] ?? 0.0;
+                $proyeccion = $diasHabilesTranscurridos > 0
+                    ? round(($ventaActualReal / $diasHabilesTranscurridos) * $diasHabilesTotales, 2)
+                    : 0.0;
+
+                $variacionPct = round((($proyeccion - $prom) / $prom) * 100, 1);
+                $semaforo = $variacionPct < 0 ? 'rojo' : ($variacionPct < 10 ? 'amarillo' : 'verde');
+
+                $filas[] = [
+                    'ruc'               => $ruc,
+                    'razon'             => $info['razon'],
+                    'venta_m3'          => $ventaM3,
+                    'venta_m2'          => $ventaM2,
+                    'venta_m1'          => $ventaM1,
+                    'prom'              => $prom,
+                    'venta_actual'      => $proyeccion,
+                    'venta_actual_real' => $ventaActualReal,
+                    'variacion_pct'     => $variacionPct,
+                    'semaforo'          => $semaforo,
+                ];
+            }
+
+            if (empty($filas)) continue; // sede sin ningún cliente con historial en los 3 meses previos
+
+            usort($filas, fn($a, $b) => $b['prom'] <=> $a['prom']);
+
+            $resultado[] = [
+                'sede'     => $sede,
+                'clientes' => array_slice($filas, 0, self::TOP_N),
+            ];
+        }
+
+        usort($resultado, fn($a, $b) => $a['sede'] <=> $b['sede']);
+
+        return [
+            'periodos' => [
+                'm3'     => $periodos['m3']['label'],
+                'm2'     => $periodos['m2']['label'],
+                'm1'     => $periodos['m1']['label'],
+                'actual' => $periodos['actual']['label'],
+            ],
+            'dias_habiles_transcurridos' => $diasHabilesTranscurridos,
+            'dias_habiles_totales'       => $diasHabilesTotales,
+            'fecha_corte'                => $hoy->toDateString(),
+            'mes_cerrado'                => $mesCerrado,
+            'sedes'                      => $resultado,
+        ];
     }
 
     // ─────────────────────────────────────────────────────────────────
