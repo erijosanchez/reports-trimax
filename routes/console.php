@@ -9,6 +9,8 @@ use App\Jobs\AlertaCobranzaVencimientoJob;
 use App\Jobs\AlertaCajaChicaVencimientoJob;
 use App\Jobs\AlertaComentariosVencimientoJob;
 use App\Jobs\MarcarNoEnviadosCobranzaJob;
+use App\Jobs\MarcarNoEnviadosCajaChicaJob;
+use App\Jobs\MarcarNoEnviadosComentariosJob;
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
@@ -45,6 +47,22 @@ Schedule::job(new AlertaCajaChicaVencimientoJob)
 // Alerta Comentarios: jueves 7:00 PM (Lima) — dentro del horario laboral, 5h antes del límite (11:59 PM).
 Schedule::job(new AlertaComentariosVencimientoJob)
     ->weeklyOn(4, '19:00')
+    ->withoutOverlapping()
+    ->onOneServer()
+    ->timezone('America/Lima');
+
+// Marca "no_enviado" en sedes que no enviaron Caja Chica esa semana — corre
+// domingo 2 AM (Lima), un par de horas después del límite del sábado 11:59 PM.
+Schedule::job(new MarcarNoEnviadosCajaChicaJob)
+    ->weeklyOn(0, '02:00')
+    ->withoutOverlapping()
+    ->onOneServer()
+    ->timezone('America/Lima');
+
+// Marca "no_enviado" en sedes que no enviaron Comentarios esa semana — corre
+// viernes 2 AM (Lima), un par de horas después del límite del jueves 11:59 PM.
+Schedule::job(new MarcarNoEnviadosComentariosJob)
+    ->weeklyOn(5, '02:00')
     ->withoutOverlapping()
     ->onOneServer()
     ->timezone('America/Lima');
