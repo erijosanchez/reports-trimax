@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Motorizado;
 use App\Models\GpsRuta;
 use App\Models\Entrega;
+use App\Services\ActivityLogService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rules\Password;
 
@@ -127,6 +128,11 @@ class TrackingAdminController extends Controller
 
         $motorizado = Motorizado::create($data);
 
+        ActivityLogService::log(
+            Auth::id(), 'create_motorizado', 'Motorizado', $motorizado->id,
+            "Creó motorizado {$motorizado->nombre} (sede: {$motorizado->sede})"
+        );
+
         return response()->json(['success' => true, 'motorizado' => $motorizado]);
     }
 
@@ -146,9 +152,15 @@ class TrackingAdminController extends Controller
             'estado'   => 'required|in:activo,inactivo',
         ]);
 
+        $cambioPassword = !empty($data['password']);
         if (empty($data['password'])) unset($data['password']);
 
         $motorizado->update($data);
+
+        ActivityLogService::log(
+            Auth::id(), 'update_motorizado', 'Motorizado', $motorizado->id,
+            "Editó motorizado {$motorizado->nombre} (sede: {$motorizado->sede})" . ($cambioPassword ? ' — cambió contraseña' : '')
+        );
 
         return response()->json(['success' => true]);
     }
@@ -156,7 +168,16 @@ class TrackingAdminController extends Controller
     public function destroyMotorizado(int $id)
     {
         $this->checkPermiso();
-        Motorizado::findOrFail($id)->delete();
+        $motorizado = Motorizado::findOrFail($id);
+        $nombre = $motorizado->nombre;
+        $sede   = $motorizado->sede;
+        $motorizado->delete();
+
+        ActivityLogService::log(
+            Auth::id(), 'delete_motorizado', 'Motorizado', $id,
+            "Eliminó motorizado {$nombre} (sede: {$sede})"
+        );
+
         return response()->json(['success' => true]);
     }
 
@@ -211,6 +232,11 @@ class TrackingAdminController extends Controller
         $data['orden_secuencia'] = $ultimaSecuencia + 1;
 
         $entrega = Entrega::create($data);
+
+        ActivityLogService::log(
+            Auth::id(), 'create_entrega', 'Entrega', $entrega->id,
+            "Creó entrega para {$entrega->cliente_nombre} (sede: {$entrega->sede})"
+        );
 
         return response()->json(['success' => true, 'entrega' => $entrega]);
     }

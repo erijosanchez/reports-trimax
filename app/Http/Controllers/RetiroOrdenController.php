@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\RetiroOrden;
 use App\Models\User;
+use App\Services\ActivityLogService;
 use Illuminate\Http\Request;
 
 class RetiroOrdenController extends Controller
@@ -69,6 +70,11 @@ class RetiroOrdenController extends Controller
 
         $retiro->load('creator');
 
+        ActivityLogService::log(
+            $user->id, 'create_retiro_orden', 'RetiroOrden', $retiro->id,
+            "Registró retiro de orden {$retiro->numero_orden} (sede: {$retiro->sede})"
+        );
+
         return response()->json([
             'success'  => true,
             'message'  => 'Orden de retiro registrada correctamente.',
@@ -91,6 +97,11 @@ class RetiroOrdenController extends Controller
         $retiro = RetiroOrden::findOrFail($id);
         $retiro->update($request->only(['sede', 'numero_orden', 'motivo', 'nombre_responsable', 'observacion']));
 
+        ActivityLogService::log(
+            auth()->id(), 'update_retiro_orden', 'RetiroOrden', $retiro->id,
+            "Editó retiro de orden {$retiro->numero_orden} (sede: {$retiro->sede})"
+        );
+
         return response()->json([
             'success' => true,
             'message' => 'Registro actualizado correctamente.',
@@ -107,6 +118,11 @@ class RetiroOrdenController extends Controller
 
         $retiro = RetiroOrden::findOrFail($id);
         $retiro->update(['nombre_responsable' => $request->nombre_responsable]);
+
+        ActivityLogService::log(
+            auth()->id(), 'reasignar_retiro_orden', 'RetiroOrden', $retiro->id,
+            "Reasignó retiro de orden {$retiro->numero_orden} a {$retiro->nombre_responsable}"
+        );
 
         return response()->json([
             'success' => true,
@@ -129,6 +145,11 @@ class RetiroOrdenController extends Controller
 
         $retiro->update(['status' => 'atendido']);
 
+        ActivityLogService::log(
+            $user->id, 'atender_retiro_orden', 'RetiroOrden', $retiro->id,
+            "Marcó como atendido el retiro de orden {$retiro->numero_orden} (sede: {$retiro->sede})"
+        );
+
         return response()->json([
             'success' => true,
             'message' => 'Orden marcada como atendida.',
@@ -150,6 +171,11 @@ class RetiroOrdenController extends Controller
 
         $retiro->update(['status' => 'rechazado']);
 
+        ActivityLogService::log(
+            $user->id, 'rechazar_retiro_orden', 'RetiroOrden', $retiro->id,
+            "Marcó como rechazado el retiro de orden {$retiro->numero_orden} (sede: {$retiro->sede})"
+        );
+
         return response()->json([
             'success' => true,
             'message' => 'Orden marcada como rechazada.',
@@ -159,7 +185,14 @@ class RetiroOrdenController extends Controller
     public function destroy($id)
     {
         $retiro = RetiroOrden::findOrFail($id);
+        $numeroOrden = $retiro->numero_orden;
+        $sede        = $retiro->sede;
         $retiro->delete();
+
+        ActivityLogService::log(
+            auth()->id(), 'delete_retiro_orden', 'RetiroOrden', $id,
+            "Eliminó retiro de orden {$numeroOrden} (sede: {$sede})"
+        );
 
         return response()->json([
             'success' => true,
