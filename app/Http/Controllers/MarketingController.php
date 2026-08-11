@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Survey;
+use App\Models\SurveyGoal;
 use App\Models\User;
 use App\Models\UsersMarketing;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class MarketingController extends Controller
@@ -71,6 +73,76 @@ class MarketingController extends Controller
         }
 
         return $this->calcStats($query->get());
+    }
+
+    /**
+     * Rango lunes-domingo de la semana en curso, para el cálculo de
+     * cumplimiento semanal por sede. (Sin respuesta aún de Marketing sobre
+     * si el corte debe ser otro — lunes-domingo es el default documentado
+     * en el spec, fácil de cambiar en un solo lugar si lo definen distinto.)
+     */
+    private function semanaActual(): array
+    {
+        return [
+            Carbon::now('America/Lima')->startOfWeek(Carbon::MONDAY)->startOfDay(),
+            Carbon::now('America/Lima')->endOfWeek(Carbon::SUNDAY)->endOfDay(),
+        ];
+    }
+
+    /**
+     * Stats "por sede" para el dashboard nuevo: meta semanal, encuestas
+     * obtenidas esta semana, % de cumplimiento, avance día a día, y
+     * promedios por pregunta. Solo considera encuestas de esquema nuevo
+     * (con productos_rating) — las anteriores al rediseño no tienen los
+     * campos nuevos y quedarían fuera de estas métricas por diseño.
+     */
+    private function calcularSedeStats()
+    {
+        [$inicioSemana, $finSemana] = $this->semanaActual();
+
+        $sedes = UsersMarketing::where('role', 'sede')
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
+        return $sedes->map(function ($sede) use ($inicioSemana, $finSemana) {
+            $surveysSede = Survey::esquemaNuevo()
+                ->where(fn($q) => $q->where('user_id', $sede->id)->orWhere('sede_id', $sede->id))
+                ->get();
+
+            $surveysSemana = $surveysSede->filter(
+                fn($s) => $s->created_at->between($inicioSemana, $finSemana)
+            );
+
+            $metaVigente  = SurveyGoal::vigentePara($sede->id);
+            $metaSemanal  = $metaVigente?->meta_semanal;
+            $obtenidas    = $surveysSemana->count();
+            $cumplimiento = $metaSemanal ? (int) round(($obtenidas / $metaSemanal) * 100) : null;
+
+            $avanceDiario = collect(range(0, 6))->map(function ($i) use ($inicioSemana, $surveysSemana) {
+                $dia = $inicioSemana->copy()->addDays($i);
+                return [
+                    'fecha' => $dia->toDateString(),
+                    'label' => $dia->translatedFormat('D'),
+                    'total' => $surveysSemana->filter(fn($s) => $s->created_at->isSameDay($dia))->count(),
+                ];
+            });
+
+            return [
+                'id'               => $sede->id,
+                'name'             => $sede->name,
+                'location'         => $sede->location,
+                'meta_semanal'     => $metaSemanal,
+                'obtenidas_semana' => $obtenidas,
+                'cumplimiento_pct' => $cumplimiento,
+                'avance_diario'    => $avanceDiario,
+                'total_historico'  => $surveysSede->count(),
+                'avg_experiencia'  => round($surveysSede->pluck('experience_rating')->filter()->avg() ?? 0, 2),
+                'avg_sede'         => round($surveysSede->pluck('sede_rating')->filter()->avg() ?? 0, 2),
+                'avg_consultor'    => round($surveysSede->pluck('consultor_rating')->filter()->avg() ?? 0, 2),
+                'avg_productos'    => round($surveysSede->pluck('productos_rating')->filter()->avg() ?? 0, 2),
+            ];
+        })->values();
     }
 
     // ─── Dashboard ─────────────────────────────────────────────────────────────
@@ -173,6 +245,12 @@ class MarketingController extends Controller
             ->limit(50)
             ->get();
 
+        $sedeStats = $this->calcularSedeStats();
+        $sedesParaMeta = UsersMarketing::where('role', 'sede')
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
         return view('marketing.dashboard.index', compact(
             'stats',
             'userStats',
@@ -181,8 +259,29 @@ class MarketingController extends Controller
             'startDate',
             'endDate',
             'userId',
-            'dailyTrend'
+            'dailyTrend',
+            'sedeStats',
+            'sedesParaMeta'
         ));
+    }
+
+    // ─── Metas por sede (CRUD mínimo — solo crear, con vigente_desde = hoy) ────
+
+    public function storeGoal(Request $request)
+    {
+        $validated = $request->validate([
+            'sede_id'      => 'required|integer|exists:users_marketing,id',
+            'meta_semanal' => 'required|integer|min:1|max:1000',
+        ]);
+
+        SurveyGoal::create([
+            'sede_id'       => $validated['sede_id'],
+            'meta_semanal'  => $validated['meta_semanal'],
+            'vigente_desde' => now('America/Lima')->toDateString(),
+            'created_by'    => auth()->id(),
+        ]);
+
+        return response()->json(['success' => true]);
     }
 
     // ─── Detalle de una encuesta (AJAX — modal) ────────────────────────────────
@@ -217,8 +316,19 @@ class MarketingController extends Controller
      */
     public static function dispatchAlertIfNeeded(Survey $survey, UsersMarketing $evaluado): void
     {
-        // Solo disparar si experiencia O atención es ≤ 2
-        if ($survey->experience_rating > 2 && $survey->service_quality_rating > 2) {
+        // Disparar si alguna calificación respondida es ≤ 2. service_quality_rating
+        // ya no se pregunta en encuestas nuevas (queda null) — no cuenta como "mala"
+        // por sí sola, a diferencia de antes.
+        $ratings = array_filter([
+            $survey->experience_rating,
+            $survey->sede_rating,
+            $survey->consultor_rating,
+            $survey->productos_rating,
+        ], fn($r) => !is_null($r));
+
+        $hayCalificacionBaja = collect($ratings)->contains(fn($r) => $r <= 2);
+
+        if (!$hayCalificacionBaja) {
             return;
         }
 

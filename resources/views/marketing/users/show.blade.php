@@ -242,32 +242,23 @@
                                                     <div class="alert alert-info border-0 mt-3" role="alert">
                                                         <h6 class="alert-heading">
                                                             <i class="mdi mdi-chart-line me-2"></i>
-                                                            Estadísticas Consolidadas
+                                                            Estadísticas del consultor
                                                         </h6>
-                                                        <div class="row mt-3">
-                                                            <div class="col-md-6">
-                                                                <p class="mb-1">
-                                                                    <strong>Encuestas Propias:</strong>
-                                                                    {{ $stats['total_surveys'] }}
-                                                                </p>
-                                                                <p class="mb-0">
-                                                                    <strong>Promedio Propio:</strong>
-                                                                    <i class="mdi mdi-star text-warning"></i>
-                                                                    {{ number_format($stats['average_rating'], 2) }}
-                                                                </p>
-                                                            </div>
-                                                            <div class="col-md-6">
-                                                                <p class="mb-1">
-                                                                    <strong>Total con Sedes:</strong>
-                                                                    {{ $stats['total_surveys_with_sedes'] }}
-                                                                </p>
-                                                                <p class="mb-0">
-                                                                    <strong>Promedio General:</strong>
-                                                                    <i class="mdi mdi-star text-warning"></i>
-                                                                    {{ number_format($stats['average_rating_with_sedes'], 2) }}
-                                                                </p>
-                                                            </div>
-                                                        </div>
+                                                        <p class="mb-1">
+                                                            <strong>Encuestas Propias:</strong>
+                                                            {{ $stats['total_surveys'] }}
+                                                        </p>
+                                                        <p class="mb-0">
+                                                            <strong>Promedio Propio:</strong>
+                                                            <i class="mdi mdi-star text-warning"></i>
+                                                            {{ number_format($stats['average_rating'], 2) }}
+                                                        </p>
+                                                        <p class="mb-0 mt-2 text-muted small">
+                                                            Solo cuenta las encuestas recibidas por el link propio de
+                                                            este consultor. La tabla de sedes de arriba muestra los
+                                                            números de cada sede por separado — ya no se suman al
+                                                            promedio del consultor.
+                                                        </p>
                                                     </div>
                                                 @else
                                                     <div class="alert alert-warning border-0" role="alert">

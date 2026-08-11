@@ -536,6 +536,68 @@ body {
     }
 }
 
+/* ===== FILTRO SÍ/NO (¿tiene consultor?) ===== */
+.filter-toggle {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.filter-btn {
+    flex: 1;
+    min-width: 100px;
+    max-width: 160px;
+    padding: 16px 10px;
+    text-align: center;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all .2s ease;
+    color: #333;
+    background: white;
+}
+
+.filter-btn:hover {
+    border-color: #1565C0;
+}
+
+.filter-btn.active {
+    background: #1565C0;
+    border-color: #1565C0;
+    color: white;
+}
+
+.hint-text {
+    text-align: center;
+    font-size: 12.5px;
+    color: #888;
+    margin-top: 10px;
+}
+
+.checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+    font-size: 14px;
+    color: #555;
+    cursor: pointer;
+}
+
+.checkbox-row input {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.required-mark {
+    color: #F44336;
+}
+
 /* ===== INPUTS HIDDEN ===== */
 input[type="hidden"] {
     display: none;
