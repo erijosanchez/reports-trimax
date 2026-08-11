@@ -32,3 +32,6 @@ Thumbs.db
 
 # Guías/PDFs generados para usuarios finales, no versionados a propósito.
 /docs/guias/
+
+# Documentación de arquitectura/infraestructura de referencia, solo local.
+/docs/documentacion/
