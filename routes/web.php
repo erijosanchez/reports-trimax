@@ -231,7 +231,6 @@ Route::middleware(['auth', '2fa.verified', 'throttle:dashboard', 'track.activity
         Route::get('/lead-time/dashboard/otp', [LeadTimeController::class, 'index'])->name('lead-time.index');
         Route::get('api/lead-time/data', [LeadTimeController::class, 'getData'])->name('lead-time.data');
         Route::get('api/lead-time/years', [LeadTimeController::class, 'getAvailableYears'])->name('lead-time.years');
-        Route::post('api/lead-time/clear-cache', [LeadTimeController::class, 'clearCache'])->name('lead-time.clear-cache');
 
         // Ver lead time semanal y mensual
         Route::get('/lead-time/semanal', [LeadTimeController::class, 'semanal'])->name('lead-time.semanal');
@@ -371,6 +370,8 @@ Route::middleware(['auth', '2fa.verified', 'throttle:dashboard', 'track.activity
         Route::get('/historial',               [VoucherController::class, 'historial'])->name('historial');
         Route::get('/sedes',                   [VoucherController::class, 'sedesDisponibles'])->name('sedes');
         Route::get('/kpi-semanal',             [VoucherController::class, 'kpiSemanal'])->name('kpiSemanal');
+        Route::get('/kpi-finanzas-semanal',    [VoucherController::class, 'kpiFinanzasSemanal'])->name('kpiFinanzasSemanal');
+        Route::get('/revisores',               [VoucherController::class, 'revisoresDisponibles'])->name('revisores');
         Route::post('/',                       [VoucherController::class, 'store'])->name('store');
         Route::post('/{id}/factura',           [VoucherController::class, 'addFactura'])->name('addFactura');
         Route::delete('/factura/{id}',         [VoucherController::class, 'removeFactura'])->name('removeFactura');

@@ -11,12 +11,55 @@ class LeadTimeController extends Controller
 {
     protected $sheetsService;
 
+    /**
+     * Categorías que mide Lead Time. NOXLS/TDLS son categorías propias, NO
+     * variantes de NOX/TD — solo BLANCO tiene un alias real ("BLANCOS").
+     */
+    private const CATEGORIAS = ['NOX', 'NOXLS', 'TD', 'TDLS', 'DEVABLUE', 'BLANCO', 'COLOREADO'];
+
+    private const TIPOS_POR_CATEGORIA = [
+        'NOX'       => ['NOX'],
+        'NOXLS'     => ['NOXLS'],
+        'TD'        => ['TD'],
+        'TDLS'      => ['TDLS'],
+        'DEVABLUE'  => ['DEVABLUE'],
+        'BLANCO'    => ['BLANCO', 'BLANCOS'],
+        'COLOREADO' => ['COLOREADO'],
+    ];
+
+    private const NOMBRES_DISPLAY = [
+        'NOX'       => 'NOX',
+        'NOXLS'     => 'NOX LS',
+        'TD'        => 'TRIDUREX',
+        'TDLS'      => 'TRIDUREX LS',
+        'DEVABLUE'  => 'DEVABLUE',
+        'BLANCO'    => 'BLANCOS',
+        'COLOREADO' => 'COLOREADO',
+    ];
+
     public function __construct(GoogleSheetsService $sheetsService)
     {
         $this->sheetsService = $sheetsService;
     }
 
-    
+    /** ¿El TIPO_DE_TRABAJO de este registro pertenece a la categoría $cat? */
+    private function tipoPerteneceACategoria($record, string $cat): bool
+    {
+        $tipo = strtoupper(trim($record['TIPO_DE_TRABAJO'] ?? ''));
+        return in_array($tipo, self::TIPOS_POR_CATEGORIA[$cat] ?? [$cat], true);
+    }
+
+    /** ¿El TIPO_DE_TRABAJO de este registro pertenece a alguna de las 5 categorías? */
+    private function tipoEsCategoriaValida($record): bool
+    {
+        $tipo = strtoupper(trim($record['TIPO_DE_TRABAJO'] ?? ''));
+        foreach (self::TIPOS_POR_CATEGORIA as $tipos) {
+            if (in_array($tipo, $tipos, true)) return true;
+        }
+        return false;
+    }
+
+
     // ════════════════════════════════════════════════════════════
     //  VISTAS
     // ════════════════════════════════════════════════════════════
@@ -50,6 +93,10 @@ class LeadTimeController extends Controller
      */
     public function getObjetivoMasData(Request $request)
     {
+        if (!auth()->user()->puedeVerLeadTime()) {
+            return response()->json(['error' => 'No autorizado'], 403);
+        }
+
         try {
             $year = (int) $request->get('year', Carbon::now()->year);
 
@@ -87,6 +134,10 @@ class LeadTimeController extends Controller
      */
     public function getData(Request $request)
     {
+        if (!auth()->user()->puedeVerLeadTime()) {
+            return response()->json(['error' => 'No autorizado'], 403);
+        }
+
         try {
             $year = $request->get('year', Carbon::now()->year);
             $month = $request->get('month', Carbon::now()->month);
@@ -119,6 +170,10 @@ class LeadTimeController extends Controller
      */
     public function getSemanalData(Request $request)
     {
+        if (!auth()->user()->puedeVerLeadTime()) {
+            return response()->json(['error' => 'No autorizado'], 403);
+        }
+
         try {
             $year  = (int) $request->get('year',  Carbon::now()->year);
             $month = (int) $request->get('month', Carbon::now()->month);
@@ -148,7 +203,7 @@ class LeadTimeController extends Controller
      */
     private function processSemanalData(int $year, int $month): array
     {
-        $categorias = ['NOX', 'TD', 'DEVABLUE', 'BLANCO', 'COLOREADO'];
+        $categorias = self::CATEGORIAS;
 
         $spreadsheetId = config('google.lead_time_spreadsheet_id');
         $rawData = $this->sheetsService->getSheetDataFromSpreadsheet($spreadsheetId, 'Historico');
@@ -167,9 +222,22 @@ class LeadTimeController extends Controller
             $records[] = $rec;
         }
 
+        // El desglose diario no debe mostrar días futuros: un día que no ha
+        // pasado no tiene datos que mostrar (y las pendientes con LEAD_TIME
+        // en ese día todavía no pueden estar "vencidas", así que ni siquiera
+        // se calculan para esos días).
         $daysInMonth = Carbon::createFromDate($year, $month, 1)->daysInMonth;
+        $hoy = Carbon::today();
+        if ($year > $hoy->year || ($year == $hoy->year && $month > $hoy->month)) {
+            $limiteDia = 0;
+        } elseif ($year == $hoy->year && $month == $hoy->month) {
+            $limiteDia = $hoy->day;
+        } else {
+            $limiteDia = $daysInMonth;
+        }
+
         $diasMap = [];
-        for ($d = 1; $d <= $daysInMonth; $d++) {
+        for ($d = 1; $d <= $limiteDia; $d++) {
             $fecha = Carbon::createFromDate($year, $month, $d)->format('Y-m-d');
             $diasMap[$fecha] = [
                 'label'   => $d,
@@ -182,13 +250,14 @@ class LeadTimeController extends Controller
 
         $filtered = [];
         foreach ($records as $rec) {
+            // El filtro de tipo de trabajo válido se aplica solo dentro de
+            // calcularKpiYCats() (para las tarjetas por categoría) — el
+            // conteo general/Cumplimiento General cuenta todas las órdenes,
+            // sin importar el tipo.
+            //
             // Mismo criterio que el dashboard mensual: las pendientes se ubican
-            // por su LEAD_TIME y solo entran las que el Sheet ya marcó atrasadas.
-            if ($this->esPendiente($rec)) {
-                $conclusion = strtoupper(trim($rec['CONCLUSION'] ?? ''));
-                if ($conclusion !== 'FUERA DE TIEMPO') continue;
-            }
-
+            // por su LEAD_TIME (fecha comprometida), evaluables desde el Sheet
+            // aunque todavía no se hayan entregado.
             $d = $this->fechaDePeriodo($rec);
             if (!$d) continue;
 
@@ -357,26 +426,20 @@ class LeadTimeController extends Controller
 
         $enTiempoGeneral = 0;
         foreach ($records as $r) {
-            $conclusion = strtoupper(trim($r['CONCLUSION'] ?? ''));
-            if ($conclusion === 'DENTRO DE TIEMPO' || $conclusion === 'EN TIEMPO') {
+            if ($this->esConclusionEnTiempo($r)) {
                 $enTiempoGeneral++;
             }
         }
 
         $porCat = [];
         foreach ($categorias as $cat) {
-            $catRecs = array_filter($records, function ($r) use ($cat) {
-                $tipo = strtoupper(trim($r['TIPO_DE_TRABAJO'] ?? ''));
-                if ($cat === 'BLANCO') return $tipo === 'BLANCO' || $tipo === 'BLANCOS';
-                return $tipo === $cat;
-            });
+            $catRecs = array_filter($records, fn($r) => $this->tipoPerteneceACategoria($r, $cat));
 
             $catTotal    = count($catRecs);
             $catEnTiempo = 0;
 
             foreach ($catRecs as $r) {
-                $conclusion = strtoupper(trim($r['CONCLUSION'] ?? ''));
-                if ($conclusion === 'DENTRO DE TIEMPO' || $conclusion === 'EN TIEMPO') {
+                if ($this->esConclusionEnTiempo($r)) {
                     $catEnTiempo++;
                 }
             }
@@ -436,14 +499,15 @@ class LeadTimeController extends Controller
         }
 
         $filtered = array_filter($records, function ($record) use ($year, $month) {
+            // El filtro de tipo de trabajo válido se aplica solo por
+            // categoría más abajo (tarjetas NOX/TD/DEVABLUE/BLANCO/
+            // COLOREADO) y en $ordenesAtrasadas — el conteo general
+            // (Cumplimiento General) cuenta todas las órdenes.
+            //
             // Las pendientes no tienen fecha de entrega: se ubican en el mes de
-            // su LEAD_TIME y solo entran las que el Sheet ya marcó atrasadas.
-            // Las que siguen dentro de plazo todavía no se pueden evaluar.
-            if ($this->esPendiente($record)) {
-                $conclusion = strtoupper(trim($record['CONCLUSION'] ?? ''));
-                if ($conclusion !== 'FUERA DE TIEMPO') return false;
-            }
-
+            // su LEAD_TIME (fecha comprometida). El Sheet ya evalúa su
+            // CONCLUSION (DENTRO/FUERA DE TIEMPO) mientras siguen pendientes,
+            // así que no hace falta esperar a que se entreguen para contarlas.
             $fecha = $this->fechaDePeriodo($record);
 
             return $fecha && $fecha->year == $year && $fecha->month == $month;
@@ -455,40 +519,25 @@ class LeadTimeController extends Controller
             return $this->emptyResponse();
         }
 
-        $categorias = ['NOX', 'TD', 'DEVABLUE', 'BLANCO', 'COLOREADO'];
+        $categorias = self::CATEGORIAS;
 
-        $nombresDisplay = [
-            'NOX'       => 'NOX',
-            'TD'        => 'TRIDUREX',
-            'DEVABLUE'  => 'DEVABLUE',
-            'BLANCO'    => 'BLANCOS',
-            'COLOREADO' => 'COLOREADO',
-        ];
+        $nombresDisplay = self::NOMBRES_DISPLAY;
 
         $resultados   = [];
         $totalGeneral = count($filtered);
 
-        // Se cuentan por separado: hay registros con CONCLUSION no evaluable
-        // (ej. 'SIN DATOS') que no son ni en tiempo ni atrasados.
         $totalEnTiempo = 0;
         $totalFuera    = 0;
         foreach ($filtered as $record) {
-            $conclusion = strtoupper(trim($record['CONCLUSION'] ?? ''));
-            if ($conclusion === 'DENTRO DE TIEMPO' || $conclusion === 'EN TIEMPO') {
+            if ($this->esConclusionEnTiempo($record)) {
                 $totalEnTiempo++;
-            } elseif ($conclusion === 'FUERA DE TIEMPO') {
+            } elseif (strtoupper(trim($record['CONCLUSION'] ?? '')) === 'FUERA DE TIEMPO') {
                 $totalFuera++;
             }
         }
 
         foreach ($categorias as $cat) {
-            $datosCategoria = array_filter($filtered, function ($r) use ($cat) {
-                $tipo = strtoupper(trim($r['TIPO_DE_TRABAJO'] ?? ''));
-                if ($cat === 'BLANCO') {
-                    return $tipo === 'BLANCO' || $tipo === 'BLANCOS';
-                }
-                return $tipo === $cat;
-            });
+            $datosCategoria = array_filter($filtered, fn($r) => $this->tipoPerteneceACategoria($r, $cat));
 
             $totalCat = count($datosCategoria);
 
@@ -540,10 +589,8 @@ class LeadTimeController extends Controller
         $ordenesAtrasadas = [];
         foreach ($filtered as $record) {
             $conclusion = strtoupper(trim($record['CONCLUSION'] ?? ''));
-            $tipo       = strtoupper(trim($record['TIPO_DE_TRABAJO'] ?? ''));
-            $categoriasValidas = ['NOX', 'TD', 'DEVABLUE', 'BLANCO', 'COLOREADO'];
 
-            if ($conclusion === 'FUERA DE TIEMPO' && in_array($tipo, $categoriasValidas)) {
+            if ($conclusion === 'FUERA DE TIEMPO' && $this->tipoEsCategoriaValida($record)) {
                 $ordenesAtrasadas[] = [
                     'numero_orden'    => $record['NUMERO_ORDEN'] ?? '',
                     'sede'            => $record['SEDE'] ?? '',
@@ -574,6 +621,18 @@ class LeadTimeController extends Controller
             'categorias'        => $resultados,
             'ordenes_atrasadas' => $ordenesAtrasadas,
         ];
+    }
+
+    /**
+     * "SIN DATOS" son órdenes ya entregadas (tienen TIME) a las que el
+     * Sheet no les pudo calcular el veredicto por faltarles LEAD_TIME/META.
+     * Sin evidencia de atraso, se cuentan como en tiempo (igual que
+     * "DENTRO DE TIEMPO"/"EN TIEMPO") — no como "fuera de tiempo" ni aparte.
+     */
+    private function esConclusionEnTiempo($record): bool
+    {
+        $conclusion = strtoupper(trim($record['CONCLUSION'] ?? ''));
+        return in_array($conclusion, ['DENTRO DE TIEMPO', 'EN TIEMPO', 'SIN DATOS'], true);
     }
 
     /**
@@ -638,7 +697,7 @@ class LeadTimeController extends Controller
         foreach ($registros as $record) {
             $conclusion = strtoupper(trim($record['CONCLUSION'] ?? ''));
 
-            if ($conclusion === 'DENTRO DE TIEMPO' || $conclusion === 'EN TIEMPO') {
+            if ($this->esConclusionEnTiempo($record)) {
                 $label = $this->getLabelDentroTiempo($record);
             } elseif ($conclusion === 'FUERA DE TIEMPO') {
                 $diasAtraso = $this->diasDeAtraso($record);
@@ -720,7 +779,7 @@ class LeadTimeController extends Controller
      */
     private function processObjetivoMasData(int $year): array
     {
-        $categorias = ['NOX', 'TD', 'DEVABLUE', 'BLANCO', 'COLOREADO'];
+        $categorias = self::CATEGORIAS;
 
         $spreadsheetId = config('google.lead_time_spreadsheet_id');
         $rawData = $this->sheetsService->getSheetDataFromSpreadsheet($spreadsheetId, 'Historico');
@@ -739,19 +798,20 @@ class LeadTimeController extends Controller
             $records[] = $rec;
         }
 
-        // Solo FUERA DE TIEMPO para el año completo (hasta hoy)
+        // Solo FUERA DE TIEMPO para el año completo (hasta hoy). Se ubican
+        // igual que en las otras 2 vistas: por TIME si ya se entregó, por
+        // LEAD_TIME si sigue pendiente (antes exigía TIME real y perdía las
+        // pendientes-ya-vencidas, desalineando el total con el dashboard
+        // mensual y el semanal).
+        // El filtro de tipo de trabajo válido se aplica solo por categoría
+        // más abajo — el bloque "general" cuenta todas las órdenes.
         $today    = Carbon::today();
         $filtered = array_values(array_filter($records, function ($rec) use ($year, $today) {
             $conclusion = strtoupper(trim($rec['CONCLUSION'] ?? ''));
             if ($conclusion !== 'FUERA DE TIEMPO') return false;
-            $time = $rec['TIME'] ?? '';
-            if (empty($time)) return false;
-            try {
-                $d = Carbon::parse($time);
-                return $d->year == $year && $d->lte($today);
-            } catch (\Exception $e) {
-                return false;
-            }
+
+            $fecha = $this->fechaDePeriodo($rec);
+            return $fecha && $fecha->year == $year && $fecha->lte($today);
         }));
 
         if (empty($filtered)) {
@@ -761,22 +821,18 @@ class LeadTimeController extends Controller
         // ── Construir semanas ISO ────────────────────────────────────────────
         $semanasMap = [];
         foreach ($filtered as $rec) {
-            $time = $rec['TIME'] ?? '';
-            if (empty($time)) continue;
-            try {
-                $d      = Carbon::parse($time);
-                $semNum = (int) $d->format('W');
-                if (!isset($semanasMap[$semNum])) {
-                    $lunes   = Carbon::now()->setISODate($year, $semNum, 1);
-                    $domingo = Carbon::now()->setISODate($year, $semNum, 7);
-                    $semanasMap[$semNum] = [
-                        'num'   => $semNum,
-                        'label' => "Semana $semNum",
-                        'rango' => $lunes->format('d/m') . ' – ' . $domingo->format('d/m'),
-                    ];
-                }
-            } catch (\Exception $e) {
-                continue;
+            $d = $this->fechaDePeriodo($rec);
+            if (!$d) continue;
+
+            $semNum = (int) $d->format('W');
+            if (!isset($semanasMap[$semNum])) {
+                $lunes   = Carbon::now()->setISODate($year, $semNum, 1);
+                $domingo = Carbon::now()->setISODate($year, $semNum, 7);
+                $semanasMap[$semNum] = [
+                    'num'   => $semNum,
+                    'label' => "Semana $semNum",
+                    'rango' => $lunes->format('d/m') . ' – ' . $domingo->format('d/m'),
+                ];
             }
         }
 
@@ -797,12 +853,9 @@ class LeadTimeController extends Controller
             foreach ($recs as $rec) {
                 $atraso = abs((int) ($rec['ATRASO'] ?? 0));
                 if ($atraso === 0) $atraso = 1;
-                try {
-                    $d      = Carbon::parse($rec['TIME'] ?? '');
-                    $semNum = (int) $d->format('W');
-                } catch (\Exception $e) {
-                    continue;
-                }
+                $d = $this->fechaDePeriodo($rec);
+                if (!$d) continue;
+                $semNum = (int) $d->format('W');
                 if (!isset($semanasMap[$semNum])) continue;
                 $key = $atraso <= $maxAtraso ? $atraso : 'mas';
                 $data[$key][$semNum]++;
@@ -866,21 +919,11 @@ class LeadTimeController extends Controller
         // ── Tablas de conteo ─────────────────────────────────────────────────
         $general = $buildTable($filtered);
 
-        $nombresDisplay = [
-            'NOX'       => 'NOX',
-            'TD'        => 'TRIDUREX',
-            'DEVABLUE'  => 'DEVABLUE',
-            'BLANCO'    => 'BLANCOS',
-            'COLOREADO' => 'COLOREADO',
-        ];
+        $nombresDisplay = self::NOMBRES_DISPLAY;
 
         $cats = [];
         foreach ($categorias as $cat) {
-            $catRecs = array_values(array_filter($filtered, function ($r) use ($cat) {
-                $tipo = strtoupper(trim($r['TIPO_DE_TRABAJO'] ?? ''));
-                if ($cat === 'BLANCO') return $tipo === 'BLANCO' || $tipo === 'BLANCOS';
-                return $tipo === $cat;
-            }));
+            $catRecs = array_values(array_filter($filtered, fn($r) => $this->tipoPerteneceACategoria($r, $cat)));
             $cats[$cat] = array_merge($buildTable($catRecs), ['nombre' => $nombresDisplay[$cat]]);
         }
 
@@ -906,11 +949,7 @@ class LeadTimeController extends Controller
 
         // Por categoría
         foreach ($categorias as $cat) {
-            $catRecs = array_values(array_filter($filtered, function ($r) use ($cat) {
-                $tipo = strtoupper(trim($r['TIPO_DE_TRABAJO'] ?? ''));
-                if ($cat === 'BLANCO') return $tipo === 'BLANCO' || $tipo === 'BLANCOS';
-                return $tipo === $cat;
-            }));
+            $catRecs = array_values(array_filter($filtered, fn($r) => $this->tipoPerteneceACategoria($r, $cat)));
 
             $criticas = array_values(array_filter($catRecs, function ($r) {
                 return abs((int) ($r['ATRASO'] ?? 0)) >= 2;
@@ -976,6 +1015,10 @@ class LeadTimeController extends Controller
      */
     public function getAvailableYears()
     {
+        if (!auth()->user()->puedeVerLeadTime()) {
+            return response()->json(['error' => 'No autorizado'], 403);
+        }
+
         try {
             $cacheKey = "lead_time_available_years";
 
@@ -1012,22 +1055,5 @@ class LeadTimeController extends Controller
         } catch (\Exception $e) {
             return response()->json(['success' => true, 'years' => [Carbon::now()->year]]);
         }
-    }
-
-    /**
-     * API: Limpiar caché
-     */
-    public function clearCache()
-    {
-        for ($m = 1; $m <= 12; $m++) {
-            for ($y = 2024; $y <= 2027; $y++) {
-                Cache::forget("lead_time_data_{$y}_{$m}");
-                Cache::forget("lead_time_semanal_{$y}_{$m}");
-                Cache::forget("lead_time_objetivo_mas_{$y}");
-            }
-        }
-        Cache::forget("lead_time_available_years");
-
-        return response()->json(['success' => true, 'message' => 'Caché limpiado']);
     }
 }

@@ -223,10 +223,6 @@ class ComentariosSedesController extends Controller
             return response()->json(['error' => 'Sin permiso para revisar reportes.'], 403);
         }
 
-        if (is_null($reporte->fecha_envio_original)) {
-            return response()->json(['error' => 'No se puede revisar un reporte que aún no fue enviado.'], 422);
-        }
-
         $data = $request->validate([
             'estado'     => 'required|in:conforme,conforme_observado,rechazado',
             'motivo'     => 'required_unless:estado,conforme|nullable|string|max:2000',

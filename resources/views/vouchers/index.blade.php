@@ -394,7 +394,8 @@
 
     @php $verTodo = $puedeAplicar || $esRevisor || auth()->user()->puede_ver_vouchers; @endphp
 
-    {{-- ══ KPI SEMANAL DE CONFORMIDAD ══ --}}
+    @if($puedeVerKpiSede)
+    {{-- ══ KPI SEMANAL DE CONFORMIDAD (desempeño de la sede, no de finanzas) ══ --}}
     <div class="mb-4 row">
         <div class="col-12">
             <div class="card">
@@ -434,6 +435,50 @@
             </div>
         </div>
     </div>
+    @endif
+
+    @if($esRevisor)
+    {{-- ══ KPI SEMANAL DE FINANZAS (tiempo de aplicación) ══ --}}
+    <div class="mb-4 row">
+        <div class="col-12">
+            <div class="card">
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 card-header">
+                    <h6 class="mb-0 card-title">
+                        <i class="me-2 mdi mdi-clock-outline text-primary"></i>
+                        KPI Semanal de Finanzas
+                        <small class="text-muted fw-normal ms-1" style="font-size:.72rem">
+                            (horas promedio hasta aplicar · últimas 8 semanas)
+                        </small>
+                    </h6>
+                    @if($puedeVerTodosLosRevisores)
+                    <div class="d-flex align-items-center gap-2">
+                        <label class="mb-0 text-muted small">Aplicado por:</label>
+                        <select id="kpi-revisor" class="form-select form-select-sm" style="width:auto;min-width:150px">
+                            <option value="">Todos</option>
+                        </select>
+                    </div>
+                    @endif
+                </div>
+                <div class="card-body">
+                    <div class="row align-items-center g-3">
+                        <div class="col-12 col-md-3">
+                            <div class="text-center p-3 rounded" style="background:var(--bs-tertiary-bg,#f8f9fa)">
+                                <div class="text-muted small mb-1">Semana actual</div>
+                                <div id="kpi-fin-actual-valor" class="fw-bold" style="font-size:2rem;line-height:1">—</div>
+                                <div id="kpi-fin-actual-detalle" class="text-muted mt-1" style="font-size:.75rem">Sin aplicaciones</div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-9">
+                            <div style="position:relative;height:220px">
+                                <canvas id="kpiFinanzasChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
 
     {{-- ══ HISTORIAL ══ --}}
     <div class="row">
@@ -576,6 +621,8 @@
                 <div class="modal-body">
                     <div id="rev-msg"></div>
                     <input type="hidden" id="rev-id" name="voucher_id">
+
+                    <div id="rev-envio-info" class="mb-3 text-muted" style="font-size:.8rem"></div>
 
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Resultado de la revisión <span class="text-danger">*</span></label>
@@ -1090,7 +1137,13 @@
                     </div>`;
             }
 
+            const envioHtml = `
+                <div class="mb-3 text-muted" style="font-size:.8rem">
+                    <i class="mdi mdi-send-outline me-1"></i>Enviado por <strong>${data.creator_name ?? '—'}</strong> · ${data.hora_envio ?? '—'}
+                </div>`;
+
             document.getElementById('det-body').innerHTML = `
+                ${envioHtml}
                 <table class="table table-bordered table-sm mb-0">
                     <thead class="table-light">
                         <tr><th>Factura</th><th>RUC</th><th class="text-end">Monto</th></tr>
@@ -1170,13 +1223,28 @@
 
     function demoraHtml(v) {
         if (v.demora === null || v.demora === undefined) return '<span class="text-muted">—</span>';
-        const cls = v.demora <= 3 ? 'kpi-ok' : (v.demora <= 7 ? 'kpi-warn' : 'kpi-bad');
-        return `<span class="${cls}">${v.demora}d</span>`;
+        // v.demora llega en minutos (precisión real de horas/minutos, no días
+        // redondeados). Verde hasta 48h (2 días), amarillo hasta 72h (3 días),
+        // rojo desde ahí — mismo criterio que antes, expresado en horas.
+        const mins  = v.demora;
+        const horas = mins / 60;
+        const cls   = horas <= 48 ? 'kpi-ok' : (horas <= 72 ? 'kpi-warn' : 'kpi-bad');
+
+        const d = Math.floor(mins / 1440);
+        const h = Math.floor((mins % 1440) / 60);
+        const m = mins % 60;
+
+        let texto;
+        if (d > 0)      texto = h > 0 ? `${d}d ${h}h` : `${d}d`;
+        else if (h > 0) texto = m > 0 ? `${h}h ${m}m` : `${h}h`;
+        else            texto = `${m}m`;
+
+        return `<span class="${cls}">${texto}</span>`;
     }
 
     function renderHistRow(v) {
         const aplicadoHtml = v.aplicado_at
-            ? `<span class="text-success fw-semibold">${v.aplicado_at}</span>`
+            ? `<span class="text-success fw-semibold">${v.aplicado_at}</span>${v.hora_aplicado ? ` <span class="text-muted">${v.hora_aplicado}</span>` : ''}`
             : `<span class="text-muted">—</span>`;
         const solicitanteCol = VER_TODO ? `<td style="font-size:.83rem">${v.creator_name ?? '—'}</td>` : '';
         const revisarBtn = v.puede_revisar
@@ -1193,7 +1261,7 @@
             <td><span class="sede-badge">${v.sede}</span></td>
             ${solicitanteCol}
             <td class="text-end fw-semibold">S/ ${v.total}</td>
-            <td style="font-size:.82rem;white-space:nowrap">${v.solicitado_at ?? '—'}</td>
+            <td style="font-size:.82rem;white-space:nowrap">${v.solicitado_at ?? '—'}${v.hora_envio ? ` <span class="text-muted">${v.hora_envio}</span>` : ''}</td>
             <td style="font-size:.82rem;white-space:nowrap">${aplicadoHtml}</td>
             <td class="text-center">${demoraHtml(v)}</td>
             <td class="text-center"><span class="badge bg-${v.conformidad_color}">${v.conformidad_label}</span></td>
@@ -1262,6 +1330,17 @@
         } catch (e) { /* noop */ }
     }
 
+    /* ══ Poblado de revisores (KPI de finanzas) ═════════════ */
+    async function populateRevisores() {
+        const sel = document.getElementById('kpi-revisor');
+        if (!sel) return;
+        try {
+            const revisores = await apiFetch(`${BASE}/revisores`);
+            const opts = revisores.map(r => `<option value="${r.id}">${r.name}</option>`).join('');
+            sel.insertAdjacentHTML('beforeend', opts);
+        } catch (e) { /* noop */ }
+    }
+
     /* ══ KPI semanal de conformidad ═════════════════════════ */
     let kpiChart = null;
     async function loadKpiSemanal() {
@@ -1320,12 +1399,71 @@
     }
     document.getElementById('kpi-sede')?.addEventListener('change', loadKpiSemanal);
 
+    /* ══ KPI semanal de finanzas (tiempo de aplicación) ═══════ */
+    let kpiFinanzasChart = null;
+    async function loadKpiFinanzas() {
+        const canvas = document.getElementById('kpiFinanzasChart');
+        if (!canvas) return;
+        const aplicador = document.getElementById('kpi-revisor')?.value || '';
+        const p = new URLSearchParams();
+        if (aplicador) p.set('aplicador', aplicador);
+        try {
+            const data = await apiFetch(`${BASE}/kpi-finanzas-semanal?${p.toString()}`);
+
+            const valEl = document.getElementById('kpi-fin-actual-valor');
+            const detEl = document.getElementById('kpi-fin-actual-detalle');
+            if (data.promedio_actual === null) {
+                valEl.textContent = '—';
+                valEl.className   = 'fw-bold text-muted';
+                detEl.textContent = 'Sin aplicaciones esta semana';
+            } else {
+                // Menos horas es mejor: mismos umbrales que la columna "Demora"
+                // del historial — verde hasta 2 días (48h), amarillo hasta
+                // 3 días (72h), rojo desde el día 4 (>72h).
+                const c = data.promedio_actual <= 48 ? 'text-success'
+                        : data.promedio_actual <= 72 ? 'text-warning' : 'text-danger';
+                valEl.textContent = data.promedio_actual + ' hora' + (data.promedio_actual == 1 ? '' : 's');
+                valEl.className   = 'fw-bold ' + c;
+                detEl.textContent = `${data.aplicados_actual} voucher(s) aplicado(s)`;
+            }
+
+            const color = v => v === null ? 'rgba(148,163,184,.4)'
+                             : v <= 48 ? 'rgba(16,185,129,.85)'
+                             : v <= 72 ? 'rgba(234,179,8,.85)' : 'rgba(239,68,68,.85)';
+
+            if (kpiFinanzasChart) kpiFinanzasChart.destroy();
+            kpiFinanzasChart = new Chart(canvas.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        label: 'Horas hasta aplicar',
+                        data: data.data,
+                        backgroundColor: data.data.map(color),
+                        borderRadius: 6,
+                        maxBarThickness: 46,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true, ticks: { callback: v => v + 'h' } } },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { callbacks: { label: c => c.parsed.y === null ? 'Sin datos' : c.parsed.y + ' hora(s)' } }
+                    }
+                }
+            });
+        } catch (e) { /* noop */ }
+    }
+    document.getElementById('kpi-revisor')?.addEventListener('change', loadKpiFinanzas);
+
     /* ══ Revisión de finanzas ═══════════════════════════════ */
     if (ES_REVISOR) {
         setupDropZone('drop-zone-rev', 'archivos-rev', 'preview-rev');
         const modalRev = new bootstrap.Modal(document.getElementById('modalRevision'));
 
-        function abrirRevision(id, codigo) {
+        async function abrirRevision(id, codigo) {
             const form = document.getElementById('formRevision');
             form.reset();
             document.getElementById('rev-id').value = id;
@@ -1335,7 +1473,18 @@
             document.getElementById('preview-rev').innerHTML = '';
             _acumulados['archivos-rev'] = new DataTransfer();
             updatePeso('archivos-rev');
+
+            const envioInfo = document.getElementById('rev-envio-info');
+            envioInfo.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
             modalRev.show();
+
+            try {
+                const data = await apiFetch(`${BASE}/${id}/facturas`);
+                envioInfo.innerHTML =
+                    `<i class="mdi mdi-send-outline me-1"></i>Enviado por <strong>${data.creator_name ?? '—'}</strong> · ${data.hora_envio ?? '—'}`;
+            } catch (e) {
+                envioInfo.innerHTML = '';
+            }
         }
         window.__abrirRevision = abrirRevision;
 
@@ -1378,6 +1527,7 @@
                 modalRev.hide();
                 loadHistorial(histPage);
                 loadKpiSemanal();
+                loadKpiFinanzas();
             } catch (err) {
                 msg.innerHTML = `<div class="alert alert-danger py-2">${err.message}</div>`;
             } finally {
@@ -1388,8 +1538,10 @@
 
     /* ══ Init ═══════════════════════════════════════════════ */
     populateSedes();
+    populateRevisores();
     loadHistorial(1);
     loadKpiSemanal();
+    loadKpiFinanzas();
 
 })();
 </script>

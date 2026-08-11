@@ -42,7 +42,7 @@ class Voucher extends Model
         'archivos'      => 'array',
         'total'         => 'decimal:2',
         'solicitado_at' => 'date',
-        'aplicado_at'   => 'date',
+        'aplicado_at'   => 'datetime',
         'created_at'    => 'datetime',
         'updated_at'    => 'datetime',
         'revision_kpi_penalidad' => 'decimal:2',
