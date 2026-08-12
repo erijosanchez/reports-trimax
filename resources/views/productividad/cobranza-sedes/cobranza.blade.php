@@ -146,7 +146,7 @@
                         </div>
                         @if ($mostrarExcepcionNota)
                         <div class="mt-2 text-muted" style="font-size:11px;">
-                            <i class="me-1 mdi-information-outline mdi"></i>Huanuco, Ica y Ate: límite 11:00 AM
+                            <i class="me-1 mdi-information-outline mdi"></i>Huanuco, Ica, Ate y Huancayo: límite 11:00 AM
                         </div>
                         @endif
                     </div>

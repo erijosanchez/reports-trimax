@@ -75,7 +75,7 @@ class ReporteCobranza extends Model
     }
 
     // Sedes con límite excepcional de 11:00 AM (resto: 10:00 AM). Sin tildes: comparar vía esSedeLimite11().
-    const SEDES_LIMITE_11 = ['HUANUCO', 'ICA', 'ATE'];
+    const SEDES_LIMITE_11 = ['HUANUCO', 'ICA', 'ATE', 'HUANCAYO'];
 
     /** Normaliza la sede para comparar: la BD guarda 'HUÁNUCO' con tilde (ver Admin\UserController::getSedes). */
     public static function normalizarSede(?string $sede): string
@@ -99,7 +99,7 @@ class ReporteCobranza extends Model
 
     /**
      * Calcula el KPI según la hora de entrega respecto al límite diario.
-     * Límite general: 10:00 AM. Excepciones (11:00 AM): Huanuco, Ica, Ate.
+     * Límite general: 10:00 AM. Excepciones (11:00 AM): Huanuco, Ica, Ate, Huancayo.
      *  En tiempo           → 100%
      *  Atraso ≤ 1 hora     → 90%
      *  Atraso ≤ 2 horas    → 80%

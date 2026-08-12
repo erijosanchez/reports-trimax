@@ -54,6 +54,12 @@ class ReporteCobranzaTest extends TestCase
         $this->assertTrue(ReporteCobranza::esSedeLimite11('ATE'));
     }
 
+    public function test_huancayo_tiene_limite_11am(): void
+    {
+        $this->assertTrue(ReporteCobranza::esSedeLimite11('HUANCAYO'));
+        $this->assertSame([11, 0], ReporteCobranza::horaLimitePara('HUANCAYO'));
+    }
+
     public function test_sedes_sin_excepcion_tienen_limite_10am(): void
     {
         $this->assertFalse(ReporteCobranza::esSedeLimite11('LIMA'));
