@@ -316,7 +316,7 @@
                                                     </select>
                                                 </div>
                                                 <div class="col-md-2">
-                                                    <label class="mb-1 form-label small">Calificación</label>
+                                                    <label class="mb-1 form-label small">Experiencia General</label>
                                                     <select id="enc-rating" class="form-select-sm form-select">
                                                         <option value="">Todas</option>
                                                         <option value="4">😊 Muy Satisfecho</option>
@@ -367,7 +367,7 @@
                                                             <th>Fecha</th>
                                                             <th>Cliente</th>
                                                             <th>Sede</th>
-                                                            <th class="text-center">Experiencia</th>
+                                                            <th class="text-center">Experiencia General</th>
                                                             <th class="text-center">Promedio</th>
                                                             <th>Comentario</th>
                                                         </tr>
