@@ -60,5 +60,6 @@ class AuthServiceProvider extends ServiceProvider
         Gate::define('ver-motorizados', fn (User $u) => $u->puedeVerMotorizados());
         Gate::define('ver-retiros-ordenes', fn (User $u) => $u->puedeVerRetirosOrdenes());
         Gate::define('ver-desbloqueo', fn (User $u) => $u->puedeVerDesbloqueo());
+        Gate::define('enviar-avisos', fn (User $u) => $u->puedeEnviarAvisos());
     }
 }

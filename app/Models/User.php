@@ -39,6 +39,7 @@ class User extends Authenticatable
         'puede_ver_retiros_ordenes',
         'puede_ver_vouchers',
         'puede_ver_desbloqueo',
+        'puede_enviar_avisos',
         'is_active',
         'email_notifications_enabled',
         'last_login_at',
@@ -78,6 +79,7 @@ class User extends Authenticatable
         'puede_ver_retiros_ordenes' => 'boolean',
         'puede_ver_vouchers'        => 'boolean',
         'puede_ver_desbloqueo'      => 'boolean',
+        'puede_enviar_avisos'       => 'boolean',
         'es_gerente_general' => 'boolean',
         'last_login_at' => 'datetime',
         'two_factor_confirmed_at' => 'datetime',
@@ -360,6 +362,16 @@ class User extends Authenticatable
     {
         return $this->isSuperAdmin() || $this->isAdmin() || $this->isSede()
             || $this->isFinanzas() || (bool) $this->puede_ver_desbloqueo;
+    }
+
+    /**
+     * Enviar avisos manuales dentro del sistema (bandeja in-app). Nadie lo
+     * tiene por defecto salvo super_admin — se otorga desde el panel de
+     * usuarios, igual que los demás permisos especiales.
+     */
+    public function puedeEnviarAvisos(): bool
+    {
+        return $this->isSuperAdmin() || (bool) $this->puede_enviar_avisos;
     }
 
     // NOTIFICACIONES

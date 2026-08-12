@@ -466,6 +466,21 @@
                                                                         Si lo desmarcas, el usuario sigue recibiendo sus notificaciones en la campanita del sistema, pero deja de llegarle correo.
                                                                     </small>
                                                                 </div>
+
+                                                                {{-- Enviar avisos --}}
+                                                                <div class="mt-3 px-3 py-2 border rounded" style="border-color:#6366f1 !important; background:#f5f5ff;">
+                                                                    <div class="form-check form-check-success">
+                                                                        <label class="form-check-label fw-semibold">
+                                                                            <input type="checkbox" name="puede_enviar_avisos" value="1" class="form-check-input"
+                                                                                {{ old('puede_enviar_avisos') ? 'checked' : '' }}>
+                                                                            <i class="mdi mdi-bullhorn text-primary"></i> Puede enviar avisos
+                                                                            <i class="input-helper"></i>
+                                                                        </label>
+                                                                    </div>
+                                                                    <small class="text-muted d-block mt-1">
+                                                                        Permite redactar y enviar avisos manuales a otros usuarios (por rol o a todos) desde el módulo Avisos.
+                                                                    </small>
+                                                                </div>
                                                             </div>
 
                                                             {{-- MÓDULO PRODUCTIVIDAD SEDES --}}

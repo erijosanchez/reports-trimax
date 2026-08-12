@@ -25,6 +25,15 @@
                     <span class="menu-title">Archivos</span>
                 </a>
             </li>
+            @if (auth()->user()->puedeEnviarAvisos())
+                <li class="nav-item">
+                    <a class="nav-link {{ request()->routeIs('avisos.*') ? 'active' : '' }}"
+                        href="{{ route('avisos.index') }}">
+                        <i class="mdi mdi-bullhorn menu-icon"></i>
+                        <span class="menu-title">Avisos</span>
+                    </a>
+                </li>
+            @endif
         @endif
 
         @php

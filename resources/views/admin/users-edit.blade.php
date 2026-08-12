@@ -443,6 +443,29 @@
                                                                         pero deja de llegarle correo.
                                                                     </small>
                                                                 </div>
+
+                                                                {{-- Enviar avisos --}}
+                                                                <div class="mt-3 px-3 py-2 border rounded"
+                                                                    style="border-color:#6366f1 !important; background:#f5f5ff;">
+                                                                    <div class="col-md-6">
+                                                                        <div class="form-check form-check-success">
+                                                                            <label class="form-check-label fw-semibold">
+                                                                                <input type="checkbox"
+                                                                                    name="puede_enviar_avisos"
+                                                                                    value="1"
+                                                                                    class="form-check-input"
+                                                                                    {{ old('puede_enviar_avisos', $user->puede_enviar_avisos ?? false) ? 'checked' : '' }}>
+                                                                                Puede enviar avisos
+                                                                                <i class="input-helper"></i>
+                                                                            </label>
+                                                                        </div>
+                                                                    </div>
+                                                                    <small class="d-block mt-1 text-muted">
+                                                                        Permite a {{ $user->name }} redactar y enviar
+                                                                        avisos manuales a otros usuarios (por rol o a
+                                                                        todos) desde el módulo Avisos.
+                                                                    </small>
+                                                                </div>
                                                             </div>
 
                                                             {{-- MÓDULO PRODUCTIVIDAD SEDES --}}

@@ -32,6 +32,7 @@ use App\Http\Controllers\RetiroOrdenController;
 use App\Http\Controllers\VoucherController;
 use App\Http\Controllers\DesbloqueoController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\AvisoController;
 
 // ============================================================
 // RUTAS PARA LARAVEL 11
@@ -406,6 +407,13 @@ Route::middleware(['auth', '2fa.verified', 'throttle:dashboard', 'track.activity
         Route::delete('/{id}',                    [DesbloqueoController::class, 'destroy'])->name('destroy');
         Route::get('/{id}/file/{index}',          [DesbloqueoController::class, 'file'])->name('file');
         Route::get('/{id}/revision-file/{index}', [DesbloqueoController::class, 'revisionFile'])->name('revisionFile');
+    });
+
+    // Avisos manuales dentro del sistema
+    Route::prefix('avisos')->name('avisos.')->group(function () {
+        Route::get('/',    [AvisoController::class, 'index'])->name('index');
+        Route::post('/',   [AvisoController::class, 'store'])->name('store');
+        Route::delete('/{id}', [AvisoController::class, 'destroy'])->name('destroy');
     });
 
     // ── Tracking Admin ────────────────────────────────────────

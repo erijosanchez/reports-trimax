@@ -80,6 +80,8 @@ class UserController extends Controller
             'puede_ver_vouchers',
             // Desbloqueo de clientes
             'puede_ver_desbloqueo',
+            // Avisos
+            'puede_enviar_avisos',
         ];
     }
 
