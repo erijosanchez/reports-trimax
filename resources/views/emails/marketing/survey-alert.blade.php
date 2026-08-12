@@ -3,9 +3,8 @@
 @section('badge', 'ALERTA MARKETING')
 
 @section('alert_banner')
-    <div
-        class="email-alert {{ $survey->experience_rating === 1 || $survey->service_quality_rating === 1 ? 'email-alert--danger' : 'email-alert--warning' }}">
-        {{ $survey->experience_rating === 1 || $survey->service_quality_rating === 1 ? '🔴' : '🟡' }}
+    <div class="email-alert {{ $peorRating === 1 ? 'email-alert--danger' : 'email-alert--warning' }}">
+        {{ $peorRating === 1 ? '🔴' : '🟡' }}
         Encuesta con calificación negativa recibida
     </div>
 @endsection
@@ -18,27 +17,20 @@
         Te notificamos para que puedas tomar acción a tiempo.
     </p>
 
-    {{-- Evaluado --}}
+    {{-- Sede --}}
     <div class="data-card">
-        <div class="data-card__header">👤 Evaluado</div>
+        <div class="data-card__header">📍 Sede</div>
         <div class="data-card__body">
             <div class="data-row">
                 <div class="data-label">Nombre</div>
                 <div class="data-value"><strong>{{ $evaluado->name }}</strong></div>
             </div>
-            <div class="data-row">
-                <div class="data-label">Tipo</div>
-                <div class="data-value">
-                    @if ($evaluado->role === 'consultor')
-                        Consultor
-                    @elseif($evaluado->role === 'trimax')
-                        TRIMAX General
-                    @else
-                        Sede — {{ $evaluado->location }}
-                    @endif
+            @if ($evaluado->role === 'trimax')
+                <div class="data-row">
+                    <div class="data-label">Tipo</div>
+                    <div class="data-value">TRIMAX General</div>
                 </div>
-            </div>
-            @if ($evaluado->location && $evaluado->role === 'sede')
+            @elseif ($evaluado->location)
                 <div class="data-row">
                     <div class="data-label">Ubicación</div>
                     <div class="data-value">{{ $evaluado->location }}</div>
@@ -51,35 +43,21 @@
     <div class="data-card">
         <div class="data-card__header">⭐ Calificaciones recibidas</div>
         <div class="data-card__body">
-            @php
-                $labels = [1 => 'Muy Insatisfecho 😞', 2 => 'Insatisfecho 😐', 3 => 'Feliz 🙂', 4 => 'Muy Feliz 😊'];
-                $combined = number_format(($survey->experience_rating + $survey->service_quality_rating) / 2, 2);
-            @endphp
-            <div class="data-row">
-                <div class="data-label">Experiencia</div>
-                <div class="data-value">
-                    <span
-                        class="badge-estado {{ $survey->experience_rating <= 1 ? 'badge-urgente' : ($survey->experience_rating === 2 ? 'badge-en-proceso' : 'badge-contratado') }}">
-                        {{ $labels[$survey->experience_rating] ?? 'N/A' }}
-                    </span>
-                    <span
-                        style="color:#64748b; font-size:12px; margin-left:6px;">({{ $survey->experience_rating }}/4)</span>
+            @foreach ($preguntas as $p)
+                <div class="data-row">
+                    <div class="data-label">{{ $p['label'] }}</div>
+                    <div class="data-value">
+                        <span
+                            class="badge-estado {{ $p['valor'] <= 1 ? 'badge-urgente' : ($p['valor'] === 2 ? 'badge-en-proceso' : 'badge-contratado') }}">
+                            {{ $p['texto'] }}
+                        </span>
+                        <span style="color:#64748b; font-size:12px; margin-left:6px;">({{ $p['valor'] }}/4)</span>
+                    </div>
                 </div>
-            </div>
-            <div class="data-row">
-                <div class="data-label">Atención</div>
-                <div class="data-value">
-                    <span
-                        class="badge-estado {{ $survey->service_quality_rating <= 1 ? 'badge-urgente' : ($survey->service_quality_rating === 2 ? 'badge-en-proceso' : 'badge-contratado') }}">
-                        {{ $labels[$survey->service_quality_rating] ?? 'N/A' }}
-                    </span>
-                    <span
-                        style="color:#64748b; font-size:12px; margin-left:6px;">({{ $survey->service_quality_rating }}/4)</span>
-                </div>
-            </div>
+            @endforeach
             <div class="data-row">
                 <div class="data-label">Promedio</div>
-                <div class="data-value data-value--mono">{{ $combined }} / 4.00</div>
+                <div class="data-value data-value--mono">{{ number_format($promedio, 2) }} / 4.00</div>
             </div>
         </div>
     </div>
@@ -89,9 +67,15 @@
         <div class="data-card__header">🧑 Datos del cliente</div>
         <div class="data-card__body">
             <div class="data-row">
-                <div class="data-label">Nombre</div>
+                <div class="data-label">Razón social</div>
                 <div class="data-value">{{ $survey->client_name ?: 'Anónimo' }}</div>
             </div>
+            @if ($survey->ruc)
+                <div class="data-row">
+                    <div class="data-label">RUC</div>
+                    <div class="data-value">{{ $survey->ruc }}</div>
+                </div>
+            @endif
             <div class="data-row">
                 <div class="data-label">Fecha</div>
                 <div class="data-value">{{ $survey->created_at->format('d/m/Y H:i') }}</div>

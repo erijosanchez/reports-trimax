@@ -178,4 +178,36 @@ class Survey extends Model
     {
         return $query->whereNotNull('tiempos_entrega_rating');
     }
+
+    /**
+     * Encuestas atribuibles a una entidad (sede o Trimax General) — misma
+     * regla que getDisplayEntityAttribute(): si el cliente eligió una sede
+     * (sede_id), cuenta exclusivamente para esa sede; si no, cuenta para el
+     * dueño del link. Antes de esto, calcularSedeStats() usaba
+     * `user_id = sede OR sede_id = sede`, que contaba dos veces una encuesta
+     * del link de una sede si el cliente la reetiquetó a otra sede distinta.
+     */
+    public function scopeParaEntidad($query, int $entidadId)
+    {
+        return $query->where(function ($q) use ($entidadId) {
+            $q->where('sede_id', $entidadId)
+                ->orWhere(function ($q2) use ($entidadId) {
+                    $q2->whereNull('sede_id')->where('user_id', $entidadId);
+                });
+        });
+    }
+
+    /** Promedio de todas las preguntas de calificación respondidas (pool de valores, no promedio de promedios). */
+    public static function promedioConsolidado($surveys): float
+    {
+        $ratings = collect($surveys)->flatMap(fn($s) => [
+            $s->experience_rating,
+            $s->sede_rating,
+            $s->consultor_rating,
+            $s->tiempos_entrega_rating,
+            $s->promociones_rating,
+        ])->filter(fn($r) => !is_null($r));
+
+        return $ratings->isEmpty() ? 0.0 : round($ratings->avg(), 2);
+    }
 }

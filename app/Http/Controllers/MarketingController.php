@@ -14,8 +14,11 @@ class MarketingController extends Controller
     // ─── helpers privados ──────────────────────────────────────────────────────
 
     /**
-     * Estadísticas completas a partir de una colección de encuestas.
-     * Calcula promedios separados (experiencia / atención) Y el combinado.
+     * Estadísticas completas a partir de una colección de encuestas. Se
+     * mantiene tal cual para el endpoint público /stats (getStats) — no se
+     * usa en el dashboard, que ahora calcula su propio promedio consolidado
+     * (ver Survey::promedioConsolidado) sobre las 5 preguntas de calificación
+     * en vez de solo experiencia/atención.
      */
     private function calcStats($surveys): array
     {
@@ -27,87 +30,14 @@ class MarketingController extends Controller
             'feliz'                   => $surveys->where('experience_rating', 3)->count(),
             'insatisfecho'            => $surveys->where('experience_rating', 2)->count(),
             'muy_insatisfecho'        => $surveys->where('experience_rating', 1)->count(),
-            // Promedios separados
             'average_experience'      => $total ? round($surveys->avg('experience_rating'), 2) : 0,
             'average_service'         => $total ? round($surveys->avg('service_quality_rating'), 2) : 0,
-            // Promedio combinado: media de los dos ratings por encuesta
             'average_combined'        => $total
                 ? round(
                     $surveys->avg(fn($s) => ($s->experience_rating + $s->service_quality_rating) / 2),
                     2
                 )
                 : 0,
-        ];
-    }
-
-    /**
-     * Mismos stats pero para una colección de IDs de user_id (útil para consultores + sedes).
-     *
-     * @param array $userIds IDs de users_marketing cuyas encuestas directas se cuentan.
-     * @param array $sedeTagIds IDs de sede a incluir también vía Survey.sede_id (encuestas de
-     *   Trimax General etiquetadas con esa sede).
-     * @param bool $excludeTagged Si es true, excluye las encuestas ya etiquetadas con una sede
-     *   (usado para Trimax General: esas ya se cuentan exclusivamente en la sede elegida).
-     */
-    private function calcStatsForIds(
-        array $userIds,
-        ?string $startDate = null,
-        ?string $endDate = null,
-        array $sedeTagIds = [],
-        bool $excludeTagged = false
-    ): array {
-        $query = Survey::where(function ($q) use ($userIds, $sedeTagIds, $excludeTagged) {
-            $q->whereIn('user_id', $userIds);
-            if ($excludeTagged) {
-                $q->whereNull('sede_id');
-            } elseif (!empty($sedeTagIds)) {
-                $q->orWhereIn('sede_id', $sedeTagIds);
-            }
-        });
-
-        if ($startDate && $endDate) {
-            $query->whereBetween('created_at', [
-                $startDate . ' 00:00:00',
-                $endDate   . ' 23:59:59',
-            ]);
-        }
-
-        return $this->calcStats($query->get());
-    }
-
-    /**
-     * Stats de un consultor para el dashboard: ya no tiene link propio
-     * (2026-08-12), así que sus encuestas son las de la encuesta maestra
-     * donde lo eligieron (consultor_id). El único rating que le pertenece es
-     * consultor_rating — no tiene un "experience"/"service" propios, por eso
-     * ambos promedios reflejan el mismo valor (se mantiene el mismo shape que
-     * calcStats() para que la vista y el sortByDesc('average_combined')
-     * sigan funcionando igual).
-     */
-    private function calcConsultorStats(int $consultorId, ?string $startDate = null, ?string $endDate = null): array
-    {
-        $query = Survey::where('consultor_id', $consultorId);
-
-        if ($startDate && $endDate) {
-            $query->whereBetween('created_at', [
-                $startDate . ' 00:00:00',
-                $endDate   . ' 23:59:59',
-            ]);
-        }
-
-        $surveys = $query->get();
-        $total   = $surveys->count();
-        $average = $total ? round($surveys->avg('consultor_rating'), 2) : 0;
-
-        return [
-            'total'              => $total,
-            'muy_feliz'          => $surveys->where('consultor_rating', 4)->count(),
-            'feliz'              => $surveys->where('consultor_rating', 3)->count(),
-            'insatisfecho'       => $surveys->where('consultor_rating', 2)->count(),
-            'muy_insatisfecho'   => $surveys->where('consultor_rating', 1)->count(),
-            'average_experience' => $average,
-            'average_service'    => $average,
-            'average_combined'   => $average,
         ];
     }
 
@@ -126,11 +56,14 @@ class MarketingController extends Controller
     }
 
     /**
-     * Stats "por sede" para el dashboard nuevo: meta semanal, encuestas
-     * obtenidas esta semana, % de cumplimiento, avance día a día, y
-     * promedios por pregunta. Solo considera encuestas de esquema nuevo
-     * (con tiempos_entrega_rating) — las anteriores al rediseño no tienen
-     * los campos nuevos y quedarían fuera de estas métricas por diseño.
+     * Stats por sede — eje central del dashboard (reestructurado 2026-08-12):
+     * identifica las encuestas de cada sede, consolida su total, compara
+     * contra la meta semanal y calcula el % de cumplimiento. Los consultores
+     * ya no son una entidad de primer nivel — su desempeño se agrega como
+     * desglose dentro de la sede a la que están asignados.
+     * Solo considera encuestas de esquema nuevo (con tiempos_entrega_rating)
+     * — las anteriores al rediseño no tienen las preguntas nuevas y quedan
+     * fuera de estas métricas por diseño.
      */
     private function calcularSedeStats()
     {
@@ -139,12 +72,11 @@ class MarketingController extends Controller
         $sedes = UsersMarketing::where('role', 'sede')
             ->where('is_active', true)
             ->orderBy('name')
+            ->with('consultores')
             ->get();
 
         return $sedes->map(function ($sede) use ($inicioSemana, $finSemana) {
-            $surveysSede = Survey::esquemaNuevo()
-                ->where(fn($q) => $q->where('user_id', $sede->id)->orWhere('sede_id', $sede->id))
-                ->get();
+            $surveysSede = Survey::esquemaNuevo()->paraEntidad($sede->id)->get();
 
             $surveysSemana = $surveysSede->filter(
                 fn($s) => $s->created_at->between($inicioSemana, $finSemana)
@@ -164,6 +96,16 @@ class MarketingController extends Controller
                 ];
             });
 
+            $consultores = $sede->consultores
+                ->where('is_active', true)
+                ->map(fn($c) => [
+                    'id'             => $c->id,
+                    'name'           => $c->name,
+                    'total_surveys'  => $c->consultor_stats['total_surveys'],
+                    'average_rating' => $c->consultor_stats['average_rating'],
+                ])
+                ->values();
+
             return [
                 'id'               => $sede->id,
                 'name'             => $sede->name,
@@ -173,11 +115,8 @@ class MarketingController extends Controller
                 'cumplimiento_pct' => $cumplimiento,
                 'avance_diario'    => $avanceDiario,
                 'total_historico'  => $surveysSede->count(),
-                'avg_experiencia'  => round($surveysSede->pluck('experience_rating')->filter()->avg() ?? 0, 2),
-                'avg_sede'         => round($surveysSede->pluck('sede_rating')->filter()->avg() ?? 0, 2),
-                'avg_consultor'    => round($surveysSede->pluck('consultor_rating')->filter()->avg() ?? 0, 2),
-                'avg_tiempos_entrega' => round($surveysSede->pluck('tiempos_entrega_rating')->filter()->avg() ?? 0, 2),
-                'avg_promociones'     => round($surveysSede->pluck('promociones_rating')->filter()->avg() ?? 0, 2),
+                'promedio'         => Survey::promedioConsolidado($surveysSede),
+                'consultores'      => $consultores,
             ];
         })->values();
     }
@@ -189,115 +128,54 @@ class MarketingController extends Controller
         // Sin valores por defecto: si no se envían fechas, se usa TODA la data real.
         $startDate = $request->get('start_date');
         $endDate   = $request->get('end_date');
-        $userId    = $request->get('user_id');
 
         // Solo aplicamos el rango de fechas cuando se envían AMBAS fechas.
         $hasDateRange = $startDate && $endDate;
 
-        // ── Encuestas (todas, o filtradas por rango si se pidió) ──
-        $query = Survey::with(['userMarketing:id,name,role,location', 'selectedSede:id,name,role,location'])
-            ->when($hasDateRange, fn($q) => $q->whereBetween('created_at', [
-                $startDate . ' 00:00:00',
-                $endDate   . ' 23:59:59',
-            ]));
+        $surveys = Survey::when($hasDateRange, fn($q) => $q->whereBetween('created_at', [
+            $startDate . ' 00:00:00',
+            $endDate   . ' 23:59:59',
+        ]))->get();
 
-        if ($userId) {
-            $query->where('user_id', $userId);
-        }
+        // ── Stats generales (cabecera): total + promedio consolidado del rango ──
+        $stats = [
+            'total'    => $surveys->count(),
+            'promedio' => Survey::promedioConsolidado($surveys),
+        ];
 
-        $surveys = $query->get();
+        $sedeStats     = $this->calcularSedeStats();
+        $sedesConMeta  = $sedeStats->whereNotNull('meta_semanal');
+        $sedesCumplen  = $sedesConMeta->filter(fn($s) => $s['cumplimiento_pct'] >= 100)->count();
 
-        // ── Stats generales ──
-        $stats = $this->calcStats($surveys);
-
-        // ── Tendencia diaria (para el gráfico de líneas) ──
-        $dailyTrend = Survey::when($hasDateRange, fn($q) => $q->whereBetween('created_at', [
-                $startDate . ' 00:00:00',
-                $endDate   . ' 23:59:59',
-            ]))
-            ->when($userId, fn($q) => $q->where('user_id', $userId))
-            ->selectRaw('DATE(created_at) as date,
-                            COUNT(*) as total,
-                            ROUND(AVG(experience_rating), 2) as avg_experience,
-                            ROUND(AVG(service_quality_rating), 2) as avg_service,
-                            ROUND(AVG((experience_rating + service_quality_rating) / 2), 2) as avg_combined')
-            ->groupBy('date')
-            ->orderBy('date')
-            ->get();
-
-        // ── Stats por usuario ──
-        $userStats = UsersMarketing::whereIn('role', ['consultor', 'sede', 'trimax'])
-            ->where('is_active', true)
-            ->with(['sedes'])
-            ->get()
-            ->map(function ($user) use ($startDate, $endDate) {
-
-                if ($user->isConsultor()) {
-                    $sedeIds = $user->sedes->pluck('id')->toArray();
-                    $s       = $this->calcConsultorStats($user->id, $startDate, $endDate);
-
-                    return array_merge($s, [
-                        'id'          => $user->id,
-                        'name'        => $user->name,
-                        'role'        => $user->role,
-                        'location'    => $user->location,
-                        'sedes_count' => count($sedeIds),
-                    ]);
-                }
-
-                if ($user->isSede()) {
-                    // Sus encuestas directas + las de Trimax General etiquetadas con esta sede
-                    $s = $this->calcStatsForIds([$user->id], $startDate, $endDate, [$user->id]);
-                } else {
-                    // Trimax General — solo las encuestas que el cliente dejó sin sede seleccionada
-                    $s = $this->calcStatsForIds([$user->id], $startDate, $endDate, [], true);
-                }
-
-                return array_merge($s, [
-                    'id'          => $user->id,
-                    'name'        => $user->name,
-                    'role'        => $user->role,
-                    'location'    => $user->location,
-                    'sedes_count' => 0,
-                ]);
-            })
-            ->sortByDesc('average_combined')
-            ->values();
-
-        // ── Lista para filtro ──
-        $users = UsersMarketing::whereIn('role', ['consultor', 'sede', 'trimax'])
-            ->where('is_active', true)
-            ->orderBy('name')
-            ->get(['id', 'name', 'role', 'location']);
-
-        // ── Encuestas recientes (preview de las 50 más nuevas) ──
-        $recentSurveys = Survey::with(['userMarketing:id,name,role,location', 'selectedSede:id,name,role,location'])
-            ->when($hasDateRange, fn($q) => $q->whereBetween('created_at', [
-                $startDate . ' 00:00:00',
-                $endDate   . ' 23:59:59',
-            ]))
-            ->when($userId, fn($q, $id) => $q->where('user_id', $id))
-            ->orderBy('created_at', 'desc')
-            ->limit(50)
-            ->get();
-
-        $sedeStats = $this->calcularSedeStats();
         $sedesParaMeta = UsersMarketing::where('role', 'sede')
             ->where('is_active', true)
             ->orderBy('name')
             ->get(['id', 'name']);
 
+        // ── Encuestas recientes con calificación baja (para la pestaña Alertas) ──
+        $recentLowRated = Survey::with(['userMarketing:id,name,role,location', 'selectedSede:id,name,role,location'])
+            ->orderBy('created_at', 'desc')
+            ->limit(200)
+            ->get()
+            ->filter(fn($s) => collect([
+                $s->experience_rating,
+                $s->sede_rating,
+                $s->consultor_rating,
+                $s->tiempos_entrega_rating,
+                $s->promociones_rating,
+            ])->filter()->contains(fn($r) => $r <= 2))
+            ->take(20)
+            ->values();
+
         return view('marketing.dashboard.index', compact(
             'stats',
-            'userStats',
-            'users',
-            'recentSurveys',
-            'startDate',
-            'endDate',
-            'userId',
-            'dailyTrend',
             'sedeStats',
-            'sedesParaMeta'
+            'sedesConMeta',
+            'sedesCumplen',
+            'sedesParaMeta',
+            'recentLowRated',
+            'startDate',
+            'endDate'
         ));
     }
 
@@ -324,23 +202,30 @@ class MarketingController extends Controller
 
     public function showSurvey(Survey $survey)
     {
-        $survey->load(['userMarketing', 'selectedSede']);
+        $survey->load(['userMarketing', 'selectedSede', 'consultor']);
         $evaluado = $survey->display_entity;
+
+        $preguntas = collect([
+            ['label' => 'Experiencia general', 'valor' => $survey->experience_rating, 'texto' => $survey->experience_rating_text],
+            ['label' => 'Sede', 'valor' => $survey->sede_rating, 'texto' => $survey->sede_rating_text],
+            ['label' => $survey->consultor ? "Consultor ({$survey->consultor->name})" : 'Consultor', 'valor' => $survey->consultor_rating, 'texto' => $survey->consultor_rating_text],
+            ['label' => 'Tiempos de entrega', 'valor' => $survey->tiempos_entrega_rating, 'texto' => $survey->tiempos_entrega_rating_text],
+            ['label' => 'Promociones', 'valor' => $survey->promociones_rating, 'texto' => $survey->promociones_rating_text],
+        ])->filter(fn($p) => !is_null($p['valor']))->values();
 
         return response()->json([
             'success' => true,
             'survey'  => [
-                'id'                    => $survey->id,
-                'client_name'           => $survey->client_name ?: 'Anónimo',
-                'ruc'                   => $survey->ruc,
-                'experience_rating'     => $survey->experience_rating,
-                'service_quality_rating' => $survey->service_quality_rating,
-                'average_combined'      => round(($survey->experience_rating + $survey->service_quality_rating) / 2, 2),
-                'comments'              => $survey->comments,
-                'created_at'            => $survey->created_at->format('d/m/Y H:i'),
-                'evaluado_name'         => $evaluado->name,
-                'evaluado_role'         => $evaluado->role,
-                'evaluado_location'     => $evaluado->location,
+                'id'                => $survey->id,
+                'client_name'       => $survey->client_name ?: 'Anónimo',
+                'ruc'               => $survey->ruc,
+                'preguntas'         => $preguntas,
+                'promedio'          => Survey::promedioConsolidado([$survey]),
+                'comments'          => $survey->comments,
+                'created_at'        => $survey->created_at->format('d/m/Y H:i'),
+                'evaluado_name'     => $evaluado->name,
+                'evaluado_role'     => $evaluado->role,
+                'evaluado_location' => $evaluado->location,
             ],
         ]);
     }
@@ -380,7 +265,7 @@ class MarketingController extends Controller
         }
     }
 
-    // ─── API stats (AJAX) ──────────────────────────────────────────────────────
+    // ─── API stats (AJAX) — endpoint público, se mantiene tal cual ────────────
 
     public function getStats(Request $request)
     {
@@ -405,7 +290,7 @@ class MarketingController extends Controller
     {
         $startDate = $request->get('start_date');
         $endDate   = $request->get('end_date');
-        $userId    = $request->get('user_id');
+        $sedeId    = $request->get('sede_id');
         $rating    = $request->get('rating');
 
         $query = Survey::with(['userMarketing:id,name,role,location', 'selectedSede:id,name,role,location'])
@@ -415,24 +300,24 @@ class MarketingController extends Controller
                 fn($q) =>
                 $q->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
             )
-            ->when($userId, fn($q) => $q->where('user_id', $userId))
+            ->when($sedeId, fn($q) => $q->paraEntidad($sedeId))
             ->when($rating, fn($q) => $q->where('experience_rating', $rating))
             ->orderBy('created_at', 'desc'); // más recientes primero
 
         $paginated = $query->paginate(20);
 
         $data = $paginated->getCollection()->map(fn($sv) => [
-            'id'                     => $sv->id,
-            'date'                   => $sv->created_at->format('d/m/Y'),
-            'time'                   => $sv->created_at->format('H:i'),
-            'client_name'            => $sv->client_name,
-            'ruc'                    => $sv->ruc,
-            'evaluado_name'          => $sv->display_entity->name,
-            'evaluado_role'          => $sv->display_entity->role,
-            'evaluado_location'      => $sv->display_entity->location,
-            'experience_rating'      => $sv->experience_rating,
-            'service_quality_rating' => $sv->service_quality_rating,
-            'comments'               => $sv->comments,
+            'id'                => $sv->id,
+            'date'              => $sv->created_at->format('d/m/Y'),
+            'time'              => $sv->created_at->format('H:i'),
+            'client_name'       => $sv->client_name,
+            'ruc'               => $sv->ruc,
+            'evaluado_name'     => $sv->display_entity->name,
+            'evaluado_role'     => $sv->display_entity->role,
+            'evaluado_location' => $sv->display_entity->location,
+            'experience_rating' => $sv->experience_rating,
+            'promedio'          => Survey::promedioConsolidado([$sv]),
+            'comments'          => $sv->comments,
         ]);
 
         return response()->json([
