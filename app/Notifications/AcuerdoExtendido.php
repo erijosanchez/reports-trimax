@@ -6,10 +6,11 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
 use Illuminate\Notifications\Messages\MailMessage;
 use App\Models\AcuerdoComercial;
+use App\Notifications\Concerns\RespetaPreferenciaCorreo;
 
 class AcuerdoExtendido extends Notification
 {
-    use Queueable;
+    use Queueable, RespetaPreferenciaCorreo;
 
     protected $acuerdo;
     protected $motivo;
@@ -20,11 +21,6 @@ class AcuerdoExtendido extends Notification
         $this->acuerdo = $acuerdo;
         $this->motivo = $motivo;
         $this->nuevaFecha = $nuevaFecha;
-    }
-
-    public function via($notifiable)
-    {
-        return ['mail',];
     }
 
     public function toMail($notifiable)
@@ -46,6 +42,9 @@ class AcuerdoExtendido extends Notification
     {
         return [
             'tipo' => 'acuerdo_extendido',
+            'titulo' => 'Acuerdo Comercial Extendido',
+            'mensaje' => "Acuerdo {$this->acuerdo->numero_acuerdo} extendido hasta {$this->nuevaFecha}",
+            'url' => url('/comercial/acuerdos'),
             'acuerdo_id' => $this->acuerdo->id,
             'numero_acuerdo' => $this->acuerdo->numero_acuerdo,
             'nueva_fecha' => $this->nuevaFecha,

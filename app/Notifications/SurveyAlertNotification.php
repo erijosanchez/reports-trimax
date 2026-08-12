@@ -7,10 +7,11 @@ use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use App\Models\Survey;
 use App\Models\UsersMarketing;
+use App\Notifications\Concerns\RespetaPreferenciaCorreo;
 
 class SurveyAlertNotification extends Notification
 {
-    use Queueable;
+    use Queueable, RespetaPreferenciaCorreo;
 
     protected Survey $survey;
     protected UsersMarketing $evaluado;
@@ -19,11 +20,6 @@ class SurveyAlertNotification extends Notification
     {
         $this->survey   = $survey;
         $this->evaluado = $evaluado;
-    }
-
-    public function via(object $notifiable): array
-    {
-        return ['mail'];
     }
 
     public function toMail(object $notifiable): MailMessage
@@ -54,6 +50,10 @@ class SurveyAlertNotification extends Notification
     public function toArray(object $notifiable): array
     {
         return [
+            'tipo'                   => 'survey_alert',
+            'titulo'                 => 'Encuesta con calificación negativa',
+            'mensaje'                => "{$this->evaluado->name} — promedio " . number_format(Survey::promedioConsolidado([$this->survey]), 2),
+            'url'                    => url('/marketing'),
             'survey_id'              => $this->survey->id,
             'evaluado_name'          => $this->evaluado->name,
             'experience_rating'      => $this->survey->experience_rating,
@@ -61,7 +61,6 @@ class SurveyAlertNotification extends Notification
             'consultor_rating'       => $this->survey->consultor_rating,
             'tiempos_entrega_rating' => $this->survey->tiempos_entrega_rating,
             'promociones_rating'     => $this->survey->promociones_rating,
-            'tipo'                   => 'survey_alert',
         ];
     }
 }

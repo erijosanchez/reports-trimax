@@ -7,21 +7,17 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use App\Models\DescuentoEspecial;
+use App\Notifications\Concerns\RespetaPreferenciaCorreo;
 
 class DescuentoEspecialAprobado extends Notification
 {
-    use Queueable;
+    use Queueable, RespetaPreferenciaCorreo;
 
     protected $descuento;
 
     public function __construct(DescuentoEspecial $descuento)
     {
         $this->descuento = $descuento;
-    }
-
-    public function via($notifiable)
-    {
-        return ['mail'];
     }
 
     public function toMail($notifiable)
@@ -44,9 +40,12 @@ class DescuentoEspecialAprobado extends Notification
     public function toArray($notifiable)
     {
         return [
+            'tipo' => 'descuento_especial_aprobado',
+            'titulo' => 'Descuento Especial Aprobado',
+            'mensaje' => "Descuento {$this->descuento->numero_descuento} — {$this->descuento->razon_social}",
+            'url' => url('/comercial/descuentos-especiales'),
             'descuento_id' => $this->descuento->id,
             'numero_descuento' => $this->descuento->numero_descuento,
-            'mensaje' => 'Descuento especial aprobado completamente'
         ];
     }
 }

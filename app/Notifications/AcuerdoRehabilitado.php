@@ -6,10 +6,11 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
 use Illuminate\Notifications\Messages\MailMessage;
 use App\Models\AcuerdoComercial;
+use App\Notifications\Concerns\RespetaPreferenciaCorreo;
 
 class AcuerdoRehabilitado extends Notification
 {
-    use Queueable;
+    use Queueable, RespetaPreferenciaCorreo;
 
     protected $acuerdo;
     protected $motivo;
@@ -18,11 +19,6 @@ class AcuerdoRehabilitado extends Notification
     {
         $this->acuerdo = $acuerdo;
         $this->motivo = $motivo;
-    }
-
-    public function via($notifiable)
-    {
-        return ['mail'];
     }
 
     public function toMail($notifiable)
@@ -43,6 +39,9 @@ class AcuerdoRehabilitado extends Notification
     {
         return [
             'tipo' => 'acuerdo_rehabilitado',
+            'titulo' => 'Acuerdo Comercial Rehabilitado',
+            'mensaje' => "Acuerdo {$this->acuerdo->numero_acuerdo} — {$this->acuerdo->razon_social}",
+            'url' => url('/comercial/acuerdos'),
             'acuerdo_id' => $this->acuerdo->id,
             'numero_acuerdo' => $this->acuerdo->numero_acuerdo,
             'motivo' => $this->motivo

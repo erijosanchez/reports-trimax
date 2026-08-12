@@ -40,6 +40,7 @@ class User extends Authenticatable
         'puede_ver_vouchers',
         'puede_ver_desbloqueo',
         'is_active',
+        'email_notifications_enabled',
         'last_login_at',
         'two_factor_secret',
         'two_factor_recovery_codes',
@@ -57,6 +58,7 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
         'is_active' => 'boolean',
+        'email_notifications_enabled' => 'boolean',
         'puede_ver_ventas_consolidadas' => 'boolean',
         'puede_ver_descuentos_especiales' => 'boolean',
         'puede_ver_consultar_orden' => 'boolean',
@@ -358,6 +360,20 @@ class User extends Authenticatable
     {
         return $this->isSuperAdmin() || $this->isAdmin() || $this->isSede()
             || $this->isFinanzas() || (bool) $this->puede_ver_desbloqueo;
+    }
+
+    // NOTIFICACIONES
+
+    /**
+     * Si es false, las notificaciones del sistema dejan de enviarle correo
+     * pero le siguen llegando por la bandeja in-app (canal "database").
+     */
+    public function wantsEmailNotifications(): bool
+    {
+        // null = todavía no se corrió la migración de la columna, o el
+        // usuario nunca la tocó — por defecto sigue recibiendo correo como
+        // siempre (opt-out, no opt-in).
+        return $this->email_notifications_enabled ?? true;
     }
 
     public function getRoleName()

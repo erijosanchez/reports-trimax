@@ -31,6 +31,7 @@ use App\Http\Controllers\ProductivyController;
 use App\Http\Controllers\RetiroOrdenController;
 use App\Http\Controllers\VoucherController;
 use App\Http\Controllers\DesbloqueoController;
+use App\Http\Controllers\NotificationController;
 
 // ============================================================
 // RUTAS PARA LARAVEL 11
@@ -114,6 +115,13 @@ Route::middleware(['auth', '2fa.verified', 'throttle:dashboard', 'track.activity
         Route::get('/{id}/view', [FileController::class, 'view'])->name('view');
         Route::get('/{id}/download', [FileController::class, 'download'])->name('download');
         Route::delete('/{id}', [FileController::class, 'destroy'])->name('destroy');
+    });
+
+    // Notificaciones in-app (bandeja de la campanita, todos los usuarios autenticados)
+    Route::prefix('notificaciones')->name('notificaciones.')->group(function () {
+        Route::get('/', [NotificationController::class, 'index'])->name('index');
+        Route::post('/{id}/leer', [NotificationController::class, 'markAsRead'])->name('leer');
+        Route::post('/leer-todas', [NotificationController::class, 'markAllAsRead'])->name('leer-todas');
     });
 
     // Marketing Routes (All authenticated users)

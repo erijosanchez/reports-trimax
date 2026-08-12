@@ -7,10 +7,11 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use App\Models\DescuentoEspecial;
+use App\Notifications\Concerns\RespetaPreferenciaCorreo;
 
 class DescuentoEspecialDeshabilitado extends Notification
 {
-    use Queueable;
+    use Queueable, RespetaPreferenciaCorreo;
 
     protected $descuento;
     protected $motivo;
@@ -19,11 +20,6 @@ class DescuentoEspecialDeshabilitado extends Notification
     {
         $this->descuento = $descuento;
         $this->motivo = $motivo;
-    }
-
-    public function via($notifiable)
-    {
-        return ['mail'];
     }
 
     public function toMail($notifiable)
@@ -45,9 +41,12 @@ class DescuentoEspecialDeshabilitado extends Notification
     public function toArray($notifiable)
     {
         return [
+            'tipo' => 'descuento_especial_deshabilitado',
+            'titulo' => 'Descuento Especial Deshabilitado',
+            'mensaje' => "Descuento {$this->descuento->numero_descuento} — {$this->descuento->razon_social}",
+            'url' => url('/comercial/descuentos-especiales'),
             'descuento_id' => $this->descuento->id,
             'numero_descuento' => $this->descuento->numero_descuento,
-            'mensaje' => 'Descuento especial deshabilitado',
             'motivo' => $this->motivo
         ];
     }

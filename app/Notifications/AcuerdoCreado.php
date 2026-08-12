@@ -7,10 +7,11 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use App\Models\AcuerdoComercial;
+use App\Notifications\Concerns\RespetaPreferenciaCorreo;
 
 class AcuerdoCreado extends Notification
 {
-    use Queueable;
+    use Queueable, RespetaPreferenciaCorreo;
     protected $acuerdo;
 
     /**
@@ -19,16 +20,6 @@ class AcuerdoCreado extends Notification
     public function __construct(AcuerdoComercial $acuerdo)
     {
         $this->acuerdo = $acuerdo;
-    }
-
-    /**
-     * Get the notification's delivery channels.
-     *
-     * @return array<int, string>
-     */
-    public function via(object $notifiable): array
-    {
-        return ['mail'];
     }
 
     /**
@@ -58,10 +49,13 @@ class AcuerdoCreado extends Notification
     public function toArray(object $notifiable): array
     {
         return [
+            'tipo' => 'acuerdo_creado',
+            'titulo' => 'Nuevo Acuerdo Comercial',
+            'mensaje' => "Acuerdo {$this->acuerdo->numero_acuerdo} — {$this->acuerdo->razon_social}",
+            'url' => url('/comercial/acuerdos'),
             'acuerdo_id' => $this->acuerdo->id,
             'numero_acuerdo' => $this->acuerdo->numero_acuerdo,
             'razon_social' => $this->acuerdo->razon_social,
-            'tipo' => 'acuerdo_creado'
         ];
     }
 }
