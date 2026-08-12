@@ -76,6 +76,42 @@ class MarketingController extends Controller
     }
 
     /**
+     * Stats de un consultor para el dashboard: ya no tiene link propio
+     * (2026-08-12), así que sus encuestas son las de la encuesta maestra
+     * donde lo eligieron (consultor_id). El único rating que le pertenece es
+     * consultor_rating — no tiene un "experience"/"service" propios, por eso
+     * ambos promedios reflejan el mismo valor (se mantiene el mismo shape que
+     * calcStats() para que la vista y el sortByDesc('average_combined')
+     * sigan funcionando igual).
+     */
+    private function calcConsultorStats(int $consultorId, ?string $startDate = null, ?string $endDate = null): array
+    {
+        $query = Survey::where('consultor_id', $consultorId);
+
+        if ($startDate && $endDate) {
+            $query->whereBetween('created_at', [
+                $startDate . ' 00:00:00',
+                $endDate   . ' 23:59:59',
+            ]);
+        }
+
+        $surveys = $query->get();
+        $total   = $surveys->count();
+        $average = $total ? round($surveys->avg('consultor_rating'), 2) : 0;
+
+        return [
+            'total'              => $total,
+            'muy_feliz'          => $surveys->where('consultor_rating', 4)->count(),
+            'feliz'              => $surveys->where('consultor_rating', 3)->count(),
+            'insatisfecho'       => $surveys->where('consultor_rating', 2)->count(),
+            'muy_insatisfecho'   => $surveys->where('consultor_rating', 1)->count(),
+            'average_experience' => $average,
+            'average_service'    => $average,
+            'average_combined'   => $average,
+        ];
+    }
+
+    /**
      * Rango lunes-domingo de la semana en curso, para el cálculo de
      * cumplimiento semanal por sede. (Sin respuesta aún de Marketing sobre
      * si el corte debe ser otro — lunes-domingo es el default documentado
@@ -93,8 +129,8 @@ class MarketingController extends Controller
      * Stats "por sede" para el dashboard nuevo: meta semanal, encuestas
      * obtenidas esta semana, % de cumplimiento, avance día a día, y
      * promedios por pregunta. Solo considera encuestas de esquema nuevo
-     * (con productos_rating) — las anteriores al rediseño no tienen los
-     * campos nuevos y quedarían fuera de estas métricas por diseño.
+     * (con tiempos_entrega_rating) — las anteriores al rediseño no tienen
+     * los campos nuevos y quedarían fuera de estas métricas por diseño.
      */
     private function calcularSedeStats()
     {
@@ -140,7 +176,8 @@ class MarketingController extends Controller
                 'avg_experiencia'  => round($surveysSede->pluck('experience_rating')->filter()->avg() ?? 0, 2),
                 'avg_sede'         => round($surveysSede->pluck('sede_rating')->filter()->avg() ?? 0, 2),
                 'avg_consultor'    => round($surveysSede->pluck('consultor_rating')->filter()->avg() ?? 0, 2),
-                'avg_productos'    => round($surveysSede->pluck('productos_rating')->filter()->avg() ?? 0, 2),
+                'avg_tiempos_entrega' => round($surveysSede->pluck('tiempos_entrega_rating')->filter()->avg() ?? 0, 2),
+                'avg_promociones'     => round($surveysSede->pluck('promociones_rating')->filter()->avg() ?? 0, 2),
             ];
         })->values();
     }
@@ -197,8 +234,7 @@ class MarketingController extends Controller
 
                 if ($user->isConsultor()) {
                     $sedeIds = $user->sedes->pluck('id')->toArray();
-                    $allIds  = array_merge([$user->id], $sedeIds);
-                    $s       = $this->calcStatsForIds($allIds, $startDate, $endDate, $sedeIds);
+                    $s       = $this->calcConsultorStats($user->id, $startDate, $endDate);
 
                     return array_merge($s, [
                         'id'          => $user->id,
@@ -296,6 +332,7 @@ class MarketingController extends Controller
             'survey'  => [
                 'id'                    => $survey->id,
                 'client_name'           => $survey->client_name ?: 'Anónimo',
+                'ruc'                   => $survey->ruc,
                 'experience_rating'     => $survey->experience_rating,
                 'service_quality_rating' => $survey->service_quality_rating,
                 'average_combined'      => round(($survey->experience_rating + $survey->service_quality_rating) / 2, 2),
@@ -323,7 +360,8 @@ class MarketingController extends Controller
             $survey->experience_rating,
             $survey->sede_rating,
             $survey->consultor_rating,
-            $survey->productos_rating,
+            $survey->tiempos_entrega_rating,
+            $survey->promociones_rating,
         ], fn($r) => !is_null($r));
 
         $hayCalificacionBaja = collect($ratings)->contains(fn($r) => $r <= 2);
@@ -388,6 +426,7 @@ class MarketingController extends Controller
             'date'                   => $sv->created_at->format('d/m/Y'),
             'time'                   => $sv->created_at->format('H:i'),
             'client_name'            => $sv->client_name,
+            'ruc'                    => $sv->ruc,
             'evaluado_name'          => $sv->display_entity->name,
             'evaluado_role'          => $sv->display_entity->role,
             'evaluado_location'      => $sv->display_entity->location,

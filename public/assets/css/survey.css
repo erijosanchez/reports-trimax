@@ -598,6 +598,12 @@ body {
     color: #F44336;
 }
 
+.optional-mark {
+    color: #999;
+    font-weight: normal;
+    font-size: 0.85em;
+}
+
 /* ===== INPUTS HIDDEN ===== */
 input[type="hidden"] {
     display: none;

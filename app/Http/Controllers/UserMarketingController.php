@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use App\Models\UsersMarketing;
+use App\Models\Survey;
 use App\Services\ActivityLogService;
 use Google\Service\Directory\Users;
 
@@ -119,7 +120,11 @@ class UserMarketingController extends Controller
                 'name' => $request->name,
                 'role' => $request->role,
                 'location' => $request->location,
-                'unique_token' => Str::random(32),
+                // Los consultores ya no tienen link propio (2026-08-12): se
+                // les asigna a sedes y su calificación sale de la encuesta
+                // maestra. El modelo también lo guarda por si se crea sin pasar
+                // por aquí (p.ej. tests, comandos).
+                'unique_token' => $request->role === 'consultor' ? null : Str::random(32),
                 'is_active' => true,
             ]);
 
@@ -127,9 +132,13 @@ class UserMarketingController extends Controller
 
             ActivityLogService::log(auth()->id(), 'create_user_marketing', 'UsersMarketing', $user->id, "Creó usuario marketing: {$user->name} (rol: {$user->role})");
 
+            $mensaje = $user->role === 'consultor'
+                ? 'Usuario creado exitosamente. Asígnale sus sedes desde su ficha.'
+                : 'Usuario creado exitosamente. Link de encuesta generado.';
+
             return redirect()
                 ->route('marketing.users.show', $user->id)
-                ->with('success', 'Usuario creado exitosamente. Link de encuesta generado.');
+                ->with('success', $mensaje);
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->with('error', 'Error al crear usuario: ' . $e->getMessage())->withInput();
@@ -145,16 +154,10 @@ class UserMarketingController extends Controller
 
         // Estadísticas del usuario
         if ($user->isConsultor()) {
-            // Para consultores: solo sus encuestas propias — las calificaciones de
-            // una sede ya no se heredan hacia el consultor asignado (2026-08-11).
-            $stats = [
-                'total_surveys' => $user->total_surveys,
-                'average_rating' => $user->average_rating,
-                'muy_feliz' => $user->surveys->where('experience_rating', 4)->count(),
-                'feliz' => $user->surveys->where('experience_rating', 3)->count(),
-                'insatisfecho' => $user->surveys->where('experience_rating', 2)->count(),
-                'muy_insatisfecho' => $user->surveys->where('experience_rating', 1)->count(),
-            ];
+            // Para consultores: encuestas de la encuesta maestra donde lo
+            // eligieron (consultor_id/consultor_rating) — ya no tienen link
+            // propio (2026-08-12).
+            $stats = $user->consultor_stats;
         } else {
             // Para sedes, estadísticas normales
             $stats = [
@@ -167,16 +170,23 @@ class UserMarketingController extends Controller
             ];
         }
 
+        // Para consultores, "sus" encuestas son las de la encuesta maestra
+        // donde lo eligieron (consultor_id) — ya no tienen link propio.
+        $surveyQuery = $user->isConsultor()
+            ? Survey::where('consultor_id', $user->id)
+            : $user->surveys();
+
         // Encuestas recientes
-        $recentSurveys = $user->surveys()
+        $recentSurveys = (clone $surveyQuery)
             ->orderBy('created_at', 'desc')
             ->limit(10)
             ->get();
 
         // Tendencia (últimos 30 días)
-        $trend = $user->surveys()
+        $ratingColumn = $user->isConsultor() ? 'consultor_rating' : 'experience_rating';
+        $trend = (clone $surveyQuery)
             ->where('created_at', '>=', now()->subDays(30))
-            ->selectRaw('DATE(created_at) as date, COUNT(*) as count, AVG(experience_rating) as avg_rating')
+            ->selectRaw("DATE(created_at) as date, COUNT(*) as count, AVG({$ratingColumn}) as avg_rating")
             ->groupBy('date')
             ->orderBy('date')
             ->get();
@@ -305,6 +315,11 @@ class UserMarketingController extends Controller
     public function regenerateToken($id)
     {
         $user = UsersMarketing::findOrFail($id);
+
+        if ($user->isConsultor()) {
+            return back()->with('error', 'Los consultores ya no tienen link propio — su calificación sale de la encuesta maestra.');
+        }
+
         $user->unique_token = Str::random(32);
         $user->save();
 
@@ -348,6 +363,13 @@ class UserMarketingController extends Controller
     public function generateQR($id)
     {
         $user = UsersMarketing::findOrFail($id);
+
+        if (!$user->survey_url) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Los consultores ya no tienen link propio — no hay QR que generar.',
+            ], 422);
+        }
 
         // Generar URL del QR
         $qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=" . urlencode($user->survey_url);
@@ -399,9 +421,9 @@ class UserMarketingController extends Controller
                     $user->role === 'consultor' ? 'Consultor' : 'Sede',
                     $user->location ?? 'N/A',
                     $user->is_active ? 'Activo' : 'Inactivo',
-                    $user->surveys->count(),
-                    round($user->surveys->avg('experience_rating'), 2),
-                    $user->survey_url,
+                    $user->total_surveys,
+                    $user->average_rating,
+                    $user->survey_url ?? 'N/A — sin link propio',
                     $user->created_at->format('Y-m-d H:i:s')
                 ]);
             }
@@ -418,8 +440,11 @@ class UserMarketingController extends Controller
     public function preview($id)
     {
         $user = UsersMarketing::findOrFail($id);
-        $token = $user->unique_token;
 
-        return redirect()->route('survey.show', $token);
+        if (!$user->unique_token) {
+            return back()->with('error', 'Los consultores ya no tienen link propio — no hay encuesta que previsualizar.');
+        }
+
+        return redirect()->route('survey.show', $user->unique_token);
     }
 }

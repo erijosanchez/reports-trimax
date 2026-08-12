@@ -24,13 +24,15 @@ class UsersMarketing extends Model
         'is_active' => 'boolean',
     ];
 
-    // Generar token único al crear usuario
+    // Generar token único al crear usuario — los consultores ya no tienen
+    // link propio (2026-08-12): solo se les asigna a sedes y su calificación
+    // sale de la pregunta de consultor en la encuesta maestra.
     protected static function boot()
     {
         parent::boot();
 
         static::creating(function ($usersMarketing) {
-            if (empty($usersMarketing->unique_token)) {
+            if (empty($usersMarketing->unique_token) && $usersMarketing->role !== 'consultor') {
                 $usersMarketing->unique_token = Str::random(32);
             }
         });
@@ -63,7 +65,7 @@ class UsersMarketing extends Model
 
     public function getSurveyUrlAttribute()
     {
-        return url("/encuesta/{$this->unique_token}");
+        return $this->unique_token ? url("/encuesta/{$this->unique_token}") : null;
     }
 
     public function isConsultor()
@@ -107,9 +109,9 @@ class UsersMarketing extends Model
      * Query de encuestas a considerar para las stats "propias" de esta entidad.
      * - Sede: sus encuestas directas + las de Trimax General etiquetadas con esta sede.
      * - Trimax: solo las que el cliente dejó sin sede seleccionada.
-     * - Consultor: únicamente sus encuestas directas — las calificaciones de
-     *   una sede ya NO se heredan hacia sus consultores asignados (decisión
-     *   validada 2026-08-11: cada consultor responde solo por su propio link).
+     * - Consultor: encuestas de la encuesta maestra donde lo eligieron como su
+     *   consultor (`consultor_id`) — ya no tiene link propio (2026-08-12), así
+     *   que `user_id` nunca será suyo para encuestas nuevas.
      */
     protected function surveyQueryForStats()
     {
@@ -121,12 +123,18 @@ class UsersMarketing extends Model
             return Survey::where('user_id', $this->id)->whereNull('sede_id');
         }
 
+        if ($this->isConsultor()) {
+            return Survey::where('consultor_id', $this->id);
+        }
+
         return $this->surveys();
     }
 
     public function getAverageRatingAttribute()
     {
-        return round($this->surveyQueryForStats()->avg('experience_rating') ?? 0, 2);
+        $column = $this->isConsultor() ? 'consultor_rating' : 'experience_rating';
+
+        return round($this->surveyQueryForStats()->avg($column) ?? 0, 2);
     }
 
     public function getTotalSurveysAttribute()
@@ -134,22 +142,24 @@ class UsersMarketing extends Model
         return $this->surveyQueryForStats()->count();
     }
 
-    // Obtener estadísticas detalladas del consultor (solo sus encuestas propias).
+    // Estadísticas detalladas del consultor: encuestas de la encuesta maestra
+    // donde lo eligieron (consultor_id), calificadas con consultor_rating —
+    // ya no tiene link propio, así que no hay "sus encuestas" vía user_id.
     public function getConsultorStatsAttribute()
     {
         if (!$this->isConsultor()) {
             return null;
         }
 
-        $surveys = $this->surveys;
+        $surveys = Survey::where('consultor_id', $this->id)->get();
 
         return [
             'total_surveys' => $surveys->count(),
-            'average_rating' => round($surveys->avg('experience_rating') ?? 0, 2),
-            'muy_feliz' => $surveys->where('experience_rating', 4)->count(),
-            'feliz' => $surveys->where('experience_rating', 3)->count(),
-            'insatisfecho' => $surveys->where('experience_rating', 2)->count(),
-            'muy_insatisfecho' => $surveys->where('experience_rating', 1)->count(),
+            'average_rating' => round($surveys->avg('consultor_rating') ?? 0, 2),
+            'muy_feliz' => $surveys->where('consultor_rating', 4)->count(),
+            'feliz' => $surveys->where('consultor_rating', 3)->count(),
+            'insatisfecho' => $surveys->where('consultor_rating', 2)->count(),
+            'muy_insatisfecho' => $surveys->where('consultor_rating', 1)->count(),
         ];
     }
 }

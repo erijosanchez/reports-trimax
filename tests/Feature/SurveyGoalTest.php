@@ -14,7 +14,7 @@ use Tests\TestCase;
  * Metas semanales por sede (nuevo, validado con Gerencia 2026-08-11): no
  * existía ningún concepto de meta en el sistema. El dashboard "Por Sede"
  * calcula cumplimiento = encuestas de la semana en curso ÷ meta vigente, y
- * solo considera encuestas del esquema nuevo (con productos_rating).
+ * solo considera encuestas del esquema nuevo (con tiempos_entrega_rating).
  */
 class SurveyGoalTest extends TestCase
 {
@@ -42,12 +42,12 @@ class SurveyGoalTest extends TestCase
     private function crearEncuestaEsquemaNuevo(UsersMarketing $sede, $createdAt = null): Survey
     {
         $survey = Survey::create([
-            'user_id'           => $sede->id,
-            'client_name'       => 'Cliente Test',
-            'experience_rating' => 4,
-            'sede_rating'       => 4,
-            'tiene_consultor'   => false,
-            'productos_rating'  => 4,
+            'user_id'                => $sede->id,
+            'client_name'            => 'Cliente Test',
+            'experience_rating'      => 4,
+            'sede_rating'            => 4,
+            'tiene_consultor'        => false,
+            'tiempos_entrega_rating' => 4,
         ]);
 
         if ($createdAt) {
@@ -133,7 +133,7 @@ class SurveyGoalTest extends TestCase
             'vigente_desde' => now()->startOfWeek()->toDateString(),
         ]);
 
-        // Encuesta del esquema anterior: sin productos_rating.
+        // Encuesta del esquema anterior: sin tiempos_entrega_rating.
         Survey::create([
             'user_id'                => $sede->id,
             'client_name'            => 'Cliente antiguo',

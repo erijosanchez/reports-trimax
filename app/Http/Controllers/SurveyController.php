@@ -79,16 +79,19 @@ class SurveyController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'client_name'           => 'required|string|max:255',
-            'sede_id'                => 'nullable|integer|exists:users_marketing,id',
-            'experience_rating'      => 'required|integer|between:1,4',
-            'sede_rating'            => 'required|integer|between:1,4',
-            'tiene_consultor'        => 'required|boolean',
-            'consultor_id'           => 'nullable|integer|exists:users_marketing,id',
-            'consultor_desconocido'  => 'nullable|boolean',
-            'consultor_rating'       => 'nullable|integer|between:1,4',
-            'productos_rating'       => 'required|integer|between:1,4',
-            'comments'               => 'nullable|string|max:1000',
+            'client_name'             => 'required|string|max:255',
+            'ruc'                     => 'required|digits:11',
+            'sede_id'                 => 'required|integer|exists:users_marketing,id',
+            'experience_rating'       => 'required|integer|between:1,4',
+            'sede_rating'             => 'required|integer|between:1,4',
+            'tiene_consultor'         => 'required|boolean',
+            'consultor_id'            => 'nullable|integer|exists:users_marketing,id',
+            'consultor_rating'        => 'nullable|integer|between:1,4',
+            'tiempos_entrega_rating'  => 'required|integer|between:1,4',
+            'promociones_rating'      => 'nullable|integer|between:1,4',
+            'comments'                => 'nullable|string|max:1000',
+        ], [
+            'ruc.digits' => 'El RUC debe tener exactamente 11 dígitos.',
         ]);
 
         if ($validator->fails()) {
@@ -99,84 +102,81 @@ class SurveyController extends Controller
             ], 422);
         }
 
-        // La sede es opcional (queda "General" / null), pero si viene un id
-        // tiene que ser una sede real y activa, sin importar el rol del link.
-        $sedeId = null;
-        if ($request->filled('sede_id')) {
-            $sede = UsersMarketing::where('id', $request->sede_id)
-                ->where('role', 'sede')
-                ->where('is_active', true)
-                ->first();
+        // La sede ya no es opcional (rediseño 2026-08-12): "General" no es una
+        // sede real, solo se conserva a nivel de token/QR para no romper los
+        // links de Trimax General ya distribuidos. El cliente siempre elige
+        // una sede real y activa, sin importar el rol del link.
+        $sede = UsersMarketing::where('id', $request->sede_id)
+            ->where('role', 'sede')
+            ->where('is_active', true)
+            ->first();
 
-            if (!$sede) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'La sede seleccionada no es válida',
-                ], 422);
-            }
-
-            $sedeId = $sede->id;
+        if (!$sede) {
+            return response()->json([
+                'success' => false,
+                'message' => 'La sede seleccionada no es válida',
+            ], 422);
         }
+
+        $sedeId = $sede->id;
 
         // La rama del consultor solo se procesa si tiene_consultor = true;
         // cualquier dato de consultor enviado fuera de esa rama se ignora
-        // en vez de rechazar la encuesta completa.
-        $tieneConsultor       = $request->boolean('tiene_consultor');
-        $consultorId          = null;
-        $consultorDesconocido = false;
-        $consultorRating      = null;
+        // en vez de rechazar la encuesta completa. Ya no existe la opción
+        // "no sabe / no tiene consultor" (rediseño 2026-08-12): si tiene
+        // consultor, tiene que elegir uno específico y calificarlo.
+        $tieneConsultor  = $request->boolean('tiene_consultor');
+        $consultorId     = null;
+        $consultorRating = null;
 
         if ($tieneConsultor) {
-            $consultorDesconocido = $request->boolean('consultor_desconocido');
-
-            if (!$consultorDesconocido) {
-                if (!$request->filled('consultor_id')) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Selecciona un consultor o marca "No sabe / no tiene consultor"',
-                    ], 422);
-                }
-
-                $consultor = UsersMarketing::where('id', $request->consultor_id)
-                    ->where('role', 'consultor')
-                    ->where('is_active', true)
-                    ->first();
-
-                if (!$consultor) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'El consultor seleccionado no es válido',
-                    ], 422);
-                }
-
-                $consultorId = $consultor->id;
-
-                if (!$request->filled('consultor_rating')) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Falta calificar la atención del consultor',
-                    ], 422);
-                }
-
-                $consultorRating = (int) $request->consultor_rating;
+            if (!$request->filled('consultor_id')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Selecciona el consultor que te atiende',
+                ], 422);
             }
+
+            $consultor = UsersMarketing::where('id', $request->consultor_id)
+                ->where('role', 'consultor')
+                ->where('is_active', true)
+                ->first();
+
+            if (!$consultor) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El consultor seleccionado no es válido',
+                ], 422);
+            }
+
+            $consultorId = $consultor->id;
+
+            if (!$request->filled('consultor_rating')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Falta calificar la atención del consultor',
+                ], 422);
+            }
+
+            $consultorRating = (int) $request->consultor_rating;
         }
 
         try {
             $survey = Survey::create([
-                'user_id'                => $user->id,
-                'sede_id'                => $sedeId,
-                'client_name'            => $request->client_name,
-                'experience_rating'      => $request->experience_rating,
-                'sede_rating'            => $request->sede_rating,
-                'tiene_consultor'        => $tieneConsultor,
-                'consultor_id'           => $consultorId,
-                'consultor_desconocido'  => $consultorDesconocido,
-                'consultor_rating'       => $consultorRating,
-                'productos_rating'       => $request->productos_rating,
-                'comments'               => $request->comments,
-                'ip_address'             => $request->ip(),
-                'user_agent'             => $request->userAgent(),
+                'user_id'                 => $user->id,
+                'sede_id'                 => $sedeId,
+                'client_name'             => $request->client_name,
+                'ruc'                     => $request->ruc,
+                'experience_rating'       => $request->experience_rating,
+                'sede_rating'             => $request->sede_rating,
+                'tiene_consultor'         => $tieneConsultor,
+                'consultor_id'            => $consultorId,
+                'consultor_rating'        => $consultorRating,
+                'tiempos_entrega_rating'  => $request->tiempos_entrega_rating,
+                'promociones_rating'      => $request->promociones_rating,
+                'comments'                => $request->comments,
+                'ip_address'              => $request->ip(),
+                'user_agent'              => $request->userAgent(),
             ]);
 
             // Email de alerta en try/catch propio — si falla el email, la encuesta igual se guarda

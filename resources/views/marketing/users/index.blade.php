@@ -397,16 +397,20 @@
                                                                     @endif
                                                                 </td>
                                                                 <td>
-                                                                    <div class="input-group input-group-sm">
-                                                                        <input type="text" class="form-control"
-                                                                            value="{{ Str::limit($user->survey_url, 30) }}"
-                                                                            readonly style="font-size: 0.8rem;">
-                                                                        <button class="btn btn-primary text-white px-3"
-                                                                            type="button"
-                                                                            onclick="copyToClipboard('{{ $user->survey_url }}', this)">
-                                                                            <i class="mdi mdi-content-copy"></i>
-                                                                        </button>
-                                                                    </div>
+                                                                    @if ($user->survey_url)
+                                                                        <div class="input-group input-group-sm">
+                                                                            <input type="text" class="form-control"
+                                                                                value="{{ Str::limit($user->survey_url, 30) }}"
+                                                                                readonly style="font-size: 0.8rem;">
+                                                                            <button class="btn btn-primary text-white px-3"
+                                                                                type="button"
+                                                                                onclick="copyToClipboard('{{ $user->survey_url }}', this)">
+                                                                                <i class="mdi mdi-content-copy"></i>
+                                                                            </button>
+                                                                        </div>
+                                                                    @else
+                                                                        <small class="text-muted">Sin link propio</small>
+                                                                    @endif
                                                                 </td>
                                                                 <td>
                                                                     <div class="d-flex flex-wrap gap-1">
@@ -428,12 +432,14 @@
                                                                                 <i class="mdi mdi-store"></i>
                                                                             </a>
                                                                         @endif
-                                                                        <button
-                                                                            onclick="showQR('{{ $user->id }}', '{{ $user->name }}')"
-                                                                            class="btn btn-sm btn-secondary"
-                                                                            data-bs-toggle="tooltip" title="Ver QR">
-                                                                            <i class="mdi mdi-qrcode"></i>
-                                                                        </button>
+                                                                        @if ($user->survey_url)
+                                                                            <button
+                                                                                onclick="showQR('{{ $user->id }}', '{{ $user->name }}')"
+                                                                                class="btn btn-sm btn-secondary"
+                                                                                data-bs-toggle="tooltip" title="Ver QR">
+                                                                                <i class="mdi mdi-qrcode"></i>
+                                                                            </button>
+                                                                        @endif
                                                                         <form method="POST"
                                                                             action="{{ route('marketing.users.toggle-status', $user->id) }}"
                                                                             class="d-inline">

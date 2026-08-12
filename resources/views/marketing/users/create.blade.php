@@ -158,7 +158,7 @@
                                                 </div>
                                             </div>
 
-                                            <div class="d-flex align-items-start mb-3">
+                                            <div class="d-flex align-items-start mb-3" id="linkInfoBlock">
                                                 <div class="icon-wrapper bg-success-subtle rounded me-3">
                                                     <i class="mdi mdi-link-variant text-success"></i>
                                                 </div>
@@ -166,6 +166,19 @@
                                                     <h6 class="mb-1">Link Único</h6>
                                                     <small class="text-muted">Se generará automáticamente un enlace único de
                                                         encuesta</small>
+                                                </div>
+                                            </div>
+
+                                            <div class="d-flex align-items-start mb-3" id="consultorInfoBlock"
+                                                style="display: none;">
+                                                <div class="icon-wrapper bg-primary-subtle rounded me-3">
+                                                    <i class="mdi mdi-store text-primary"></i>
+                                                </div>
+                                                <div>
+                                                    <h6 class="mb-1">Sin link propio</h6>
+                                                    <small class="text-muted">Los consultores no reciben link ni QR —
+                                                        se les asigna a sedes y su calificación sale de la encuesta
+                                                        general</small>
                                                 </div>
                                             </div>
 
@@ -179,7 +192,7 @@
                                                 </div>
                                             </div>
 
-                                            <div class="d-flex align-items-start">
+                                            <div class="d-flex align-items-start" id="qrInfoBlock">
                                                 <div class="icon-wrapper bg-info-subtle rounded me-3">
                                                     <i class="mdi mdi-qrcode text-info"></i>
                                                 </div>
@@ -207,8 +220,9 @@
                                                     <div>
                                                         <h6 class="mb-1 text-primary">Consultor</h6>
                                                         <small class="text-muted">Personal que atiende directamente a
-                                                            clientes. Puede tener
-                                                            sedes asignadas.</small>
+                                                            clientes. Se le asignan sedes; no tiene link ni QR
+                                                            propios — su calificación sale de la encuesta
+                                                            general.</small>
                                                     </div>
                                                 </div>
                                             </div>
@@ -285,6 +299,9 @@
             const roleSelect = document.getElementById('role');
             const locationField = document.getElementById('locationField');
             const locationInput = locationField.querySelector('input[name="location"]');
+            const linkInfoBlock = document.getElementById('linkInfoBlock');
+            const qrInfoBlock = document.getElementById('qrInfoBlock');
+            const consultorInfoBlock = document.getElementById('consultorInfoBlock');
 
             // Function to toggle location field
             function toggleLocationField() {
@@ -298,13 +315,23 @@
                 }
             }
 
+            // Los consultores no tienen link ni QR propios (2026-08-12)
+            function toggleTokenInfo() {
+                const esConsultor = roleSelect.value === 'consultor';
+                linkInfoBlock.style.display = esConsultor ? 'none' : 'flex';
+                qrInfoBlock.style.display = esConsultor ? 'none' : 'flex';
+                consultorInfoBlock.style.display = esConsultor ? 'flex' : 'none';
+            }
+
             // Event listener for role change
             roleSelect.addEventListener('change', function() {
                 toggleLocationField();
+                toggleTokenInfo();
             });
 
             // Check initial state (for old() values)
             toggleLocationField();
+            toggleTokenInfo();
         });
     </script>
 @endpush

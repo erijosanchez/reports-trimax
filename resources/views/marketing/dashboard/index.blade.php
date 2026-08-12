@@ -497,7 +497,7 @@
                                             <span class="text-muted small">
                                                 Meta y cumplimiento son semanales (lunes–domingo). Solo cuentan
                                                 encuestas con el formulario nuevo — las anteriores al rediseño no
-                                                tienen las preguntas de sede/consultor/productos.
+                                                tienen las preguntas de sede/consultor/tiempos de entrega.
                                             </span>
                                             <button type="button" class="ms-auto btn-outline-primary btn btn-sm"
                                                 data-bs-toggle="modal" data-bs-target="#modalMeta">
@@ -562,10 +562,11 @@
                                                         @if ($s['total_historico'] > 0)
                                                             <p class="mb-1 text-muted small">Resultados (esquema nuevo)</p>
                                                             <div class="row text-center small">
-                                                                <div class="col-3"><strong>{{ number_format($s['avg_experiencia'], 1) }}</strong><br><span class="text-muted">General</span></div>
-                                                                <div class="col-3"><strong>{{ number_format($s['avg_sede'], 1) }}</strong><br><span class="text-muted">Sede</span></div>
-                                                                <div class="col-3"><strong>{{ $s['avg_consultor'] > 0 ? number_format($s['avg_consultor'], 1) : '—' }}</strong><br><span class="text-muted">Consultor</span></div>
-                                                                <div class="col-3"><strong>{{ number_format($s['avg_productos'], 1) }}</strong><br><span class="text-muted">Productos</span></div>
+                                                                <div class="col"><strong>{{ number_format($s['avg_experiencia'], 1) }}</strong><br><span class="text-muted">General</span></div>
+                                                                <div class="col"><strong>{{ number_format($s['avg_sede'], 1) }}</strong><br><span class="text-muted">Sede</span></div>
+                                                                <div class="col"><strong>{{ $s['avg_consultor'] > 0 ? number_format($s['avg_consultor'], 1) : '—' }}</strong><br><span class="text-muted">Consultor</span></div>
+                                                                <div class="col"><strong>{{ number_format($s['avg_tiempos_entrega'], 1) }}</strong><br><span class="text-muted">Entrega</span></div>
+                                                                <div class="col"><strong>{{ $s['avg_promociones'] > 0 ? number_format($s['avg_promociones'], 1) : '—' }}</strong><br><span class="text-muted">Promos</span></div>
                                                             </div>
                                                         @endif
                                                     </div>

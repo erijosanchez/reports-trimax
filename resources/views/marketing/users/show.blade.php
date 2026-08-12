@@ -300,47 +300,64 @@
                                 <!-- Columna Principal -->
                                 <div class="col-lg-8">
                                     <!-- Link de Encuesta -->
-                                    <div class="card grid-margin stretch-card">
-                                        <div class="card-body"
-                                            style="background: linear-gradient(135deg, #1565C0 0%, #0D47A1 100%); color: white; border-radius: 10px;">
-                                            <h4 class="card-title text-white mb-3">
-                                                <i class="mdi mdi-link-variant me-2"></i>
-                                                Link de Encuesta Única
-                                            </h4>
-                                            <p class="opacity-75 mb-3">Comparte este link con tus clientes para recibir
-                                                feedback</p>
+                                    @if ($user->survey_url)
+                                        <div class="card grid-margin stretch-card">
+                                            <div class="card-body"
+                                                style="background: linear-gradient(135deg, #1565C0 0%, #0D47A1 100%); color: white; border-radius: 10px;">
+                                                <h4 class="card-title text-white mb-3">
+                                                    <i class="mdi mdi-link-variant me-2"></i>
+                                                    Link de Encuesta Única
+                                                </h4>
+                                                <p class="opacity-75 mb-3">Comparte este link con tus clientes para recibir
+                                                    feedback</p>
 
-                                            <div class="input-group mb-3 bg-white rounded overflow-hidden">
-                                                <input type="text" class="form-control border-0"
-                                                    value="{{ $user->survey_url }}" readonly id="surveyLink">
-                                                <button class="btn btn-primary text-white" type="button"
-                                                    onclick="copyLink()">
-                                                    <i class="mdi mdi-content-copy"></i> Copiar
-                                                </button>
-                                            </div>
+                                                <div class="input-group mb-3 bg-white rounded overflow-hidden">
+                                                    <input type="text" class="form-control border-0"
+                                                        value="{{ $user->survey_url }}" readonly id="surveyLink">
+                                                    <button class="btn btn-primary text-white" type="button"
+                                                        onclick="copyLink()">
+                                                        <i class="mdi mdi-content-copy"></i> Copiar
+                                                    </button>
+                                                </div>
 
-                                            <div class="d-flex flex-wrap gap-2">
-                                                <a href="{{ route('marketing.users.preview', $user->id) }}"
-                                                    target="_blank" class="btn btn-light btn-sm">
-                                                    <i class="mdi mdi-eye me-1"></i> Vista Previa
-                                                </a>
-                                                <button onclick="shareWhatsApp()" class="btn btn-success btn-sm">
-                                                    <i class="mdi mdi-whatsapp me-1"></i> Compartir WhatsApp
-                                                </button>
-                                                <button onclick="shareEmail()" class="btn btn-info btn-sm">
-                                                    <i class="mdi mdi-email me-1"></i> Enviar Email
-                                                </button>
-                                            </div>
+                                                <div class="d-flex flex-wrap gap-2">
+                                                    <a href="{{ route('marketing.users.preview', $user->id) }}"
+                                                        target="_blank" class="btn btn-light btn-sm">
+                                                        <i class="mdi mdi-eye me-1"></i> Vista Previa
+                                                    </a>
+                                                    <button onclick="shareWhatsApp()" class="btn btn-success btn-sm">
+                                                        <i class="mdi mdi-whatsapp me-1"></i> Compartir WhatsApp
+                                                    </button>
+                                                    <button onclick="shareEmail()" class="btn btn-info btn-sm">
+                                                        <i class="mdi mdi-email me-1"></i> Enviar Email
+                                                    </button>
+                                                </div>
 
-                                            <div class="mt-3">
-                                                <small class="opacity-75">
-                                                    <i class="mdi mdi-shield-check me-1"></i>
-                                                    Este link es único y permanente. Si necesitas regenerarlo, usa el botón
-                                                    en la sección de acciones.
-                                                </small>
+                                                <div class="mt-3">
+                                                    <small class="opacity-75">
+                                                        <i class="mdi mdi-shield-check me-1"></i>
+                                                        Este link es único y permanente. Si necesitas regenerarlo, usa el botón
+                                                        en la sección de acciones.
+                                                    </small>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
+                                    @else
+                                        <div class="card grid-margin stretch-card">
+                                            <div class="card-body">
+                                                <h4 class="card-title mb-3">
+                                                    <i class="mdi mdi-link-variant-off text-muted me-2"></i>
+                                                    Sin link propio
+                                                </h4>
+                                                <p class="text-muted mb-0">
+                                                    Los consultores ya no tienen link ni QR propios. Su calificación
+                                                    sale de la pregunta "¿Cuál de los consultores comerciales de
+                                                    Trimax lo atiende?" en la encuesta general de Trimax — asígnalo
+                                                    a sus sedes y sus respuestas se irán sumando automáticamente.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    @endif
 
                                     <!-- Gráfico -->
                                     @if ($stats['total_surveys'] > 0)
@@ -465,29 +482,31 @@
                                 <!-- Columna Lateral -->
                                 <div class="col-lg-4">
                                     <!-- Código QR -->
-                                    <div class="card grid-margin stretch-card">
-                                        <div class="card-body">
-                                            <h4 class="card-title mb-4">
-                                                <i class="mdi mdi-qrcode text-primary me-2"></i>
-                                                Código QR
-                                            </h4>
-                                            <div class="text-center">
-                                                <div class="bg-light p-4 rounded mb-3">
-                                                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data={{ urlencode($user->survey_url) }}"
-                                                        alt="QR Code" class="img-fluid"
-                                                        style="max-width: 250px; border-radius: 10px;">
+                                    @if ($user->survey_url)
+                                        <div class="card grid-margin stretch-card">
+                                            <div class="card-body">
+                                                <h4 class="card-title mb-4">
+                                                    <i class="mdi mdi-qrcode text-primary me-2"></i>
+                                                    Código QR
+                                                </h4>
+                                                <div class="text-center">
+                                                    <div class="bg-light p-4 rounded mb-3">
+                                                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data={{ urlencode($user->survey_url) }}"
+                                                            alt="QR Code" class="img-fluid"
+                                                            style="max-width: 250px; border-radius: 10px;">
+                                                    </div>
+                                                    <a href="https://api.qrserver.com/v1/create-qr-code/?size=1000x1000&data={{ urlencode($user->survey_url) }}"
+                                                        download="qr_{{ $user->id }}.png"
+                                                        class="btn btn-primary text-white w-100 mb-2">
+                                                        <i class="mdi mdi-download me-1"></i> Descargar QR en Alta Calidad
+                                                    </a>
+                                                    <small class="text-muted d-block">
+                                                        Imprime este código para recibir encuestas presenciales
+                                                    </small>
                                                 </div>
-                                                <a href="https://api.qrserver.com/v1/create-qr-code/?size=1000x1000&data={{ urlencode($user->survey_url) }}"
-                                                    download="qr_{{ $user->id }}.png"
-                                                    class="btn btn-primary text-white w-100 mb-2">
-                                                    <i class="mdi mdi-download me-1"></i> Descargar QR en Alta Calidad
-                                                </a>
-                                                <small class="text-muted d-block">
-                                                    Imprime este código para recibir encuestas presenciales
-                                                </small>
                                             </div>
                                         </div>
-                                    </div>
+                                    @endif
 
                                     <!-- Acciones -->
                                     <div class="card grid-margin stretch-card">
@@ -512,14 +531,16 @@
                                                     </button>
                                                 </form>
 
-                                                <form method="POST"
-                                                    action="{{ route('marketing.users.regenerate-token', $user->id) }}"
-                                                    onsubmit="return confirm('¿Regenerar token? El link anterior dejará de funcionar.')">
-                                                    @csrf
-                                                    <button type="submit" class="btn btn-dark w-100">
-                                                        <i class="mdi mdi-refresh me-1"></i> Regenerar Token
-                                                    </button>
-                                                </form>
+                                                @if ($user->survey_url)
+                                                    <form method="POST"
+                                                        action="{{ route('marketing.users.regenerate-token', $user->id) }}"
+                                                        onsubmit="return confirm('¿Regenerar token? El link anterior dejará de funcionar.')">
+                                                        @csrf
+                                                        <button type="submit" class="btn btn-dark w-100">
+                                                            <i class="mdi mdi-refresh me-1"></i> Regenerar Token
+                                                        </button>
+                                                    </form>
+                                                @endif
 
                                                 <hr>
 

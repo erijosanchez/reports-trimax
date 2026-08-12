@@ -11,13 +11,16 @@ use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 /**
- * Rediseño de la encuesta (validado con Gerencia, 2026-08-11): "sede con la
- * que trabaja" es un dato del cliente, no un detalle exclusivo del link
- * Trimax General — se pregunta siempre, en cualquier link, y precarga según
- * el rol del token (editable). Si el cliente selecciona/edita una sede, la
- * respuesta cuenta exclusivamente para esa sede; si no, cuenta para el
- * dueño del link. Las calificaciones de una sede ya NO se heredan hacia los
- * consultores que tiene asignados.
+ * Rediseño de la encuesta (validado con Gerencia, 2026-08-11; ajustado
+ * 2026-08-12): "sede con la que trabaja" es un dato del cliente, no un
+ * detalle exclusivo del link Trimax General — se pregunta siempre, en
+ * cualquier link, y precarga según el rol del token (editable). Desde el
+ * 2026-08-12 "General" deja de ser una opción válida: el cliente siempre
+ * debe elegir una sede real, sin importar qué link haya usado. Ese `sede_id`
+ * nulo solo sigue siendo posible en encuestas históricas (anteriores a este
+ * cambio) — se conserva la lógica de agregación para no perder ese dato. Las
+ * calificaciones de una sede ya NO se heredan hacia los consultores que
+ * tiene asignados.
  */
 class SurveySedeSelectionTest extends TestCase
 {
@@ -65,11 +68,12 @@ class SurveySedeSelectionTest extends TestCase
     private function payloadBase(array $overrides = []): array
     {
         return array_merge([
-            'client_name'       => 'Cliente Test SAC',
-            'experience_rating' => 4,
-            'sede_rating'       => 4,
-            'tiene_consultor'   => false,
-            'productos_rating'  => 4,
+            'client_name'            => 'Cliente Test SAC',
+            'ruc'                    => '20123456789',
+            'experience_rating'      => 4,
+            'sede_rating'            => 4,
+            'tiene_consultor'        => false,
+            'tiempos_entrega_rating' => 4,
         ], $overrides);
     }
 
@@ -99,17 +103,6 @@ class SurveySedeSelectionTest extends TestCase
         $response->assertJsonCount(2, 'data.sedes');
     }
 
-    public function test_get_data_incluye_sedes_para_token_de_consultor(): void
-    {
-        $consultor = $this->crearConsultor();
-        $this->crearSede('Sede Arequipa', 'Arequipa');
-
-        $response = $this->getJson("/api/encuesta/{$consultor->unique_token}");
-
-        $response->assertOk();
-        $response->assertJsonCount(1, 'data.sedes');
-    }
-
     public function test_get_data_precarga_la_propia_sede_para_un_token_de_sede(): void
     {
         $sede = $this->crearSede('Sede Arequipa', 'Arequipa');
@@ -120,30 +113,17 @@ class SurveySedeSelectionTest extends TestCase
         $response->assertJsonPath('data.sede_preseleccionada_id', $sede->id);
     }
 
-    public function test_get_data_precarga_la_unica_sede_asignada_de_un_consultor(): void
+    public function test_consultor_ya_no_tiene_unique_token(): void
     {
+        // Los consultores dejaron de tener link/QR propio (2026-08-12): se
+        // les asigna a sedes y su calificación sale de la pregunta de
+        // consultor en la encuesta maestra (ver SurveyConsultorFlowTest).
+        // Reemplaza a los tests que verificaban precarga de sede en el link
+        // propio de un consultor — ese link ya no existe.
         $consultor = $this->crearConsultor();
-        $sede      = $this->crearSede('Sede Arequipa', 'Arequipa');
-        $this->asignarSede($consultor, $sede);
 
-        $response = $this->getJson("/api/encuesta/{$consultor->unique_token}");
-
-        $response->assertOk();
-        $response->assertJsonPath('data.sede_preseleccionada_id', $sede->id);
-    }
-
-    public function test_get_data_no_precarga_sede_de_un_consultor_con_varias_sedes(): void
-    {
-        $consultor = $this->crearConsultor();
-        $sedeA     = $this->crearSede('Sede Arequipa', 'Arequipa');
-        $sedeB     = $this->crearSede('Sede Lima', 'Lima');
-        $this->asignarSede($consultor, $sedeA);
-        $this->asignarSede($consultor, $sedeB);
-
-        $response = $this->getJson("/api/encuesta/{$consultor->unique_token}");
-
-        $response->assertOk();
-        $response->assertJsonPath('data.sede_preseleccionada_id', null);
+        $this->assertNull($consultor->unique_token);
+        $this->assertNull($consultor->survey_url);
     }
 
     public function test_get_data_incluye_consultores_activos_con_sus_sedes(): void
@@ -174,17 +154,17 @@ class SurveySedeSelectionTest extends TestCase
         $response->assertStatus(422);
     }
 
-    public function test_encuesta_de_trimax_general_se_guarda_sin_sede_si_no_se_selecciona(): void
+    public function test_encuesta_rechaza_no_elegir_sede(): void
     {
+        // "General" ya no es una opción válida (2026-08-12): el cliente
+        // siempre debe elegir una sede real, incluso en el link Trimax
+        // General — ese token solo se conserva para no reemitir el QR.
         $trimax = $this->crearTrimax();
 
         $response = $this->postJson("/api/encuesta/{$trimax->unique_token}", $this->payloadBase());
 
-        $response->assertCreated();
-        $this->assertDatabaseHas('surveys', [
-            'user_id' => $trimax->id,
-            'sede_id' => null,
-        ]);
+        $response->assertStatus(422);
+        $this->assertDatabaseMissing('surveys', ['user_id' => $trimax->id]);
     }
 
     public function test_encuesta_de_trimax_general_se_guarda_con_la_sede_seleccionada(): void
@@ -246,13 +226,13 @@ class SurveySedeSelectionTest extends TestCase
         $sede   = $this->crearSede('Sede Arequipa', 'Arequipa');
 
         Survey::create([
-            'user_id'           => $trimax->id,
-            'sede_id'           => $sede->id,
-            'client_name'       => 'Cliente Test',
-            'experience_rating' => 4,
-            'sede_rating'       => 4,
-            'tiene_consultor'   => false,
-            'productos_rating'  => 4,
+            'user_id'                => $trimax->id,
+            'sede_id'                => $sede->id,
+            'client_name'            => 'Cliente Test',
+            'experience_rating'      => 4,
+            'sede_rating'            => 4,
+            'tiene_consultor'        => false,
+            'tiempos_entrega_rating' => 4,
         ]);
 
         $this->assertSame(1, $sede->fresh()->total_surveys);
@@ -265,12 +245,12 @@ class SurveySedeSelectionTest extends TestCase
         $sede   = $this->crearSede('Sede Arequipa', 'Arequipa');
 
         Survey::create([
-            'user_id'           => $trimax->id,
-            'client_name'       => 'Cliente Test',
-            'experience_rating' => 3,
-            'sede_rating'       => 3,
-            'tiene_consultor'   => false,
-            'productos_rating'  => 3,
+            'user_id'                => $trimax->id,
+            'client_name'            => 'Cliente Test',
+            'experience_rating'      => 3,
+            'sede_rating'            => 3,
+            'tiene_consultor'        => false,
+            'tiempos_entrega_rating' => 3,
         ]);
 
         $this->assertSame(1, $trimax->fresh()->total_surveys);

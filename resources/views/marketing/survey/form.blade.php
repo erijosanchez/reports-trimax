@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Encuesta de satisfacción - TRIMAX</title>
+    <title>Encuesta de atención al cliente - TRIMAX</title>
     <link rel="stylesheet" href="{{ asset('assets/css/survey.css') }}?v={{ filemtime(public_path('assets/css/survey.css')) }}">
     <link rel="icon" type="image/x-icon" href="{{ asset('assets/img/fv.png') }}">
 </head>
@@ -26,33 +26,39 @@
             <form id="survey-form">
                 <!-- Datos del cliente -->
                 <div class="form-group">
+                    <label>RUC <span class="required-mark">*</span></label>
+                    <input type="text" name="ruc" id="ruc" required inputmode="numeric" maxlength="11"
+                        placeholder="Escribe el RUC (11 dígitos)...">
+                </div>
+
+                <div class="form-group">
                     <label>Razón social <span class="required-mark">*</span></label>
                     <input type="text" name="client_name" id="client_name" required
                         placeholder="Escribe la razón social...">
                 </div>
 
                 <div class="form-group sede-group">
-                    <label>Sede con la que trabaja</label>
+                    <label>Sede con la que trabaja <span class="required-mark">*</span></label>
                     <div class="select-wrapper">
-                        <select name="sede_id" id="sede_id">
-                            <option value="">General (sin sede específica)</option>
+                        <select name="sede_id" id="sede_id" required>
+                            <option value="">Selecciona una sede...</option>
                         </select>
                     </div>
                 </div>
 
                 <!-- Pregunta 1: Experiencia general -->
                 <div class="question-container">
-                    <div class="header-question">Encuesta de satisfacción - TRIMAX</div>
+                    <div class="header-question">Encuesta de atención al cliente - TRIMAX</div>
                     <div class="question">
                         <div class="question-text">¿Cómo calificarías tu experiencia en TRIMAX?</div>
                         <div class="ratings">
                             <div class="rating-btn muy-feliz" data-question="1" data-value="4">
                                 <img class="emoji" src="{{ asset('assets/img/caras/muysatisfecho.png') }}" alt="">
-                                <div class="rating-label">Muy<br>Buena</div>
+                                <div class="rating-label">Muy<br>Satisfecho</div>
                             </div>
                             <div class="rating-btn feliz" data-question="1" data-value="3">
                                 <img class="emoji" src="{{ asset('assets/img/caras/satisfecho.png') }}" alt="">
-                                <div class="rating-label">Buena</div>
+                                <div class="rating-label">Satisfecho</div>
                             </div>
                             <div class="rating-btn insatisfecho" data-question="1" data-value="2">
                                 <img class="emoji" src="{{ asset('assets/img/caras/insatisfecho.png') }}" alt="">
@@ -69,17 +75,18 @@
 
                 <!-- Pregunta 2: Satisfacción con la sede -->
                 <div class="question-container">
-                    <div class="header-question">Encuesta de satisfacción - TRIMAX</div>
+                    <div class="header-question">Encuesta de atención al cliente - TRIMAX</div>
                     <div class="question">
-                        <div class="question-text">¿Cómo evaluarías la atención y el soporte de tu Sede TRIMAX?</div>
+                        <div class="question-text">¿Usted se encuentra satisfecho con la atención y soporte de tu
+                            sede TRIMAX?</div>
                         <div class="ratings">
                             <div class="rating-btn muy-feliz" data-question="2" data-value="4">
                                 <img class="emoji" src="{{ asset('assets/img/caras/muysatisfecho.png') }}" alt="">
-                                <div class="rating-label">Muy<br>Buena</div>
+                                <div class="rating-label">Muy<br>Satisfecho</div>
                             </div>
                             <div class="rating-btn feliz" data-question="2" data-value="3">
                                 <img class="emoji" src="{{ asset('assets/img/caras/satisfecho.png') }}" alt="">
-                                <div class="rating-label">Buena</div>
+                                <div class="rating-label">Satisfecho</div>
                             </div>
                             <div class="rating-btn insatisfecho" data-question="2" data-value="2">
                                 <img class="emoji" src="{{ asset('assets/img/caras/insatisfecho.png') }}" alt="">
@@ -110,24 +117,23 @@
                     <div class="select-wrapper">
                         <select name="consultor_id" id="consultor_id">
                             <option value="">Selecciona un consultor...</option>
-                            <option value="no_sabe">No sabe / No tiene consultor</option>
                         </select>
                     </div>
                 </div>
 
                 <div class="question-container" id="consultor-rating-question" style="display: none;">
-                    <div class="header-question">Encuesta de satisfacción - TRIMAX</div>
+                    <div class="header-question">Encuesta de atención al cliente - TRIMAX</div>
                     <div class="question">
-                        <div class="question-text">¿Cómo evaluarías la atención y el soporte de tu Consultor
-                            Trimax?</div>
+                        <div class="question-text">¿Usted se encuentra satisfecho con la orientación que le brinda
+                            su consultor?</div>
                         <div class="ratings">
                             <div class="rating-btn muy-feliz" data-question="3" data-value="4">
                                 <img class="emoji" src="{{ asset('assets/img/caras/muysatisfecho.png') }}" alt="">
-                                <div class="rating-label">Muy<br>Buena</div>
+                                <div class="rating-label">Muy<br>Satisfecho</div>
                             </div>
                             <div class="rating-btn feliz" data-question="3" data-value="3">
                                 <img class="emoji" src="{{ asset('assets/img/caras/satisfecho.png') }}" alt="">
-                                <div class="rating-label">Buena</div>
+                                <div class="rating-label">Satisfecho</div>
                             </div>
                             <div class="rating-btn insatisfecho" data-question="3" data-value="2">
                                 <img class="emoji" src="{{ asset('assets/img/caras/insatisfecho.png') }}" alt="">
@@ -142,21 +148,21 @@
                     </div>
                 </div>
 
-                <!-- Cierre: productos — oculto hasta responder el filtro de consultor.
-                     Con "No" aparece de inmediato; con "Sí" aparece debajo del bloque
-                     de consultor (ambas ramas convergen aquí). -->
-                <div class="question-container" id="productos-question" style="display: none;">
-                    <div class="header-question">Encuesta de satisfacción - TRIMAX</div>
+                <!-- Cierre: tiempos de entrega — oculto hasta responder el filtro de
+                     consultor. Con "No" aparece de inmediato; con "Sí" aparece debajo
+                     del bloque de consultor (ambas ramas convergen aquí). -->
+                <div class="question-container" id="tiempos-entrega-question" style="display: none;">
+                    <div class="header-question">Encuesta de atención al cliente - TRIMAX</div>
                     <div class="question">
-                        <div class="question-text">¿Cómo calificarías los productos Trimax?</div>
+                        <div class="question-text">¿Usted se encuentra satisfecho con los tiempos de entrega?</div>
                         <div class="ratings">
                             <div class="rating-btn muy-feliz" data-question="4" data-value="4">
                                 <img class="emoji" src="{{ asset('assets/img/caras/muysatisfecho.png') }}" alt="">
-                                <div class="rating-label">Muy<br>Buenos</div>
+                                <div class="rating-label">Muy<br>Satisfecho</div>
                             </div>
                             <div class="rating-btn feliz" data-question="4" data-value="3">
                                 <img class="emoji" src="{{ asset('assets/img/caras/satisfecho.png') }}" alt="">
-                                <div class="rating-label">Buenos</div>
+                                <div class="rating-label">Satisfecho</div>
                             </div>
                             <div class="rating-btn insatisfecho" data-question="4" data-value="2">
                                 <img class="emoji" src="{{ asset('assets/img/caras/insatisfecho.png') }}" alt="">
@@ -167,12 +173,41 @@
                                 <div class="rating-label">Muy<br>Insatisfecho</div>
                             </div>
                         </div>
-                        <input type="hidden" name="productos_rating" id="productos_rating" required>
+                        <input type="hidden" name="tiempos_entrega_rating" id="tiempos_entrega_rating" required>
+                    </div>
+                </div>
+
+                <!-- Cierre: promociones (opcional) — misma visibilidad que tiempos de entrega -->
+                <div class="question-container" id="promociones-question" style="display: none;">
+                    <div class="header-question">Encuesta de atención al cliente - TRIMAX</div>
+                    <div class="question">
+                        <div class="question-text">¿Usted se encuentra satisfecho con las promociones que le
+                            brinda TRIMAX? <span class="optional-mark">(opcional)</span></div>
+                        <div class="ratings">
+                            <div class="rating-btn muy-feliz" data-question="5" data-value="4">
+                                <img class="emoji" src="{{ asset('assets/img/caras/muysatisfecho.png') }}" alt="">
+                                <div class="rating-label">Muy<br>Satisfecho</div>
+                            </div>
+                            <div class="rating-btn feliz" data-question="5" data-value="3">
+                                <img class="emoji" src="{{ asset('assets/img/caras/satisfecho.png') }}" alt="">
+                                <div class="rating-label">Satisfecho</div>
+                            </div>
+                            <div class="rating-btn insatisfecho" data-question="5" data-value="2">
+                                <img class="emoji" src="{{ asset('assets/img/caras/insatisfecho.png') }}" alt="">
+                                <div class="rating-label">Insatisfecho</div>
+                            </div>
+                            <div class="rating-btn muy-insatisfecho" data-question="5" data-value="1">
+                                <img class="emoji" src="{{ asset('assets/img/caras/muyinsatisfecho.png') }}" alt="">
+                                <div class="rating-label">Muy<br>Insatisfecho</div>
+                            </div>
+                        </div>
+                        <input type="hidden" name="promociones_rating" id="promociones_rating">
                     </div>
                 </div>
 
                 <div class="form-group">
-                    <label>Cuéntanos brevemente qué podríamos mejorar o qué te gustó más de nuestra atención.</label>
+                    <label>Cuéntanos brevemente qué podríamos mejorar o qué te gustó más de nuestra atención
+                        <span class="optional-mark">(opcional)</span></label>
                     <textarea name="comments" id="comments" placeholder="Tu opinión es anónima y nos ayuda a mejorar..."></textarea>
                 </div>
 
@@ -212,7 +247,8 @@
             1: null, // experience
             2: null, // sede
             3: null, // consultor
-            4: null, // productos
+            4: null, // tiempos de entrega
+            5: null, // promociones (opcional)
         };
         let tieneConsultorValue = null; // '1' | '0' | null
         let consultores = []; // [{id, name, sede_ids: [...]}]
@@ -286,23 +322,22 @@
                 select.appendChild(opt);
             });
 
-            const optNoSabe = document.createElement('option');
-            optNoSabe.value = 'no_sabe';
-            optNoSabe.textContent = 'No sabe / No tiene consultor';
-            select.appendChild(optNoSabe);
-
             if ([...select.options].some(o => o.value === valorPrevio)) {
                 select.value = valorPrevio;
             }
         }
 
         // ===== RAMA CONSULTOR: mostrar/ocultar según Sí/No y selección =====
-        // "Productos" queda oculto hasta responder el filtro: con "No" aparece
-        // de inmediato; con "Sí" aparece igual, debajo del bloque de consultor.
+        // Ya no existe "no sabe/no tiene consultor" (rediseño 2026-08-12): si
+        // tiene_consultor = Sí, cualquier valor elegido en el select ya es un
+        // consultor específico. "Tiempos de entrega"/"promociones" quedan
+        // ocultas hasta responder el filtro: con "No" aparecen de inmediato;
+        // con "Sí" aparecen igual, debajo del bloque de consultor.
         function actualizarRamaConsultor() {
             const grupoSelect = document.getElementById('consultor-select-group');
             const preguntaRating = document.getElementById('consultor-rating-question');
-            const productosQuestion = document.getElementById('productos-question');
+            const tiemposEntregaQuestion = document.getElementById('tiempos-entrega-question');
+            const promocionesQuestion = document.getElementById('promociones-question');
 
             if (tieneConsultorValue !== '1') {
                 grupoSelect.style.display = 'none';
@@ -312,18 +347,20 @@
                 selectedRatings[3] = null;
                 document.querySelectorAll('.rating-btn[data-question="3"]').forEach(b => b.classList.remove(
                     'active'));
-                productosQuestion.style.display = tieneConsultorValue === '0' ? 'block' : 'none';
+                const convergen = tieneConsultorValue === '0' ? 'block' : 'none';
+                tiemposEntregaQuestion.style.display = convergen;
+                promocionesQuestion.style.display = convergen;
                 return;
             }
 
             grupoSelect.style.display = 'block';
-            productosQuestion.style.display = 'block';
+            tiemposEntregaQuestion.style.display = 'block';
+            promocionesQuestion.style.display = 'block';
 
             const consultorSeleccionado = document.getElementById('consultor_id').value;
-            const esConsultorEspecifico = consultorSeleccionado && consultorSeleccionado !== 'no_sabe';
-            preguntaRating.style.display = esConsultorEspecifico ? 'block' : 'none';
+            preguntaRating.style.display = consultorSeleccionado ? 'block' : 'none';
 
-            if (!esConsultorEspecifico) {
+            if (!consultorSeleccionado) {
                 document.getElementById('consultor_rating').value = '';
                 selectedRatings[3] = null;
                 document.querySelectorAll('.rating-btn[data-question="3"]').forEach(b => b.classList.remove(
@@ -379,7 +416,7 @@
             }
         });
 
-        // ===== RATING BUTTONS (preguntas 1, 2, 3, 4) =====
+        // ===== RATING BUTTONS (preguntas 1 a 5) =====
         document.querySelectorAll('.rating-btn').forEach(btn => {
             btn.addEventListener('click', function() {
                 formStarted = true;
@@ -396,7 +433,8 @@
                     1: 'experience_rating',
                     2: 'sede_rating',
                     3: 'consultor_rating',
-                    4: 'productos_rating',
+                    4: 'tiempos_entrega_rating',
+                    5: 'promociones_rating',
                 };
                 document.getElementById(fieldByQuestion[question]).value = this.dataset.value;
             });
@@ -427,6 +465,12 @@
         });
 
         // ===== FORM INPUT TRACKING =====
+        document.getElementById('ruc').addEventListener('input', function() {
+            if (this.value.trim().length > 0) {
+                formStarted = true;
+            }
+        });
+
         document.getElementById('client_name').addEventListener('input', function() {
             if (this.value.trim().length > 0) {
                 formStarted = true;
@@ -443,8 +487,17 @@
         document.getElementById('survey-form').addEventListener('submit', async (e) => {
             e.preventDefault();
 
+            const rucValue = document.getElementById('ruc').value.trim();
+            if (!/^\d{11}$/.test(rucValue)) {
+                Notify.warning('Ingresa un RUC válido (11 dígitos)');
+                return;
+            }
             if (!document.getElementById('client_name').value.trim()) {
                 Notify.warning('Ingresa la razón social');
+                return;
+            }
+            if (!document.getElementById('sede_id').value) {
+                Notify.warning('Selecciona la sede con la que trabajas');
                 return;
             }
             if (!selectedRatings[1] || !selectedRatings[2]) {
@@ -458,19 +511,17 @@
 
             const consultorSelect = document.getElementById('consultor_id');
             const consultorValue = consultorSelect.value;
-            const esConsultorEspecifico = tieneConsultorValue === '1' && consultorValue && consultorValue !==
-                'no_sabe';
 
             if (tieneConsultorValue === '1' && !consultorValue) {
-                Notify.warning('Selecciona un consultor o marca "No sabe / No tiene consultor"');
+                Notify.warning('Selecciona el consultor que te atiende');
                 return;
             }
-            if (esConsultorEspecifico && !selectedRatings[3]) {
+            if (tieneConsultorValue === '1' && !selectedRatings[3]) {
                 Notify.warning('Falta calificar la atención del consultor');
                 return;
             }
             if (!selectedRatings[4]) {
-                Notify.warning('Falta calificar los productos Trimax');
+                Notify.warning('Falta calificar los tiempos de entrega');
                 return;
             }
 
@@ -479,26 +530,24 @@
             submitBtn.textContent = 'Enviando...';
 
             const formData = {
+                ruc: rucValue,
                 client_name: document.getElementById('client_name').value.trim(),
                 experience_rating: parseInt(selectedRatings[1]),
                 sede_rating: parseInt(selectedRatings[2]),
                 tiene_consultor: tieneConsultorValue === '1',
-                productos_rating: parseInt(selectedRatings[4]),
+                tiempos_entrega_rating: parseInt(selectedRatings[4]),
                 comments: document.getElementById('comments').value,
             };
 
-            const sedeValue = document.getElementById('sede_id').value;
-            if (sedeValue) {
-                formData.sede_id = parseInt(sedeValue);
+            if (selectedRatings[5]) {
+                formData.promociones_rating = parseInt(selectedRatings[5]);
             }
 
+            formData.sede_id = parseInt(document.getElementById('sede_id').value);
+
             if (tieneConsultorValue === '1') {
-                if (consultorValue === 'no_sabe') {
-                    formData.consultor_desconocido = true;
-                } else {
-                    formData.consultor_id = parseInt(consultorValue);
-                    formData.consultor_rating = parseInt(selectedRatings[3]);
-                }
+                formData.consultor_id = parseInt(consultorValue);
+                formData.consultor_rating = parseInt(selectedRatings[3]);
             }
 
             try {

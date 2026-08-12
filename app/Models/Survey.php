@@ -13,6 +13,7 @@ class Survey extends Model
         'user_id',
         'sede_id',
         'client_name',
+        'ruc',
         'experience_rating',
         'service_quality_rating',
         'sede_rating',
@@ -21,19 +22,23 @@ class Survey extends Model
         'consultor_desconocido',
         'consultor_rating',
         'productos_rating',
+        'tiempos_entrega_rating',
+        'promociones_rating',
         'comments',
         'ip_address',
         'user_agent',
     ];
 
     protected $casts = [
-        'experience_rating'     => 'integer',
+        'experience_rating'      => 'integer',
         'service_quality_rating' => 'integer',
-        'sede_rating'            => 'integer',
-        'tiene_consultor'        => 'boolean',
-        'consultor_desconocido'  => 'boolean',
-        'consultor_rating'       => 'integer',
-        'productos_rating'       => 'integer',
+        'sede_rating'             => 'integer',
+        'tiene_consultor'         => 'boolean',
+        'consultor_desconocido'   => 'boolean',
+        'consultor_rating'        => 'integer',
+        'productos_rating'        => 'integer',
+        'tiempos_entrega_rating'  => 'integer',
+        'promociones_rating'      => 'integer',
     ];
 
     protected static function boot()
@@ -52,17 +57,8 @@ class Survey extends Model
     }
 
     private const RATING_LABELS = [
-        4 => 'MUY BUENA',
-        3 => 'BUENA',
-        2 => 'INSATISFECHO',
-        1 => 'MUY INSATISFECHO',
-    ];
-
-    // "Productos" concuerda en género masculino plural ("MUY BUENOS/BUENOS"),
-    // a diferencia del resto de preguntas ("MUY BUENA/BUENA").
-    private const RATING_LABELS_PRODUCTOS = [
-        4 => 'MUY BUENOS',
-        3 => 'BUENOS',
+        4 => 'MUY SATISFECHO',
+        3 => 'SATISFECHO',
         2 => 'INSATISFECHO',
         1 => 'MUY INSATISFECHO',
     ];
@@ -106,10 +102,10 @@ class Survey extends Model
         return $this->selectedSede ?? $this->userMarketing;
     }
 
-    /** true si la encuesta ya viene con el esquema nuevo (productos_rating siempre se pide). */
+    /** true si la encuesta ya viene con el esquema nuevo (tiempos_entrega_rating siempre se pide). */
     public function getEsEsquemaNuevoAttribute(): bool
     {
-        return !is_null($this->productos_rating);
+        return !is_null($this->tiempos_entrega_rating);
     }
 
     public function getExperienceRatingTextAttribute()
@@ -127,9 +123,22 @@ class Survey extends Model
         return self::RATING_LABELS[$this->consultor_rating] ?? 'N/A';
     }
 
+    // productos_rating queda deprecada (rediseño 2026-08-12, reemplazada por
+    // tiempos_entrega/promociones) — se mantiene solo para leer encuestas
+    // respondidas entre el 2026-08-11 y el 2026-08-12 con ese esquema.
     public function getProductosRatingTextAttribute()
     {
-        return self::RATING_LABELS_PRODUCTOS[$this->productos_rating] ?? 'N/A';
+        return self::RATING_LABELS[$this->productos_rating] ?? 'N/A';
+    }
+
+    public function getTiemposEntregaRatingTextAttribute()
+    {
+        return self::RATING_LABELS[$this->tiempos_entrega_rating] ?? 'N/A';
+    }
+
+    public function getPromocionesRatingTextAttribute()
+    {
+        return self::RATING_LABELS[$this->promociones_rating] ?? 'N/A';
     }
 
     // Se mantiene por compatibilidad con vistas/consumidores existentes —
@@ -164,9 +173,9 @@ class Survey extends Model
         return $query->where('experience_rating', $rating);
     }
 
-    /** Encuestas ya respondidas con el flujo nuevo (post rediseño 2026-08-11). */
+    /** Encuestas ya respondidas con el flujo nuevo (post rediseño 2026-08-12). */
     public function scopeEsquemaNuevo($query)
     {
-        return $query->whereNotNull('productos_rating');
+        return $query->whereNotNull('tiempos_entrega_rating');
     }
 }

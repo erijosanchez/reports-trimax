@@ -7,10 +7,10 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
- * Rama nueva de la encuesta (validada con Gerencia, 2026-08-11):
+ * Rama de la encuesta (estructura final de Marketing, 2026-08-12):
  * "¿Actualmente es atendido por un consultor comercial de Trimax?" (Sí/No).
- * Si responde Sí, elige un consultor específico (o "No sabe / no tiene
- * consultor") y, solo si eligió uno específico, lo califica.
+ * Si responde Sí, elige un consultor específico de la lista y lo califica
+ * — ya no existe la opción "no sabe / no tiene consultor".
  */
 class SurveyConsultorFlowTest extends TestCase
 {
@@ -34,14 +34,25 @@ class SurveyConsultorFlowTest extends TestCase
         ]);
     }
 
+    private function crearSede(string $nombre = 'Sede Test'): UsersMarketing
+    {
+        return UsersMarketing::create([
+            'name'      => $nombre,
+            'role'      => 'sede',
+            'is_active' => true,
+        ]);
+    }
+
     private function payloadBase(array $overrides = []): array
     {
         return array_merge([
-            'client_name'       => 'Cliente Test SAC',
-            'experience_rating' => 4,
-            'sede_rating'       => 4,
-            'tiene_consultor'   => false,
-            'productos_rating'  => 4,
+            'client_name'            => 'Cliente Test SAC',
+            'ruc'                    => '20123456789',
+            'sede_id'                => $this->crearSede()->id,
+            'experience_rating'      => 4,
+            'sede_rating'            => 4,
+            'tiene_consultor'        => false,
+            'tiempos_entrega_rating' => 4,
         ], $overrides);
     }
 
@@ -63,7 +74,7 @@ class SurveyConsultorFlowTest extends TestCase
         ]);
     }
 
-    public function test_requiere_elegir_consultor_o_no_sabe_cuando_tiene_consultor_es_si(): void
+    public function test_requiere_elegir_consultor_cuando_tiene_consultor_es_si(): void
     {
         $trimax = $this->crearTrimax();
 
@@ -89,34 +100,14 @@ class SurveyConsultorFlowTest extends TestCase
 
         $response->assertCreated();
         $this->assertDatabaseHas('surveys', [
-            'user_id'               => $trimax->id,
-            'tiene_consultor'       => 1,
-            'consultor_id'          => $consultor->id,
-            'consultor_desconocido' => 0,
-            'consultor_rating'      => 3,
+            'user_id'          => $trimax->id,
+            'tiene_consultor'  => 1,
+            'consultor_id'     => $consultor->id,
+            'consultor_rating' => 3,
         ]);
     }
 
-    public function test_permite_no_sabe_no_tiene_consultor_sin_calificarlo(): void
-    {
-        $trimax = $this->crearTrimax();
-
-        $response = $this->postJson("/api/encuesta/{$trimax->unique_token}", $this->payloadBase([
-            'tiene_consultor'       => true,
-            'consultor_desconocido' => true,
-        ]));
-
-        $response->assertCreated();
-        $this->assertDatabaseHas('surveys', [
-            'user_id'               => $trimax->id,
-            'tiene_consultor'       => 1,
-            'consultor_id'          => null,
-            'consultor_desconocido' => 1,
-            'consultor_rating'      => null,
-        ]);
-    }
-
-    public function test_requiere_calificar_al_consultor_si_se_eligio_uno_especifico(): void
+    public function test_requiere_calificar_al_consultor_elegido(): void
     {
         $trimax    = $this->crearTrimax();
         $consultor = $this->crearConsultor();
