@@ -218,7 +218,7 @@
                                                                             </div>
                                                                         </td>
                                                                         <td>
-                                                                            <span class="badge badge-secondary">
+                                                                            <span class="badge badge-dark">
                                                                                 <i class="mdi mdi-map-marker"></i>
                                                                                 {{ $sede->location }}
                                                                             </span>

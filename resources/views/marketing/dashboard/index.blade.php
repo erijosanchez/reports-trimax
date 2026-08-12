@@ -1704,7 +1704,7 @@
                         }
                     </td>
                     <td><strong>${sv.evaluado_name}</strong></td>
-                    <td><span class="badge badge-secondary">${tipo}</span></td>
+                    <td><span class="badge badge-dark">${tipo}</span></td>
                     <td class="text-center">${RATING_BADGE[sv.experience_rating] ?? sv.experience_rating}</td>
                     <td class="text-center">${RATING_BADGE[sv.service_quality_rating] ?? sv.service_quality_rating}</td>
                     <td class="text-center"><span class="badge ${combCls}">${comb}</span></td>

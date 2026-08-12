@@ -325,7 +325,7 @@
                                                                                     </span>
                                                                                 @endforeach
                                                                                 @if ($user->sedes->count() > 3)
-                                                                                    <span class="badge badge-secondary"
+                                                                                    <span class="badge badge-dark"
                                                                                         data-bs-toggle="tooltip"
                                                                                         title="{{ $user->sedes->pluck('name')->slice(3)->join(', ') }}"
                                                                                         style="padding: 0.4rem 0.8rem;">

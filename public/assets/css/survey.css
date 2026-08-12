@@ -11,8 +11,9 @@ body {
     background-position: center;
     background-size: 100%;
     background-repeat: no-repeat;
+    background-attachment: fixed;
     padding: 2rem;
-    
+
 }
 
 /* ===== CONTAINER PRINCIPAL ===== */

@@ -5,7 +5,7 @@
         2 => ['class' => 'badge-warning', 'icon' => 'mdi-emoticon-neutral', 'label' => 'Insatisfecho'],
         1 => ['class' => 'badge-danger', 'icon' => 'mdi-emoticon-sad', 'label' => 'Muy Insatisfecho'],
     ];
-    $cfg = $ratingConfig[$rating] ?? ['class' => 'badge-secondary', 'icon' => 'mdi-help', 'label' => 'N/A'];
+    $cfg = $ratingConfig[$rating] ?? ['class' => 'badge-dark', 'icon' => 'mdi-help', 'label' => 'N/A'];
 @endphp
 <span class="badge {{ $cfg['class'] }}">
     <i class="mdi {{ $cfg['icon'] }}"></i> {{ $cfg['label'] }}
