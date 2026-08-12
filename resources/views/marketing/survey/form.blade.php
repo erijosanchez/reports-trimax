@@ -154,7 +154,7 @@
                 <div class="question-container anim-in" id="tiempos-entrega-question" style="display: none;">
                     <div class="header-question">Encuesta de atención al cliente - TRIMAX</div>
                     <div class="question">
-                        <div class="question-text">¿Usted se encuentra satisfecho con los tiempos de entrega?</div>
+                        <div class="question-text">¿Usted está satisfecho con los tiempos de entrega de los productos Trimax?</div>
                         <div class="ratings">
                             <div class="rating-btn muy-feliz" data-question="4" data-value="4">
                                 <img class="emoji" src="{{ asset('assets/img/caras/muysatisfecho.png') }}" alt="">
@@ -181,8 +181,7 @@
                 <div class="question-container anim-in" id="promociones-question" style="display: none;">
                     <div class="header-question">Encuesta de atención al cliente - TRIMAX</div>
                     <div class="question">
-                        <div class="question-text">¿Usted se encuentra satisfecho con las promociones que le
-                            brinda TRIMAX? <span class="optional-mark">(opcional)</span></div>
+                        <div class="question-text">¿Usted está satisfecho con la información de promociones que da Trimax? <span class="optional-mark">(opcional)</span></div>
                         <div class="ratings">
                             <div class="rating-btn muy-feliz" data-question="5" data-value="4">
                                 <img class="emoji" src="{{ asset('assets/img/caras/muysatisfecho.png') }}" alt="">
