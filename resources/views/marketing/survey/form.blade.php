@@ -37,17 +37,8 @@
                         placeholder="Escribe la razón social...">
                 </div>
 
-                <div class="form-group sede-group anim-in" style="animation-delay: .15s">
-                    <label>Sede con la que trabaja <span class="required-mark">*</span></label>
-                    <div class="select-wrapper">
-                        <select name="sede_id" id="sede_id" required>
-                            <option value="">Selecciona una sede...</option>
-                        </select>
-                    </div>
-                </div>
-
                 <!-- Pregunta 1: Experiencia general -->
-                <div class="question-container anim-in" style="animation-delay: .2s">
+                <div class="question-container anim-in" style="animation-delay: .15s">
                     <div class="header-question">Encuesta de atención al cliente - TRIMAX</div>
                     <div class="question">
                         <div class="question-text">¿Cómo calificarías tu experiencia en TRIMAX?</div>
@@ -70,6 +61,15 @@
                             </div>
                         </div>
                         <input type="hidden" name="experience_rating" id="experience_rating" required>
+                    </div>
+                </div>
+
+                <div class="form-group sede-group anim-in" style="animation-delay: .2s">
+                    <label>Sede con la que trabaja <span class="required-mark">*</span></label>
+                    <div class="select-wrapper">
+                        <select name="sede_id" id="sede_id" required>
+                            <option value="">Selecciona una sede...</option>
+                        </select>
                     </div>
                 </div>
 
