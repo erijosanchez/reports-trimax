@@ -318,7 +318,7 @@
                                                                             <div class="mt-2" style="line-height: 1.8;">
                                                                                 @foreach ($user->sedes->take(3) as $sede)
                                                                                     <span
-                                                                                        class="badge badge-light me-1 mb-1"
+                                                                                        class="badge badge-dark me-1 mb-1"
                                                                                         style="padding: 0.4rem 0.8rem;">
                                                                                         <i
                                                                                             class="mdi mdi-map-marker me-1"></i>{{ $sede->name }}
