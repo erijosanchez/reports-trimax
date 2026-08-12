@@ -420,6 +420,29 @@
                                                                         <strong>Solo debe haber uno activo.</strong>
                                                                     </small>
                                                                 </div>
+
+                                                                {{-- Notificaciones por correo --}}
+                                                                <div class="mt-3 px-3 py-2 border rounded"
+                                                                    style="border-color:#0dcaf0 !important; background:#f0fbfd;">
+                                                                    <div class="col-md-6">
+                                                                        <div class="form-check form-check-success">
+                                                                            <label class="form-check-label fw-semibold">
+                                                                                <input type="checkbox"
+                                                                                    name="email_notifications_enabled"
+                                                                                    value="1"
+                                                                                    class="form-check-input"
+                                                                                    {{ old('email_notifications_enabled', $user->email_notifications_enabled ?? true) ? 'checked' : '' }}>
+                                                                                Recibir notificaciones por correo
+                                                                                <i class="input-helper"></i>
+                                                                            </label>
+                                                                        </div>
+                                                                    </div>
+                                                                    <small class="d-block mt-1 text-muted">
+                                                                        Si lo desmarcas, {{ $user->name }} sigue recibiendo
+                                                                        sus notificaciones en la campanita del sistema,
+                                                                        pero deja de llegarle correo.
+                                                                    </small>
+                                                                </div>
                                                             </div>
 
                                                             {{-- MÓDULO PRODUCTIVIDAD SEDES --}}

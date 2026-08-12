@@ -118,6 +118,7 @@ class UserController extends Controller
             'sede'               => $request->role === 'sede' ? strtoupper($request->sede) : null,
             'is_active'          => true,
             'es_gerente_general' => $request->boolean('es_gerente_general'),
+            'email_notifications_enabled' => $request->boolean('email_notifications_enabled'),
         ], $permisos));
 
         $user->assignRole($request->role);
@@ -166,6 +167,7 @@ class UserController extends Controller
             'sede'             => $request->role === 'sede' ? strtoupper($request->sede) : null,
             'is_active'        => $request->boolean('is_active'),
             'es_gerente_general' => $request->boolean('es_gerente_general'),
+            'email_notifications_enabled' => $request->boolean('email_notifications_enabled'),
         ], $permisos));
 
         if ($request->filled('password')) {
