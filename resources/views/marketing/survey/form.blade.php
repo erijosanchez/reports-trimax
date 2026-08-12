@@ -78,7 +78,7 @@
                     <div class="header-question">Encuesta de atención al cliente - TRIMAX</div>
                     <div class="question">
                         <div class="question-text">¿Usted se encuentra satisfecho con la atención y soporte de tu
-                            sede TRIMAX?</div>
+                            sede <span id="sede-question-name">TRIMAX</span>?</div>
                         <div class="ratings">
                             <div class="rating-btn muy-feliz" data-question="2" data-value="4">
                                 <img class="emoji" src="{{ asset('assets/img/caras/muysatisfecho.png') }}" alt="">
@@ -125,7 +125,7 @@
                     <div class="header-question">Encuesta de atención al cliente - TRIMAX</div>
                     <div class="question">
                         <div class="question-text">¿Usted se encuentra satisfecho con la orientación que le brinda
-                            su consultor?</div>
+                            su consultor<span id="consultor-question-name"></span>?</div>
                         <div class="ratings">
                             <div class="rating-btn muy-feliz" data-question="3" data-value="4">
                                 <img class="emoji" src="{{ asset('assets/img/caras/muysatisfecho.png') }}" alt="">
@@ -299,6 +299,24 @@
             }, 120000);
         }
 
+        // ===== NOMBRE DINÁMICO EN LAS PREGUNTAS: sede y consultor elegidos =====
+        function updateSedeQuestionName() {
+            const sedeSelect = document.getElementById('sede_id');
+            const selected = sedeSelect.options[sedeSelect.selectedIndex];
+            // Los nombres de sede ya suelen empezar con "Sede " (ej. "Sede
+            // Arequipa") — se quita ese prefijo para no leer "tu sede Sede
+            // Arequipa", quede como quede el nombre real se ve bien igual.
+            const nombre = selected && selected.value ? selected.text.replace(/^sede\s+/i, '') : '';
+            document.getElementById('sede-question-name').textContent = nombre || 'TRIMAX';
+        }
+
+        function updateConsultorQuestionName() {
+            const consultorSelect = document.getElementById('consultor_id');
+            const selected = consultorSelect.options[consultorSelect.selectedIndex];
+            document.getElementById('consultor-question-name').textContent =
+                (selected && selected.value) ? ` ${selected.text}` : '';
+        }
+
         // ===== CONSULTOR DROPDOWN: filtrado por la sede elegida =====
         function renderConsultores() {
             const select = document.getElementById('consultor_id');
@@ -347,6 +365,7 @@
                 selectedRatings[3] = null;
                 document.querySelectorAll('.rating-btn[data-question="3"]').forEach(b => b.classList.remove(
                     'active'));
+                updateConsultorQuestionName();
                 const convergen = tieneConsultorValue === '0' ? 'block' : 'none';
                 tiemposEntregaQuestion.style.display = convergen;
                 promocionesQuestion.style.display = convergen;
@@ -359,6 +378,7 @@
 
             const consultorSeleccionado = document.getElementById('consultor_id').value;
             preguntaRating.style.display = consultorSeleccionado ? 'block' : 'none';
+            updateConsultorQuestionName();
 
             if (!consultorSeleccionado) {
                 document.getElementById('consultor_rating').value = '';
@@ -396,9 +416,11 @@
                     if (data.data.sede_preseleccionada_id) {
                         sedeSelect.value = String(data.data.sede_preseleccionada_id);
                     }
+                    updateSedeQuestionName();
                     sedeSelect.addEventListener('change', () => {
                         formStarted = true;
                         renderConsultores();
+                        updateSedeQuestionName();
                     });
 
                     consultores = data.data.consultores || [];
