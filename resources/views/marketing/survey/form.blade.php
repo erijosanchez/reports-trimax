@@ -18,26 +18,26 @@
 
         <div id="survey-container" style="display: none;">
 
-            <div class="evaluado-info">
+            <div class="evaluado-info anim-in">
                 <div class="name" id="evaluado-name"></div>
                 <div class="type" id="evaluado-type"></div>
             </div>
 
             <form id="survey-form">
                 <!-- Datos del cliente -->
-                <div class="form-group">
+                <div class="form-group anim-in" style="animation-delay: .05s">
                     <label>RUC <span class="required-mark">*</span></label>
                     <input type="text" name="ruc" id="ruc" required inputmode="numeric" maxlength="11"
                         placeholder="Escribe el RUC (11 dígitos)...">
                 </div>
 
-                <div class="form-group">
+                <div class="form-group anim-in" style="animation-delay: .1s">
                     <label>Razón social <span class="required-mark">*</span></label>
                     <input type="text" name="client_name" id="client_name" required
                         placeholder="Escribe la razón social...">
                 </div>
 
-                <div class="form-group sede-group">
+                <div class="form-group sede-group anim-in" style="animation-delay: .15s">
                     <label>Sede con la que trabaja <span class="required-mark">*</span></label>
                     <div class="select-wrapper">
                         <select name="sede_id" id="sede_id" required>
@@ -47,7 +47,7 @@
                 </div>
 
                 <!-- Pregunta 1: Experiencia general -->
-                <div class="question-container">
+                <div class="question-container anim-in" style="animation-delay: .2s">
                     <div class="header-question">Encuesta de atención al cliente - TRIMAX</div>
                     <div class="question">
                         <div class="question-text">¿Cómo calificarías tu experiencia en TRIMAX?</div>
@@ -74,7 +74,7 @@
                 </div>
 
                 <!-- Pregunta 2: Satisfacción con la sede -->
-                <div class="question-container">
+                <div class="question-container anim-in" style="animation-delay: .25s">
                     <div class="header-question">Encuesta de atención al cliente - TRIMAX</div>
                     <div class="question">
                         <div class="question-text">¿Usted se encuentra satisfecho con la atención y soporte de tu
@@ -102,7 +102,7 @@
                 </div>
 
                 <!-- Filtro: ¿tiene consultor? -->
-                <div class="form-group">
+                <div class="form-group anim-in" style="animation-delay: .3s">
                     <label>¿Actualmente es atendido por un consultor comercial de Trimax?</label>
                     <div class="filter-toggle">
                         <div class="filter-btn" id="tiene-consultor-si" data-value="1">Sí</div>
@@ -112,7 +112,7 @@
                 </div>
 
                 <!-- Rama consultor: solo visible si tiene_consultor = Sí -->
-                <div class="form-group" id="consultor-select-group" style="display: none;">
+                <div class="form-group anim-in" id="consultor-select-group" style="display: none;">
                     <label>¿Cuál de los consultores comerciales de Trimax lo atiende?</label>
                     <div class="select-wrapper">
                         <select name="consultor_id" id="consultor_id">
@@ -121,7 +121,7 @@
                     </div>
                 </div>
 
-                <div class="question-container" id="consultor-rating-question" style="display: none;">
+                <div class="question-container anim-in" id="consultor-rating-question" style="display: none;">
                     <div class="header-question">Encuesta de atención al cliente - TRIMAX</div>
                     <div class="question">
                         <div class="question-text">¿Usted se encuentra satisfecho con la orientación que le brinda
@@ -151,7 +151,7 @@
                 <!-- Cierre: tiempos de entrega — oculto hasta responder el filtro de
                      consultor. Con "No" aparece de inmediato; con "Sí" aparece debajo
                      del bloque de consultor (ambas ramas convergen aquí). -->
-                <div class="question-container" id="tiempos-entrega-question" style="display: none;">
+                <div class="question-container anim-in" id="tiempos-entrega-question" style="display: none;">
                     <div class="header-question">Encuesta de atención al cliente - TRIMAX</div>
                     <div class="question">
                         <div class="question-text">¿Usted se encuentra satisfecho con los tiempos de entrega?</div>
@@ -178,7 +178,7 @@
                 </div>
 
                 <!-- Cierre: promociones (opcional) — misma visibilidad que tiempos de entrega -->
-                <div class="question-container" id="promociones-question" style="display: none;">
+                <div class="question-container anim-in" id="promociones-question" style="display: none;">
                     <div class="header-question">Encuesta de atención al cliente - TRIMAX</div>
                     <div class="question">
                         <div class="question-text">¿Usted se encuentra satisfecho con las promociones que le
@@ -205,15 +205,15 @@
                     </div>
                 </div>
 
-                <div class="form-group">
+                <div class="form-group anim-in" style="animation-delay: .35s">
                     <label>Cuéntanos brevemente qué podríamos mejorar o qué te gustó más de nuestra atención
                         <span class="optional-mark">(opcional)</span></label>
                     <textarea name="comments" id="comments" placeholder="Tu opinión es anónima y nos ayuda a mejorar..."></textarea>
                 </div>
 
-                <button type="submit" class="submit-btn" id="submit-btn">ENVIAR</button>
+                <button type="submit" class="submit-btn anim-in" id="submit-btn" style="animation-delay: .4s">ENVIAR</button>
 
-                <div class="trimax-logo">
+                <div class="trimax-logo anim-in" style="animation-delay: .45s">
                     <img src="{{ asset('assets/img/ltr.png') }}" alt="TRIMAX">
                 </div>
             </form>

@@ -153,6 +153,7 @@ body {
 .rating-btn.active .emoji {
     transform: scale(1.15);
     box-shadow: 0 8px 25px rgba(0,0,0,0.25);
+    animation: popRating 0.35s cubic-bezier(.34,1.56,.64,1);
 }
 
 .rating-btn.active .emoji::after {
@@ -171,6 +172,7 @@ body {
     color: #4CAF50;
     font-weight: bold;
     box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    animation: checkPop 0.4s cubic-bezier(.34,1.56,.64,1) 0.05s both;
 }
 
 .rating-label {
@@ -317,6 +319,7 @@ body {
 .submit-btn:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+    animation: pulseBtn 1.2s ease-in-out infinite;
 }
 
 /* ===== LOGO TRIMAX ===== */
@@ -371,12 +374,18 @@ body {
     font-size: 28px;
     font-weight: 700;
     margin-bottom: 15px;
+    animation: cardEnter 0.5s ease 0.25s both;
 }
 
 .success-container p {
     color: #666;
     font-size: 16px;
     margin-bottom: 30px;
+    animation: cardEnter 0.5s ease 0.4s both;
+}
+
+.success-container .trimax-logo {
+    animation: cardEnter 0.5s ease 0.55s both;
 }
 
 /* ===== RESPONSIVE ===== */
@@ -570,6 +579,7 @@ body {
     background: #1565C0;
     border-color: #1565C0;
     color: white;
+    animation: popSelect 0.3s cubic-bezier(.34,1.56,.64,1);
 }
 
 .hint-text {
@@ -721,5 +731,63 @@ input[type="hidden"] {
 @media (max-width: 576px) {
     .scroll-indicator {
         bottom: 15px;
+    }
+}
+
+/* ===== ANIMACIONES DE ENTRADA (más interactivo) ===== */
+/* Se aplica a cada bloque de la encuesta: los visibles desde el inicio
+   quedan escalonados por animation-delay (ver form.blade.php); los que
+   JS revela más tarde (rama de consultor, cierre) heredan la misma
+   clase y la animación se vuelve a disparar sola al pasar de
+   display:none a visible, sin necesitar JS adicional. */
+@keyframes cardEnter {
+    from {
+        opacity: 0;
+        transform: translateY(22px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.anim-in {
+    animation: cardEnter 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Rebote al seleccionar una calificación */
+@keyframes popRating {
+    0% { transform: scale(1); }
+    45% { transform: scale(1.28); }
+    100% { transform: scale(1.15); }
+}
+
+/* Aparición del check ✓ sobre la calificación elegida */
+@keyframes checkPop {
+    0% { transform: scale(0); opacity: 0; }
+    60% { transform: scale(1.3); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+/* Rebote al elegir Sí/No en el filtro de consultor */
+@keyframes popSelect {
+    0% { transform: scale(1); }
+    45% { transform: scale(1.08); }
+    100% { transform: scale(1); }
+}
+
+/* Botón enviar "respirando" mientras se envía */
+@keyframes pulseBtn {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 0.85; }
+}
+
+/* Respeta la preferencia del usuario de reducir animaciones */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+        scroll-behavior: auto !important;
     }
 }
