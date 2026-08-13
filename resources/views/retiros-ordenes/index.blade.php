@@ -199,6 +199,11 @@
                         </table>
                     </div>
                 </div>
+                @if($registros->hasPages())
+                <div class="card-footer d-flex justify-content-end">
+                    {{ $registros->withQueryString()->links() }}
+                </div>
+                @endif
             </div>
         </div>
     </div>

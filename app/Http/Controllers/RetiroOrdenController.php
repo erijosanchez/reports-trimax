@@ -25,12 +25,12 @@ class RetiroOrdenController extends Controller
         }
 
         if ($user->isSuperAdmin() || $user->isAdmin() || in_array($user->id, self::RESPONSABLES_IDS)) {
-            $registros = RetiroOrden::with('creator')->latest()->get();
+            $registros = RetiroOrden::with('creator')->latest()->paginate(20);
         } else {
             $registros = RetiroOrden::with('creator')
                 ->where('sede', $user->sede)
                 ->latest()
-                ->get();
+                ->paginate(20);
         }
 
         $responsables   = $this->responsables();
