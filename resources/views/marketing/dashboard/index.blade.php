@@ -87,6 +87,20 @@
                                     </div>
                                 </div>
                                 <div class="grid-margin col-xl col-lg-3 col-md-6 col-sm-6 stretch-card">
+                                    <div class="card card-statistics" style="border-top: 3px solid #0dcaf0;">
+                                        <div class="card-body">
+                                            <div class="d-flex flex-column align-items-center">
+                                                <div class="bg-info-subtle mb-3 rounded icon-wrapper">
+                                                    <i class="text-info mdi mdi-percent icon-lg"></i>
+                                                </div>
+                                                <h3 class="mb-1 rate-percentage">
+                                                    {{ number_format($stats['csat'], 1) }}%</h3>
+                                                <p class="mb-0 statistics-title">CSAT (top-box)</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="grid-margin col-xl col-lg-3 col-md-6 col-sm-6 stretch-card">
                                     <div class="card card-statistics">
                                         <div class="card-body">
                                             <div class="d-flex flex-column align-items-center">
@@ -120,6 +134,9 @@
                                 <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab"
                                         data-bs-target="#tab-zona" type="button"><i
                                             class="me-1 mdi mdi-map-marker"></i>Por Sede</button></li>
+                                <li class="nav-item"><button class="nav-link" data-bs-toggle="tab"
+                                        data-bs-target="#tab-resumen" type="button"><i
+                                            class="me-1 mdi mdi-table"></i>Resumen</button></li>
                                 <li class="nav-item"><button class="nav-link" data-bs-toggle="tab"
                                         data-bs-target="#tab-encuestas" type="button" id="btn-tab-encuestas">
                                         <i class="me-1 mdi mdi-clipboard-list"></i>Todas las Encuestas
@@ -217,6 +234,15 @@
                                                                     ⭐ {{ number_format($s['promedio'], 2) }}
                                                                 </span>
                                                             </div>
+                                                            <div
+                                                                class="d-flex align-items-center justify-content-between p-2 mb-2 rounded promedio-consolidado-box">
+                                                                <span class="text-muted small">CSAT (top-box)</span>
+                                                                <span
+                                                                    class="badge {{ $s['csat'] >= 75 ? 'badge-success' : ($s['csat'] >= 50 ? 'badge-warning' : 'badge-danger') }} px-3 py-2"
+                                                                    style="font-size:.9rem;">
+                                                                    {{ number_format($s['csat'], 1) }}%
+                                                                </span>
+                                                            </div>
                                                         @endif
 
                                                         @if ($s['consultores']->count() > 0)
@@ -253,6 +279,184 @@
                                             </div>
                                         </div>
                                     @endif
+                                </div>
+
+                                {{-- ══ TAB: RESUMEN ══ --}}
+                                <div class="tab-pane fade" id="tab-resumen" role="tabpanel">
+
+                                    <div class="grid-margin card">
+                                        <div class="card-body">
+                                            <div class="d-flex align-items-start justify-content-between flex-wrap gap-2 mb-1">
+                                                <h5 class="mb-0 card-title"><i
+                                                        class="me-2 text-primary mdi mdi-table"></i>Resumen por sede
+                                                </h5>
+                                                <a href="{{ route('marketing.resumen.sedes.export') }}"
+                                                    class="btn-outline-success btn btn-sm">
+                                                    <i class="me-1 mdi mdi-file-excel"></i>Exportar Excel
+                                                </a>
+                                            </div>
+                                            <p class="mb-3 text-muted small">Cumplimiento semanal es contra la meta
+                                                definida por sede. No existe una meta mensual real en el
+                                                sistema — el cumplimiento mensual usa una meta estimada (meta
+                                                semanal × 4.33 semanas/mes). La fila TOTAL suma la meta y lo
+                                                obtenido de todas las sedes.</p>
+                                            <div class="table-responsive">
+                                                <table class="table table-hover table-sm mb-0">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Sede</th>
+                                                            <th class="text-center">Esta semana</th>
+                                                            <th class="text-center">Cumpl. semanal</th>
+                                                            <th class="text-center">Este mes</th>
+                                                            <th class="text-center">Cumpl. mensual (est.)</th>
+                                                            <th class="text-center">Promedio consolidado</th>
+                                                            <th class="text-center">CSAT</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @forelse ($sedeStats as $s)
+                                                            <tr>
+                                                                <td><strong>{{ $s['name'] }}</strong></td>
+                                                                <td class="text-center">{{ $s['obtenidas_semana'] }} /
+                                                                    {{ $s['meta_semanal'] ?? '—' }}</td>
+                                                                <td class="text-center">
+                                                                    @if (is_null($s['cumplimiento_pct']))
+                                                                        <span
+                                                                            class="badge-cumplimiento sin-meta">Sin
+                                                                            meta</span>
+                                                                    @else
+                                                                        <span
+                                                                            class="badge-cumplimiento {{ $s['cumplimiento_pct'] < 70 ? 'rojo' : ($s['cumplimiento_pct'] < 100 ? 'amarillo' : 'verde') }}">{{ $s['cumplimiento_pct'] }}%</span>
+                                                                    @endif
+                                                                </td>
+                                                                <td class="text-center">{{ $s['obtenidas_mes'] }} /
+                                                                    {{ $s['meta_mensual_estimada'] ?? '—' }}</td>
+                                                                <td class="text-center">
+                                                                    @if (is_null($s['cumplimiento_mensual_pct']))
+                                                                        <span
+                                                                            class="badge-cumplimiento sin-meta">Sin
+                                                                            meta</span>
+                                                                    @else
+                                                                        <span
+                                                                            class="badge-cumplimiento {{ $s['cumplimiento_mensual_pct'] < 70 ? 'rojo' : ($s['cumplimiento_mensual_pct'] < 100 ? 'amarillo' : 'verde') }}">{{ $s['cumplimiento_mensual_pct'] }}%</span>
+                                                                    @endif
+                                                                </td>
+                                                                <td class="text-center">
+                                                                    <span
+                                                                        class="badge {{ $s['promedio'] >= 3.5 ? 'badge-success' : ($s['promedio'] >= 2.5 ? 'badge-warning' : 'badge-danger') }}">⭐
+                                                                        {{ number_format($s['promedio'], 2) }}</span>
+                                                                </td>
+                                                                <td class="text-center">
+                                                                    <span
+                                                                        class="badge {{ $s['csat'] >= 75 ? 'badge-success' : ($s['csat'] >= 50 ? 'badge-warning' : 'badge-danger') }}">{{ number_format($s['csat'], 1) }}%</span>
+                                                                </td>
+                                                            </tr>
+                                                        @empty
+                                                            <tr>
+                                                                <td colspan="7" class="py-4 text-muted text-center">No
+                                                                    hay sedes activas registradas.</td>
+                                                            </tr>
+                                        @endforelse
+                                                    </tbody>
+                                                    @if ($sedeStats->count() > 0)
+                                                        <tfoot>
+                                                            <tr class="table-light fw-bold">
+                                                                <td>TOTAL</td>
+                                                                <td class="text-center">
+                                                                    {{ $resumenTotales['obtenidas_semana'] }} /
+                                                                    {{ $resumenTotales['meta_semanal'] ?? '—' }}</td>
+                                                                <td class="text-center">
+                                                                    @if (is_null($resumenTotales['cumplimiento_pct']))
+                                                                        <span
+                                                                            class="badge-cumplimiento sin-meta">Sin
+                                                                            meta</span>
+                                                                    @else
+                                                                        <span
+                                                                            class="badge-cumplimiento {{ $resumenTotales['cumplimiento_pct'] < 70 ? 'rojo' : ($resumenTotales['cumplimiento_pct'] < 100 ? 'amarillo' : 'verde') }}">{{ $resumenTotales['cumplimiento_pct'] }}%</span>
+                                                                    @endif
+                                                                </td>
+                                                                <td class="text-center">
+                                                                    {{ $resumenTotales['obtenidas_mes'] }} /
+                                                                    {{ $resumenTotales['meta_mensual_estimada'] ?? '—' }}
+                                                                </td>
+                                                                <td class="text-center">
+                                                                    @if (is_null($resumenTotales['cumplimiento_mensual_pct']))
+                                                                        <span
+                                                                            class="badge-cumplimiento sin-meta">Sin
+                                                                            meta</span>
+                                                                    @else
+                                                                        <span
+                                                                            class="badge-cumplimiento {{ $resumenTotales['cumplimiento_mensual_pct'] < 70 ? 'rojo' : ($resumenTotales['cumplimiento_mensual_pct'] < 100 ? 'amarillo' : 'verde') }}">{{ $resumenTotales['cumplimiento_mensual_pct'] }}%</span>
+                                                                    @endif
+                                                                </td>
+                                                                <td class="text-center text-muted">—</td>
+                                                                <td class="text-center text-muted">—</td>
+                                                            </tr>
+                                                        </tfoot>
+                                                    @endif
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="grid-margin card">
+                                        <div class="card-body">
+                                            <div class="d-flex align-items-start justify-content-between flex-wrap gap-2 mb-3">
+                                                <h5 class="mb-0 card-title"><i
+                                                        class="me-2 text-primary mdi mdi-account-tie"></i>Calificación
+                                                    de consultores</h5>
+                                                <a href="{{ route('marketing.resumen.consultores.export') }}"
+                                                    class="btn-outline-success btn btn-sm">
+                                                    <i class="me-1 mdi mdi-file-excel"></i>Exportar Excel
+                                                </a>
+                                            </div>
+                                            <div class="table-responsive">
+                                                <table class="table table-hover table-sm mb-0">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Consultor</th>
+                                                            <th>Sede(s)</th>
+                                                            <th class="text-center">Total encuestas</th>
+                                                            <th class="text-center">Promedio</th>
+                                                            <th class="text-center">CSAT</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @forelse ($consultoresResumen as $c)
+                                                            <tr>
+                                                                <td><strong>{{ $c['name'] }}</strong></td>
+                                                                <td class="text-muted small">{{ $c['sedes'] }}</td>
+                                                                <td class="text-center">{{ $c['total_surveys'] }}</td>
+                                                                <td class="text-center">
+                                                                    @if ($c['total_surveys'] > 0)
+                                                                        <span
+                                                                            class="badge {{ $c['promedio'] >= 3.5 ? 'badge-success' : ($c['promedio'] >= 2.5 ? 'badge-warning' : 'badge-danger') }}">⭐
+                                                                            {{ number_format($c['promedio'], 2) }}</span>
+                                                                    @else
+                                                                        <span class="text-muted">Sin
+                                                                            encuestas</span>
+                                                                    @endif
+                                                                </td>
+                                                                <td class="text-center">
+                                                                    @if ($c['total_surveys'] > 0)
+                                                                        <span
+                                                                            class="badge {{ $c['csat'] >= 75 ? 'badge-success' : ($c['csat'] >= 50 ? 'badge-warning' : 'badge-danger') }}">{{ number_format($c['csat'], 1) }}%</span>
+                                                                    @else
+                                                                        <span class="text-muted">—</span>
+                                                                    @endif
+                                                                </td>
+                                                            </tr>
+                                                        @empty
+                                                            <tr>
+                                                                <td colspan="5" class="py-4 text-muted text-center">No
+                                                                    hay consultores activos registrados.</td>
+                                                            </tr>
+                                                        @endforelse
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
 
                                 {{-- ══ MODAL: Definir meta semanal por sede ══ --}}

@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\MarketingConsultoresExport;
+use App\Exports\MarketingResumenSedesExport;
 use App\Models\Survey;
 use App\Models\SurveyGoal;
 use App\Models\User;
 use App\Models\UsersMarketing;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Maatwebsite\Excel\Facades\Excel;
 
 class MarketingController extends Controller
 {
@@ -55,6 +58,15 @@ class MarketingController extends Controller
         ];
     }
 
+    /** Rango del mes calendario en curso, para el cumplimiento mensual del tab Resumen. */
+    private function mesActual(): array
+    {
+        return [
+            Carbon::now('America/Lima')->startOfMonth()->startOfDay(),
+            Carbon::now('America/Lima')->endOfMonth()->endOfDay(),
+        ];
+    }
+
     /**
      * Stats por sede — eje central del dashboard (reestructurado 2026-08-12):
      * identifica las encuestas de cada sede, consolida su total, compara
@@ -68,6 +80,7 @@ class MarketingController extends Controller
     private function calcularSedeStats()
     {
         [$inicioSemana, $finSemana] = $this->semanaActual();
+        [$inicioMes, $finMes]       = $this->mesActual();
 
         $sedes = UsersMarketing::where('role', 'sede')
             ->where('is_active', true)
@@ -75,17 +88,27 @@ class MarketingController extends Controller
             ->with('consultores')
             ->get();
 
-        return $sedes->map(function ($sede) use ($inicioSemana, $finSemana) {
+        return $sedes->map(function ($sede) use ($inicioSemana, $finSemana, $inicioMes, $finMes) {
             $surveysSede = Survey::esquemaNuevo()->paraEntidad($sede->id)->get();
 
             $surveysSemana = $surveysSede->filter(
                 fn($s) => $s->created_at->between($inicioSemana, $finSemana)
+            );
+            $surveysMes = $surveysSede->filter(
+                fn($s) => $s->created_at->between($inicioMes, $finMes)
             );
 
             $metaVigente  = SurveyGoal::vigentePara($sede->id);
             $metaSemanal  = $metaVigente?->meta_semanal;
             $obtenidas    = $surveysSemana->count();
             $cumplimiento = $metaSemanal ? (int) round(($obtenidas / $metaSemanal) * 100) : null;
+
+            // No existe meta mensual real en el sistema (solo meta_semanal) — se
+            // estima multiplicando por 4.33 (promedio de semanas/mes), a pedido
+            // del usuario, ya que Marketing no ha definido una meta mensual propia.
+            $obtenidasMes         = $surveysMes->count();
+            $metaMensualEstimada  = $metaSemanal ? (int) round($metaSemanal * 4.33) : null;
+            $cumplimientoMensual  = $metaMensualEstimada ? (int) round(($obtenidasMes / $metaMensualEstimada) * 100) : null;
 
             $avanceDiario = collect(range(0, 6))->map(function ($i) use ($inicioSemana, $surveysSemana) {
                 $dia = $inicioSemana->copy()->addDays($i);
@@ -115,10 +138,67 @@ class MarketingController extends Controller
                 'cumplimiento_pct' => $cumplimiento,
                 'avance_diario'    => $avanceDiario,
                 'total_historico'  => $surveysSede->count(),
+                'obtenidas_mes'    => $obtenidasMes,
+                'meta_mensual_estimada'    => $metaMensualEstimada,
+                'cumplimiento_mensual_pct' => $cumplimientoMensual,
                 'promedio'         => Survey::promedioConsolidado($surveysSede),
+                'csat'             => Survey::csatConsolidado($surveysSede),
                 'consultores'      => $consultores,
             ];
         })->values();
+    }
+
+    /**
+     * Cómo se están calificando los consultores — para el tab Resumen. A
+     * diferencia del desglose dentro de cada tarjeta de sede (donde un
+     * consultor con más de una sede asignada aparece repetido), acá sale
+     * una sola vez con todas sus sedes juntas.
+     */
+    private function calcConsultoresResumen()
+    {
+        return UsersMarketing::where('role', 'consultor')
+            ->where('is_active', true)
+            ->with('sedes:id,name')
+            ->orderBy('name')
+            ->get()
+            ->map(function ($c) {
+                $ratings = Survey::where('consultor_id', $c->id)
+                    ->whereNotNull('consultor_rating')
+                    ->pluck('consultor_rating');
+
+                return [
+                    'id'            => $c->id,
+                    'name'          => $c->name,
+                    'sedes'         => $c->sedes->pluck('name')->implode(', ') ?: '—',
+                    'total_surveys' => $ratings->count(),
+                    'promedio'      => $ratings->isEmpty() ? 0.0 : round($ratings->avg(), 2),
+                    'csat'          => $ratings->isEmpty()
+                        ? 0.0
+                        : round($ratings->filter(fn($r) => $r >= 3)->count() / $ratings->count() * 100, 1),
+                ];
+            })
+            ->sortByDesc('total_surveys')
+            ->values();
+    }
+
+    /** Fila TOTAL del tab Resumen: suma de meta y de obtenidas entre todas las sedes, semanal y mensual. */
+    private function calcResumenTotales($sedeStats): array
+    {
+        $totales = [
+            'obtenidas_semana'      => $sedeStats->sum('obtenidas_semana'),
+            'meta_semanal'          => $sedeStats->sum('meta_semanal') ?: null,
+            'obtenidas_mes'         => $sedeStats->sum('obtenidas_mes'),
+            'meta_mensual_estimada' => $sedeStats->sum('meta_mensual_estimada') ?: null,
+        ];
+
+        $totales['cumplimiento_pct'] = $totales['meta_semanal']
+            ? (int) round($totales['obtenidas_semana'] / $totales['meta_semanal'] * 100)
+            : null;
+        $totales['cumplimiento_mensual_pct'] = $totales['meta_mensual_estimada']
+            ? (int) round($totales['obtenidas_mes'] / $totales['meta_mensual_estimada'] * 100)
+            : null;
+
+        return $totales;
     }
 
     // ─── Dashboard ─────────────────────────────────────────────────────────────
@@ -141,16 +221,20 @@ class MarketingController extends Controller
         $stats = [
             'total'    => $surveys->count(),
             'promedio' => Survey::promedioConsolidado($surveys),
+            'csat'     => Survey::csatConsolidado($surveys),
         ];
 
         $sedeStats     = $this->calcularSedeStats();
         $sedesConMeta  = $sedeStats->whereNotNull('meta_semanal');
         $sedesCumplen  = $sedesConMeta->filter(fn($s) => $s['cumplimiento_pct'] >= 100)->count();
+        $resumenTotales = $this->calcResumenTotales($sedeStats);
 
         $sedesParaMeta = UsersMarketing::where('role', 'sede')
             ->where('is_active', true)
             ->orderBy('name')
             ->get(['id', 'name']);
+
+        $consultoresResumen = $this->calcConsultoresResumen();
 
         // ── Encuestas recientes con calificación baja (para la pestaña Alertas) ──
         $recentLowRated = Survey::with(['userMarketing:id,name,role,location', 'selectedSede:id,name,role,location'])
@@ -173,10 +257,33 @@ class MarketingController extends Controller
             'sedesConMeta',
             'sedesCumplen',
             'sedesParaMeta',
+            'consultoresResumen',
+            'resumenTotales',
             'recentLowRated',
             'startDate',
             'endDate'
         ));
+    }
+
+    // ─── Exportar Excel (tab Resumen) ─────────────────────────────────────────
+
+    public function exportResumenSedes()
+    {
+        $sedeStats = $this->calcularSedeStats();
+        $totales   = $this->calcResumenTotales($sedeStats);
+
+        return Excel::download(
+            new MarketingResumenSedesExport($sedeStats->toArray(), $totales),
+            'marketing_resumen_sedes.xlsx'
+        );
+    }
+
+    public function exportResumenConsultores()
+    {
+        return Excel::download(
+            new MarketingConsultoresExport($this->calcConsultoresResumen()->toArray()),
+            'marketing_calificacion_consultores.xlsx'
+        );
     }
 
     // ─── Metas por sede (CRUD mínimo — solo crear, con vigente_desde = hoy) ────

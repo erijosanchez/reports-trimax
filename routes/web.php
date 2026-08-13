@@ -141,6 +141,11 @@ Route::middleware(['auth', '2fa.verified', 'throttle:dashboard', 'track.activity
         Route::post('/metas', [MarketingController::class, 'storeGoal'])
             ->name('metas.store');
 
+        Route::get('/resumen/sedes/export', [MarketingController::class, 'exportResumenSedes'])
+            ->name('resumen.sedes.export');
+        Route::get('/resumen/consultores/export', [MarketingController::class, 'exportResumenConsultores'])
+            ->name('resumen.consultores.export');
+
         Route::prefix('users')->name('users.')->group(function () {
             // User Management (Super Admin and Marketing only)
             Route::get('/adminpanel', [UserMarketingController::class, 'index'])->name('index');

@@ -210,4 +210,27 @@ class Survey extends Model
 
         return $ratings->isEmpty() ? 0.0 : round($ratings->avg(), 2);
     }
+
+    /**
+     * CSAT top-box: % de respuestas "satisfecho" (3) o "muy satisfecho" (4)
+     * sobre el total de respuestas del mismo pool que promedioConsolidado().
+     * Es el cálculo estándar de CSAT (a diferencia del promedio consolidado,
+     * que es un promedio simple 1-4, no un porcentaje de satisfacción).
+     */
+    public static function csatConsolidado($surveys): float
+    {
+        $ratings = collect($surveys)->flatMap(fn($s) => [
+            $s->experience_rating,
+            $s->sede_rating,
+            $s->consultor_rating,
+            $s->tiempos_entrega_rating,
+            $s->promociones_rating,
+        ])->filter(fn($r) => !is_null($r));
+
+        if ($ratings->isEmpty()) {
+            return 0.0;
+        }
+
+        return round($ratings->filter(fn($r) => $r >= 3)->count() / $ratings->count() * 100, 1);
+    }
 }
