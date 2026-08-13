@@ -24,6 +24,29 @@ class AdminController extends Controller
             'blocked_ips' => IpBlacklist::active()->count(),
         ];
 
+        $dailyRows = UserSession::selectRaw('DATE(login_at) as day, COUNT(*) as sessions, COUNT(DISTINCT user_id) as unique_users')
+            ->where('login_at', '>=', today()->subDays(6))
+            ->groupBy('day')
+            ->get()
+            ->keyBy('day');
+
+        $activityLabels = [];
+        $activitySessions = [];
+        $activityUniqueUsers = [];
+
+        for ($i = 6; $i >= 0; $i--) {
+            $date = today()->subDays($i);
+            $row  = $dailyRows->get($date->toDateString());
+
+            $activityLabels[]     = $i === 0 ? 'Hoy' : ($i === 1 ? 'Ayer' : "Hace {$i} días");
+            $activitySessions[]   = (int) ($row->sessions ?? 0);
+            $activityUniqueUsers[] = (int) ($row->unique_users ?? 0);
+        }
+
+        $stats['activity_labels']        = $activityLabels;
+        $stats['activity_sessions']      = $activitySessions;
+        $stats['activity_unique_users']  = $activityUniqueUsers;
+
         $usersOnline = User::online()
             ->with('activeSessions')
             ->get();

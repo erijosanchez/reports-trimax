@@ -448,19 +448,17 @@
                 new Chart(ctx, {
                     type: 'line',
                     data: {
-                        labels: ['Hace 6 días', 'Hace 5 días', 'Hace 4 días', 'Hace 3 días', 'Hace 2 días',
-                            'Ayer', 'Hoy'
-                        ],
+                        labels: {!! json_encode($stats['activity_labels']) !!},
                         datasets: [{
                             label: 'Sesiones',
-                            data: [45, 52, 38, 65, 59, 80, {{ $stats['total_sessions_today'] }}],
+                            data: {!! json_encode($stats['activity_sessions']) !!},
                             borderColor: '#6366f1',
                             backgroundColor: 'rgba(99, 102, 241, 0.1)',
                             tension: 0.4,
                             fill: true
                         }, {
                             label: 'Usuarios Únicos',
-                            data: [28, 35, 25, 42, 38, 55, {{ $stats['users_online'] }}],
+                            data: {!! json_encode($stats['activity_unique_users']) !!},
                             borderColor: '#10b981',
                             backgroundColor: 'rgba(16, 185, 129, 0.1)',
                             tension: 0.4,
