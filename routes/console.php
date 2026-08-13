@@ -11,6 +11,7 @@ use App\Jobs\AlertaComentariosVencimientoJob;
 use App\Jobs\MarcarNoEnviadosCobranzaJob;
 use App\Jobs\MarcarNoEnviadosCajaChicaJob;
 use App\Jobs\MarcarNoEnviadosComentariosJob;
+use App\Jobs\LimpiarNotificacionesLeidasJob;
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
@@ -104,6 +105,14 @@ Schedule::call(function () {
         ->delete();
 })->weeklyOn(0, '03:00')
     ->name('limpieza-seguridad')
+    ->withoutOverlapping()
+    ->onOneServer()
+    ->timezone('America/Lima');
+
+// Notificaciones in-app leídas con más de 3 días — diario 03:30 (Lima).
+// Las no leídas nunca se borran, sin importar la antigüedad.
+Schedule::job(new LimpiarNotificacionesLeidasJob)
+    ->dailyAt('03:30')
     ->withoutOverlapping()
     ->onOneServer()
     ->timezone('America/Lima');
