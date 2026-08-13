@@ -100,8 +100,8 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Mensaje</label>
-                            <textarea class="form-control" name="mensaje" rows="10" maxlength="2000" required
-                                placeholder="Escribe el aviso..." style="min-height: 220px;"></textarea>
+                            <textarea class="form-control" name="mensaje" rows="14" maxlength="2000" required
+                                placeholder="Escribe el aviso..." style="min-height: 320px;"></textarea>
                         </div>
                         <div class="mb-2">
                             <label class="form-label">Destinatarios</label>

@@ -88,7 +88,7 @@
 <div class="modal fade" id="avisoModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
-            <div class="text-white modal-header" style="background:linear-gradient(135deg,#6366f1,#764ba2);">
+            <div class="text-white modal-header" style="background:linear-gradient(135deg, #1565C0 0%, #0D47A1 100%);">
                 <h5 class="mb-0 modal-title">
                     <i class="me-2 mdi mdi-bullhorn"></i>Aviso
                 </h5>
