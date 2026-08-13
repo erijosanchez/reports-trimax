@@ -437,8 +437,9 @@ Route::middleware(['auth', '2fa.verified', 'throttle:dashboard', 'track.activity
         )->name('historial-recorrido');
 
         // Entregas
-        Route::get('/entregas',    [TrackingAdminController::class, 'entregas'])->name('entregas');
-        Route::post('/entregas',   [TrackingAdminController::class, 'storeEntrega'])->name('entregas.store');
+        Route::get('/entregas',         [TrackingAdminController::class, 'entregas'])->name('entregas');
+        Route::post('/entregas',        [TrackingAdminController::class, 'storeEntrega'])->name('entregas.store');
+        Route::get('/ordenes/buscar',   [TrackingAdminController::class, 'buscarOrdenes'])->name('ordenes.buscar');
     });
 
     // Admin Routes (Admin + Super Admin only)

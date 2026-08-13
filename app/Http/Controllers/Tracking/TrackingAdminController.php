@@ -9,6 +9,7 @@ use App\Models\GpsRuta;
 use App\Models\Entrega;
 use App\Services\ActivityLogService;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rules\Password;
 
 class TrackingAdminController extends Controller
@@ -213,6 +214,8 @@ class TrackingAdminController extends Controller
 
     public function storeEntrega(Request $request)
     {
+        $this->checkPermiso();
+
         $data = $request->validate([
             'motorizado_id'    => 'required|exists:motorizados,id',
             'ruta_id'          => 'required|exists:gps_rutas,id',
@@ -239,5 +242,50 @@ class TrackingAdminController extends Controller
         );
 
         return response()->json(['success' => true, 'entrega' => $entrega]);
+    }
+
+    /**
+     * Busca órdenes reales de ordenes_historico para autocompletar la
+     * referencia de una entrega, excluyendo anuladas, ya entregadas y
+     * las que ya tienen una entrega pendiente/completada asignada.
+     */
+    public function buscarOrdenes(Request $request)
+    {
+        $this->checkPermiso();
+
+        $data = $request->validate([
+            'sede' => 'required|string',
+            'q'    => 'required|string|min:2',
+        ]);
+
+        $term = $data['q'];
+
+        $ocupadas = Entrega::whereIn('estado', ['pendiente', 'completado'])
+            ->whereNotNull('referencia')
+            ->pluck('referencia');
+
+        $ordenes = DB::table('ordenes_historico')
+            ->where('descripcion_sede', $data['sede'])
+            ->where(function ($q) use ($term) {
+                $q->where('numero_orden', 'like', "%{$term}%")
+                  ->orWhere('cliente', 'like', "%{$term}%");
+            })
+            ->where(function ($q) {
+                $q->whereNull('estado_orden')->orWhere('estado_orden', '!=', 'Anulado');
+            })
+            ->where(function ($q) {
+                $q->whereNull('ubicacion_orden')->orWhere('ubicacion_orden', '!=', 'FACTURADO Y ENTREGADO');
+            })
+            ->whereNotIn('numero_orden', $ocupadas)
+            ->orderByRaw("CASE WHEN numero_orden LIKE ? THEN 0 ELSE 1 END", ["{$term}%"])
+            ->limit(15)
+            ->get(['numero_orden', 'cliente', 'ruc', 'fecha_orden']);
+
+        return response()->json($ordenes->map(fn ($o) => [
+            'numero_orden' => $o->numero_orden,
+            'cliente'      => $o->cliente,
+            'ruc'          => $o->ruc,
+            'fecha_orden'  => $o->fecha_orden,
+        ]));
     }
 }

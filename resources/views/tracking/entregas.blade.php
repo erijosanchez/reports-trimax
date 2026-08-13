@@ -206,15 +206,21 @@
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">Cliente <span class="text-danger">*</span></label>
-                                <input type="text" name="cliente_nombre" class="form-control" required>
+                                <input type="text" name="cliente_nombre" id="inp-cliente-nombre" class="form-control" required>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">Teléfono cliente</label>
                                 <input type="text" name="cliente_telefono" class="form-control">
                             </div>
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold">Referencia</label>
-                                <input type="text" name="referencia" class="form-control" placeholder="Ej: ORD-001">
+                            <div class="col-md-6" style="position: relative">
+                                <label class="form-label fw-semibold">
+                                    Referencia
+                                    <span id="badge-orden" class="bg-secondary ms-2 badge">Sin verificar</span>
+                                </label>
+                                <input type="text" name="referencia" id="inp-referencia" class="form-control"
+                                    autocomplete="off" placeholder="Buscar por N° de orden o cliente...">
+                                <div id="referencia-resultados" class="list-group d-none"
+                                    style="position:absolute; left:0; right:0; z-index:1050; max-height:220px; overflow-y:auto;"></div>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">Sede <span class="text-danger">*</span></label>
@@ -289,6 +295,7 @@
             const msgSinRuta = document.getElementById('msg-sin-ruta');
 
             if (sede) document.getElementById('sel-sede').value = sede;
+            limpiarOrdenSeleccionada();
 
             if (!motId) {
                 selRuta.innerHTML = '<option value="">Primero selecciona un motorizado</option>';
@@ -320,6 +327,98 @@
             } catch (e) {
                 selRuta.innerHTML = '<option value="">Error al cargar rutas</option>';
                 selRuta.disabled = true;
+            }
+        });
+
+        // Buscador de órdenes reales (ordenes_historico) por sede
+        function limpiarOrdenSeleccionada() {
+            const badge = document.getElementById('badge-orden');
+            document.getElementById('inp-referencia').value = '';
+            document.getElementById('referencia-resultados').classList.add('d-none');
+            badge.className = 'badge bg-secondary ms-2';
+            badge.textContent = 'Sin verificar';
+        }
+        document.getElementById('sel-sede').addEventListener('change', limpiarOrdenSeleccionada);
+
+        let ordenTimer = null;
+        document.getElementById('inp-referencia').addEventListener('input', function() {
+            clearTimeout(ordenTimer);
+            const term = this.value.trim();
+            const badge = document.getElementById('badge-orden');
+            const resultados = document.getElementById('referencia-resultados');
+
+            if (term.length < 2) {
+                resultados.classList.add('d-none');
+                badge.className = 'badge bg-secondary ms-2';
+                badge.textContent = 'Sin verificar';
+                return;
+            }
+
+            const sede = document.getElementById('sel-sede').value;
+            if (!sede) {
+                resultados.classList.add('d-none');
+                badge.className = 'badge bg-warning ms-2';
+                badge.textContent = 'Selecciona motorizado primero';
+                return;
+            }
+
+            ordenTimer = setTimeout(async () => {
+                try {
+                    const res = await fetch(
+                        `/tracking/ordenes/buscar?sede=${encodeURIComponent(sede)}&q=${encodeURIComponent(term)}`
+                    );
+                    const data = await res.json();
+
+                    resultados.innerHTML = '';
+
+                    if (!data.length) {
+                        const vacio = document.createElement('div');
+                        vacio.className = 'list-group-item text-muted';
+                        vacio.textContent = 'Sin coincidencias';
+                        resultados.appendChild(vacio);
+                        resultados.classList.remove('d-none');
+                        badge.className = 'badge bg-warning ms-2';
+                        badge.textContent = 'Sin coincidencias';
+                        return;
+                    }
+
+                    data.forEach(o => {
+                        const btn = document.createElement('button');
+                        btn.type = 'button';
+                        btn.className = 'list-group-item list-group-item-action btn-seleccionar-orden';
+                        btn.dataset.numero = o.numero_orden ?? '';
+                        btn.dataset.cliente = o.cliente ?? '';
+
+                        const numero = document.createElement('strong');
+                        numero.textContent = o.numero_orden ?? '';
+                        btn.appendChild(numero);
+                        btn.appendChild(document.createTextNode(' — ' + (o.cliente || '—')));
+
+                        resultados.appendChild(btn);
+                    });
+                    resultados.classList.remove('d-none');
+                } catch (_) {
+                    resultados.classList.add('d-none');
+                }
+            }, 350);
+        });
+
+        document.getElementById('referencia-resultados').addEventListener('click', function(e) {
+            const btn = e.target.closest('.btn-seleccionar-orden');
+            if (!btn) return;
+
+            document.getElementById('inp-referencia').value = btn.dataset.numero;
+            document.getElementById('inp-cliente-nombre').value = btn.dataset.cliente;
+            this.classList.add('d-none');
+
+            const badge = document.getElementById('badge-orden');
+            badge.className = 'badge bg-success ms-2';
+            badge.textContent = '✓ Orden verificada';
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('#inp-referencia') && !e.target.closest('#referencia-resultados')) {
+                document.getElementById('referencia-resultados').classList.add('d-none');
             }
         });
 
