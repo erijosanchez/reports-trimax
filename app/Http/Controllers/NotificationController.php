@@ -22,12 +22,14 @@ class NotificationController extends Controller
             ->limit(20)
             ->get()
             ->map(fn($n) => [
-                'id'         => $n->id,
-                'titulo'     => $n->data['titulo'] ?? 'Notificación',
-                'mensaje'    => $n->data['mensaje'] ?? '',
-                'url'        => $n->data['url'] ?? null,
-                'leida'      => !is_null($n->read_at),
-                'fecha'      => $n->created_at->diffForHumans(),
+                'id'          => $n->id,
+                'tipo'        => $n->data['tipo'] ?? null,
+                'titulo'      => $n->data['titulo'] ?? 'Notificación',
+                'mensaje'     => $n->data['mensaje'] ?? '',
+                'url'         => $n->data['url'] ?? null,
+                'enviado_por' => $n->data['enviado_por'] ?? null,
+                'leida'       => !is_null($n->read_at),
+                'fecha'       => $n->created_at->diffForHumans(),
             ]);
 
         return response()->json([

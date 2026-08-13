@@ -38,15 +38,14 @@
                     <span id="notif-badge" class="badge rounded-pill bg-danger position-absolute"
                         style="top:2px; right:0; font-size:.6rem; display:none;">0</span>
                 </a>
-                <div class="dropdown-menu dropdown-menu-right navbar-dropdown" aria-labelledby="bellDropdown"
-                    style="width:340px; max-height:420px; overflow-y:auto;">
-                    <div class="dropdown-header d-flex align-items-center justify-content-between">
+                <div class="dropdown-menu dropdown-menu-right navbar-dropdown notif-dropdown" aria-labelledby="bellDropdown">
+                    <div class="dropdown-header d-flex align-items-center justify-content-between flex-wrap gap-1">
                         <span class="font-weight-semibold">Notificaciones</span>
                         <button type="button" class="btn btn-link btn-sm p-0" id="notif-marcar-todas">Marcar
                             todas leídas</button>
                     </div>
                     <div id="notif-list">
-                        <div class="dropdown-item text-center text-muted small py-3">Cargando...</div>
+                        <div class="notif-item text-center text-muted small py-3">Cargando...</div>
                     </div>
                 </div>
             </li>
@@ -85,6 +84,95 @@
     </div>
 </nav>
 
+{{-- Aviso grande — se muestra solo, sin que el usuario abra la campanita --}}
+<div class="modal fade" id="avisoModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="text-white modal-header" style="background:linear-gradient(135deg,#6366f1,#764ba2);">
+                <h5 class="mb-0 modal-title">
+                    <i class="me-2 mdi mdi-bullhorn"></i>Aviso
+                </h5>
+                <button type="button" class="btn-close btn-close-white" id="avisoModalClose" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body py-4">
+                <h4 class="mb-3" id="avisoModalTitulo"></h4>
+                <p class="mb-0" id="avisoModalMensaje" style="white-space:pre-line; word-break:break-word;"></p>
+            </div>
+            <div class="modal-footer d-flex align-items-center justify-content-between">
+                <small class="text-muted" id="avisoModalFooter"></small>
+                <button type="button" class="text-white btn btn-primary" id="avisoModalEntendido">Entendido</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .notif-dropdown {
+        width: 380px;
+        max-width: min(380px, 92vw);
+        max-height: 70vh;
+        overflow-y: auto;
+        padding: 0;
+    }
+
+    .notif-dropdown .dropdown-header {
+        padding: .75rem 1rem;
+        position: sticky;
+        top: 0;
+        background: #fff;
+        z-index: 1;
+        border-bottom: 1px solid #eee;
+    }
+
+    .notif-item {
+        display: block;
+        width: 100%;
+        padding: .65rem 1rem;
+        border-bottom: 1px solid #f1f1f4;
+        white-space: normal;
+        overflow-wrap: break-word;
+        word-break: break-word;
+        text-decoration: none;
+        color: inherit;
+    }
+
+    .notif-item:last-child {
+        border-bottom: none;
+    }
+
+    .notif-item:hover {
+        background: #f8f9fb;
+        color: inherit;
+    }
+
+    .notif-item .notif-row {
+        display: flex;
+        align-items: flex-start;
+        gap: .5rem;
+    }
+
+    .notif-item .notif-body {
+        min-width: 0;
+        flex: 1 1 auto;
+    }
+
+    .notif-item .notif-body>* {
+        white-space: normal;
+        overflow-wrap: break-word;
+    }
+
+    .notif-item .notif-dot {
+        flex: 0 0 auto;
+        margin-top: .35rem;
+    }
+
+    @media (max-width: 480px) {
+        .notif-dropdown {
+            width: 92vw;
+        }
+    }
+</style>
+
 @push('scripts')
     <script>
         (function() {
@@ -94,37 +182,69 @@
             const marcarTodasBtn = document.getElementById('notif-marcar-todas');
             let cargando = false;
 
+            // ── Cola de avisos grandes (tipo "aviso") sin leer ──
+            let colaAvisos = [];
+            const avisoModalEl = document.getElementById('avisoModal');
+            const avisoModal = new bootstrap.Modal(avisoModalEl);
+
+            function marcarLeida(id) {
+                return fetch(`/notificaciones/${id}/leer`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
+                    }
+                });
+            }
+
+            function mostrarSiguienteAviso() {
+                if (!colaAvisos.length) return;
+                const aviso = colaAvisos[0];
+                document.getElementById('avisoModalTitulo').textContent = aviso.titulo;
+                document.getElementById('avisoModalMensaje').textContent = aviso.mensaje;
+                document.getElementById('avisoModalFooter').textContent = aviso.enviado_por ?
+                    `Enviado por ${aviso.enviado_por} · ${aviso.fecha}` : aviso.fecha;
+                avisoModal.show();
+            }
+
+            function cerrarAvisoActual() {
+                const aviso = colaAvisos.shift();
+                if (aviso) marcarLeida(aviso.id).finally(() => cargarNotificaciones());
+                avisoModal.hide();
+                if (colaAvisos.length) {
+                    setTimeout(mostrarSiguienteAviso, 400);
+                }
+            }
+
+            document.getElementById('avisoModalEntendido').addEventListener('click', cerrarAvisoActual);
+            document.getElementById('avisoModalClose').addEventListener('click', cerrarAvisoActual);
+
             function renderLista(notificaciones) {
                 if (!notificaciones.length) {
-                    list.innerHTML = '<div class="dropdown-item text-center text-muted small py-3">Sin notificaciones</div>';
+                    list.innerHTML = '<div class="notif-item text-center text-muted small py-3">Sin notificaciones</div>';
                     return;
                 }
                 list.innerHTML = notificaciones.map(n => `
-                    <a href="#" class="dropdown-item notif-item py-2 ${n.leida ? '' : 'bg-light'}" data-id="${n.id}" data-url="${n.url ?? ''}">
-                        <div class="d-flex justify-content-between align-items-start gap-2">
-                            <div>
-                                <div class="fw-semibold small">${n.titulo}</div>
+                    <a href="#" class="notif-item ${n.leida ? '' : 'bg-light'}" data-id="${n.id}" data-url="${n.url ?? ''}">
+                        <div class="notif-row">
+                            <div class="notif-body">
+                                <div class="fw-semibold small">${n.tipo === 'aviso' ? '<i class="mdi mdi-bullhorn text-primary me-1"></i>' : ''}${n.titulo}</div>
                                 <div class="text-muted small">${n.mensaje}</div>
+                                <div class="text-muted mt-1" style="font-size:10px;">${n.fecha}</div>
                             </div>
-                            ${n.leida ? '' : '<span class="badge bg-primary" style="font-size:8px;">&nbsp;</span>'}
+                            ${n.leida ? '' : '<span class="notif-dot badge bg-primary" style="font-size:8px;">&nbsp;</span>'}
                         </div>
-                        <div class="text-muted" style="font-size:10px;">${n.fecha}</div>
                     </a>
                 `).join('');
 
-                list.querySelectorAll('.notif-item').forEach(item => {
+                list.querySelectorAll('.notif-item[data-id]').forEach(item => {
                     item.addEventListener('click', function(e) {
                         e.preventDefault();
                         const id = this.dataset.id;
                         const url = this.dataset.url;
-                        fetch(`/notificaciones/${id}/leer`, {
-                            method: 'POST',
-                            headers: {
-                                'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                                'Accept': 'application/json'
-                            }
-                        }).finally(() => {
+                        marcarLeida(id).finally(() => {
                             if (url) window.location.href = url;
+                            else cargarNotificaciones();
                         });
                     });
                 });
@@ -144,9 +264,18 @@
                         } else {
                             badge.style.display = 'none';
                         }
+
+                        // Avisos sin leer que todavía no están en cola → encolar y mostrar
+                        const nuevosAvisos = data.notificaciones.filter(n => n.tipo === 'aviso' && !n.leida &&
+                            !colaAvisos.some(a => a.id === n.id));
+                        if (nuevosAvisos.length) {
+                            const yaMostrandoUno = colaAvisos.length > 0;
+                            colaAvisos = colaAvisos.concat(nuevosAvisos);
+                            if (!yaMostrandoUno) mostrarSiguienteAviso();
+                        }
                     })
                     .catch(() => {
-                        list.innerHTML = '<div class="dropdown-item text-center text-muted small py-3">Error al cargar</div>';
+                        list.innerHTML = '<div class="notif-item text-center text-muted small py-3">Error al cargar</div>';
                     })
                     .finally(() => cargando = false);
             }
@@ -167,7 +296,7 @@
                 });
             }
 
-            // Badge inicial al cargar la página, sin abrir el dropdown
+            // Badge inicial + chequeo de avisos al cargar la página
             document.addEventListener('DOMContentLoaded', cargarNotificaciones);
         })();
     </script>
