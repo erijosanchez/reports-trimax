@@ -79,10 +79,12 @@ class AdminController extends Controller
         }])->get();
 
         $mapped = $users->map(function ($user) {
+            $isOnline = $user->isOnline();
+
             return [
                 'id'            => $user->id,
                 'name'          => $user->name,
-                'is_online'     => $user->isOnline(),
+                'is_online'     => $isOnline,
                 'last_seen'     => $user->lastSeenText(),
                 'last_activity' => $user->lastActivityAt()?->toISOString(),
             ];
@@ -90,7 +92,7 @@ class AdminController extends Controller
 
         return response()->json([
             'users'        => $mapped,
-            'online_count' => $users->filter(fn($u) => $u->isOnline())->count(),
+            'online_count' => $mapped->where('is_online', true)->count(),
             'updated_at'   => now('America/Lima')->format('H:i:s'),
         ]);
     }

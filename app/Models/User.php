@@ -420,13 +420,33 @@ class User extends Authenticatable
 
     public function isOnline(): bool
     {
+        $cutoff = now()->subMinutes(10);
+
+        // Si la relación ya fue eager-loaded, evitamos una query extra por usuario (N+1).
+        if ($this->relationLoaded('sessions')) {
+            return $this->sessions->contains(
+                fn ($session) => $session->is_online
+                    && $session->last_activity
+                    && $session->last_activity->gte($cutoff)
+            );
+        }
+
         return $this->activeSessions()
-            ->where('last_activity', '>=', now()->subMinutes(10))
+            ->where('last_activity', '>=', $cutoff)
             ->exists();
     }
 
     public function lastActivityAt(): ?\Illuminate\Support\Carbon
     {
+        if ($this->relationLoaded('sessions')) {
+            $session = $this->sessions
+                ->whereNotNull('last_activity')
+                ->sortByDesc('last_activity')
+                ->first();
+
+            return $session?->last_activity?->setTimezone('America/Lima');
+        }
+
         $session = $this->sessions()
             ->whereNotNull('last_activity')
             ->orderByDesc('last_activity')
@@ -479,6 +499,12 @@ class User extends Authenticatable
 
     public function totalUsageTime(): int
     {
+        if ($this->relationLoaded('sessions')) {
+            return (int) $this->sessions
+                ->whereNotNull('session_duration')
+                ->sum('session_duration');
+        }
+
         return $this->sessions()
             ->whereNotNull('session_duration')
             ->sum('session_duration');
