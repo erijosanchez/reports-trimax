@@ -82,6 +82,8 @@ class UserController extends Controller
             'puede_ver_desbloqueo',
             // Avisos
             'puede_enviar_avisos',
+            // Marketing
+            'puede_ver_marketing',
         ];
     }
 

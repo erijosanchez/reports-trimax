@@ -314,9 +314,10 @@ class SurveySedeSelectionTest extends TestCase
 
     public function test_encuestas_ajax_muestra_la_sede_seleccionada_en_vez_de_trimax_general(): void
     {
-        Role::findOrCreate('user', 'web');
+        // marketing.encuestas.ajax ahora exige role:marketing|super_admin.
+        Role::findOrCreate('marketing', 'web');
         $authUser = User::factory()->create();
-        $authUser->assignRole('user');
+        $authUser->assignRole('marketing');
         $this->actingAs($authUser);
 
         $trimax = $this->crearTrimax();
