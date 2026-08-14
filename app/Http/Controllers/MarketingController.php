@@ -67,6 +67,16 @@ class MarketingController extends Controller
         ];
     }
 
+    /** Etiquetas Lun-Dom de la semana en curso, para los encabezados de día del tab Resumen. */
+    private function diasSemanaLabels(): array
+    {
+        [$inicioSemana] = $this->semanaActual();
+
+        return collect(range(0, 6))
+            ->map(fn($i) => $inicioSemana->copy()->addDays($i)->translatedFormat('D'))
+            ->all();
+    }
+
     /**
      * Stats por sede — eje central del dashboard (reestructurado 2026-08-12):
      * identifica las encuestas de cada sede, consolida su total, compara
@@ -198,6 +208,12 @@ class MarketingController extends Controller
             ? (int) round($totales['obtenidas_mes'] / $totales['meta_mensual_estimada'] * 100)
             : null;
 
+        // Mismo shape que 'avance_diario' de cada sede ([{'total' => n}, ...]) para
+        // poder reusar la misma lógica de columnas por día en la vista y el export.
+        $totales['avance_diario'] = collect(range(0, 6))
+            ->map(fn($i) => ['total' => $sedeStats->sum(fn($s) => $s['avance_diario'][$i]['total'] ?? 0)])
+            ->all();
+
         return $totales;
     }
 
@@ -235,6 +251,7 @@ class MarketingController extends Controller
             ->get(['id', 'name']);
 
         $consultoresResumen = $this->calcConsultoresResumen();
+        $diasSemanaLabels   = $this->diasSemanaLabels();
 
         // ── Encuestas recientes con calificación baja (para la pestaña Alertas) ──
         $recentLowRated = Survey::with(['userMarketing:id,name,role,location', 'selectedSede:id,name,role,location'])
@@ -259,6 +276,7 @@ class MarketingController extends Controller
             'sedesParaMeta',
             'consultoresResumen',
             'resumenTotales',
+            'diasSemanaLabels',
             'recentLowRated',
             'startDate',
             'endDate'
@@ -273,7 +291,7 @@ class MarketingController extends Controller
         $totales   = $this->calcResumenTotales($sedeStats);
 
         return Excel::download(
-            new MarketingResumenSedesExport($sedeStats->toArray(), $totales),
+            new MarketingResumenSedesExport($sedeStats->toArray(), $totales, $this->diasSemanaLabels()),
             'marketing_resumen_sedes.xlsx'
         );
     }

@@ -295,29 +295,32 @@
                                                     <i class="me-1 mdi mdi-file-excel"></i>Exportar Excel
                                                 </a>
                                             </div>
-                                            <p class="mb-3 text-muted small">Cumplimiento semanal es contra la meta
-                                                definida por sede. No existe una meta mensual real en el
-                                                sistema — el cumplimiento mensual usa una meta estimada (meta
-                                                semanal × 4.33 semanas/mes). La fila TOTAL suma la meta y lo
-                                                obtenido de todas las sedes.</p>
+                                            <p class="mb-3 text-muted small">Encuestas por día de la semana en curso
+                                                (lunes–domingo), igual que las tarjetas del tab Por Sede.
+                                                Cumplimiento semanal es contra la meta definida por sede. "Este
+                                                mes" compara contra una meta mensual estimada (meta semanal ×
+                                                4.33 semanas/mes), ya que no existe una meta mensual real en el
+                                                sistema. La fila TOTAL suma la meta y lo obtenido de todas las
+                                                sedes.</p>
                                             <div class="table-responsive">
                                                 <table class="table table-hover table-sm mb-0">
                                                     <thead>
                                                         <tr>
                                                             <th>Sede</th>
-                                                            <th class="text-center">Esta semana</th>
+                                                            <th class="text-center">Meta semanal</th>
                                                             <th class="text-center">Cumpl. semanal</th>
                                                             <th class="text-center">Este mes</th>
-                                                            <th class="text-center">Cumpl. mensual (est.)</th>
-                                                            <th class="text-center">Promedio consolidado</th>
-                                                            <th class="text-center">CSAT</th>
+                                                            @foreach ($diasSemanaLabels as $dia)
+                                                                <th class="text-center">{{ ucfirst($dia) }}</th>
+                                                            @endforeach
+                                                            <th class="text-center">Total semana</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody>
                                                         @forelse ($sedeStats as $s)
                                                             <tr>
                                                                 <td><strong>{{ $s['name'] }}</strong></td>
-                                                                <td class="text-center">{{ $s['obtenidas_semana'] }} /
+                                                                <td class="text-center">
                                                                     {{ $s['meta_semanal'] ?? '—' }}</td>
                                                                 <td class="text-center">
                                                                     @if (is_null($s['cumplimiento_pct']))
@@ -331,30 +334,16 @@
                                                                 </td>
                                                                 <td class="text-center">{{ $s['obtenidas_mes'] }} /
                                                                     {{ $s['meta_mensual_estimada'] ?? '—' }}</td>
-                                                                <td class="text-center">
-                                                                    @if (is_null($s['cumplimiento_mensual_pct']))
-                                                                        <span
-                                                                            class="badge-cumplimiento sin-meta">Sin
-                                                                            meta</span>
-                                                                    @else
-                                                                        <span
-                                                                            class="badge-cumplimiento {{ $s['cumplimiento_mensual_pct'] < 70 ? 'rojo' : ($s['cumplimiento_mensual_pct'] < 100 ? 'amarillo' : 'verde') }}">{{ $s['cumplimiento_mensual_pct'] }}%</span>
-                                                                    @endif
-                                                                </td>
-                                                                <td class="text-center">
-                                                                    <span
-                                                                        class="badge {{ $s['promedio'] >= 3.5 ? 'badge-success' : ($s['promedio'] >= 2.5 ? 'badge-warning' : 'badge-danger') }}">⭐
-                                                                        {{ number_format($s['promedio'], 2) }}</span>
-                                                                </td>
-                                                                <td class="text-center">
-                                                                    <span
-                                                                        class="badge {{ $s['csat'] >= 75 ? 'badge-success' : ($s['csat'] >= 50 ? 'badge-warning' : 'badge-danger') }}">{{ number_format($s['csat'], 1) }}%</span>
-                                                                </td>
+                                                                @foreach ($s['avance_diario'] as $dia)
+                                                                    <td class="text-center">{{ $dia['total'] }}</td>
+                                                                @endforeach
+                                                                <td class="text-center fw-bold">
+                                                                    {{ $s['obtenidas_semana'] }}</td>
                                                             </tr>
                                                         @empty
                                                             <tr>
-                                                                <td colspan="7" class="py-4 text-muted text-center">No
-                                                                    hay sedes activas registradas.</td>
+                                                                <td colspan="12" class="py-4 text-muted text-center">
+                                                                    No hay sedes activas registradas.</td>
                                                             </tr>
                                         @endforelse
                                                     </tbody>
@@ -363,7 +352,6 @@
                                                             <tr class="table-light fw-bold">
                                                                 <td>TOTAL</td>
                                                                 <td class="text-center">
-                                                                    {{ $resumenTotales['obtenidas_semana'] }} /
                                                                     {{ $resumenTotales['meta_semanal'] ?? '—' }}</td>
                                                                 <td class="text-center">
                                                                     @if (is_null($resumenTotales['cumplimiento_pct']))
@@ -379,18 +367,11 @@
                                                                     {{ $resumenTotales['obtenidas_mes'] }} /
                                                                     {{ $resumenTotales['meta_mensual_estimada'] ?? '—' }}
                                                                 </td>
+                                                                @foreach ($resumenTotales['avance_diario'] as $dia)
+                                                                    <td class="text-center">{{ $dia['total'] }}</td>
+                                                                @endforeach
                                                                 <td class="text-center">
-                                                                    @if (is_null($resumenTotales['cumplimiento_mensual_pct']))
-                                                                        <span
-                                                                            class="badge-cumplimiento sin-meta">Sin
-                                                                            meta</span>
-                                                                    @else
-                                                                        <span
-                                                                            class="badge-cumplimiento {{ $resumenTotales['cumplimiento_mensual_pct'] < 70 ? 'rojo' : ($resumenTotales['cumplimiento_mensual_pct'] < 100 ? 'amarillo' : 'verde') }}">{{ $resumenTotales['cumplimiento_mensual_pct'] }}%</span>
-                                                                    @endif
-                                                                </td>
-                                                                <td class="text-center text-muted">—</td>
-                                                                <td class="text-center text-muted">—</td>
+                                                                    {{ $resumenTotales['obtenidas_semana'] }}</td>
                                                             </tr>
                                                         </tfoot>
                                                     @endif
