@@ -97,6 +97,7 @@
                                             <th>Estado</th>
                                             <th>Entregado</th>
                                             <th>Coords entrega</th>
+                                            <th>Acciones</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -117,9 +118,9 @@
                                                             <i class="mdi mdi-phone"></i> {{ $e->cliente_telefono }}
                                                         </div>
                                                     @endif
-                                                    @if ($e->referencia)
+                                                    @if ($e->ordenes_count)
                                                         <div class="text-muted" style="font-size:11px">
-                                                            Ref: {{ $e->referencia }}
+                                                            {{ $e->ordenes_count }} orden(es)
                                                         </div>
                                                     @endif
                                                 </td>
@@ -144,10 +145,16 @@
                                                         <span class="text-muted small">—</span>
                                                     @endif
                                                 </td>
+                                                <td>
+                                                    <button type="button" class="btn-outline-primary btn btn-xs btn-ver-entrega"
+                                                        data-id="{{ $e->id }}">
+                                                        <i class="mdi mdi-eye"></i> Ver
+                                                    </button>
+                                                </td>
                                             </tr>
                                         @empty
                                             <tr>
-                                                <td colspan="8" class="py-5 text-muted text-center">
+                                                <td colspan="9" class="py-5 text-muted text-center">
                                                     <i class="d-block opacity-50 mb-2 mdi mdi-package-variant mdi-36px"></i>
                                                     Sin entregas registradas
                                                 </td>
@@ -212,12 +219,13 @@
                                 <label class="form-label fw-semibold">Teléfono cliente</label>
                                 <input type="text" name="cliente_telefono" class="form-control">
                             </div>
-                            <div class="col-md-6" style="position: relative">
+                            <div class="col-12" style="position: relative">
                                 <label class="form-label fw-semibold">
-                                    Referencia
-                                    <span id="badge-orden" class="bg-secondary ms-2 badge">Sin verificar</span>
+                                    Órdenes asignadas <span class="text-danger">*</span>
+                                    <span id="badge-orden" class="bg-secondary ms-2 badge">0 seleccionadas</span>
                                 </label>
-                                <input type="text" name="referencia" id="inp-referencia" class="form-control"
+                                <div id="chips-ordenes" class="d-flex flex-wrap gap-1 mb-2"></div>
+                                <input type="text" id="inp-buscar-orden" class="form-control"
                                     autocomplete="off" placeholder="Buscar por N° de orden o cliente...">
                                 <div id="referencia-resultados" class="list-group d-none"
                                     style="position:absolute; left:0; right:0; z-index:1050; max-height:220px; overflow-y:auto;"></div>
@@ -270,6 +278,22 @@
                     </div>
                 </div>
             </form>
+        </div>
+    </div>
+
+    {{-- Modal Detalle --}}
+    <div class="modal fade" id="modalDetalle" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="bg-dark text-white modal-header">
+                    <h5 class="modal-title">
+                        <i class="me-1 mdi mdi-package-variant-closed"></i>
+                        Detalle de entrega #<span id="det-id"></span>
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="detalle-body"></div>
+            </div>
         </div>
     </div>
 @endsection
@@ -330,35 +354,74 @@
             }
         });
 
-        // Buscador de órdenes reales (ordenes_historico) por sede
-        function limpiarOrdenSeleccionada() {
+        // Escape básico para contenido inyectado vía innerHTML
+        function esc(s) {
+            return (s ?? '').toString().replace(/[&<>"']/g, c => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            })[c]);
+        }
+
+        // Buscador de órdenes reales (ordenes_historico) por sede — multi-selección
+        let ordenesSeleccionadas = [];
+
+        function renderChips() {
+            const cont = document.getElementById('chips-ordenes');
+            cont.innerHTML = '';
+            ordenesSeleccionadas.forEach((o, idx) => {
+                const chip = document.createElement('span');
+                chip.className = 'bg-primary d-inline-flex align-items-center gap-1 badge';
+                const txt = document.createElement('span');
+                txt.textContent = o.numero_orden;
+                const rm = document.createElement('button');
+                rm.type = 'button';
+                rm.className = 'btn-close btn-close-white';
+                rm.style.fontSize = '8px';
+                rm.setAttribute('aria-label', 'Quitar');
+                rm.addEventListener('click', () => {
+                    ordenesSeleccionadas.splice(idx, 1);
+                    renderChips();
+                });
+                chip.appendChild(txt);
+                chip.appendChild(rm);
+                cont.appendChild(chip);
+            });
+
             const badge = document.getElementById('badge-orden');
-            document.getElementById('inp-referencia').value = '';
+            badge.textContent = `${ordenesSeleccionadas.length} seleccionada(s)`;
+            badge.className = 'badge ms-2 ' + (ordenesSeleccionadas.length ? 'bg-success' : 'bg-secondary');
+        }
+
+        function limpiarOrdenSeleccionada() {
+            ordenesSeleccionadas = [];
+            renderChips();
+            document.getElementById('inp-buscar-orden').value = '';
             document.getElementById('referencia-resultados').classList.add('d-none');
-            badge.className = 'badge bg-secondary ms-2';
-            badge.textContent = 'Sin verificar';
         }
         document.getElementById('sel-sede').addEventListener('change', limpiarOrdenSeleccionada);
+        document.getElementById('modalCrear').addEventListener('show.bs.modal', () => {
+            document.getElementById('form-crear').reset();
+            limpiarOrdenSeleccionada();
+        });
 
         let ordenTimer = null;
-        document.getElementById('inp-referencia').addEventListener('input', function() {
+        document.getElementById('inp-buscar-orden').addEventListener('input', function() {
             clearTimeout(ordenTimer);
             const term = this.value.trim();
-            const badge = document.getElementById('badge-orden');
             const resultados = document.getElementById('referencia-resultados');
 
             if (term.length < 2) {
                 resultados.classList.add('d-none');
-                badge.className = 'badge bg-secondary ms-2';
-                badge.textContent = 'Sin verificar';
                 return;
             }
 
             const sede = document.getElementById('sel-sede').value;
             if (!sede) {
-                resultados.classList.add('d-none');
-                badge.className = 'badge bg-warning ms-2';
-                badge.textContent = 'Selecciona motorizado primero';
+                resultados.innerHTML = '';
+                const aviso = document.createElement('div');
+                aviso.className = 'list-group-item text-muted';
+                aviso.textContent = 'Selecciona motorizado primero';
+                resultados.appendChild(aviso);
+                resultados.classList.remove('d-none');
                 return;
             }
 
@@ -371,23 +434,27 @@
 
                     resultados.innerHTML = '';
 
-                    if (!data.length) {
+                    const disponibles = data.filter(o =>
+                        !ordenesSeleccionadas.some(sel => sel.numero_orden === o.numero_orden)
+                    );
+
+                    if (!disponibles.length) {
                         const vacio = document.createElement('div');
                         vacio.className = 'list-group-item text-muted';
                         vacio.textContent = 'Sin coincidencias';
                         resultados.appendChild(vacio);
                         resultados.classList.remove('d-none');
-                        badge.className = 'badge bg-warning ms-2';
-                        badge.textContent = 'Sin coincidencias';
                         return;
                     }
 
-                    data.forEach(o => {
+                    disponibles.forEach(o => {
                         const btn = document.createElement('button');
                         btn.type = 'button';
                         btn.className = 'list-group-item list-group-item-action btn-seleccionar-orden';
                         btn.dataset.numero = o.numero_orden ?? '';
                         btn.dataset.cliente = o.cliente ?? '';
+                        btn.dataset.ruc = o.ruc ?? '';
+                        btn.dataset.fecha = o.fecha_orden ?? '';
 
                         const numero = document.createElement('strong');
                         numero.textContent = o.numero_orden ?? '';
@@ -407,17 +474,27 @@
             const btn = e.target.closest('.btn-seleccionar-orden');
             if (!btn) return;
 
-            document.getElementById('inp-referencia').value = btn.dataset.numero;
-            document.getElementById('inp-cliente-nombre').value = btn.dataset.cliente;
-            this.classList.add('d-none');
+            const numero = btn.dataset.numero;
+            if (!ordenesSeleccionadas.some(o => o.numero_orden === numero)) {
+                ordenesSeleccionadas.push({
+                    numero_orden: numero,
+                    cliente: btn.dataset.cliente || null,
+                    ruc: btn.dataset.ruc || null,
+                    fecha_orden: btn.dataset.fecha || null,
+                });
+            }
 
-            const badge = document.getElementById('badge-orden');
-            badge.className = 'badge bg-success ms-2';
-            badge.textContent = '✓ Orden verificada';
+            if (!document.getElementById('inp-cliente-nombre').value) {
+                document.getElementById('inp-cliente-nombre').value = btn.dataset.cliente || '';
+            }
+
+            renderChips();
+            document.getElementById('inp-buscar-orden').value = '';
+            this.classList.add('d-none');
         });
 
         document.addEventListener('click', function(e) {
-            if (!e.target.closest('#inp-referencia') && !e.target.closest('#referencia-resultados')) {
+            if (!e.target.closest('#inp-buscar-orden') && !e.target.closest('#referencia-resultados')) {
                 document.getElementById('referencia-resultados').classList.add('d-none');
             }
         });
@@ -458,7 +535,13 @@
         // Crear entrega
         document.getElementById('form-crear').addEventListener('submit', async e => {
             e.preventDefault();
+            if (!ordenesSeleccionadas.length) {
+                toast('Selecciona al menos una orden', 'danger');
+                return;
+            }
             const fd = new FormData(e.target);
+            const payload = Object.fromEntries(fd);
+            payload.ordenes = ordenesSeleccionadas;
             const btn = e.target.querySelector('[type=submit]');
             btn.disabled = true;
             const res = await fetch('/tracking/entregas', {
@@ -468,7 +551,7 @@
                     'Accept': 'application/json',
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(Object.fromEntries(fd)),
+                body: JSON.stringify(payload),
             });
             btn.disabled = false;
             if (res.ok) {
@@ -478,6 +561,61 @@
                 const d = await res.json();
                 toast(Object.values(d.errors ?? {}).flat()[0] || d.message || 'Error', 'danger');
             }
+        });
+
+        // Ver detalle de entrega (incluye órdenes asignadas)
+        document.querySelectorAll('.btn-ver-entrega').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const id = btn.dataset.id;
+                document.getElementById('det-id').textContent = id;
+                const body = document.getElementById('detalle-body');
+                body.innerHTML = '<div class="text-center text-muted py-4">Cargando...</div>';
+                new bootstrap.Modal(document.getElementById('modalDetalle')).show();
+
+                try {
+                    const res = await fetch(`/tracking/entregas/${id}`);
+                    if (!res.ok) throw new Error();
+                    const { entrega: e } = await res.json();
+
+                    const badges = { pendiente: 'bg-secondary', completado: 'bg-success', fallido: 'bg-danger' };
+                    const filas = (e.ordenes || []).map(o => `
+                        <tr>
+                            <td>${esc(o.numero_orden)}</td>
+                            <td>${esc(o.cliente) || '—'}</td>
+                            <td>${esc(o.ruc) || '—'}</td>
+                            <td>${esc(o.fecha_orden) || '—'}</td>
+                        </tr>
+                    `).join('');
+
+                    body.innerHTML = `
+                        <div class="row g-2 mb-3">
+                            <div class="col-md-6"><strong>Cliente:</strong> ${esc(e.cliente_nombre)}</div>
+                            <div class="col-md-6"><strong>Teléfono:</strong> ${esc(e.cliente_telefono) || '—'}</div>
+                            <div class="col-md-6"><strong>Motorizado:</strong> ${esc(e.motorizado?.nombre)}</div>
+                            <div class="col-md-6"><strong>Sede:</strong> ${esc(e.sede)}</div>
+                            <div class="col-12"><strong>Dirección:</strong> ${esc(e.direccion)}</div>
+                            <div class="col-md-6">
+                                <strong>Estado:</strong>
+                                <span class="badge ${badges[e.estado] || 'bg-secondary'}">${esc(e.estado)}</span>
+                            </div>
+                            ${e.notas ? `<div class="col-12"><strong>Notas:</strong> ${esc(e.notas)}</div>` : ''}
+                        </div>
+                        <h6 class="fw-bold">Órdenes asignadas (${(e.ordenes || []).length})</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover mb-0">
+                                <thead>
+                                    <tr><th>N° Orden</th><th>Cliente</th><th>RUC</th><th>Fecha</th></tr>
+                                </thead>
+                                <tbody>
+                                    ${filas || '<tr><td colspan="4" class="text-muted">Sin órdenes registradas</td></tr>'}
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                } catch (_) {
+                    body.innerHTML = '<div class="text-danger text-center py-4">Error al cargar el detalle</div>';
+                }
+            });
         });
     </script>
 @endpush

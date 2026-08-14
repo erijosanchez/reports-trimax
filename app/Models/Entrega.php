@@ -31,4 +31,9 @@ class Entrega extends Model
     {
         return $this->belongsTo(GpsRuta::class, 'ruta_id');
     }
+
+    public function ordenes()
+    {
+        return $this->hasMany(EntregaOrden::class);
+    }
 }

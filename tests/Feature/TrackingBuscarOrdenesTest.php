@@ -10,7 +10,7 @@ use Tests\TestCase;
 
 /**
  * Cubre el buscador de órdenes reales (ordenes_historico) usado para
- * autocompletar la "referencia" al crear una entrega en tracking/entregas.
+ * asignar órdenes a una entrega en tracking/entregas.
  */
 class TrackingBuscarOrdenesTest extends TestCase
 {
@@ -62,27 +62,50 @@ class TrackingBuscarOrdenesTest extends TestCase
         $this->assertSame(['ORD-2001'], $numeros);
     }
 
+    public function test_solo_incluye_ordenes_en_sede(): void
+    {
+        $this->orden(['numero_orden' => 'ORD-2101', 'ubicacion_orden' => 'EN SEDE']);
+        $this->orden(['numero_orden' => 'ORD-2102', 'ubicacion_orden' => 'En sede']); // variante de mayúsculas real en BD
+        $this->orden(['numero_orden' => 'ORD-2103', 'ubicacion_orden' => ' EN SEDE ']); // con espacios
+        $this->orden(['numero_orden' => 'ORD-2104', 'ubicacion_orden' => 'EN TRANSITO']);
+        $this->orden(['numero_orden' => 'ORD-2105', 'ubicacion_orden' => 'DESPACHO']);
+        $this->orden(['numero_orden' => 'ORD-2106', 'ubicacion_orden' => null]);
+
+        $response = $this->actingAs($this->usuarioConPermiso())
+            ->getJson(route('tracking.ordenes.buscar', ['sede' => 'Lima', 'q' => 'ORD-21']))
+            ->assertOk();
+
+        $numeros = collect($response->json())->pluck('numero_orden')->sort()->values()->all();
+
+        $this->assertSame(['ORD-2101', 'ORD-2102', 'ORD-2103'], $numeros);
+    }
+
     public function test_excluye_ordenes_con_entrega_pendiente_o_completada_pero_incluye_las_de_entrega_fallida(): void
     {
         $this->orden(['numero_orden' => 'ORD-3001']);
         $this->orden(['numero_orden' => 'ORD-3002']);
         $this->orden(['numero_orden' => 'ORD-3003']);
 
-        Entrega::create([
+        $entregaA = Entrega::create([
             'motorizado_id' => 1, 'ruta_id' => 1, 'cliente_nombre' => 'A',
-            'referencia' => 'ORD-3001', 'direccion' => 'Dir', 'orden_secuencia' => 1,
+            'direccion' => 'Dir', 'orden_secuencia' => 1,
             'estado' => 'pendiente', 'sede' => 'Lima',
         ]);
-        Entrega::create([
+        $entregaA->ordenes()->create(['numero_orden' => 'ORD-3001']);
+
+        $entregaB = Entrega::create([
             'motorizado_id' => 1, 'ruta_id' => 1, 'cliente_nombre' => 'B',
-            'referencia' => 'ORD-3002', 'direccion' => 'Dir', 'orden_secuencia' => 2,
+            'direccion' => 'Dir', 'orden_secuencia' => 2,
             'estado' => 'completado', 'sede' => 'Lima',
         ]);
-        Entrega::create([
+        $entregaB->ordenes()->create(['numero_orden' => 'ORD-3002']);
+
+        $entregaC = Entrega::create([
             'motorizado_id' => 1, 'ruta_id' => 1, 'cliente_nombre' => 'C',
-            'referencia' => 'ORD-3003', 'direccion' => 'Dir', 'orden_secuencia' => 3,
+            'direccion' => 'Dir', 'orden_secuencia' => 3,
             'estado' => 'fallido', 'sede' => 'Lima',
         ]);
+        $entregaC->ordenes()->create(['numero_orden' => 'ORD-3003']);
 
         $response = $this->actingAs($this->usuarioConPermiso())
             ->getJson(route('tracking.ordenes.buscar', ['sede' => 'Lima', 'q' => 'ORD-300']))

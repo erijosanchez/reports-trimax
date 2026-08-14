@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Motorizado;
 use App\Models\GpsRuta;
 use App\Models\Entrega;
+use App\Models\EntregaOrden;
 use App\Services\ActivityLogService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -193,6 +194,7 @@ class TrackingAdminController extends Controller
         $sedes = Motorizado::SEDES;
 
         $query = Entrega::with(['motorizado', 'ruta'])
+            ->withCount('ordenes')
             ->orderByDesc('id');
 
         if ($request->filled('sede'))         $query->where('sede', $request->sede);
@@ -217,37 +219,95 @@ class TrackingAdminController extends Controller
         $this->checkPermiso();
 
         $data = $request->validate([
-            'motorizado_id'    => 'required|exists:motorizados,id',
-            'ruta_id'          => 'required|exists:gps_rutas,id',
-            'cliente_nombre'   => 'required|string|max:255',
-            'cliente_telefono' => 'nullable|string|max:50',
-            'referencia'       => 'nullable|string|max:100',
-            'direccion'        => 'required|string',
-            'latitud'          => 'nullable|numeric',
-            'longitud'         => 'nullable|numeric',
-            'sede'             => 'required|string',
-            'notas'            => 'nullable|string',
+            'motorizado_id'          => 'required|exists:motorizados,id',
+            'ruta_id'                => 'required|exists:gps_rutas,id',
+            'cliente_nombre'         => 'required|string|max:255',
+            'cliente_telefono'       => 'nullable|string|max:50',
+            'ordenes'                => 'required|array|min:1',
+            'ordenes.*.numero_orden' => 'required|string|max:100',
+            'ordenes.*.cliente'      => 'nullable|string|max:255',
+            'ordenes.*.ruc'          => 'nullable|string|max:20',
+            'ordenes.*.fecha_orden'  => 'nullable|date',
+            'direccion'              => 'required|string',
+            'latitud'                => 'nullable|numeric',
+            'longitud'               => 'nullable|numeric',
+            'sede'                   => 'required|string',
+            'notas'                  => 'nullable|string',
         ]);
+
+        $ordenes = collect($data['ordenes'])->unique('numero_orden')->values();
+
+        // Revalida "ocupadas" al momento de guardar (no solo al buscar), por si
+        // dos usuarios eligieron la misma orden casi al mismo tiempo.
+        $ocupadas = EntregaOrden::whereHas('entrega', fn ($q) => $q->whereIn('estado', ['pendiente', 'completado']))
+            ->whereIn('numero_orden', $ordenes->pluck('numero_orden'))
+            ->pluck('numero_orden');
+
+        if ($ocupadas->isNotEmpty()) {
+            return response()->json([
+                'message' => 'Alguna orden ya fue asignada a otra entrega: ' . $ocupadas->implode(', '),
+            ], 422);
+        }
 
         // Auto-asignar secuencia
         $ultimaSecuencia = Entrega::where('ruta_id', $data['ruta_id'])
             ->max('orden_secuencia') ?? 0;
-        $data['orden_secuencia'] = $ultimaSecuencia + 1;
 
-        $entrega = Entrega::create($data);
+        $entrega = DB::transaction(function () use ($data, $ordenes, $ultimaSecuencia) {
+            $entrega = Entrega::create([
+                'motorizado_id'    => $data['motorizado_id'],
+                'ruta_id'          => $data['ruta_id'],
+                'cliente_nombre'   => $data['cliente_nombre'],
+                'cliente_telefono' => $data['cliente_telefono'] ?? null,
+                'referencia'       => \Illuminate\Support\Str::limit($ordenes->pluck('numero_orden')->implode(', '), 250, ''),
+                'direccion'        => $data['direccion'],
+                'latitud'          => $data['latitud'] ?? null,
+                'longitud'         => $data['longitud'] ?? null,
+                'orden_secuencia'  => $ultimaSecuencia + 1,
+                'sede'             => $data['sede'],
+                'notas'            => $data['notas'] ?? null,
+            ]);
+
+            $entrega->ordenes()->createMany($ordenes->map(fn ($o) => [
+                'numero_orden' => $o['numero_orden'],
+                'cliente'      => $o['cliente'] ?? null,
+                'ruc'          => $o['ruc'] ?? null,
+                'fecha_orden'  => $o['fecha_orden'] ?? null,
+            ])->all());
+
+            return $entrega;
+        });
 
         ActivityLogService::log(
             Auth::id(), 'create_entrega', 'Entrega', $entrega->id,
-            "Creó entrega para {$entrega->cliente_nombre} (sede: {$entrega->sede})"
+            "Creó entrega para {$entrega->cliente_nombre} (sede: {$entrega->sede}) con {$ordenes->count()} orden(es)"
         );
 
-        return response()->json(['success' => true, 'entrega' => $entrega]);
+        return response()->json(['success' => true, 'entrega' => $entrega->load('ordenes')]);
+    }
+
+    public function showEntrega(int $id)
+    {
+        $this->checkPermiso();
+
+        $entrega = Entrega::with(['motorizado', 'ruta', 'ordenes'])->findOrFail($id);
+
+        $data = $entrega->toArray();
+        $data['ordenes'] = $entrega->ordenes->map(fn ($o) => [
+            'numero_orden' => $o->numero_orden,
+            'cliente'      => $o->cliente,
+            'ruc'          => $o->ruc,
+            'fecha_orden'  => $o->fecha_orden?->toDateString(),
+        ]);
+
+        return response()->json(['entrega' => $data]);
     }
 
     /**
-     * Busca órdenes reales de ordenes_historico para autocompletar la
-     * referencia de una entrega, excluyendo anuladas, ya entregadas y
-     * las que ya tienen una entrega pendiente/completada asignada.
+     * Busca órdenes reales de ordenes_historico para asignarlas a una entrega,
+     * limitando a las que físicamente están en sede (ubicacion_orden = "En
+     * sede") y excluyendo anuladas y las que ya tienen una entrega
+     * pendiente/completada asignada, para que la asignación sea trazable.
      */
     public function buscarOrdenes(Request $request)
     {
@@ -260,9 +320,8 @@ class TrackingAdminController extends Controller
 
         $term = $data['q'];
 
-        $ocupadas = Entrega::whereIn('estado', ['pendiente', 'completado'])
-            ->whereNotNull('referencia')
-            ->pluck('referencia');
+        $ocupadas = EntregaOrden::whereHas('entrega', fn ($q) => $q->whereIn('estado', ['pendiente', 'completado']))
+            ->pluck('numero_orden');
 
         $ordenes = DB::table('ordenes_historico')
             ->where('descripcion_sede', $data['sede'])
@@ -273,9 +332,7 @@ class TrackingAdminController extends Controller
             ->where(function ($q) {
                 $q->whereNull('estado_orden')->orWhere('estado_orden', '!=', 'Anulado');
             })
-            ->where(function ($q) {
-                $q->whereNull('ubicacion_orden')->orWhere('ubicacion_orden', '!=', 'FACTURADO Y ENTREGADO');
-            })
+            ->whereRaw('UPPER(TRIM(ubicacion_orden)) = ?', ['EN SEDE'])
             ->whereNotIn('numero_orden', $ocupadas)
             ->orderByRaw("CASE WHEN numero_orden LIKE ? THEN 0 ELSE 1 END", ["{$term}%"])
             ->limit(15)

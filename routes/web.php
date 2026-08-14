@@ -447,6 +447,7 @@ Route::middleware(['auth', '2fa.verified', 'throttle:dashboard', 'track.activity
         // Entregas
         Route::get('/entregas',         [TrackingAdminController::class, 'entregas'])->name('entregas');
         Route::post('/entregas',        [TrackingAdminController::class, 'storeEntrega'])->name('entregas.store');
+        Route::get('/entregas/{id}',    [TrackingAdminController::class, 'showEntrega'])->name('entregas.show');
         Route::get('/ordenes/buscar',   [TrackingAdminController::class, 'buscarOrdenes'])->name('ordenes.buscar');
     });
 

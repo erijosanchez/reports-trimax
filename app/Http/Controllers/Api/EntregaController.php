@@ -17,7 +17,7 @@ class EntregaController extends Controller
         $ruta = GpsRuta::where('motorizado_id', $motorizado->id)
             ->whereDate('fecha', today())
             ->whereIn('status', ['pendiente', 'activa'])
-            ->with('entregas')
+            ->with('entregas.ordenes')
             ->first();
 
         if (!$ruta) {
@@ -42,6 +42,12 @@ class EntregaController extends Controller
                 'orden_secuencia'  => $e->orden_secuencia,
                 'estado'           => $e->estado,
                 'notas'            => $e->notas,
+                'ordenes'          => $e->ordenes->map(fn($o) => [
+                    'numero_orden' => $o->numero_orden,
+                    'cliente'      => $o->cliente,
+                    'ruc'          => $o->ruc,
+                    'fecha_orden'  => $o->fecha_orden?->toDateString(),
+                ]),
             ]),
         ]);
     }
