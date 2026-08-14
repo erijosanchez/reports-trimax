@@ -20,11 +20,15 @@ class SurveyGoalTest extends TestCase
 {
     use RefreshDatabase;
 
+    // Las rutas marketing.* ahora exigen role:marketing|super_admin (antes
+    // el rol solo ocultaba el link del sidebar, cualquier autenticado podía
+    // entrar tecleando la URL) — este helper simula al usuario real que
+    // tendría acceso al panel.
     private function actingAsUsuarioAutenticado(): User
     {
-        Role::findOrCreate('user', 'web');
+        Role::findOrCreate('marketing', 'web');
         $authUser = User::factory()->create();
-        $authUser->assignRole('user');
+        $authUser->assignRole('marketing');
         $this->actingAs($authUser);
         return $authUser;
     }

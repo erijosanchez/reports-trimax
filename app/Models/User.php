@@ -40,6 +40,7 @@ class User extends Authenticatable
         'puede_ver_vouchers',
         'puede_ver_desbloqueo',
         'puede_enviar_avisos',
+        'puede_ver_marketing',
         'is_active',
         'email_notifications_enabled',
         'last_login_at',
@@ -80,6 +81,7 @@ class User extends Authenticatable
         'puede_ver_vouchers'        => 'boolean',
         'puede_ver_desbloqueo'      => 'boolean',
         'puede_enviar_avisos'       => 'boolean',
+        'puede_ver_marketing'       => 'boolean',
         'es_gerente_general' => 'boolean',
         'last_login_at' => 'datetime',
         'two_factor_confirmed_at' => 'datetime',
@@ -372,6 +374,16 @@ class User extends Authenticatable
     public function puedeEnviarAvisos(): bool
     {
         return $this->isSuperAdmin() || (bool) $this->puede_enviar_avisos;
+    }
+
+    /**
+     * Ver el módulo Marketing (dashboard de encuestas de satisfacción).
+     * Los roles marketing y super_admin ya tienen acceso por su rol; este
+     * permiso es para dar acceso a otros usuarios sin esos roles.
+     */
+    public function puedeVerMarketing(): bool
+    {
+        return $this->isSuperAdmin() || $this->isMarketing() || (bool) $this->puede_ver_marketing;
     }
 
     // NOTIFICACIONES

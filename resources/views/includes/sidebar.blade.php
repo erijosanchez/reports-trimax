@@ -397,8 +397,8 @@
             @endunless
         @endif
 
-        {{-- MÓDULO MARKETING (Solo marketing y superadmin) --}}
-        @if (auth()->user()->isMarketing() || auth()->user()->isSuperAdmin())
+        {{-- MÓDULO MARKETING (roles marketing/superadmin, o permiso especial puede_ver_marketing) --}}
+        @if (auth()->user()->puedeVerMarketing())
             <li class="nav-item nav-category">MARKETING</li>
             <li class="nav-item">
                 <a class="nav-link {{ request()->routeIs('marketing.index') ? 'active' : '' }}"

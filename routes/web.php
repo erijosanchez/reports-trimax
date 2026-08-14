@@ -125,8 +125,11 @@ Route::middleware(['auth', '2fa.verified', 'throttle:dashboard', 'track.activity
         Route::post('/leer-todas', [NotificationController::class, 'markAllAsRead'])->name('leer-todas');
     });
 
-    // Marketing Routes (All authenticated users)
-    Route::prefix('marketing')->name('marketing.')->group(function () {
+    // Marketing Routes (roles marketing/super_admin, o cualquier usuario con
+    // el permiso especial puede_ver_marketing otorgado desde el panel de
+    // usuarios — antes solo se ocultaba el link del sidebar, cualquier
+    // autenticado podía entrar tecleando la URL)
+    Route::middleware('can:ver-marketing')->prefix('marketing')->name('marketing.')->group(function () {
         // Marketing Dashboard
         Route::get('/amdpanel', [MarketingController::class, 'index'])->name('index');
         // Ver detalles de encuesta
