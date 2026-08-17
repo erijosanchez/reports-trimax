@@ -86,21 +86,24 @@
 
 {{-- Aviso grande — se muestra solo, sin que el usuario abra la campanita --}}
 <div class="modal fade" id="avisoModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content">
-            <div class="text-white modal-header" style="background:linear-gradient(135deg, #1565C0 0%, #0D47A1 100%);">
-                <h5 class="mb-0 modal-title">
-                    <i class="me-2 mdi mdi-bullhorn"></i>Aviso
-                </h5>
-                <button type="button" class="btn-close btn-close-white" id="avisoModalClose" aria-label="Cerrar"></button>
+    <div class="modal-dialog modal-dialog-centered aviso-memo-dialog">
+        <div class="modal-content aviso-memo">
+            <div class="aviso-memo-header">
+                <div class="aviso-memo-heading">
+                    <span class="aviso-memo-eyebrow">
+                        <i class="mdi mdi-bullhorn"></i>Aviso
+                        <span id="avisoModalContador" class="aviso-memo-contador" style="display:none;"></span>
+                    </span>
+                    <h4 class="aviso-memo-titulo" id="avisoModalTitulo"></h4>
+                </div>
+                <button type="button" class="btn-close btn-close-white aviso-memo-close" id="avisoModalClose" aria-label="Cerrar"></button>
             </div>
-            <div class="modal-body py-4">
-                <h4 class="mb-3" id="avisoModalTitulo"></h4>
-                <p class="mb-0" id="avisoModalMensaje" style="white-space:pre-line; word-break:break-word;"></p>
+            <div class="aviso-memo-body">
+                <p class="aviso-memo-mensaje" id="avisoModalMensaje"></p>
             </div>
-            <div class="modal-footer d-flex align-items-center justify-content-between">
-                <small class="text-muted" id="avisoModalFooter"></small>
-                <button type="button" class="text-white btn btn-primary" id="avisoModalEntendido">Entendido</button>
+            <div class="aviso-memo-footer">
+                <small class="aviso-memo-byline" id="avisoModalFooter"></small>
+                <button type="button" class="btn btn-primary aviso-memo-cta" id="avisoModalEntendido">Entendido</button>
             </div>
         </div>
     </div>
@@ -171,6 +174,127 @@
             width: 92vw;
         }
     }
+
+    /* Aviso — modal de comunicado interno, se posa sobre cualquier página */
+    .aviso-memo-dialog {
+        max-width: 440px;
+    }
+
+    .aviso-memo {
+        border: none;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 12px 32px -14px rgba(15, 23, 68, .4);
+    }
+
+    .aviso-memo-header {
+        position: relative;
+        display: flex;
+        align-items: flex-start;
+        padding: 1.35rem 3rem 1.25rem 1.5rem;
+        background: linear-gradient(180deg, var(--bs-primary, #1F3BB3) 0%, #17296E 100%);
+        border-bottom: 2px solid #B6902E;
+        color: #fff;
+    }
+
+    .aviso-memo-heading {
+        min-width: 0;
+        flex: 1 1 auto;
+    }
+
+    .aviso-memo-eyebrow {
+        display: flex;
+        align-items: center;
+        gap: .4rem;
+        font-size: .72rem;
+        font-weight: 600;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        color: #D9BE7B;
+        margin-bottom: .45rem;
+    }
+
+    .aviso-memo-eyebrow .mdi {
+        font-size: .85rem;
+    }
+
+    .aviso-memo-contador {
+        font-weight: 400;
+        text-transform: none;
+        letter-spacing: normal;
+        color: rgba(255, 255, 255, .6);
+    }
+
+    .aviso-memo-contador::before {
+        content: "· ";
+    }
+
+    .aviso-memo-titulo {
+        margin: 0;
+        font-weight: 700;
+        font-size: 1.3rem;
+        line-height: 1.35;
+        word-break: break-word;
+    }
+
+    .aviso-memo-close {
+        position: absolute;
+        top: 1.35rem;
+        right: 1.3rem;
+    }
+
+    .aviso-memo-body {
+        padding: 1.75rem 1.9rem;
+        background: #F7F8FC;
+    }
+
+    .aviso-memo-mensaje {
+        margin: 0;
+        color: #2A2F45;
+        font-size: 1rem;
+        line-height: 1.7;
+        white-space: pre-line;
+        word-break: break-word;
+    }
+
+    .aviso-memo-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: .9rem 1.9rem;
+        background: #fff;
+        border-top: 1px solid #E7E9F2;
+    }
+
+    .aviso-memo-byline {
+        color: #8891A8;
+    }
+
+    .aviso-memo-cta {
+        font-weight: 600;
+        padding: .45rem 1.5rem;
+        border-radius: 6px;
+    }
+
+    @media (max-width: 480px) {
+        .aviso-memo-header {
+            padding: 1.2rem 2.75rem 1.1rem 1.2rem;
+        }
+
+        .aviso-memo-body {
+            padding: 1.4rem;
+        }
+
+        .aviso-memo-footer {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .aviso-memo-cta {
+            width: 100%;
+        }
+    }
 </style>
 
 @push('scripts')
@@ -204,6 +328,16 @@
                 document.getElementById('avisoModalMensaje').textContent = aviso.mensaje;
                 document.getElementById('avisoModalFooter').textContent = aviso.enviado_por ?
                     `Enviado por ${aviso.enviado_por} · ${aviso.fecha}` : aviso.fecha;
+
+                const pendientes = colaAvisos.length - 1;
+                const contador = document.getElementById('avisoModalContador');
+                if (pendientes > 0) {
+                    contador.textContent = `${pendientes} pendiente${pendientes === 1 ? '' : 's'}`;
+                    contador.style.display = '';
+                } else {
+                    contador.style.display = 'none';
+                }
+
                 avisoModal.show();
             }
 
