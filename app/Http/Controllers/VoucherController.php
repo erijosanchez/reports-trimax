@@ -766,9 +766,10 @@ class VoucherController extends Controller
      * del historial, incluido su fallback para vouchers aplicados antes de
      * que aplicado_at guardara hora real (ver aplicadoTieneHoraReal).
      *
-     * Visibilidad: finanzas (sin ser admin/superadmin) solo ve su propio
-     * promedio, sin poder elegir otro usuario. Admin/superadmin puede elegir
-     * puntualmente quién aplicó o dejarlo vacío para ver el combinado.
+     * Visibilidad: cualquier usuario con acceso a este KPI (finanzas,
+     * admin, superadmin) ve por defecto el combinado del equipo. Solo
+     * admin/superadmin pueden acotar el combinado a un aplicador puntual
+     * vía el selector "Aplicado por" (finanzas no tiene ese selector).
      */
     public function kpiFinanzasSemanal(Request $request)
     {
@@ -778,7 +779,7 @@ class VoucherController extends Controller
         }
 
         $puedeVerTodos    = $user->isSuperAdmin() || $user->isAdmin();
-        $aplicadorFiltro  = $puedeVerTodos ? $request->get('aplicador') : $user->id;
+        $aplicadorFiltro  = $puedeVerTodos ? $request->get('aplicador') : null;
 
         $semanas     = $this->ultimasSemanas();
         $rangoInicio = $semanas[0]['inicio'];

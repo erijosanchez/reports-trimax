@@ -12,9 +12,9 @@ use Tests\TestCase;
 /**
  * Cubre VoucherController::kpiFinanzasSemanal y revisoresDisponibles — el
  * KPI de finanzas (horas promedio hasta APLICAR, no hasta revisar), pensado
- * para vivir junto al KPI de conformidad por sede pero con alcance
- * invertido: cada finanzas ve solo lo suyo, solo admin/superadmin pueden ver
- * a los demás.
+ * para vivir junto al KPI de conformidad por sede. Por defecto todos ven el
+ * combinado del equipo; solo admin/superadmin pueden acotarlo a un
+ * aplicador puntual vía el selector "Aplicado por".
  *
  * Se agrupa por semana de SOLICITUD (a pedido de negocio, igual que
  * kpiSemanal()): un voucher pedido una semana cuenta en esa semana aunque
@@ -105,7 +105,7 @@ class VoucherKpiFinanzasTest extends TestCase
             ->assertStatus(403);
     }
 
-    public function test_finanzas_no_admin_solo_ve_su_propio_promedio_aunque_pida_otro_aplicador(): void
+    public function test_finanzas_no_admin_ve_el_combinado_del_equipo_ignorando_aplicador(): void
     {
         $finanzasA = $this->userConRol('finanzas');
         $finanzasB = $this->userConRol('finanzas');
@@ -113,17 +113,16 @@ class VoucherKpiFinanzasTest extends TestCase
         // Ambos solicitados y aplicados dentro de la semana actual (domingo
         // -2 y -6 días siguen cayendo en el mismo lunes-domingo).
         $this->voucherAplicado('LIMA', $finanzasA->id, 2); // 48h de demora
-        // Si el filtro de "propio usuario" no funcionara, este contaminaría
-        // el promedio de A.
         $this->voucherAplicado('LIMA', $finanzasB->id, 6); // 144h de demora
 
         $resp = $this->actingAs($finanzasA)
             ->getJson(route('vouchers.kpiFinanzasSemanal', ['aplicador' => $finanzasB->id]));
 
         $resp->assertOk();
-        // Ignora el ?aplicador= ajeno: sigue siendo el promedio de A, no el combinado.
-        $this->assertEquals(48.0, $resp->json('promedio_actual'));
-        $this->assertSame(1, $resp->json('aplicados_actual'));
+        // Finanzas no tiene selector de aplicador: el ?aplicador= se ignora
+        // y siempre ve el combinado de todo el equipo, igual que admin sin filtro.
+        $this->assertEquals(96.0, $resp->json('promedio_actual'));
+        $this->assertSame(2, $resp->json('aplicados_actual'));
 
         // revisoresDisponibles tampoco es accesible para finanzas sin ser admin/superadmin.
         $this->actingAs($finanzasA)
