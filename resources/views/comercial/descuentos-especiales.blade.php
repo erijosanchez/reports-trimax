@@ -2013,6 +2013,7 @@
                 method: 'GET',
                 data: {
                     todos: 1,
+                    exportar: 1,
                     usuario: $('#filtroUsuario').val() || '',
                     sede: $('#filtroSede').val() || '',
                     aplicado: $('#filtroAplicado').val() || '',
@@ -2065,6 +2066,10 @@
                 'Comentarios': d.comentarios || '',
                 'Fecha Registro': formatearFecha(d.created_at),
                 'Creado Por': d.creador ? d.creador.name : '',
+                'Aplicado Por': d.aplicado_por || '',
+                'Fecha Aplicación': formatearFecha(d.aplicado_at),
+                'Aprobado Por': d.aprobado_por || '',
+                'Fecha Aprobación': formatearFecha(d.aprobado_at),
                 'Habilitado': d.habilitado ? 'Sí' : 'No',
             }));
 
@@ -2074,7 +2079,7 @@
                 { wch: 4 }, { wch: 18 }, { wch: 12 }, { wch: 12 }, { wch: 18 }, { wch: 18 },
                 { wch: 16 }, { wch: 13 }, { wch: 35 }, { wch: 22 }, { wch: 16 },
                 { wch: 50 }, { wch: 20 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 },
-                { wch: 40 }, { wch: 16 }, { wch: 24 }, { wch: 10 }
+                { wch: 40 }, { wch: 16 }, { wch: 22 }, { wch: 16 }, { wch: 22 }, { wch: 16 }, { wch: 10 }
             ];
             ws['!cols'] = anchos;
 

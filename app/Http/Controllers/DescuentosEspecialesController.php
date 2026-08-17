@@ -90,10 +90,40 @@ class DescuentosEspecialesController extends Controller
                 });
             }
 
-            // Modo "todos" (sin paginar): lo usan los gráficos de la pestaña Estadísticas.
-            // Los gráficos solo necesitan estas 4 columnas, así que evitamos traer las
-            // relaciones, archivos_adjuntos y demás para que la carga sea liviana.
+            // Modo "todos" (sin paginar): lo usan los gráficos de la pestaña Estadísticas
+            // y el botón Exportar Excel. Los gráficos solo necesitan 4 columnas livianas;
+            // la exportación necesita el registro completo, incluyendo aprobación.
             if ($request->boolean('todos')) {
+                if ($request->boolean('exportar')) {
+                    $todos = $query->orderBy('created_at', 'desc')->get()->map(fn($d) => [
+                        'numero_descuento'   => $d->numero_descuento,
+                        'aplicado'           => $d->aplicado,
+                        'aprobado'           => $d->aprobado,
+                        'numero_factura'     => $d->numero_factura,
+                        'numero_orden'       => $d->numero_orden,
+                        'sede'               => $d->sede,
+                        'ruc'                => $d->ruc,
+                        'razon_social'       => $d->razon_social,
+                        'consultor'          => $d->consultor,
+                        'ciudad'             => $d->ciudad,
+                        'descuento_especial' => $d->descuento_especial,
+                        'tipo'               => $d->tipo,
+                        'marca'              => $d->marca,
+                        'ar'                 => $d->ar,
+                        'disenos'            => $d->disenos,
+                        'material'           => $d->material,
+                        'comentarios'        => $d->comentarios,
+                        'created_at'         => optional($d->created_at)->toIso8601String(),
+                        'creador'            => $d->creador ? ['name' => $d->creador->name] : null,
+                        'aplicado_por'       => optional($d->aplicador)->name,
+                        'aplicado_at'        => optional($d->aplicado_at)->toIso8601String(),
+                        'aprobado_por'       => optional($d->aprobador)->name,
+                        'aprobado_at'        => optional($d->aprobado_at)->toIso8601String(),
+                        'habilitado'         => $d->habilitado,
+                    ]);
+                    return response()->json(['success' => true, 'data' => $todos]);
+                }
+
                 $todos = $query->setEagerLoads([])
                     ->get(['consultor', 'created_at', 'sede', 'descuento_especial'])
                     ->map(fn($d) => [
